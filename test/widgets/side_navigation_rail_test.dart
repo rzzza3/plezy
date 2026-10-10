@@ -22,7 +22,6 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/utils/platform_detector.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:provider/provider.dart';
 
@@ -174,67 +173,6 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
-  testWidgets('closed TV rail is slim and keeps primary icons centered', (tester) async {
-    TvDetectionService.debugSetAppleTVOverride(true);
-    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
-    await SettingsService.getInstance();
-
-    final librariesProvider = LibrariesProvider();
-    addTearDown(librariesProvider.dispose);
-
-    final hiddenLibrariesProvider = HiddenLibrariesProvider();
-    await hiddenLibrariesProvider.ensureInitialized();
-    addTearDown(hiddenLibrariesProvider.dispose);
-
-    final manager = MultiServerManager();
-    final multiServerProvider = testMultiServerProvider(manager);
-    addTearDown(multiServerProvider.dispose);
-
-    await tester.pumpWidget(
-      TranslationProvider(
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
-            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
-            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
-          ],
-          child: MaterialApp(
-            theme: ThemeData(extensions: const [testMonoTokens]),
-            home: Scaffold(
-              body: SideNavigationRail(
-                selectedTab: NavigationTabId.discover,
-                isSidebarFocused: false,
-                alwaysExpanded: false,
-                onDestinationSelected: (_) {},
-                onLibrarySelected: (_) {},
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
-    expect(tester.getSize(rail).width, SideNavigationRailState.tvCollapsedWidth);
-
-    final firstIconCenter = tester.getCenter(find.byType(AppIcon).first).dx;
-    expect(firstIconCenter - tester.getTopLeft(rail).dx, closeTo(SideNavigationRailState.tvCollapsedWidth / 2, 0.1));
-
-    final selectedItem = find.byType(NavigationRailItem).first;
-    final selectedItemContainer = tester.widget<Container>(
-      find.descendant(of: selectedItem, matching: find.byType(Container)).first,
-    );
-    // The per-item morph used to stack two `Opacity` subtrees, which cost a
-    // saveLayer each on every frame of the 250 ms expand. It now crossfades via
-    // colour alpha on the leaf, so a hidden indicator is a fully transparent
-    // colour rather than an absent one. Either way it must be invisible.
-    final indicatorColor = (selectedItemContainer.decoration as BoxDecoration?)?.color;
-    expect(indicatorColor?.a ?? 0.0, 0.0);
-
-    expect(_railSurfaceOpacity(tester).opacity, 0.0);
-  });
-
   testWidgets('closed non-TV rail keeps an opaque surface', (tester) async {
     await _pumpBasicRail(tester);
 
@@ -273,53 +211,6 @@ void main() {
     final indicator = find.descendant(of: homeItem, matching: find.byType(Container)).first;
     expect(tester.getSize(indicator), const Size(SideNavigationRailState.expandedWidth - 24, 48));
     expect(_railItemDecoration(tester, homeItem)?.borderRadius, BorderRadius.circular(MonoTokens.radiusFull));
-  });
-
-  testWidgets('expanded TV rail keeps a transparent surface', (tester) async {
-    TvDetectionService.debugSetAppleTVOverride(true);
-    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
-    await SettingsService.getInstance();
-
-    final librariesProvider = LibrariesProvider();
-    addTearDown(librariesProvider.dispose);
-
-    final hiddenLibrariesProvider = HiddenLibrariesProvider();
-    await hiddenLibrariesProvider.ensureInitialized();
-    addTearDown(hiddenLibrariesProvider.dispose);
-
-    final manager = MultiServerManager();
-    final multiServerProvider = testMultiServerProvider(manager);
-    addTearDown(multiServerProvider.dispose);
-
-    await tester.pumpWidget(
-      TranslationProvider(
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
-            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
-            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
-          ],
-          child: MaterialApp(
-            theme: ThemeData(extensions: const [testMonoTokens]),
-            home: Scaffold(
-              body: SideNavigationRail(
-                selectedTab: NavigationTabId.discover,
-                isSidebarFocused: true,
-                alwaysExpanded: false,
-                onDestinationSelected: (_) {},
-                onLibrarySelected: (_) {},
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
-    expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
-
-    expect(_railSurfaceOpacity(tester).opacity, 0.0);
   });
 
   testWidgets('expanded rail keeps selected background outside sidebar keyboard focus', (tester) async {
@@ -711,69 +602,75 @@ void main() {
     expect(scrimReports.last, isFalse);
   });
 
-  /// #2079: the TV rail is transparent so the full-bleed backdrop shows
-  /// through a *docked* rail, which the shell displaces content around. A
-  /// hover/touch panel floats over content at the collapsed offset instead,
-  /// so a transparent one leaves the menu unreadable on top of the artwork.
-  testWidgets('TV hover panel paints a surface over the content it covers', (tester) async {
-    await TvDetectionService.getInstance();
-    TvDetectionService.setForceTVSync(true);
-    expect(PlatformDetector.isTV(), isTrue);
+  group('TV sidebar', () {
+    setUp(() async {
+      await TvDetectionService.getInstance();
+      TvDetectionService.setForceTVSync(true);
+    });
 
-    await _pumpBasicRail(tester);
+    Finder railList() => find.byType(ListView);
+    double homeGlyphX(WidgetTester tester) =>
+        tester.getCenter(find.byIcon(Symbols.home_rounded)).dx - tester.getTopLeft(railList()).dx;
 
-    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
-    expect(tester.getSize(rail).width, SideNavigationRailState.tvCollapsedWidth);
-    expect(_railSurfaceOpacity(tester).opacity, 0.0);
+    testWidgets('rests as a slim rail with glyphs on its center line', (tester) async {
+      await _pumpBasicRail(tester);
 
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    addTearDown(gesture.removePointer);
-    await gesture.addPointer(location: const Offset(799, 599));
-    await tester.pump();
-    await gesture.moveTo(tester.getCenter(rail));
-    await tester.pumpAndSettle();
+      expect(tester.getSize(railList()).width, 64);
+      expect(homeGlyphX(tester), closeTo(32, 0.1));
+    });
 
-    expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
-    expect(_railSurfaceOpacity(tester).opacity, 1.0);
+    testWidgets('expands without moving its glyphs', (tester) async {
+      await _pumpBasicRail(tester, isSidebarFocused: true);
 
-    await gesture.moveTo(tester.getBottomRight(rail) + const Offset(100, -10));
-    await tester.pumpAndSettle();
+      expect(tester.getSize(railList()).width, 204);
+      expect(homeGlyphX(tester), closeTo(32, 0.1));
+    });
 
-    expect(tester.getSize(rail).width, SideNavigationRailState.tvCollapsedWidth);
-    expect(_railSurfaceOpacity(tester).opacity, 0.0);
-  });
+    testWidgets('hover expands over content without reporting a floating panel', (tester) async {
+      final reports = <bool>[];
+      await _pumpBasicRail(tester, onFloatingPanelChanged: reports.add);
 
-  /// The surface fade must not outrun the width morph: a shorter fade would
-  /// leave a fully grown, fully transparent panel over the content part-way
-  /// through the collapse — the #2079 symptom, briefly.
-  testWidgets('TV panel keeps a surface for the whole collapse', (tester) async {
-    await TvDetectionService.getInstance();
-    TvDetectionService.setForceTVSync(true);
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(gesture.removePointer);
+      await gesture.addPointer(location: const Offset(799, 599));
+      await tester.pump();
+      await gesture.moveTo(tester.getCenter(railList()));
+      await tester.pumpAndSettle();
 
-    await _pumpBasicRail(tester);
+      expect(tester.getSize(railList()).width, 204);
+      expect(reports, isEmpty);
+    });
 
-    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    addTearDown(gesture.removePointer);
-    await gesture.addPointer(location: const Offset(799, 599));
-    await tester.pump();
-    await gesture.moveTo(tester.getCenter(rail));
-    await tester.pumpAndSettle();
+    testWidgets('D-pad walks Search, Home, the destinations, libraries, then Settings, and never leaves', (
+      tester,
+    ) async {
+      final sideNavKey = GlobalKey<SideNavigationRailState>();
+      final movies = _library(id: '1', title: 'Movies', serverId: ServerId('server-a'), serverName: 'Server A');
+      await _pumpBasicRail(tester, sideNavKey: sideNavKey, isSidebarFocused: true, libraries: [movies]);
 
-    final surface = _railSurfaceOpacity(tester);
-    expect(surface.duration, SideNavigationRailState.expandDuration);
-    expect(surface.curve, SideNavigationRailState.expandCurve);
-  });
+      sideNavKey.currentState!.focusActiveItem();
+      await tester.pumpAndSettle();
+      String? focused() => FocusManager.instance.primaryFocus?.debugLabel;
+      expect(focused(), 'nav_home');
 
-  testWidgets('TV always-open rail stays transparent', (tester) async {
-    await TvDetectionService.getInstance();
-    TvDetectionService.setForceTVSync(true);
+      await _press(tester, LogicalKeyboardKey.arrowUp);
+      expect(focused(), 'nav_search');
+      await _press(tester, LogicalKeyboardKey.arrowUp);
+      expect(focused(), 'nav_search');
 
-    await _pumpBasicRail(tester, alwaysExpanded: true);
-
-    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
-    expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
-    expect(_railSurfaceOpacity(tester).opacity, 0.0);
+      final visited = <String?>[];
+      for (var i = 0; i < 5; i++) {
+        await _press(tester, LogicalKeyboardKey.arrowDown);
+        visited.add(focused());
+      }
+      expect(visited, [
+        'nav_home',
+        'nav_downloads',
+        'nav_library:visible:${movies.globalKey}',
+        'nav_settings',
+        'nav_settings',
+      ]);
+    });
   });
 
   testWidgets('Apple TV D-pad focus skips hidden downloads item', (tester) async {
@@ -824,9 +721,7 @@ void main() {
     sideNavKey.currentState!.focusActiveItem();
     await tester.pumpAndSettle();
 
-    // Home -> Libraries -> Search -> Settings. Downloads is hidden on Apple TV.
-    await _press(tester, LogicalKeyboardKey.arrowDown);
-    await _press(tester, LogicalKeyboardKey.arrowDown);
+    // Home -> Settings. Downloads is hidden on Apple TV.
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.enter);
 

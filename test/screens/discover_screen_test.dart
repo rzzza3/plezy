@@ -123,7 +123,7 @@ void main() {
     final discoverKey = GlobalKey<State<DiscoverScreen>>();
     const targetSidebarOffset = SideNavigationRailState.expandedWidth;
     const currentForegroundLeft = 120.0;
-    const foregroundWidth = 1280 - SideNavigationRailState.tvCollapsedWidth;
+    const foregroundWidth = 1280 - TvSidebarTokens.railWidth;
 
     addTearDown(() async {
       discoverProvider.dispose();
@@ -154,7 +154,7 @@ void main() {
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: targetSidebarOffset,
-              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              reservedSideNavigationWidth: TvSidebarTokens.railWidth,
               foregroundLeft: currentForegroundLeft,
               foregroundWidth: foregroundWidth,
               viewportWidth: 1280,
@@ -320,7 +320,7 @@ void main() {
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
-              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              reservedSideNavigationWidth: TvSidebarTokens.railWidth,
               foregroundLeft: 0,
               foregroundWidth: 1280,
               viewportWidth: 1280,
@@ -434,7 +434,7 @@ void main() {
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
-              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              reservedSideNavigationWidth: TvSidebarTokens.railWidth,
               foregroundLeft: 0,
               foregroundWidth: 1280,
               viewportWidth: 1280,
@@ -536,7 +536,7 @@ void main() {
       profileId: null,
       isProfileBinding: () => activeProfileProvider.isBinding,
     );
-    const foregroundWidth = 1280 - SideNavigationRailState.tvCollapsedWidth;
+    const foregroundWidth = 1280 - TvSidebarTokens.railWidth;
 
     addTearDown(() async {
       discoverProvider.dispose();
@@ -567,7 +567,7 @@ void main() {
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
-              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              reservedSideNavigationWidth: TvSidebarTokens.railWidth,
               foregroundLeft: 0,
               foregroundWidth: foregroundWidth,
               viewportWidth: 1280,
@@ -677,7 +677,7 @@ void main() {
               home: MainScreenFocusScope(
                 focusSidebar: () {},
                 sideNavigationWidth: SideNavigationRailState.expandedWidth,
-                reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+                reservedSideNavigationWidth: TvSidebarTokens.railWidth,
                 foregroundLeft: 0,
                 foregroundWidth: 1280,
                 viewportWidth: 1280,
@@ -950,7 +950,7 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
                 MainScreenFocusScope(
                   focusSidebar: () {},
                   sideNavigationWidth: SideNavigationRailState.expandedWidth,
-                  reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+                  reservedSideNavigationWidth: TvSidebarTokens.railWidth,
                   foregroundLeft: 80,
                   foregroundWidth: 1200,
                   viewportWidth: 1280,
@@ -1046,7 +1046,7 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
-              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              reservedSideNavigationWidth: TvSidebarTokens.railWidth,
               foregroundLeft: 0,
               foregroundWidth: 1280,
               viewportWidth: 1280,
