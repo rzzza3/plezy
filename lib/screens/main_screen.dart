@@ -37,6 +37,9 @@ import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
+import '../profiles/profile.dart';
+import '../profiles/profile_activation.dart';
+import '../profiles/profile_menu.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/account_preferences_controller.dart';
@@ -62,6 +65,8 @@ import '../utils/live_tv_deep_link.dart';
 import '../widgets/music/mini_player.dart';
 import '../widgets/navigation_label_fit.dart';
 import '../widgets/mobile_navigation_rail.dart';
+import '../widgets/app_menu.dart';
+import '../widgets/profile_switching_overlay.dart';
 import '../widgets/side_navigation_rail.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
@@ -464,6 +469,7 @@ class _MainScreenState extends State<MainScreen>
   // content offset. Docked expansion (always-open, D-pad focus) displaces
   // content instead and reports no floating panel.
   bool _isSidebarFloatingPanel = false;
+  bool _switchingProfile = false;
   bool _isOverlaySheetOpen = false;
 
   /// The binder is now owned by a top-level [Provider] (see main.dart) so
@@ -1498,11 +1504,42 @@ class _MainScreenState extends State<MainScreen>
     _updateTvosMenuPassthrough();
   }
 
-  double _sideNavigationWidth(BuildContext context, {required bool alwaysExpanded}) {
-    final isExpanded = alwaysExpanded || _isSidebarFocused;
-    return isExpanded
-        ? SideNavigationRailState.expandedWidth
+  double _reservedSideNavigationWidth(BuildContext context, {required bool alwaysExpanded}) {
+    return alwaysExpanded
+        ? SideNavigationRailState.expandedWidthForContext(context)
         : SideNavigationRailState.collapsedWidthForContext(context);
+  }
+
+  /// The TV sidebar expands over the content, so content stays at its
+  /// reserved offset; elsewhere a focused rail pushes content aside.
+  double _sideNavigationWidth(BuildContext context, {required bool alwaysExpanded}) {
+    if (PlatformDetector.isTV() || alwaysExpanded || !_isSidebarFocused) {
+      return _reservedSideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
+    }
+    return SideNavigationRailState.expandedWidth;
+  }
+
+  /// The TV sidebar's profile row opens the same menu as the avatar in the
+  /// home screen's top band on other platforms.
+  Future<void> _openProfileMenu() async {
+    if (_switchingProfile) return;
+    final value = await showAdaptiveAppMenu<String>(
+      context,
+      entries: profileMenuEntries(context, context.read<ActiveProfileProvider>()),
+      position: const Offset(TvSidebarTokens.expandedWidth, TvSidebarTokens.verticalPadding),
+      focusFirstItem: true,
+    );
+    if (value == null || !mounted || _switchingProfile) return;
+    await runProfileMenuAction(context, value, switchProfile: _switchProfileFromSidebar, openSettings: _openSettings);
+  }
+
+  Future<void> _switchProfileFromSidebar(Profile profile) async {
+    setState(() => _switchingProfile = true);
+    try {
+      await switchProfileFromUi(context, profile);
+    } finally {
+      if (mounted) setState(() => _switchingProfile = false);
+    }
   }
 
   bool get _shouldPassTvosMenuToSystem {
@@ -2082,9 +2119,7 @@ class _MainScreenState extends State<MainScreen>
         pref: SettingsService.alwaysKeepSidebarOpen,
         builder: (context, alwaysExpanded, _) {
           final targetContentOffset = _sideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
-          final reservedContentOffset = alwaysExpanded
-              ? SideNavigationRailState.expandedWidth
-              : SideNavigationRailState.collapsedWidthForContext(context);
+          final reservedContentOffset = _reservedSideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
 
           return OverlaySheetHost(
             onOpenChanged: _handleOverlaySheetOpenChanged,
@@ -2203,9 +2238,11 @@ class _MainScreenState extends State<MainScreen>
                                   setState(() => _isSidebarFloatingPanel = floating);
                                 },
                                 onReconnect: _triggerReconnect,
+                                onProfileSelected: () => unawaited(_openProfileMenu()),
                               ),
                             ),
                           ),
+                          if (_switchingProfile) const ProfileSwitchingOverlay(),
                         ],
                       ),
                     ),
