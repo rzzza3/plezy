@@ -41,7 +41,6 @@ import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
-import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
@@ -106,10 +105,9 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    final titleText = tester.widget<Text>(find.text(title));
-    final baseFontSize = 56 * TvLayoutConstants.scaleForSize(const Size(800, 480));
+    final titleText = tester.widget<Text>(find.text(title.toUpperCase()));
     expect(titleText.style?.fontSize, isNotNull);
-    expect(titleText.style!.fontSize!, lessThan(baseFontSize));
+    expect(titleText.style!.fontSize!, lessThan(42));
   });
 
   testWidgets('TV detail exposes hero information as one semantic node', (tester) async {
@@ -156,7 +154,7 @@ void main() {
     expect(tester.widget<Semantics>(information).properties.onTap, isNotNull);
 
     // Visual content and the separate action row remain present.
-    expect(find.text('Semantic Movie'), findsOneWidget);
+    expect(find.text('SEMANTIC MOVIE'), findsOneWidget);
     expect(find.text('One concise detail announcement.'), findsOneWidget);
     expect(find.byType(FocusableActionBar), findsOneWidget);
     semantics.dispose();
@@ -749,7 +747,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     final summaryText = tester.widget<Text>(find.text(summary));
-    expect(summaryText.style?.color, theme.colorScheme.onSurface.withValues(alpha: 0.78));
+    expect(summaryText.style?.color, theme.colorScheme.onSurface.withValues(alpha: 0.82));
   });
 
   testWidgets('TV detail shows every season tab and prefetches adjacent first page', (tester) async {
@@ -1383,17 +1381,15 @@ void main() {
     final audioText = find.textContaining('English');
     expect(audioText, findsOneWidget);
 
-    // At the screen's right edge — outside the hero's 60% text column, not
-    // right-aligned within it — sitting on the action row's baseline, in the
-    // hero's own ink rather than the muted chip colour.
+    // Silo's playback readout: in the hero column, left-aligned with the
+    // actions, directly above them, in the muted credit ink.
     final bar = tester.getRect(find.byType(FocusableActionBar));
     final statusRect = tester.getRect(status);
-    expect(statusRect.right, closeTo(1920 - 24, 1)); // spotlightLeft at this scale
-    expect(statusRect.left, greaterThan(1920 * 0.60));
-    expect(statusRect.bottom, closeTo(bar.bottom, 1));
-    expect(statusRect.center.dy, greaterThan(bar.center.dy));
+    expect(statusRect.left, 50);
+    expect(statusRect.bottom, lessThanOrEqualTo(bar.top - 12));
+    expect(statusRect.bottom, greaterThan(bar.top - 40));
     final ink = tester.widget<Text>(audioText).style!.color!;
-    expect(ink.a, 1.0);
+    expect(ink.a, closeTo(0.62, 0.01));
 
     // It is information, not a sixth button: RIGHT past the last action stays
     // on the last action.

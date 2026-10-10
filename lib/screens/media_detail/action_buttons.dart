@@ -22,14 +22,16 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
   Widget _buildAvailableActionButtons(BuildContext context, MediaItem metadata) {
     final isTv = PlatformDetector.isTV();
-    final tvScale = TvLayoutConstants.scaleOf(context);
-    final actionSize = isTv ? _tvDetailActionSize * tvScale : 48.0;
+    final actionSize = isTv ? TvDetailTokens.actionSize : 48.0;
     final playButtonLabel = _getPlayButtonLabel(metadata);
     final playIcon = _getPlayButtonIcon(metadata);
     final playActionLabel = playIcon == Symbols.resume_rounded ? t.common.resume : t.common.play;
     final playSemanticsLabel = playButtonLabel.isEmpty ? playActionLabel : '$playActionLabel $playButtonLabel';
-    final playIconSize = isTv ? 22 * tvScale : 20.0;
-    final playTextStyle = TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: .w700);
+    final playIconSize = isTv ? TvDetailTokens.actionIconSize : 20.0;
+    final playTextStyle = isTv ? TvDetailTokens.playLabel : const TextStyle(fontSize: 16, fontWeight: .w700);
+    // Silo's TV play pill always names its action; elsewhere a movie's play
+    // button is icon-only.
+    final playButtonText = isTv && playButtonLabel.isEmpty ? playActionLabel : playButtonLabel;
     final playButtonIcon = AppIcon(playIcon, fill: 1, size: playIconSize);
 
     // Split "Play Version" segment (#1881): a visible second Play segment
@@ -50,9 +52,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     // M3E split-button geometry: stadium outer corners, small joined inner
     // corners, a hairline gap between the two segments, and a trailing
     // segment narrower than a full action so it reads as Play's appendix.
-    final splitGap = isTv ? 2.0 * tvScale : 2.0;
+    const splitGap = 2.0;
     final versionSegmentWidth = actionSize * 0.75;
-    final splitInnerRadius = Radius.circular(isTv ? 8.0 * tvScale : 8.0);
+    const splitInnerRadius = Radius.circular(8.0);
     final splitOuterRadius = Radius.circular(actionSize / 2);
     final playShape = showVersionSplit
         ? RoundedRectangleBorder(
@@ -136,7 +138,25 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       bool showFocus = false,
       OutlinedBorder? shape,
     }) {
-      if (!isKeyboardMode && !isTv) {
+      if (isTv) {
+        return ButtonStyle(
+          padding: WidgetStatePropertyAll(padding ?? EdgeInsets.zero),
+          minimumSize: WidgetStatePropertyAll(Size(0, actionSize)),
+          fixedSize: padding == null ? WidgetStatePropertyAll(Size.square(actionSize)) : null,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+          overlayColor: noOverlay,
+          elevation: const WidgetStatePropertyAll(0),
+          backgroundColor: WidgetStatePropertyAll(
+            showFocus ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: TvDetailTokens.actionFillAlpha),
+          ),
+          foregroundColor: WidgetStatePropertyAll(
+            showFocus ? Theme.of(context).scaffoldBackgroundColor : foregroundColor ?? colorScheme.onSurface,
+          ),
+          shape: WidgetStatePropertyAll(shape ?? const StadiumBorder()),
+        );
+      }
+      if (!isKeyboardMode) {
         if (padding != null) {
           return FilledButton.styleFrom(padding: padding, shape: shape);
         }
@@ -168,7 +188,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         : () =>
               unawaited(navigateToVideoPlayer(context, metadata: primaryTrailer, isLaunchCurrent: () => _canUseDetail));
 
-    final gap = isTv ? 8.0 * tvScale : 12.0;
+    final gap = isTv ? TvDetailTokens.actionSpacing : 12.0;
 
     Widget playButton(FocusableActionBuildState state) {
       return Semantics(
@@ -182,16 +202,16 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             onPressed: onPlayPressed,
             style: actionButtonStyle(
               showFocus: state.showFocus,
-              padding: .symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+              padding: .symmetric(horizontal: isTv ? TvDetailTokens.playHorizontalPadding : 16),
               shape: playShape,
             ),
-            child: playButtonLabel.isNotEmpty
+            child: playButtonText.isNotEmpty
                 ? Row(
                     mainAxisSize: .min,
                     children: [
                       playButtonIcon,
-                      SizedBox(width: isTv ? 7 * tvScale : 8),
-                      Text(playButtonLabel, style: playTextStyle),
+                      SizedBox(width: isTv ? TvDetailTokens.playLabelGap : 8),
+                      Text(playButtonText, style: playTextStyle),
                     ],
                   )
                 : playButtonIcon,
@@ -236,12 +256,13 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       String? tooltip,
       Color? foregroundColor,
     }) {
-      return IconButton.filledTonal(
+      return _detailIconButton(
         onPressed: onPressed,
         icon: icon,
         tooltip: tooltip,
-        iconSize: isTv ? 21 * tvScale : 20,
+        foregroundColor: foregroundColor,
         style: actionButtonStyle(foregroundColor: foregroundColor, showFocus: state.showFocus),
+        showFocus: state.showFocus,
       );
     }
 
@@ -296,16 +317,14 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         ? FocusableAction(
             debugLabel: 'detail_download',
             onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
-            builder: (context, state) =>
-                _buildDownloadButton(metadata, actionButtonStyle, tvScale, showFocus: state.showFocus),
+            builder: (context, state) => _buildDownloadButton(metadata, actionButtonStyle, showFocus: state.showFocus),
           )
         : null;
 
     final watchedAction = FocusableAction(
       debugLabel: 'detail_watched',
       onPressed: () => unawaited(_handleWatchedTogglePressed(metadata)),
-      builder: (context, state) =>
-          _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale, showFocus: state.showFocus),
+      builder: (context, state) => _buildWatchedToggleButton(metadata, actionButtonStyle, showFocus: state.showFocus),
     );
 
     // Watchlist toggle for the connected catalog sources (Trakt, MAL).
@@ -351,7 +370,6 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             builder: (context, state) => _buildMoreActionsButton(
               metadata,
               actionButtonStyle,
-              tvScale,
               onPlayTrailer: onPlayTrailer,
               showFocus: state.showFocus,
             ),
@@ -369,16 +387,16 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     ];
 
     double playButtonWidthEstimate() {
-      if (playButtonLabel.isEmpty) return 64.0;
+      if (playButtonText.isEmpty) return 64.0;
       final textPainter = TextPainter(
-        text: TextSpan(text: playButtonLabel, style: playTextStyle),
+        text: TextSpan(text: playButtonText, style: playTextStyle),
         maxLines: 1,
         textDirection: Directionality.of(context),
       )..layout();
       final textWidth = textPainter.width;
       textPainter.dispose();
-      final horizontalPadding = isTv ? 34.0 * tvScale : 32.0;
-      final iconGap = isTv ? 7.0 * tvScale : 8.0;
+      final horizontalPadding = isTv ? TvDetailTokens.playHorizontalPadding * 2 : 32.0;
+      final iconGap = isTv ? TvDetailTokens.playLabelGap : 8.0;
       return (horizontalPadding + playIconSize + iconGap + textWidth).clamp(64.0, double.infinity).toDouble();
     }
 
@@ -428,7 +446,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       if (isTv || !maxWidth.isFinite) return null;
       final remaining = maxWidth - estimatedRowWidth(actions) - gap;
       if (remaining < 160) return null;
-      return _buildPlaybackTracksStatus(context, metadata, isTv: false, tvScale: tvScale, maxWidth: remaining);
+      return _buildPlaybackTracksStatus(context, metadata, isTv: false, maxWidth: remaining);
     }
 
     return LayoutBuilder(
@@ -530,24 +548,22 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   Widget _buildWatchedToggleButton(
     MediaItem metadata,
     ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding, required bool showFocus})
-    actionButtonStyle,
-    double tvScale, {
+    actionButtonStyle, {
     bool showFocus = false,
   }) {
-    return IconButton.filledTonal(
+    return _detailIconButton(
       onPressed: () => unawaited(_handleWatchedTogglePressed(metadata)),
       icon: AppIcon(metadata.isWatched ? Symbols.remove_done_rounded : Symbols.check_rounded, fill: 1),
       tooltip: metadata.isWatched ? t.tooltips.markAsUnwatched : t.tooltips.markAsWatched,
-      iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
       style: actionButtonStyle(showFocus: showFocus),
+      showFocus: showFocus,
     );
   }
 
   Widget _buildMoreActionsButton(
     MediaItem metadata,
     ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding, required bool showFocus})
-    actionButtonStyle,
-    double tvScale, {
+    actionButtonStyle, {
     VoidCallback? onPlayTrailer,
     bool showFocus = false,
   }) {
@@ -557,7 +573,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
       onPlayTrailer: onPlayTrailer,
       child: Builder(
-        builder: (buttonContext) => IconButton.filledTonal(
+        builder: (buttonContext) => _detailIconButton(
           onPressed: () {
             if (!_canUseDetail) return;
             final renderBox = buttonContext.findRenderObject() as RenderBox?;
@@ -567,8 +583,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             }
           },
           icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-          iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
+          tooltip: null,
           style: actionButtonStyle(showFocus: showFocus),
+          showFocus: showFocus,
         ),
       ),
     );
@@ -710,20 +727,20 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   Widget _buildDownloadButton(
     MediaItem metadata,
     ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding, required bool showFocus})
-    actionButtonStyle,
-    double tvScale, {
+    actionButtonStyle, {
     bool showFocus = false,
   }) {
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
-        final iconSize = PlatformDetector.isTV() ? 21.0 * tvScale : 20.0;
+        final iconSize = PlatformDetector.isTV() ? TvDetailTokens.actionIconSize : 20.0;
         final spec = _downloadButtonSpec(context, downloadProvider, metadata, iconSize: iconSize);
-        return IconButton.filledTonal(
+        return _detailIconButton(
           onPressed: spec.interactive ? () => unawaited(_handleDownloadButtonPressed(context, metadata)) : null,
           icon: spec.icon,
           tooltip: spec.tooltip,
-          iconSize: iconSize,
+          foregroundColor: spec.foregroundColor,
           style: actionButtonStyle(foregroundColor: spec.foregroundColor, showFocus: showFocus),
+          showFocus: showFocus,
         );
       },
     );
@@ -853,5 +870,27 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       icon: const AppIcon(Symbols.download_rounded, fill: 1),
       tooltip: t.downloads.downloadNow,
     );
+  }
+
+  /// The row's icon-only actions. TV uses Silo's circle, which reveals
+  /// [tooltip] as a label on focus instead of a hover tooltip.
+  Widget _detailIconButton({
+    required Widget icon,
+    required VoidCallback? onPressed,
+    required String? tooltip,
+    required ButtonStyle style,
+    required bool showFocus,
+    Color? foregroundColor,
+  }) {
+    if (PlatformDetector.isTV()) {
+      return _TvDetailCircleAction(
+        icon: icon,
+        label: tooltip,
+        focused: showFocus,
+        onPressed: onPressed,
+        foregroundColor: foregroundColor,
+      );
+    }
+    return IconButton.filledTonal(onPressed: onPressed, icon: icon, tooltip: tooltip, iconSize: 20, style: style);
   }
 }

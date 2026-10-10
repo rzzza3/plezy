@@ -99,13 +99,13 @@ import '../widgets/hub_section.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/rasterized_gradient.dart';
 import '../widgets/tv_browse_rail.dart';
-import '../widgets/tv_spotlight_background.dart';
 import '../providers/account_preferences_controller.dart';
 import '../services/playback_track_preview.dart';
 import '../utils/error_message_utils.dart';
 
 part 'media_detail/action_buttons.dart';
 part 'media_detail/playback_tracks_status.dart';
+part 'media_detail/tv_detail_chrome.dart';
 
 /// Ceiling for the detail hero's backdrop box, as a fraction of the window
 /// height. Roughly the natural height of a 16:9 backdrop on a 16:10 desktop
@@ -135,7 +135,6 @@ bool _isCompactHero(double contentWidth) => contentWidth < ScreenBreakpoints.mob
 
 const double _tvDetailTallPosterScale = 0.72;
 const double _tvDetailEpisodeThumbnailScale = 0.72;
-const double _tvDetailActionSize = 46;
 const double _tvDetailActionRailGap = 4;
 const String _tvDetailSeasonsErrorHubId = 'detail_seasons_error';
 const String _tvDetailSeasonHubIdPrefix = 'detail_season_';
@@ -3690,7 +3689,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final detailScale = TvLayoutConstants.scaleForSize(size);
     final spotlightTop = (size.height * 0.08).clamp(56.0 * detailScale, 110.0 * detailScale).toDouble();
-    final rawRailHeight = _estimateTvDetailRailHeight(size, detailHubs);
+    // The rails keep their own inset; shifting them puts their first card on
+    // the hero's leading edge.
+    final railLeft = math.max(
+      0.0,
+      TvDetailTokens.horizontalInset -
+          TvBrowseRailLayout.horizontalInsetForScale(TvBrowseRailLayout.scaleForSize(size)),
+    );
+    final rawRailHeight = _estimateTvDetailRailHeight(Size(size.width - railLeft, size.height), detailHubs);
     if (!_tvDetailRevealed && _isTvDetailReadyToReveal(metadata)) {
       _scheduleTvDetailReveal(rawRailHeight, focusPrimaryAction: metadata.isMovie);
     }
@@ -3698,43 +3704,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final railHeight = stableRailHeight == null || rawRailHeight > stableRailHeight ? rawRailHeight : stableRailHeight;
     final railTopPadding = 12 * detailScale;
     final foregroundBottom = (railHeight - railTopPadding) + (_tvDetailActionRailGap * detailScale);
-    final spotlightLeft = (24 * detailScale).clamp(18.0, 40.0).toDouble();
+    const foregroundLeft = TvDetailTokens.horizontalInset;
 
     final revealContent = Stack(
       fit: StackFit.expand,
       children: [
         Positioned(
-          left: spotlightLeft,
-          right: size.width * 0.40,
+          left: foregroundLeft,
+          width: math.min(TvDetailTokens.contentMaxWidth, size.width - foregroundLeft * 2),
           top: spotlightTop,
           bottom: foregroundBottom,
           child: ListenableBuilder(
             listenable: _tvDetailForegroundListenable,
-            builder: (context, _) =>
-                _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
-          ),
-        ),
-        // The action row's track status sits at the screen's right edge,
-        // bottom-aligned with the row and outside the hero's 60% text column,
-        // so it reads as a note about the row rather than a sixth button
-        // (#2217).
-        Positioned(
-          left: size.width * 0.60 + spotlightLeft,
-          right: spotlightLeft,
-          bottom: foregroundBottom,
-          height: _tvDetailActionSize * detailScale,
-          child: ValueListenableBuilder<MediaItem?>(
-            valueListenable: _tvDetailFocusedEpisode,
-            builder: (context, _, _) => Align(
-              alignment: .bottomRight,
-              child: _buildPlaybackTracksStatus(
-                context,
-                metadata,
-                isTv: true,
-                tvScale: detailScale,
-                maxWidth: size.width * 0.40 - spotlightLeft * 2,
-              ),
-            ),
+            builder: (context, _) => _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers),
           ),
         ),
         Positioned(
@@ -3751,7 +3733,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         ),
         if (detailHubs.isNotEmpty)
           Positioned(
-            left: 0,
+            left: railLeft,
             right: 0,
             bottom: 0,
             child: TvBrowseRail(
@@ -3790,10 +3772,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         child: Scaffold(
           body: Stack(
             children: [
-              TvSpotlightBackground(
+              _TvDetailArtwork(
                 item: metadata,
                 client: _getArtworkMediaClient(context),
-                showInfo: false,
                 localArtworkPathResolver: widget.isOffline
                     ? (path) => _offlineArtworkCandidatePath(context, path)
                     : null,
@@ -3809,74 +3790,52 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return content;
   }
 
-  Widget _buildTvDetailForeground(
-    BuildContext context,
-    MediaItem metadata, {
-    required bool hideSpoilers,
-    required double scale,
-  }) {
-    final theme = Theme.of(context);
+  Widget _buildTvDetailForeground(BuildContext context, MediaItem metadata, {required bool hideSpoilers}) {
     final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
     // The focused episode's own title. The logo/title slot above keeps the
     // show's name, so without this line the episode title exists only on the
     // (usually truncated) rail card (#2217).
     final episodeTitle = _tvDetailFocusedEpisode.value?.title;
-    final foregroundColor = _tvDetailForegroundColor(context);
-    final mutedForegroundColor = foregroundColor.withValues(alpha: 0.78);
+    final credit = _tvDetailCredit(metadata);
 
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxHeight <= 0 || constraints.maxWidth <= 0) return const SizedBox.shrink();
 
+        const gap = TvDetailTokens.editorialSpacing;
         final availableHeight = constraints.maxHeight.isFinite ? constraints.maxHeight : 264.0;
-        final desiredLogoHeight = 220 * scale;
-        final minLogoHeight = 60 * scale;
-        final desiredLogoWidth = 790 * scale;
-        final episodeTitleLineHeight = 30 * scale;
-        final episodeTitleGap = 4 * scale;
-        final metadataLineHeight = 22 * scale;
-        final logoMetadataGap = 14 * scale;
-        final summaryGap = 10 * scale;
-        final summaryFontSize = availableHeight < 260 * scale ? 16.2 * scale : 18 * scale;
-        final summaryLineHeight = summaryFontSize * 1.35;
-        final actionHeight = _tvDetailActionSize * scale;
-        final actionGap = 16 * scale;
+        final summaryLineHeight = TvDetailTokens.synopsis.fontSize! * TvDetailTokens.synopsis.height!;
         final hasDescription = description != null && description.isNotEmpty;
         final hasEpisodeTitle = episodeTitle != null && episodeTitle.isNotEmpty;
-        final episodeTitleBlockHeight = hasEpisodeTitle ? episodeTitleLineHeight + episodeTitleGap : 0.0;
         // Genres belong to the show, not the focused episode, and do not change
         // while browsing; they live in the details sheet (#2217).
         final genres = metadata.genres ?? const <String>[];
+        final fixedHeight =
+            gap +
+            (hasEpisodeTitle ? TvDetailTokens.episodeTitleHeight + gap : 0) +
+            TvDetailTokens.metadataHeight +
+            (credit != null ? gap + TvDetailTokens.creditHeight : 0) +
+            gap +
+            TvDetailTokens.playbackSummaryHeight +
+            TvDetailTokens.actionGap +
+            TvDetailTokens.actionSize;
         var summaryMaxLines = 0;
         var logoHeight = 0.0;
 
-        for (var lines = hasDescription ? 3 : 0; lines >= 0; lines--) {
-          final descriptionHeight = lines > 0 ? summaryGap + (summaryLineHeight * lines) : 0.0;
-          final reservedHeight =
-              logoMetadataGap +
-              episodeTitleBlockHeight +
-              metadataLineHeight +
-              descriptionHeight +
-              actionGap +
-              actionHeight;
-          final remainingForLogo = availableHeight - reservedHeight;
-          if (remainingForLogo >= minLogoHeight || lines == 0) {
+        for (var lines = hasDescription ? TvDetailTokens.synopsisLines : 0; lines >= 0; lines--) {
+          final descriptionHeight = lines > 0 ? gap + summaryLineHeight * lines : 0.0;
+          final remainingForLogo = availableHeight - fixedHeight - descriptionHeight;
+          if (remainingForLogo >= TvDetailTokens.minLogoHeight || lines == 0) {
             summaryMaxLines = lines;
-            logoHeight = remainingForLogo <= 0 ? 0 : remainingForLogo.clamp(0, desiredLogoHeight).toDouble();
+            logoHeight = remainingForLogo <= 0 ? 0 : remainingForLogo.clamp(0, TvDetailTokens.logoHeight).toDouble();
             break;
           }
         }
 
         final showLogo = logoHeight > 0;
-        final descriptionHeight = summaryMaxLines > 0 ? summaryGap + (summaryLineHeight * summaryMaxLines) : 0.0;
-        final contentHeight =
-            (showLogo ? logoHeight + logoMetadataGap : 0) +
-            episodeTitleBlockHeight +
-            metadataLineHeight +
-            descriptionHeight +
-            actionGap +
-            actionHeight;
-        final logoWidth = desiredLogoWidth < constraints.maxWidth ? desiredLogoWidth : constraints.maxWidth;
+        final descriptionHeight = summaryMaxLines > 0 ? gap + summaryLineHeight * summaryMaxLines : 0.0;
+        final contentHeight = (showLogo ? logoHeight : 0) + fixedHeight + descriptionHeight;
+        final logoWidth = math.min(TvDetailTokens.logoMaxWidth, constraints.maxWidth);
 
         void openDetails() => _openTvDetailsSheet(context, metadata, hideSpoilers: hideSpoilers);
 
@@ -3907,23 +3866,29 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           mainAxisSize: .min,
                           crossAxisAlignment: .start,
                           children: [
-                            if (showLogo) ...[
+                            if (showLogo)
                               _buildDetailLogoOrTitle(
                                 context,
                                 metadata,
                                 width: logoWidth,
                                 height: logoHeight,
                                 availableWidth: constraints.maxWidth,
-                                titleBuilder: (context, title) => _buildDetailTitle(
-                                  context,
-                                  title,
-                                  fontSize: 56 * scale,
-                                  fontWeight: .w800,
-                                  shadowBlur: 12,
+                                alignment: Alignment.bottomLeft,
+                                titleBuilder: (context, title) => FittingTitleText(
+                                  title.toUpperCase(),
+                                  alignment: Alignment.bottomLeft,
+                                  style: TvDetailTokens.ink(context, TvDetailTokens.title).copyWith(
+                                    shadows: [
+                                      Shadow(
+                                        color: _detailTitleShadowColor(context),
+                                        offset: TvDetailTokens.titleShadowOffset,
+                                        blurRadius: TvDetailTokens.titleShadowBlur,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              SizedBox(height: logoMetadataGap),
-                            ],
+                            const SizedBox(height: gap),
                             // The metadata line sheds badges and the summary
                             // truncates by design; this block is the focusable
                             // path to the sheet that shows all of it (#2042).
@@ -3938,7 +3903,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               useBackgroundFocus: true,
                               disableScale: true,
                               autoScroll: false,
-                              borderRadius: 8,
+                              borderRadius: 4,
                               descendantsAreFocusable: false,
                               child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
@@ -3949,7 +3914,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   children: [
                                     if (hasEpisodeTitle) ...[
                                       SizedBox(
-                                        height: episodeTitleLineHeight,
+                                        height: TvDetailTokens.episodeTitleHeight,
                                         child: Align(
                                           alignment: .centerLeft,
                                           child: Text(
@@ -3957,36 +3922,35 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                             key: const ValueKey('tv_detail_episode_title'),
                                             maxLines: 1,
                                             overflow: .ellipsis,
-                                            style: TextStyle(
-                                              color: foregroundColor,
-                                              fontSize: 24 * scale,
-                                              fontWeight: .w700,
-                                              height: 1.2,
+                                            style: TvDetailTokens.ink(
+                                              context,
+                                              TvDetailTokens.episodeTitle,
+                                              TvDetailTokens.episodeTitleAlpha,
                                             ),
                                           ),
                                         ),
                                       ),
-                                      SizedBox(height: episodeTitleGap),
+                                      const SizedBox(height: gap),
                                     ],
                                     SizedBox(
-                                      height: metadataLineHeight,
+                                      height: TvDetailTokens.metadataHeight,
                                       child: Align(
                                         alignment: .centerLeft,
-                                        child: _buildTvDetailMetadataLine(context, metadata, scale),
+                                        child: _buildTvDetailMetadataLine(context, metadata),
                                       ),
                                     ),
                                     if (hasDescription && summaryMaxLines > 0) ...[
-                                      SizedBox(height: summaryGap),
+                                      const SizedBox(height: gap),
                                       SizedBox(
                                         height: summaryLineHeight * summaryMaxLines,
                                         child: Text(
                                           description,
                                           maxLines: summaryMaxLines,
                                           overflow: .ellipsis,
-                                          style: theme.textTheme.bodyLarge?.copyWith(
-                                            color: mutedForegroundColor,
-                                            fontSize: summaryFontSize,
-                                            height: 1.35,
+                                          style: TvDetailTokens.ink(
+                                            context,
+                                            TvDetailTokens.synopsis,
+                                            TvDetailTokens.synopsisAlpha,
                                           ),
                                         ),
                                       ),
@@ -3999,8 +3963,33 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         ),
                       ),
                     ),
-                    SizedBox(height: actionGap),
-                    SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
+                    if (credit != null) ...[
+                      const SizedBox(height: gap),
+                      SizedBox(
+                        height: TvDetailTokens.creditHeight,
+                        child: Text(
+                          credit,
+                          maxLines: 1,
+                          overflow: .ellipsis,
+                          style: TvDetailTokens.ink(context, TvDetailTokens.credit, TvDetailTokens.creditAlpha),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: gap),
+                    SizedBox(
+                      height: TvDetailTokens.playbackSummaryHeight,
+                      child: Align(
+                        alignment: .centerLeft,
+                        child: _buildPlaybackTracksStatus(
+                          context,
+                          metadata,
+                          isTv: true,
+                          maxWidth: constraints.maxWidth,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: TvDetailTokens.actionGap),
+                    SizedBox(height: TvDetailTokens.actionSize, child: _buildActionButtons(metadata)),
                   ],
                 ),
               ),
@@ -4009,6 +3998,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
       },
     );
+  }
+
+  /// Silo's credit line under the synopsis: a movie's director(s). Hidden
+  /// while an episode is focused, since it describes the show.
+  String? _tvDetailCredit(MediaItem metadata) {
+    if (!metadata.isMovie || _tvDetailFocusedEpisode.value != null) return null;
+    final directors = metadata.directors;
+    if (directors == null || directors.isEmpty) return null;
+    final label = directors.length > 1 ? t.discover.directors : t.discover.director;
+    return '$label: ${directors.join(', ')}';
   }
 
   /// Opens the full-information sheet for the TV hero: the complete metadata
@@ -4097,8 +4096,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return parts.join(', ');
   }
 
-  Color _tvDetailForegroundColor(BuildContext context) => Theme.of(context).colorScheme.onSurface;
-
   /// Background-side halo behind the hero title: dark themes shadow with
   /// black, light themes with white, so the title separates from artwork the
   /// scrim has not fully washed out.
@@ -4168,13 +4165,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  Widget _buildTvDetailMetadataLine(BuildContext context, MediaItem metadata, double scale) {
-    final textStyle = TextStyle(
-      color: _tvDetailForegroundColor(context),
-      fontSize: 18 * scale,
-      fontWeight: .w700,
-      letterSpacing: 0.1,
-    );
+  Widget _buildTvDetailMetadataLine(BuildContext context, MediaItem metadata) {
+    final textStyle = TvDetailTokens.ink(context, TvDetailTokens.metadata, TvDetailTokens.metadataAlpha);
     final parts = _tvDetailMetadataParts(metadata);
     if (parts.isEmpty) return const SizedBox.shrink();
 
@@ -4182,8 +4174,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       textStyle: textStyle,
       parts: parts,
       ratingIconSize: textStyle.fontSize,
-      ratingSpacing: 4 * scale,
-      ratingEntrySpacing: 12 * scale,
+      ratingSpacing: 4,
+      ratingEntrySpacing: 12,
     );
   }
 
