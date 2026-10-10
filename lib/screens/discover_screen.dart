@@ -828,8 +828,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
                       child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
                     ),
-                  // User menu — profiles + sign out
-                  _buildUserMenuAction(context),
+                  // User menu — profiles + sign out. On TV the sidebar's
+                  // profile row opens it instead.
+                  if (!PlatformDetector.isTV()) _buildUserMenuAction(context),
                 ],
               );
             },
