@@ -41,7 +41,9 @@ class FittingTitleText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseStyle = style ?? DefaultTextStyle.of(context).style;
+    // Measure with the style Text will render: it merges [style] over the
+    // ambient default, whose font and spacing change where lines wrap.
+    final baseStyle = DefaultTextStyle.of(context).style.merge(style);
     if (PlatformDetector.isAutomotive()) {
       return Align(
         alignment: alignment,
