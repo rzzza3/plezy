@@ -35,6 +35,9 @@ library;
 /// Key holding the base64 `CredentialVault` AES-256 key.
 const String credentialVaultKeyPref = 'credential_vault_key_v1';
 
+/// The vault-protected Silo session: tokens, expiry, profile and generation.
+const String siloSessionPref = 'silo_session_v1';
+
 /// Legacy single-slot Plex token, superseded by the connection registry.
 const String legacyPlexTokenPref = 'plex_token';
 
@@ -74,4 +77,7 @@ bool isSeerrSessionPrefKey(String key) => profileScopedCredentialBaseKey(key) ==
 /// Whether [key] holds a credential and must never be dropped or exported
 /// without an explicit, informed user decision.
 bool isSensitivePrefKey(String key) =>
-    key == credentialVaultKeyPref || key == legacyPlexTokenPref || profileScopedCredentialBaseKey(key) != null;
+    key == credentialVaultKeyPref ||
+    key == legacyPlexTokenPref ||
+    key == siloSessionPref ||
+    profileScopedCredentialBaseKey(key) != null;
