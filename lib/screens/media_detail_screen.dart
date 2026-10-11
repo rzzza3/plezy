@@ -3832,8 +3832,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         }
 
         final showLogo = logoHeight > 0;
-        final descriptionHeight = summaryMaxLines > 0 ? gap + summaryLineHeight * summaryMaxLines : 0.0;
-        final contentHeight = (showLogo ? logoHeight : 0) + fixedHeight + descriptionHeight;
         final logoWidth = math.min(TvDetailTokens.logoMaxWidth, constraints.maxWidth);
 
         void openDetails() => _openTvDetailsSheet(context, metadata, hideSpoilers: hideSpoilers);
@@ -3843,154 +3841,150 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             height: availableHeight,
             child: Align(
               alignment: .bottomLeft,
-              child: SizedBox(
-                height: contentHeight <= availableHeight ? contentHeight : availableHeight,
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: [
-                    Semantics(
-                      key: const ValueKey('tv_detail_information_semantics'),
-                      identifier: 'tv_detail_information',
-                      container: true,
-                      button: true,
-                      label: _tvDetailInformationSemanticLabel(metadata, description: description, genres: genres),
-                      hint: t.mediaMenu.viewDetails,
-                      onTap: openDetails,
-                      child: ExcludeSemantics(
-                        // One announcement, one action: activating it opens the
-                        // full-information sheet. The action buttons below
-                        // remain separate accessible controls.
-                        child: Column(
-                          mainAxisSize: .min,
-                          crossAxisAlignment: .start,
-                          children: [
-                            if (showLogo)
-                              _buildDetailLogoOrTitle(
-                                context,
-                                metadata,
-                                width: logoWidth,
-                                height: logoHeight,
-                                availableWidth: constraints.maxWidth,
+              child: Column(
+                mainAxisSize: .min,
+                crossAxisAlignment: .start,
+                children: [
+                  Semantics(
+                    key: const ValueKey('tv_detail_information_semantics'),
+                    identifier: 'tv_detail_information',
+                    container: true,
+                    button: true,
+                    label: _tvDetailInformationSemanticLabel(metadata, description: description, genres: genres),
+                    hint: t.mediaMenu.viewDetails,
+                    onTap: openDetails,
+                    child: ExcludeSemantics(
+                      // One announcement, one action: activating it opens the
+                      // full-information sheet. The action buttons below
+                      // remain separate accessible controls.
+                      child: Column(
+                        mainAxisSize: .min,
+                        crossAxisAlignment: .start,
+                        children: [
+                          if (showLogo)
+                            _buildDetailLogoOrTitle(
+                              context,
+                              metadata,
+                              width: logoWidth,
+                              height: logoHeight,
+                              availableWidth: constraints.maxWidth,
+                              alignment: Alignment.bottomLeft,
+                              titleBuilder: (context, title) => FittingTitleText(
+                                title.toUpperCase(),
                                 alignment: Alignment.bottomLeft,
-                                titleBuilder: (context, title) => FittingTitleText(
-                                  title.toUpperCase(),
-                                  alignment: Alignment.bottomLeft,
-                                  style: TvDetailTokens.ink(context, TvDetailTokens.title).copyWith(
-                                    shadows: [
-                                      Shadow(
-                                        color: _detailTitleShadowColor(context),
-                                        offset: TvDetailTokens.titleShadowOffset,
-                                        blurRadius: TvDetailTokens.titleShadowBlur,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(height: gap),
-                            // The metadata line sheds badges and the summary
-                            // truncates by design; this block is the focusable
-                            // path to the sheet that shows all of it (#2042).
-                            // Background-only focus chrome: zero layout delta,
-                            // so the hero height budget above stays exact.
-                            FocusableWrapper(
-                              focusNode: _tvDetailInfoFocusNode,
-                              onSelect: openDetails,
-                              onNavigateUp: _backButtonFocusNode.requestFocus,
-                              onNavigateDown: _focusTvDetailActionRow,
-                              onBack: _popMediaDetailIfBackNotSuppressed,
-                              useBackgroundFocus: true,
-                              disableScale: true,
-                              autoScroll: false,
-                              borderRadius: 4,
-                              descendantsAreFocusable: false,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: openDetails,
-                                child: Column(
-                                  mainAxisSize: .min,
-                                  crossAxisAlignment: .start,
-                                  children: [
-                                    if (hasEpisodeTitle) ...[
-                                      SizedBox(
-                                        height: TvDetailTokens.episodeTitleHeight,
-                                        child: Align(
-                                          alignment: .centerLeft,
-                                          child: Text(
-                                            episodeTitle,
-                                            key: const ValueKey('tv_detail_episode_title'),
-                                            maxLines: 1,
-                                            overflow: .ellipsis,
-                                            style: TvDetailTokens.ink(
-                                              context,
-                                              TvDetailTokens.episodeTitle,
-                                              TvDetailTokens.episodeTitleAlpha,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: gap),
-                                    ],
-                                    SizedBox(
-                                      height: TvDetailTokens.metadataHeight,
-                                      child: Align(
-                                        alignment: .centerLeft,
-                                        child: _buildTvDetailMetadataLine(context, metadata),
-                                      ),
+                                style: TvDetailTokens.ink(context, TvDetailTokens.title).copyWith(
+                                  shadows: [
+                                    Shadow(
+                                      color: _detailTitleShadowColor(context),
+                                      offset: TvDetailTokens.titleShadowOffset,
+                                      blurRadius: TvDetailTokens.titleShadowBlur,
                                     ),
-                                    if (hasDescription && summaryMaxLines > 0) ...[
-                                      const SizedBox(height: gap),
-                                      SizedBox(
-                                        height: summaryLineHeight * summaryMaxLines,
-                                        child: Text(
-                                          description,
-                                          maxLines: summaryMaxLines,
-                                          overflow: .ellipsis,
-                                          style: TvDetailTokens.ink(
-                                            context,
-                                            TvDetailTokens.synopsis,
-                                            TvDetailTokens.synopsisAlpha,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
                                   ],
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          const SizedBox(height: gap),
+                          // The metadata line sheds badges and the summary
+                          // truncates by design; this block is the focusable
+                          // path to the sheet that shows all of it (#2042).
+                          // Background-only focus chrome: zero layout delta,
+                          // so the hero height budget above stays exact.
+                          FocusableWrapper(
+                            focusNode: _tvDetailInfoFocusNode,
+                            onSelect: openDetails,
+                            onNavigateUp: _backButtonFocusNode.requestFocus,
+                            onNavigateDown: _focusTvDetailActionRow,
+                            onBack: _popMediaDetailIfBackNotSuppressed,
+                            useBackgroundFocus: true,
+                            disableScale: true,
+                            autoScroll: false,
+                            borderRadius: 4,
+                            descendantsAreFocusable: false,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: openDetails,
+                              child: Column(
+                                mainAxisSize: .min,
+                                crossAxisAlignment: .start,
+                                children: [
+                                  if (hasEpisodeTitle) ...[
+                                    SizedBox(
+                                      height: TvDetailTokens.episodeTitleHeight,
+                                      child: Align(
+                                        alignment: .centerLeft,
+                                        child: Text(
+                                          episodeTitle,
+                                          key: const ValueKey('tv_detail_episode_title'),
+                                          maxLines: 1,
+                                          overflow: .ellipsis,
+                                          style: TvDetailTokens.ink(
+                                            context,
+                                            TvDetailTokens.episodeTitle,
+                                            TvDetailTokens.episodeTitleAlpha,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: gap),
+                                  ],
+                                  SizedBox(
+                                    height: TvDetailTokens.metadataHeight,
+                                    child: Align(
+                                      alignment: .centerLeft,
+                                      child: _buildTvDetailMetadataLine(context, metadata),
+                                    ),
+                                  ),
+                                  if (hasDescription && summaryMaxLines > 0) ...[
+                                    const SizedBox(height: gap),
+                                    // A cap, not a fixed height: a synopsis
+                                    // shorter than its line budget collapses
+                                    // instead of leaving blank lines above the
+                                    // readout.
+                                    ConstrainedBox(
+                                      constraints: BoxConstraints(maxHeight: summaryLineHeight * summaryMaxLines),
+                                      child: Text(
+                                        description,
+                                        maxLines: summaryMaxLines,
+                                        overflow: .ellipsis,
+                                        style: TvDetailTokens.ink(
+                                          context,
+                                          TvDetailTokens.synopsis,
+                                          TvDetailTokens.synopsisAlpha,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    if (credit != null) ...[
-                      const SizedBox(height: gap),
-                      SizedBox(
-                        height: TvDetailTokens.creditHeight,
-                        child: Text(
-                          credit,
-                          maxLines: 1,
-                          overflow: .ellipsis,
-                          style: TvDetailTokens.ink(context, TvDetailTokens.credit, TvDetailTokens.creditAlpha),
-                        ),
-                      ),
-                    ],
+                  ),
+                  if (credit != null) ...[
                     const SizedBox(height: gap),
                     SizedBox(
-                      height: TvDetailTokens.playbackSummaryHeight,
-                      child: Align(
-                        alignment: .centerLeft,
-                        child: _buildPlaybackTracksStatus(
-                          context,
-                          metadata,
-                          isTv: true,
-                          maxWidth: constraints.maxWidth,
-                        ),
+                      height: TvDetailTokens.creditHeight,
+                      child: Text(
+                        credit,
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                        style: TvDetailTokens.ink(context, TvDetailTokens.credit, TvDetailTokens.creditAlpha),
                       ),
                     ),
-                    const SizedBox(height: TvDetailTokens.actionGap),
-                    SizedBox(height: TvDetailTokens.actionSize, child: _buildActionButtons(metadata)),
                   ],
-                ),
+                  const SizedBox(height: gap),
+                  SizedBox(
+                    height: TvDetailTokens.playbackSummaryHeight,
+                    child: Align(
+                      alignment: .centerLeft,
+                      child: _buildPlaybackTracksStatus(context, metadata, isTv: true, maxWidth: constraints.maxWidth),
+                    ),
+                  ),
+                  const SizedBox(height: TvDetailTokens.actionGap),
+                  SizedBox(height: TvDetailTokens.actionSize, child: _buildActionButtons(metadata)),
+                ],
               ),
             ),
           ),
