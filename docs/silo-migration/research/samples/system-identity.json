@@ -1,0 +1,11 @@
+{
+  "endpoint": "GET /api/v2/system/identity",
+  "status": 200,
+  "content_type": "application/json",
+  "shape": {
+    "type": "object",
+    "keys": {
+      "server_id": "string"
+    }
+  }
+}

@@ -1,0 +1,350 @@
+{
+  "endpoint": "GET /api/v2/home/sections",
+  "status": 200,
+  "content_type": "application/json",
+  "shape": {
+    "type": "object",
+    "keys": {
+      "sections": {
+        "type": "array",
+        "count": 17,
+        "items": {
+          "type": "object",
+          "keys": {
+            "id": "string",
+            "section_type": "string",
+            "title": "string",
+            "featured": "bool",
+            "item_limit": "int",
+            "total_count": "int",
+            "is_custom": "bool",
+            "customized": "bool",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "keys": {
+                  "content_id": "string",
+                  "play_content_id": "string",
+                  "type": "string",
+                  "title": "string",
+                  "series_id": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "series_title": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "season_number": {
+                    "type": "union",
+                    "of": [
+                      "int",
+                      "absent"
+                    ]
+                  },
+                  "episode_number": {
+                    "type": "union",
+                    "of": [
+                      "int",
+                      "absent"
+                    ]
+                  },
+                  "runtime": {
+                    "type": "union",
+                    "of": [
+                      "int",
+                      "absent"
+                    ]
+                  },
+                  "genres": {
+                    "type": "array",
+                    "items": "string"
+                  },
+                  "keywords": {
+                    "type": "array",
+                    "items": "string"
+                  },
+                  "content_rating": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "status": "string",
+                  "overview": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "poster_url": "string",
+                  "backdrop_url": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "logo_url": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "overlay_summary": {
+                    "type": "object",
+                    "keys": {
+                      "resolution": "string",
+                      "audio": {
+                        "type": "union",
+                        "of": [
+                          "string",
+                          "absent"
+                        ]
+                      },
+                      "audio_channels": "string",
+                      "video_codec": "string",
+                      "container": "string",
+                      "aspect_ratio": "string",
+                      "multi_sub": {
+                        "type": "union",
+                        "of": [
+                          "bool",
+                          "absent"
+                        ]
+                      },
+                      "hdr": {
+                        "type": "union",
+                        "of": [
+                          "string",
+                          "absent"
+                        ]
+                      },
+                      "release_type": {
+                        "type": "union",
+                        "of": [
+                          "string",
+                          "absent"
+                        ]
+                      },
+                      "multi_audio": {
+                        "type": "union",
+                        "of": [
+                          "bool",
+                          "absent"
+                        ]
+                      },
+                      "edition": {
+                        "type": "union",
+                        "of": [
+                          "string",
+                          "absent"
+                        ]
+                      }
+                    }
+                  },
+                  "item_source": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "user_state": {
+                    "type": "object",
+                    "keys": {
+                      "played": "bool",
+                      "is_favorite": "bool",
+                      "in_watchlist": "bool"
+                    }
+                  },
+                  "year": {
+                    "type": "union",
+                    "of": [
+                      "int",
+                      "absent"
+                    ]
+                  },
+                  "studios": {
+                    "type": "union",
+                    "of": [
+                      {
+                        "type": "array",
+                        "count": 6,
+                        "items": "string"
+                      },
+                      "absent",
+                      {
+                        "type": "array",
+                        "count": 4,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 1,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 3,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 8,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 2,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 7,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 5,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 11,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 9,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 13,
+                        "items": "string"
+                      }
+                    ]
+                  },
+                  "rating_tmdb": {
+                    "type": "union",
+                    "of": [
+                      "number",
+                      "absent",
+                      "int"
+                    ]
+                  },
+                  "position_seconds": {
+                    "type": "union",
+                    "of": [
+                      "number",
+                      "absent",
+                      "int"
+                    ]
+                  },
+                  "duration_seconds": {
+                    "type": "union",
+                    "of": [
+                      "int",
+                      "absent",
+                      "number"
+                    ]
+                  },
+                  "progress_updated_at": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "rating_imdb": {
+                    "type": "union",
+                    "of": [
+                      "number",
+                      "absent",
+                      "int"
+                    ]
+                  },
+                  "rating_rt_critic": {
+                    "type": "union",
+                    "of": [
+                      "int",
+                      "absent"
+                    ]
+                  },
+                  "networks": {
+                    "type": "union",
+                    "of": [
+                      {
+                        "type": "array",
+                        "items": "string"
+                      },
+                      "absent",
+                      {
+                        "type": "array",
+                        "count": 1,
+                        "items": "string"
+                      },
+                      {
+                        "type": "array",
+                        "count": 2,
+                        "items": "string"
+                      }
+                    ]
+                  },
+                  "show_status": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "original_language": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  },
+                  "poster_thumbhash": {
+                    "type": "union",
+                    "of": [
+                      "string",
+                      "absent"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "section_type_values": [
+    "collection",
+    "continue_watching",
+    "custom_filter",
+    "favorites",
+    "recently_added",
+    "recently_released",
+    "recommended_for_you",
+    "taste_match",
+    "trending_on_server",
+    "watchlist"
+  ]
+}

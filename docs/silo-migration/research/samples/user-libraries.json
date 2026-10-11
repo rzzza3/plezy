@@ -1,0 +1,23 @@
+{
+  "endpoint": "GET /api/v2/user/libraries",
+  "status": 200,
+  "content_type": "application/json",
+  "shape": {
+    "type": "object",
+    "keys": {
+      "items": {
+        "type": "array",
+        "count": 9,
+        "items": {
+          "type": "object",
+          "keys": {
+            "id": "string",
+            "name": "string",
+            "type": "string",
+            "sort_order": "int"
+          }
+        }
+      }
+    }
+  }
+}
