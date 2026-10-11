@@ -20,6 +20,9 @@ read-only responses, and signs out. Tokens stay in memory.
   --device-id-file <path>  Where the X-Silo-Device-Id persists between runs.
                            Default ~/.config/plezy-silo-probe/device_id
   --time-home <n>          Time n extra GET /api/v2/home/sections calls.
+  --baseline               With --time-home, also time n of the same request
+                           on a bare dart:io HttpClient and judge the 50 ms
+                           rule.
   --force-refresh          Expire the access token locally before home.
   --revoked                Sign out server-side, then reuse the old tokens.
 ''';
@@ -39,6 +42,7 @@ class SiloProbeOptions {
   final String samplesDir;
   final String deviceIdFile;
   final int timeHome;
+  final bool baseline;
   final bool forceRefresh;
   final bool revoked;
 
@@ -47,6 +51,7 @@ class SiloProbeOptions {
     required this.samplesDir,
     required this.deviceIdFile,
     this.timeHome = 0,
+    this.baseline = false,
     this.forceRefresh = false,
     this.revoked = false,
   });
@@ -57,6 +62,7 @@ class SiloProbeOptions {
     var deviceIdFile =
         '${Platform.environment['HOME'] ?? Directory.systemTemp.path}/.config/plezy-silo-probe/device_id';
     var timeHome = 0;
+    var baseline = false;
     var forceRefresh = false;
     var revoked = false;
     for (var i = 0; i < args.length; i++) {
@@ -70,6 +76,8 @@ class SiloProbeOptions {
             deviceIdFile = next();
           case '--time-home':
             timeHome = int.parse(next());
+          case '--baseline':
+            baseline = true;
           case '--force-refresh':
             forceRefresh = true;
           case '--revoked':
@@ -86,11 +94,13 @@ class SiloProbeOptions {
     }
     final uri = Uri.tryParse(origin);
     if (uri == null || (uri.scheme != 'https' && uri.scheme != 'http') || uri.host.isEmpty) return null;
+    if (baseline && timeHome < 1) return null;
     return SiloProbeOptions(
       origin: uri,
       samplesDir: samples,
       deviceIdFile: deviceIdFile,
       timeHome: timeHome,
+      baseline: baseline,
       forceRefresh: forceRefresh,
       revoked: revoked,
     );
@@ -120,6 +130,7 @@ class _ProbeFailure implements Exception {
 }
 
 const Duration _maxBackoff = Duration(seconds: 30);
+const int _perfBudgetMs = 50;
 
 /// Returns the process exit code. Writes one line per step to [out], never a
 /// token, title or name.
@@ -255,6 +266,8 @@ Future<int> runSiloProbe(
     await _writeSample(samples, 'user-libraries.json', 'GET /api/v2/user/libraries', libraries);
 
     if (options.timeHome > 0) {
+      await silo.send(const SiloRequest.get('/api/v2/home/sections'));
+      out.writeln('warmup siloHttp');
       final timings = <int>[];
       for (var i = 0; i < options.timeHome; i++) {
         final watch = Stopwatch()..start();
@@ -263,8 +276,32 @@ Future<int> runSiloProbe(
         timings.add(watch.elapsedMilliseconds);
         out.writeln('home_ms ${watch.elapsedMilliseconds} status=${timed.statusCode}');
       }
-      timings.sort();
-      out.writeln('home_ms_median ${timings[timings.length ~/ 2]}');
+      final siloMedian = _median(timings);
+      out.writeln('home_ms_median $siloMedian');
+
+      if (options.baseline) {
+        final current = session.session!;
+        final headers = {
+          'Content-Type': 'application/json',
+          SiloHeaders.authorization: 'Bearer ${current.tokens.accessToken}',
+          SiloHeaders.profileId: ?current.profileId,
+          SiloHeaders.profileToken: ?current.profileToken,
+          ...device.toMap(),
+        };
+        final sent = exchanges.last.headerNames.toSet();
+        if (!sent.containsAll(headers.keys) || sent.length != headers.length) {
+          throw _ProbeFailure(6, 'baseline headers differ from SiloHttp: ${sent.join(',')}');
+        }
+        final rawMedian = await _timeRawHome(
+          options.origin.resolve('/api/v2/home/sections'),
+          headers,
+          options.timeHome,
+          out,
+        );
+        final delta = siloMedian - rawMedian;
+        out.writeln('delta_ms_median $delta');
+        out.writeln(delta <= _perfBudgetMs ? 'perf PASS' : 'perf FAIL');
+      }
     }
     return 0;
   } on _ProbeFailure catch (failure) {
@@ -285,6 +322,39 @@ Future<int> runSiloProbe(
     if (client == null) silo.close();
   }
 }
+
+/// The curl-equivalent baseline for the S1 perf rule: one keep-alive
+/// connection, no SiloHttp layers, the full body read on every call.
+Future<int> _timeRawHome(Uri url, Map<String, String> headers, int n, StringSink out) async {
+  final client = HttpClient()..connectionTimeout = siloConnectTimeout;
+  Future<int> get() async {
+    final request = await client.getUrl(url);
+    headers.forEach(request.headers.set);
+    final response = await request.close();
+    await response.drain<void>();
+    return response.statusCode;
+  }
+
+  try {
+    await get();
+    out.writeln('warmup raw');
+    final timings = <int>[];
+    for (var i = 0; i < n; i++) {
+      final watch = Stopwatch()..start();
+      final status = await get();
+      watch.stop();
+      timings.add(watch.elapsedMilliseconds);
+      out.writeln('raw_ms ${watch.elapsedMilliseconds} status=$status');
+    }
+    final median = _median(timings);
+    out.writeln('raw_ms_median $median');
+    return median;
+  } finally {
+    client.close(force: true);
+  }
+}
+
+int _median(List<int> values) => (values.toList()..sort())[values.length ~/ 2];
 
 /// Starts a device code and polls it until approval. Follows
 /// `DeviceLoginRepository.kt:68-189`: poll at once, then every `interval`,

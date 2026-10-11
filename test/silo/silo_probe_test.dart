@@ -187,6 +187,68 @@ void main() {
     }
   });
 
+  test('--baseline times the same authenticated home request on a bare HttpClient', () async {
+    final server = await _FakeServer.start([
+      {
+        'status': 'approved',
+        'profile_id': '9',
+        'profile_token': 'profile-secret',
+        'tokens': {'access_token': 'access-secret', 'refresh_token': 'refresh-secret', 'expires_in': 900},
+      },
+    ]);
+    addTearDown(() => server.server.close(force: true));
+    final out = StringBuffer();
+    var clock = DateTime.utc(2026, 10, 11);
+
+    final code = await runSiloProbe(
+      SiloProbeOptions(
+        origin: server.origin,
+        samplesDir: '${temp.path}/samples',
+        deviceIdFile: '${temp.path}/device_id',
+        timeHome: 3,
+        baseline: true,
+      ),
+      out: out,
+      sleep: (d) async => clock = clock.add(d),
+      now: () => clock,
+    );
+
+    final log = out.toString();
+    expect(code, 0, reason: log);
+    final lines = log.trim().split('\n');
+    final timing = lines.skipWhile((l) => !l.startsWith('warmup')).takeWhile((l) => !l.startsWith('logout')).toList();
+    expect(timing.map((l) => l.split(' ').first).toList(), [
+      'warmup',
+      'home_ms',
+      'home_ms',
+      'home_ms',
+      'home_ms_median',
+      'warmup',
+      'raw_ms',
+      'raw_ms',
+      'raw_ms',
+      'raw_ms_median',
+      'delta_ms_median',
+      'perf',
+    ], reason: log);
+    expect(timing.first, 'warmup siloHttp');
+    expect(timing[5], 'warmup raw');
+    expect(timing.where((l) => l.startsWith('raw_ms ')).every((l) => l.endsWith(' status=200')), isTrue, reason: log);
+    expect(timing.last, anyOf('perf PASS', 'perf FAIL'));
+    final siloMedian = int.parse(timing[4].split(' ').last);
+    final rawMedian = int.parse(timing[9].split(' ').last);
+    expect(timing[10], 'delta_ms_median ${siloMedian - rawMedian}');
+
+    final homes = server.requests.where((r) => r.path == '/api/v2/home/sections').toList();
+    expect(homes.length, 1 + 4 + 4, reason: 'first home, warmup + 3 timed on each client');
+    expect(homes.last.headers, homes[4].headers, reason: 'the raw client sends what SiloHttp sent');
+    expect(homes.last.headers['x-profile-token'], 'profile-secret');
+
+    for (final secret in ['access-secret', 'refresh-secret', 'profile-secret', 'device-secret']) {
+      expect(log, isNot(contains(secret)));
+    }
+  });
+
   test('a code that expires is withdrawn and no session is written', () async {
     final server = await _FakeServer.start([]);
     addTearDown(() => server.server.close(force: true));
