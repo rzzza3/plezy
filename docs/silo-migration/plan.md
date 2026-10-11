@@ -98,6 +98,18 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Rebased onto `feat/tv-silo-sidebar` after the verdict, patch-id unchanged.
 - [ ] Appended to the stack. The operator lands it bottom-up.
 
+**S1 verdict, 2026-10-12, head `77ea44191`.** Clean for the lanes it can run without the app. Logs are in `/tmp/silo-probe-*.log`.
+- Unit. `flutter test --concurrency=1 test/silo` passes 57 tests. `flutter analyze` is clean.
+- Lane 2 pass. Device-code sign-in, seven reads, `home 200 sections=17`, `logout 204`.
+- Lane 3 pass. The server reported the unapproved code `expired` after about 14 minutes. The probe printed `code expired; no tokens written`, and only the three pre-sign-in samples exist.
+- Lane 5 pass. `identity 200 authorization_header=absent`.
+- Lane 6 pass. A locally expired token gave `refresh count=1` and `home 200`.
+- Lane 7 pass. After `revoke_logout 204`, reusing the old tokens gave `refresh count=1` and `session expired`.
+- Lane 8 pass. The samples hold field names, types and counts only, plus Silo's fixed `section_type` labels.
+- Lane 10 pass. All five runs sent device id `5e9d27c1-…`.
+- Perf pass. Twenty home calls each, `SiloHttp` median 439 ms, bare `dart:io` client with the same headers 440 ms, delta −1 ms. An unauthenticated keep-alive `curl` to the same URL has a median of 182 ms, so the rest is server work and payload.
+- Moved to S2, because S1 adds no code the app runs. Lane 1 (Plex home unchanged), lane 4 (network drop mid-poll) and lane 9 (`CredentialVault` storage on device).
+
 ## Sign in to Silo and pick a profile (S2)
 **Depends on.** S1.
 
