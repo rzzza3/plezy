@@ -342,7 +342,6 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                 key: _tvBrowseRailKey,
                 hubs: tvHubs,
                 focusMemory: _hubFocusMemory,
-                iconForHub: (hub, _) => hubIconFor(hub),
                 onFocusedItemChanged: _setSpotlightItem,
                 onRefresh: updateItem,
                 onRemoveFromContinueWatching: _refreshContinueWatching,

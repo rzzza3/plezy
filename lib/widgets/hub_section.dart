@@ -481,9 +481,9 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
     final isTv = PlatformDetector.isTV();
     final leadingPadding = _leadingPaddingFor(isTv);
-    final titleStyle = Theme.of(
-      context,
-    ).textTheme.titleLarge?.copyWith(fontSize: isTv ? 26 : null, fontWeight: isTv ? FontWeight.w700 : null);
+    final titleStyle = isTv
+        ? TvSectionHeaderTokens.title.copyWith(color: Theme.of(context).colorScheme.onSurface)
+        : Theme.of(context).textTheme.titleLarge;
 
     return Padding(
       padding: .only(
@@ -512,8 +512,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                   child: Row(
                     mainAxisSize: .min,
                     children: [
-                      AppIcon(widget.icon, fill: 1, size: isTv ? 28 : null),
-                      SizedBox(width: isTv ? 12 : 8),
+                      if (!isTv) ...[AppIcon(widget.icon, fill: 1), const SizedBox(width: 8)],
                       Flexible(
                         child: Text(widget.hub.title, style: titleStyle, overflow: .ellipsis, maxLines: 1),
                       ),
@@ -547,7 +546,17 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                       ],
                       if (widget.hub.more && !isKeyboardMode) ...[
                         const SizedBox(width: 4),
-                        AppIcon(Symbols.chevron_right_rounded, fill: 1, size: isTv ? 26 : 20),
+                        if (isTv)
+                          AppIcon(
+                            Symbols.chevron_right_rounded,
+                            fill: 1,
+                            size: TvSectionHeaderTokens.chevronSize,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: TvSectionHeaderTokens.chevronAlpha),
+                          )
+                        else
+                          const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20),
                       ],
                     ],
                   ),

@@ -1001,7 +1001,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       initialHubId: 'continue_watching',
       focusMemory: _hubFocusMemory,
       showServerName: showServerName,
-      iconForHub: (hub, _) => hubIconFor(hub),
       onFocusedItemChanged: _setSpotlightItem,
       onRefresh: _discover.updateItem,
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,

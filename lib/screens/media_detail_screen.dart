@@ -3740,7 +3740,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               key: _tvDetailRailKey,
               hubs: detailHubs,
               focusMemory: _hubFocusMemory,
-              iconForHub: _getTvDetailHubIcon,
               onFocusedHubItemChanged: _handleTvDetailFocusedRailItemChanged,
               onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
               onActiveHubChanged: _handleTvDetailHubChanged,
@@ -4554,15 +4553,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final seasonIndex = int.tryParse(hub.id.substring(_tvDetailSeasonHubIdPrefix.length));
     if (seasonIndex == null || seasonIndex < 0 || seasonIndex >= _seasons.length) return null;
     return _seasons[seasonIndex];
-  }
-
-  IconData _getTvDetailHubIcon(MediaHub hub, int index) {
-    if (hub.id == _tvDetailSeasonsErrorHubId) return Symbols.error_outline_rounded;
-    if (hub.id.startsWith(_tvDetailSeasonHubIdPrefix)) return Symbols.tv_rounded;
-    if (hub.id == 'detail_episodes') return Symbols.tv_rounded;
-    if (hub.id == _tvDetailExtrasHubId) return Symbols.theaters_rounded;
-    if (hub.id == _tvDetailActorsHubId) return Symbols.group_rounded;
-    return _getRelatedHubIcon(hub);
   }
 
   /// Height of the backdrop paint box, which is deliberately taller than the
