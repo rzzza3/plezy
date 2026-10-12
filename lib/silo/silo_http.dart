@@ -25,6 +25,10 @@ enum SiloAuth {
 
   /// `Authorization` and profile headers from the active session.
   bearer,
+
+  /// `Authorization` without profile headers. `verify-pin` needs it: a stale
+  /// profile token turns a correct PIN into a 403.
+  account,
 }
 
 class SiloRequest {
@@ -57,8 +61,13 @@ class SiloRequest {
   const SiloRequest.get(String path, {Map<String, String>? query, SiloAuth auth = SiloAuth.bearer, bool gated = true})
     : this('GET', path, query: query, auth: auth, gated: gated);
 
-  const SiloRequest.post(String path, {Object? body, SiloAuth auth = SiloAuth.bearer, bool single = false})
-    : this('POST', path, body: body, auth: auth, single: single);
+  const SiloRequest.post(
+    String path, {
+    Object? body,
+    SiloAuth auth = SiloAuth.bearer,
+    bool single = false,
+    Duration timeout = siloRequestTimeout,
+  }) : this('POST', path, body: body, auth: auth, single: single, timeout: timeout);
 }
 
 class SiloResponse {
@@ -106,6 +115,17 @@ class SiloCredentialsRepudiatedException implements Exception {
   String toString() => 'SiloCredentialsRepudiatedException';
 }
 
+/// The request would put credentials on an `http://` origin the person has
+/// not approved. It was not sent.
+class SiloCleartextNotApprovedException implements Exception {
+  final String origin;
+
+  const SiloCleartextNotApprovedException(this.origin);
+
+  @override
+  String toString() => 'SiloCleartextNotApprovedException: $origin';
+}
+
 String siloOrigin(Uri url) {
   final scheme = url.scheme.toLowerCase();
   final host = url.host.toLowerCase();
@@ -128,6 +148,7 @@ class SiloHttp {
   final SiloContractGate gate;
   final http.Client _client;
   final void Function(SiloExchange exchange)? onExchange;
+  final bool Function(String origin) _cleartextApproved;
   final SerialFutureQueue _refreshLock = SerialFutureQueue();
 
   SiloHttp({
@@ -137,9 +158,13 @@ class SiloHttp {
     SiloContractGate? gate,
     http.Client? client,
     this.onExchange,
+    bool Function(String origin)? cleartextApproved,
   }) : origin = Uri.parse(siloOrigin(origin)),
        gate = gate ?? SiloContractGate(),
-       _client = client ?? newSiloHttpClient();
+       _client = client ?? newSiloHttpClient(),
+       _cleartextApproved = cleartextApproved ?? _neverApproved;
+
+  static bool _neverApproved(String origin) => false;
 
   static http.Client newSiloHttpClient() => IOClient(HttpClient()..connectionTimeout = siloConnectTimeout);
 
@@ -147,11 +172,18 @@ class SiloHttp {
 
   Future<SiloResponse> send(SiloRequest request) async {
     if (request.gated) gate.check();
+    // Only an unauthenticated GET may reach an unapproved cleartext origin, so
+    // the address probes work before consent and nothing secret leaks.
+    if (origin.scheme == 'http' &&
+        (request.method != 'GET' || request.auth != SiloAuth.none) &&
+        !_cleartextApproved(origin.toString())) {
+      throw SiloCleartextNotApprovedException(origin.toString());
+    }
     final url = _resolve(request);
     final generation = session.generation;
     final current = session.session;
     final hasBearer =
-        request.auth == SiloAuth.bearer && current != null && isSameSiloOrigin(Uri.parse(current.origin), origin);
+        request.auth != SiloAuth.none && current != null && isSameSiloOrigin(Uri.parse(current.origin), origin);
     if (!hasBearer) return _exchange(request, url, null);
 
     var active = current;
@@ -260,15 +292,18 @@ class SiloHttp {
 
   Future<SiloResponse> _exchange(SiloRequest request, Uri url, SiloSession? credentials) {
     final body = request.body == null ? null : jsonEncode(_withoutNulls(request.body));
-    return _send(request.method, url, _headersFor(credentials), body, request.timeout);
+    final headers = _headersFor(credentials, withProfile: request.auth == SiloAuth.bearer);
+    return _send(request.method, url, headers, body, request.timeout);
   }
 
-  Map<String, String> _headersFor(SiloSession? credentials) => {
+  Map<String, String> _headersFor(SiloSession? credentials, {required bool withProfile}) => {
     'Content-Type': 'application/json',
     if (credentials != null) ...{
       SiloHeaders.authorization: 'Bearer ${credentials.tokens.accessToken}',
-      SiloHeaders.profileId: ?credentials.profileId,
-      SiloHeaders.profileToken: ?credentials.profileToken,
+      if (withProfile) ...{
+        SiloHeaders.profileId: ?credentials.profileId,
+        SiloHeaders.profileToken: ?credentials.profileToken,
+      },
     },
     ...device.toMap(),
   };

@@ -5,17 +5,20 @@ import '../utils/serial_future_queue.dart';
 import 'silo_headers.dart';
 import 'silo_session.dart';
 
-/// Persists the whole [SiloSessionState] as one vault-protected preference
-/// value, so tokens, expiry, profile and generation land in a single write.
+/// Persists one server's whole [SiloSessionState] as one vault-protected
+/// preference value, so tokens, expiry, profile and generation land in a
+/// single write.
 class VaultSiloSessionStore implements SiloSessionStore {
   static final SerialFutureQueue _persistence = SerialFutureQueue();
 
-  const VaultSiloSessionStore();
+  final String serverId;
+
+  const VaultSiloSessionStore(this.serverId);
 
   @override
   Future<SiloSessionState> read() => _persistence.run(() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final raw = readTolerantString(prefs, siloSessionPref);
+    final raw = readTolerantString(prefs, siloSessionPrefFor(serverId));
     if (raw == null || raw.isEmpty) return SiloSessionState.initial;
     final clear = await CredentialVault.reveal(raw);
     if (clear == null) return SiloSessionState.initial;
@@ -25,7 +28,7 @@ class VaultSiloSessionStore implements SiloSessionStore {
   @override
   Future<void> write(SiloSessionState state) => _persistence.run(() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    await prefs.setString(siloSessionPref, await CredentialVault.protect(state.encode()));
+    await prefs.setString(siloSessionPrefFor(serverId), await CredentialVault.protect(state.encode()));
   });
 }
 

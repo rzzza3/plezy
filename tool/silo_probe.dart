@@ -163,6 +163,9 @@ Future<int> runSiloProbe(
     session: session,
     device: device,
     client: client,
+    // The operator named this origin on the command line, which is the
+    // consent the app asks for on screen.
+    cleartextApproved: (origin) => origin == siloOrigin(options.origin),
     onExchange: (exchange) {
       exchanges.add(exchange);
       if (exchange.url.path == '/api/v2/auth/refresh') refreshCalls++;
