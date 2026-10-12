@@ -73,3 +73,14 @@ class SiloProblem {
     );
   }
 }
+
+/// A Silo call answered with a status its caller does not accept.
+class SiloApiException implements Exception {
+  final int status;
+  final SiloProblem? problem;
+
+  const SiloApiException(this.status, [this.problem]);
+
+  @override
+  String toString() => 'SiloApiException($status${problem == null ? '' : ' ${problem!.code}'})';
+}
