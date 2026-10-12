@@ -85,7 +85,8 @@ class _SiloLoginScreenState extends State<SiloLoginScreen> with ControllerDispos
     await Future<void>.delayed(const Duration(seconds: 1));
     final silo = controller.siloHttp;
     final server = controller.server;
-    if (!mounted || silo == null || server == null) return;
+    if (silo == null || server == null) return;
+    if (!mounted) return signOutSiloSession(silo);
     final entered = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
