@@ -71,7 +71,12 @@ class _SiloServerScreenState extends State<SiloServerScreen> with ControllerDisp
       SiloServerFound() => null,
     };
     appLogger.i('Silo: server probe ${result.runtimeType}');
-    if (error != null || result is! SiloServerFound) return setState(() => _step = _Editing(error));
+    if (error != null || result is! SiloServerFound) {
+      setState(() => _step = _Editing(error));
+      // The field lost focus while it was disabled for the probe.
+      _addressFocus.requestFocus();
+      return;
+    }
     if (!await _consentToCleartext(result.origin)) return setState(() => _step = const _Editing());
     if (!mounted) return;
     setState(() => _step = const _Editing());

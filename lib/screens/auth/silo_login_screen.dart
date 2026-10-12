@@ -139,28 +139,34 @@ class _SiloLoginScreenState extends State<SiloLoginScreen> with ControllerDispos
       SiloLoginUnreachable() => _Unreachable(onRetry: () => unawaited(controller!.open())),
       SiloLoginCommitting() => _Waiting(t.silo.signingIn),
       SiloLoginSignedIn(:final username) => _SignedIn(username),
-      SiloLoginRacing(:final device, :final password) => LayoutBuilder(
-        builder: (context, constraints) {
-          final code = _CodePanel(state: device, onNewCode: controller!.restartDeviceCode);
-          final form = _passwordForm(context, controller, password);
-          if (constraints.maxWidth < 720) {
-            return Column(
-              mainAxisSize: .min,
-              crossAxisAlignment: .stretch,
-              children: [code, const SizedBox(height: 32), form],
-            );
-          }
-          return Row(
-            crossAxisAlignment: .center,
-            children: [
-              Expanded(child: code),
-              const SizedBox(width: 48),
-              Expanded(child: form),
-            ],
-          );
-        },
-      ),
+      SiloLoginRacing(:final device, :final password) => _racing(context, controller!, device, password),
     };
+  }
+
+  /// Sized from the screen, not a `LayoutBuilder`: the sliver above measures
+  /// intrinsics, which a `LayoutBuilder` cannot answer.
+  Widget _racing(
+    BuildContext context,
+    SiloLoginController controller,
+    SiloDeviceSignInState device,
+    SiloPasswordState password,
+  ) {
+    final code = _CodePanel(state: device, onNewCode: controller.restartDeviceCode);
+    final form = _passwordForm(context, controller, password);
+    if (MediaQuery.sizeOf(context).width < 720) {
+      return Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
+        children: [code, const SizedBox(height: 32), form],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: code),
+        const SizedBox(width: 48),
+        Expanded(child: form),
+      ],
+    );
   }
 
   Widget _passwordForm(BuildContext context, SiloLoginController controller, SiloPasswordState state) {
