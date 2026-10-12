@@ -14,6 +14,7 @@ import 'connectivity_probe.dart';
 import 'jellyfin_client.dart';
 import 'jellyfin_endpoint_discovery.dart';
 import 'plex_client.dart';
+import 'silo_client.dart';
 import '../models/plex/plex_config.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_timeouts.dart';
@@ -892,6 +893,28 @@ class MultiServerManager {
         error: e,
         stackTrace: stackTrace,
       );
+      return false;
+    }
+  }
+
+  /// Registers a [SiloClient] for [connection] bound to the Silo profile
+  /// [profileId]. One account per server per device, so a re-add replaces the
+  /// server's client.
+  Future<bool> addSiloConnection(SiloConnection connection, {required String profileId}) async {
+    try {
+      final client = await SiloClient.create(connection, profileId: profileId);
+      final serverId = client.serverId;
+      final oldClient = _clients[serverId];
+      _clients[serverId] = client;
+      if (oldClient != null) unawaited(_closeClientGracefully(oldClient));
+
+      final health = await client.checkHealth();
+      if (!identical(_clients[serverId], client)) return health == HealthStatus.online;
+      _applyHealth(serverId, health);
+      appLogger.i('Added Silo server: ${connection.serverName} (${health.name})');
+      return health == HealthStatus.online;
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to add Silo server ${connection.serverName}', error: e, stackTrace: stackTrace);
       return false;
     }
   }

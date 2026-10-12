@@ -421,6 +421,8 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
       if (current.ref == ref && !_sameCredentials(current, selected)) return null;
     }
     switch (ref.backend) {
+      case MediaBackend.silo:
+        return null;
       case MediaBackend.jellyfin:
       case MediaBackend.emby:
         final client = _serverManager?.getJellyfinClientByCompoundId(ref.connectionId);

@@ -72,7 +72,7 @@ AccountPreferenceResolution resolveAccountPreferenceAccounts({
         row: row,
         connection: connection,
       ),
-      null => null,
+      SiloConnection() || null => null,
     };
     if (account == null) continue;
     accounts.add(account);

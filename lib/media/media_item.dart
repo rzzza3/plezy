@@ -109,6 +109,7 @@ sealed class MediaItem with _$MediaItem {
         serverName: serverName,
         raw: raw,
       ),
+      MediaBackend.silo => throw UnsupportedError('Silo media items arrive with the Silo catalog (S3)'),
     };
   }
 
@@ -299,6 +300,7 @@ sealed class MediaItem with _$MediaItem {
       MediaBackend.plex => _$PlexMediaItemFromJson(json),
       MediaBackend.jellyfin => _$JellyfinMediaItemFromJson(json),
       MediaBackend.emby => _$JellyfinMediaItemFromJson(json).copyWith(dialect: MediaBrowserDialect.emby),
+      MediaBackend.silo => throw UnsupportedError('Silo media items arrive with the Silo catalog (S3)'),
     };
   }
 

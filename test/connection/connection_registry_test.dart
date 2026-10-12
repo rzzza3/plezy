@@ -109,6 +109,49 @@ void main() {
       expect((jelly as JellyfinConnection).baseUrl, 'https://jellyfin.local');
     });
 
+    test('a Silo row stores origin and server id, and no credential', () async {
+      await registry.upsert(
+        SiloConnection(
+          origin: 'https://silo.ruleone.xyz',
+          serverId: 'server-1',
+          serverName: 'Silo',
+          username: 'alice',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
+        ),
+      );
+
+      final restored = await registry.get('silo:server-1') as SiloConnection;
+      final row = await (db.select(db.connections)..where((table) => table.id.equals('silo:server-1'))).getSingle();
+
+      expect(
+        (restored.origin, restored.serverId, restored.serverName, restored.username),
+        ('https://silo.ruleone.xyz', 'server-1', 'Silo', 'alice'),
+      );
+      expect(row.kind, 'silo');
+      expect(jsonDecode(row.configJson), {
+        'origin': 'https://silo.ruleone.xyz',
+        'serverId': 'server-1',
+        'serverName': 'Silo',
+        'username': 'alice',
+      });
+    });
+
+    test('a Silo row without a server id is dropped', () async {
+      await db
+          .into(db.connections)
+          .insert(
+            ConnectionsCompanion.insert(
+              id: 'silo:broken',
+              kind: 'silo',
+              displayName: 'Silo',
+              configJson: jsonEncode({'origin': 'https://silo.ruleone.xyz'}),
+              createdAt: 1_000_000,
+            ),
+          );
+
+      expect(await registry.list(), isEmpty);
+    });
+
     test('Emby upsert preserves its persisted discriminator and connection dialect', () async {
       await registry.upsert(_emby(id: 'e'));
 

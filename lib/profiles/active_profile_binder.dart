@@ -483,6 +483,8 @@ class ActiveProfileBinder {
           expected.addAll(plexMembership(account));
         case JellyfinConnection(:final serverMachineId):
           expected.add(serverMachineId);
+        case SiloConnection(:final serverId):
+          expected.add(serverId);
         case null:
           break;
       }
@@ -636,6 +638,9 @@ class ActiveProfileBinder {
         case JellyfinConnection():
           expected.add(conn.serverMachineId);
           futures.add(_bindMediaBrowser(conn, profileId: profile.id, generation: generation));
+        case SiloConnection():
+          expected.add(conn.serverId);
+          futures.add(_bindSilo(conn, pc: pc, profileId: profile.id, generation: generation));
       }
     }
     final results = await Future.wait(futures);
@@ -1119,6 +1124,25 @@ class ActiveProfileBinder {
       return _ProfileBindResult.visible({conn.serverMachineId});
     }
     return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
+  }
+
+  /// The join row's `userIdentifier` is the Silo profile this Plezy profile
+  /// enters; the client's cache scope is `silo:<server_id>/<profile_id>`.
+  Future<_ProfileBindResult> _bindSilo(
+    SiloConnection conn, {
+    required ProfileConnection pc,
+    required String profileId,
+    required int generation,
+  }) async {
+    final expected = _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverId});
+    if (pc.userIdentifier.isEmpty) {
+      appLogger.w('ActiveProfileBinder: Silo connection ${conn.id} has no profile for $profileId');
+      return expected;
+    }
+    final ok = await serverManager.addSiloConnection(conn, profileId: pc.userIdentifier);
+    if (!_isCurrentBind(profileId, generation)) return expected;
+    final visible = ok || serverManager.refusedServerIds.contains(conn.serverId);
+    return visible ? _ProfileBindResult.visible({conn.serverId}) : expected;
   }
 
   bool _isCurrentBind(String profileId, int generation) {

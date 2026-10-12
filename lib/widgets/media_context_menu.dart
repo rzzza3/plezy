@@ -207,6 +207,7 @@ bool isMediaDeletionAllowed({
   null => false,
   MediaBackend.jellyfin || MediaBackend.emby => resolvedItemPermission == true,
   MediaBackend.plex => isAdminActionAllowed,
+  MediaBackend.silo => false,
 };
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)

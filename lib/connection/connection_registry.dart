@@ -147,7 +147,7 @@ class ConnectionRegistry {
       final lastAuth = row.lastAuthenticatedAt == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(row.lastAuthenticatedAt!);
-      final connection = switch (kind) {
+      final Connection? connection = switch (kind) {
         MediaBackend.plex => PlexAccountConnection.fromConfigJson(
           id: row.id,
           json: revealed.config,
@@ -161,7 +161,16 @@ class ConnectionRegistry {
           lastAuthenticatedAt: lastAuth,
           dialect: kind.dialect!,
         ),
+        MediaBackend.silo => SiloConnection.fromConfigJson(
+          json: revealed.config,
+          createdAt: createdAt,
+          lastAuthenticatedAt: lastAuth,
+        ),
       };
+      if (connection == null) {
+        appLogger.w('ConnectionRegistry: dropping incomplete ${kind.id} connection ${row.id}');
+        return null;
+      }
       _decryptedConfigs[connection] = revealed.config;
       if (revealed.migrated) {
         await upsert(connection);

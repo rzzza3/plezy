@@ -3,6 +3,7 @@ import '../connection/connection_registry.dart';
 import '../media/ids.dart';
 import '../models/plex/plex_home_user.dart';
 import '../services/multi_server_manager.dart';
+import '../services/silo_client.dart';
 import '../services/storage_service.dart';
 import 'profile.dart';
 import 'profile_connection_registry.dart';
@@ -50,6 +51,7 @@ class ProfileConnectionCleanup {
     required this.connections,
     required this.storage,
     this.serverManager,
+    this.signOutSilo = signOutSiloConnection,
   });
 
   final ProfileConnectionRegistry profileConnections;
@@ -57,17 +59,25 @@ class ProfileConnectionCleanup {
   final StorageService storage;
   final MultiServerManager? serverManager;
 
+  /// Ends the server session and wipes its slot. Injected for tests.
+  final Future<void> Function(SiloConnection connection) signOutSilo;
+
   Future<void> removeProfileConnection({required String profileId, required Connection connection}) async {
     final removedServerIds = _serverIdsForConnection(connection);
     await profileConnections.remove(profileId, connection.id);
     await _clearProfileServerPrefsNoLongerReferenced(
       profileId: profileId,
       removedServerIds: removedServerIds,
-      clearEverywhereWhenUnreferenced: connection is JellyfinConnection,
+      clearEverywhereWhenUnreferenced: connection is JellyfinConnection || connection is SiloConnection,
     );
 
-    if (connection is JellyfinConnection) {
-      await _removeUnreferencedJellyfinConnection(connection);
+    switch (connection) {
+      case JellyfinConnection():
+        await _removeUnreferencedJellyfinConnection(connection);
+      case SiloConnection():
+        await _removeUnreferencedSiloConnection(connection);
+      case PlexAccountConnection():
+        break;
     }
   }
 
@@ -164,8 +174,32 @@ class ProfileConnectionCleanup {
       await _removeJellyfinConnection(connection);
       removed++;
     }
+    for (final connection in all.whereType<SiloConnection>()) {
+      if (referencedConnectionIds.contains(connection.id)) continue;
+      await _removeSiloConnection(connection);
+      removed++;
+    }
 
     return removed;
+  }
+
+  Future<void> _removeUnreferencedSiloConnection(SiloConnection connection) async {
+    if ((await profileConnections.listForConnection(connection.id)).isNotEmpty) return;
+    await _removeSiloConnection(connection);
+  }
+
+  /// The last profile let go of this server, so this device signs out of it:
+  /// `POST /api/v2/auth/logout`, then the slot is wiped whatever the answer
+  /// (`TvSettingsViewModel.kt:748-762`).
+  Future<void> _removeSiloConnection(SiloConnection connection) async {
+    await signOutSilo(connection);
+    await connections.remove(connection.id);
+    final serverId = ServerId.tryParse(connection.serverId);
+    if (serverId == null) return;
+    serverManager?.removeServer(serverId);
+    if (!await _isServerReferenced(serverId)) {
+      await storage.clearLibraryPreferencesForServerEverywhere(serverId);
+    }
   }
 
   Future<void> _removeUnreferencedJellyfinConnection(JellyfinConnection connection) async {
@@ -245,5 +279,6 @@ Set<ServerId> _serverIdsForConnection(Connection connection) {
       for (final server in servers) ?ServerId.tryParse(server.clientIdentifier),
     },
     JellyfinConnection(:final serverMachineId) => {?ServerId.tryParse(serverMachineId)},
+    SiloConnection(:final serverId) => {?ServerId.tryParse(serverId)},
   };
 }

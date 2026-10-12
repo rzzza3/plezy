@@ -156,6 +156,24 @@ class ServerCapabilities {
     libraryChangeEvents: true,
   );
 
+  /// Defaults for a Silo server. Every flag starts off and turns on in the
+  /// step that implements it on `SiloClient`, so no screen offers a feature
+  /// the client cannot serve yet.
+  static const ServerCapabilities silo = ServerCapabilities(
+    liveTv: false,
+    liveTvDvr: false,
+    videoTranscoding: false,
+    richHubs: false,
+    numericUserRating: false,
+    userFavorites: false,
+    externalSubtitleSearch: false,
+    richMetadataEdit: false,
+    scrubThumbnails: false,
+    folderGrouping: false,
+    instantMix: false,
+    libraryChangeEvents: false,
+  );
+
   /// Every flag here is fixed per backend *kind* except [videoTranscoding],
   /// which Plex probes per server (`PlexClient.capabilities`) — so that is the
   /// only override this type needs. Widen the parameter list if another flag

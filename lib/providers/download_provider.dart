@@ -785,6 +785,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final synthesizedRaw = switch (meta.backend) {
         MediaBackend.plex => <String, dynamic>{'key': '/library/metadata/$showRatingKey'},
         MediaBackend.jellyfin || MediaBackend.emby => <String, dynamic>{'Id': showRatingKey, 'Type': 'Series'},
+        MediaBackend.silo => throw UnsupportedError('Silo downloads arrive in S6'),
       };
       return MediaItem(
         id: showRatingKey,

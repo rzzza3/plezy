@@ -191,5 +191,6 @@ MediaItem testMediaItem({
       backendFolderKey: backendFolderKey,
       raw: raw,
     ),
+    MediaBackend.silo => throw UnsupportedError('Silo media items arrive in S3'),
   };
 }

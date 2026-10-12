@@ -164,6 +164,61 @@ void main() {
       expect(storage.getHiddenLibraries(), {'jf-machine:movies'});
     });
 
+    group('Silo, TvSettingsViewModel.kt:748-762', () {
+      final silo = SiloConnection(
+        origin: 'https://silo.ruleone.xyz',
+        serverId: 'server-1',
+        serverName: 'Silo',
+        username: 'alice',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
+      );
+      late List<String> signedOut;
+
+      setUp(() {
+        signedOut = [];
+        cleanup = ProfileConnectionCleanup(
+          profileConnections: profileConnections,
+          connections: connections,
+          storage: storage,
+          signOutSilo: (connection) async => signedOut.add(connection.id),
+        );
+      });
+
+      test('removing the last link signs this device out of the server and deletes the connection', () async {
+        await connections.upsert(silo);
+        await profileConnections.upsert(
+          ProfileConnection(profileId: 'p1', connectionId: silo.id, userIdentifier: 'sp-1'),
+        );
+
+        await cleanup.removeProfileConnection(profileId: 'p1', connection: silo);
+
+        expect(signedOut, ['silo:server-1']);
+        expect(await connections.get(silo.id), isNull);
+      });
+
+      test('a link another profile still holds keeps the session', () async {
+        await connections.upsert(silo);
+        await profileConnections.upsert(
+          ProfileConnection(profileId: 'p1', connectionId: silo.id, userIdentifier: 'sp-1'),
+        );
+        await profileConnections.upsert(
+          ProfileConnection(profileId: 'p2', connectionId: silo.id, userIdentifier: 'sp-2'),
+        );
+
+        await cleanup.removeProfileConnection(profileId: 'p1', connection: silo);
+
+        expect(signedOut, isEmpty);
+        expect(await connections.get(silo.id), isNotNull);
+      });
+
+      test('startup prune signs out an orphaned Silo connection', () async {
+        await connections.upsert(silo);
+
+        expect(await cleanup.pruneUnreferencedJellyfinConnections(), 1);
+        expect(signedOut, ['silo:server-1']);
+      });
+    });
+
     test('startup prune removes unreferenced Jellyfin rows and stale prefs', () async {
       final conn = _jellyfin();
       await connections.upsert(conn);

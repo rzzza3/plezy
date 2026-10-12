@@ -365,3 +365,80 @@ class JellyfinConnection extends Connection {
     return tag == null || tag.isEmpty ? null : tag;
   }
 }
+
+/// A Silo server the person signed in to. Holds no credential: the tokens and
+/// the selected profile's token live in the server's vault-protected session
+/// slot, and the join row names the profile.
+class SiloConnection extends Connection {
+  @override
+  final String id;
+
+  @override
+  final DateTime createdAt;
+
+  @override
+  final DateTime? lastAuthenticatedAt;
+
+  /// Canonical origin, e.g. `https://silo.example.com`.
+  final String origin;
+
+  /// `server_id` from `/api/v2/system/identity`.
+  final String serverId;
+
+  final String serverName;
+
+  /// The account's username, for display.
+  final String username;
+
+  SiloConnection({
+    required this.origin,
+    required this.serverId,
+    required this.serverName,
+    required this.username,
+    required this.createdAt,
+    this.lastAuthenticatedAt,
+  }) : id = idFor(serverId);
+
+  /// One account per server per device, like Silo's own per-server slot.
+  static String idFor(String serverId) => 'silo:$serverId';
+
+  @override
+  MediaBackend get kind => MediaBackend.silo;
+
+  @override
+  String get displayName => username.isEmpty ? serverName : '$username · $serverName';
+
+  @override
+  String get displayLabel => serverName;
+
+  @override
+  String? get displaySubtitle => username.isEmpty ? origin : '$username · $origin';
+
+  @override
+  Map<String, Object?> toConfigJson() => {
+    'origin': origin,
+    'serverId': serverId,
+    'serverName': serverName,
+    'username': username,
+  };
+
+  /// Null when the row lacks the origin or server id, so the registry drops
+  /// it like any other undecodable row.
+  static SiloConnection? fromConfigJson({
+    required Map<String, Object?> json,
+    required DateTime createdAt,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    final origin = json['origin'];
+    final serverId = json['serverId'];
+    if (origin is! String || origin.isEmpty || serverId is! String || serverId.isEmpty) return null;
+    return SiloConnection(
+      origin: origin,
+      serverId: serverId,
+      serverName: json['serverName'] as String? ?? 'Silo',
+      username: json['username'] as String? ?? '',
+      createdAt: createdAt,
+      lastAuthenticatedAt: lastAuthenticatedAt,
+    );
+  }
+}

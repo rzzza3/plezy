@@ -132,6 +132,9 @@ class CredentialVault {
   static String? _tokenKeyForKind(String kind) => switch (kind) {
     'plex' => 'accountToken',
     'jellyfin' || 'emby' => 'accessToken',
+    // A Silo config holds no credential: its tokens live in the
+    // vault-protected session slot (`VaultSiloSessionStore`).
+    'silo' => null,
     _ => null,
   };
 

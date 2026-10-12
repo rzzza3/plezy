@@ -68,6 +68,7 @@ abstract class LibraryAlphaBarStrategy {
         isShared: isShared,
       ),
       MediaBackend.jellyfin || MediaBackend.emby => const MediaBrowserAlphaBarStrategy(),
+      MediaBackend.silo => throw UnsupportedError('Silo libraries arrive in S3'),
     };
   }
 }
