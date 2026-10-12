@@ -6,6 +6,7 @@ import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/profiles/profile.dart';
+import 'package:plezy/screens/auth/silo_server_screen.dart';
 import 'package:plezy/screens/settings/add_connection_screen.dart';
 import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
 import 'package:plezy/screens/settings/add_plex_account_screen.dart';
@@ -23,16 +24,33 @@ void main() {
   Profile profile(String id) =>
       Profile.local(id: id, displayName: id, sortOrder: 0, createdAt: DateTime.fromMillisecondsSinceEpoch(0));
 
-  testWidgets('offers Plex, Jellyfin and Emby, each with its own badge', (tester) async {
+  testWidgets('offers Plex, Silo, Jellyfin and Emby, each with its own badge', (tester) async {
     await tester.pumpWidget(app(const AddConnectionScreen()));
     await tester.pumpAndSettle();
 
     expect(find.text('Sign in with Plex'), findsOneWidget);
     expect(find.text('Connect to Jellyfin'), findsOneWidget);
     expect(find.text('Connect to Emby'), findsOneWidget);
+    expect(find.text('Connect to Silo'), findsOneWidget);
 
     final badges = tester.widgetList<BackendBadge>(find.byType(BackendBadge)).map((b) => b.backend).toList();
-    expect(badges, containsAll(<MediaBackend>[MediaBackend.plex, MediaBackend.jellyfin, MediaBackend.emby]));
+    expect(
+      badges,
+      containsAll(<MediaBackend>[MediaBackend.plex, MediaBackend.jellyfin, MediaBackend.emby, MediaBackend.silo]),
+    );
+  });
+
+  testWidgets('the Silo card opens the server address screen for the target profile', (tester) async {
+    final target = profile('Living Room');
+    await tester.pumpWidget(app(AddConnectionScreen(targetProfile: target)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add a Silo server to Living Room'), findsOneWidget);
+    await tester.tap(find.text('Connect to Silo'));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<SiloServerScreen>(find.byType(SiloServerScreen)).targetProfile?.id, target.id);
+    expect(find.text('Server address'), findsOneWidget);
   });
 
   /// The pushed sign-in screen starts a 2s LAN discovery sweep and a
@@ -90,20 +108,20 @@ void main() {
     expect(screen.targetProfile?.id, target.id);
   });
 
-  testWidgets('the D-pad steps through all three backend cards', (tester) async {
+  testWidgets('the D-pad steps through all four backend cards', (tester) async {
     await tester.pumpWidget(app(const AddConnectionScreen()));
     await tester.pumpAndSettle();
 
     // The cards share a debugLabel, so track focus-node identity instead.
     final visited = <FocusNode>{};
-    for (var i = 0; i < 6; i++) {
+    for (var i = 0; i < 8; i++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
       final focused = FocusManager.instance.primaryFocus;
       if (focused != null) visited.add(focused);
     }
 
-    expect(find.byType(FocusableWrapper), findsNWidgets(3));
-    expect(visited.length, greaterThanOrEqualTo(3), reason: 'D-pad did not reach every backend card');
+    expect(find.byType(FocusableWrapper), findsNWidgets(4));
+    expect(visited.length, greaterThanOrEqualTo(4), reason: 'D-pad did not reach every backend card');
   });
 }

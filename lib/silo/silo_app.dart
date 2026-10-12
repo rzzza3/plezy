@@ -40,11 +40,13 @@ class SiloApp {
     return SiloCleartextConsent(prefs.getStringList(_consentKey) ?? const []);
   }();
 
-  static Future<void> approveCleartext(String origin) async {
+  /// False when [origin] cannot be named safely, so nothing was approved.
+  static Future<bool> approveCleartext(String origin) async {
     final consent = await SiloApp.consent();
-    if (!consent.approve(origin)) return;
+    if (!consent.approve(origin)) return false;
     final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.setStringList(_consentKey, consent.digests.toList());
+    return true;
   }
 
   static Future<SiloHttp> http({required Uri origin, required String serverId}) async {

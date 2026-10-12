@@ -286,6 +286,20 @@ class SiloLoginController extends ChangeNotifier {
     await _deviceSignIn?.abandon();
   }
 
+  /// The screen is hidden. Polling stops, but a poll already in flight still
+  /// delivers its approval, because the server hands tokens out once.
+  void pause() => _deviceSignIn?.stop();
+
+  /// The screen is back. Polls at once and renews the code if it expired.
+  void resume() {
+    final deviceSignIn = _deviceSignIn;
+    if (deviceSignIn == null || _claimed || _phase is! SiloLoginRacing) return;
+    if (deviceSignIn.state.value
+        case SiloDeviceShowingCode() || SiloDeviceUnreachable() || SiloDeviceTooManyRequests()) {
+      unawaited(deviceSignIn.run());
+    }
+  }
+
   /// Gets a fresh code after the machine stopped on denial, failure or pause.
   void restartDeviceCode() {
     final deviceSignIn = _deviceSignIn;

@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../utils/app_logger.dart';
+
 import 'silo_contract_gate.dart';
 import 'silo_http.dart';
 
@@ -453,7 +455,7 @@ class SiloDeviceSignIn {
   Future<void> _withdraw(SiloDeviceCode code) async {
     if (_canCancel == false) return;
     try {
-      await _http
+      final response = await _http
           .send(
             SiloRequest.post(
               '/api/v2/auth/device/cancel',
@@ -464,8 +466,10 @@ class SiloDeviceSignIn {
             ),
           )
           .timeout(_config.cancelTimeout);
-    } on Object {
+      appLogger.i('Silo: device code withdrawn, status ${response.statusCode}');
+    } on Object catch (error) {
       // Best effort: an unreachable server cannot approve the code either.
+      appLogger.i('Silo: device code withdraw failed (${error.runtimeType})');
     }
   }
 

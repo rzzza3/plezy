@@ -91,6 +91,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
 	late final Translations$services$en services = Translations$services$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
+	late final Translations$silo$en silo = Translations$silo$en.internal(_root);
 }
 
 // Path: app
@@ -5767,6 +5768,143 @@ class Translations$addServer$en {
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
 }
 
+// Path: silo
+class Translations$silo$en {
+	Translations$silo$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Connect to Silo'
+	String get connectCard => 'Connect to Silo';
+
+	/// en: 'Sign in with a code or your password'
+	String get connectCardSubtitle => 'Sign in with a code or your password';
+
+	/// en: 'Add a Silo server to ${name}'
+	String connectCardSubtitleScoped({required Object name}) => 'Add a Silo server to ${name}';
+
+	/// en: 'Connect to Silo'
+	String get serverTitle => 'Connect to Silo';
+
+	/// en: 'Server address'
+	String get serverAddress => 'Server address';
+
+	/// en: 'silo.example.com'
+	String get serverAddressHint => 'silo.example.com';
+
+	/// en: 'Checking the server…'
+	String get checking => 'Checking the server…';
+
+	/// en: 'Enter a server address, such as silo.example.com.'
+	String get invalidAddress => 'Enter a server address, such as silo.example.com.';
+
+	/// en: 'Can't reach this server. Check the address and try again.'
+	String get unreachable => 'Can\'t reach this server. Check the address and try again.';
+
+	/// en: 'This server needs an update before Plezy can use it.'
+	String get needsUpdate => 'This server needs an update before Plezy can use it.';
+
+	/// en: 'This server isn't set up yet. Finish its setup in a browser first.'
+	String get needsSetup => 'This server isn\'t set up yet. Finish its setup in a browser first.';
+
+	/// en: 'Connect without encryption?'
+	String get cleartextTitle => 'Connect without encryption?';
+
+	/// en: '${origin} doesn't use HTTPS. Your sign-in would cross the network unencrypted.'
+	String cleartextMessage({required Object origin}) => '${origin} doesn\'t use HTTPS. Your sign-in would cross the network unencrypted.';
+
+	/// en: 'Connect anyway'
+	String get cleartextConfirm => 'Connect anyway';
+
+	/// en: 'Could not safely identify this HTTP server.'
+	String get cleartextUnsafe => 'Could not safely identify this HTTP server.';
+
+	/// en: 'Sign in to ${server}'
+	String signInTitle({required Object server}) => 'Sign in to ${server}';
+
+	/// en: 'Connecting to the server…'
+	String get connecting => 'Connecting to the server…';
+
+	/// en: 'On your phone or computer, go to'
+	String get codeVisit => 'On your phone or computer, go to';
+
+	/// en: 'and enter this code'
+	String get codeEnter => 'and enter this code';
+
+	/// en: 'Or scan this code with your phone'
+	String get codeScan => 'Or scan this code with your phone';
+
+	/// en: 'Getting a sign-in code…'
+	String get codeGetting => 'Getting a sign-in code…';
+
+	/// en: 'Code opened. Approve it on your other device.'
+	String get codeOpened => 'Code opened. Approve it on your other device.';
+
+	/// en: 'New code'
+	String get codeRenewed => 'New code';
+
+	/// en: 'This server doesn't offer sign-in codes. Use your password.'
+	String get codeUnavailable => 'This server doesn\'t offer sign-in codes. Use your password.';
+
+	/// en: 'The sign-in was denied.'
+	String get codeDenied => 'The sign-in was denied.';
+
+	/// en: 'This sign-in code stopped working.'
+	String get codeFailed => 'This sign-in code stopped working.';
+
+	/// en: 'Paused after an hour without a sign-in.'
+	String get codePaused => 'Paused after an hour without a sign-in.';
+
+	/// en: 'Can't reach the server. Still trying…'
+	String get codeUnreachable => 'Can\'t reach the server. Still trying…';
+
+	/// en: 'Too many requests. Still trying…'
+	String get codeRateLimited => 'Too many requests. Still trying…';
+
+	/// en: 'This server or Plezy needs an update.'
+	String get codeUpdateRequired => 'This server or Plezy needs an update.';
+
+	/// en: 'Get a new code'
+	String get codeNew => 'Get a new code';
+
+	/// en: 'Or sign in with your password'
+	String get passwordHeading => 'Or sign in with your password';
+
+	/// en: 'Username'
+	String get username => 'Username';
+
+	/// en: 'Password'
+	String get password => 'Password';
+
+	/// en: 'Sign in'
+	String get signIn => 'Sign in';
+
+	/// en: 'Signing in…'
+	String get signingIn => 'Signing in…';
+
+	/// en: 'Signed in as ${username}'
+	String signedInAs({required Object username}) => 'Signed in as ${username}';
+
+	late final Translations$silo$errors$en errors = Translations$silo$errors$en.internal(_root);
+
+	/// en: 'Who's watching?'
+	String get profilesTitle => 'Who\'s watching?';
+
+	/// en: 'Couldn't load profiles.'
+	String get profilesFailed => 'Couldn\'t load profiles.';
+
+	/// en: 'Enter the PIN for ${name}'
+	String enterPin({required Object name}) => 'Enter the PIN for ${name}';
+
+	/// en: 'PIN'
+	String get pin => 'PIN';
+
+	/// en: 'Wrong PIN. Try again.'
+	String get wrongPin => 'Wrong PIN. Try again.';
+}
+
 // Path: common.ratingSource
 class Translations$common$ratingSource$en {
 	Translations$common$ratingSource$en.internal(this._root);
@@ -7367,6 +7505,57 @@ class Translations$services$libraryFilter$en {
 
 	/// en: 'No libraries available'
 	String get noLibraries => 'No libraries available';
+}
+
+// Path: silo.errors
+class Translations$silo$errors$en {
+	Translations$silo$errors$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Username required'
+	String get usernameRequired => 'Username required';
+
+	/// en: 'Password required'
+	String get passwordRequired => 'Password required';
+
+	/// en: 'Invalid credentials'
+	String get invalidCredentials => 'Invalid credentials';
+
+	/// en: 'This account is disabled.'
+	String get accountDisabled => 'This account is disabled.';
+
+	/// en: 'Too many attempts. Wait a moment and try again.'
+	String get rateLimited => 'Too many attempts. Wait a moment and try again.';
+
+	/// en: 'Sign-in is unavailable on this server right now.'
+	String get providerUnavailable => 'Sign-in is unavailable on this server right now.';
+
+	/// en: 'This server doesn't allow password sign-in.'
+	String get localLoginDisabled => 'This server doesn\'t allow password sign-in.';
+
+	/// en: 'This account can't sign in here.'
+	String get notPermitted => 'This account can\'t sign in here.';
+
+	/// en: 'Your password has expired. Change it in a browser first.'
+	String get passwordExpired => 'Your password has expired. Change it in a browser first.';
+
+	/// en: 'This sign-in needs an account on the server.'
+	String get accountRequired => 'This sign-in needs an account on the server.';
+
+	/// en: 'The sign-in changed while it was saving. Try again.'
+	String get identityChanged => 'The sign-in changed while it was saving. Try again.';
+
+	/// en: 'This server or Plezy needs an update.'
+	String get updateRequired => 'This server or Plezy needs an update.';
+
+	/// en: 'Network error. Check the connection and try again.'
+	String get network => 'Network error. Check the connection and try again.';
+
+	/// en: 'The server couldn't sign you in.'
+	String get server => 'The server couldn\'t sign you in.';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -9506,6 +9695,62 @@ extension on Translations {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.',
 			'addServer.redirectInsecure' => 'The server redirected from HTTPS to an insecure URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
+			'silo.connectCard' => 'Connect to Silo',
+			'silo.connectCardSubtitle' => 'Sign in with a code or your password',
+			'silo.connectCardSubtitleScoped' => ({required Object name}) => 'Add a Silo server to ${name}',
+			'silo.serverTitle' => 'Connect to Silo',
+			'silo.serverAddress' => 'Server address',
+			'silo.serverAddressHint' => 'silo.example.com',
+			'silo.checking' => 'Checking the server…',
+			'silo.invalidAddress' => 'Enter a server address, such as silo.example.com.',
+			'silo.unreachable' => 'Can\'t reach this server. Check the address and try again.',
+			'silo.needsUpdate' => 'This server needs an update before Plezy can use it.',
+			'silo.needsSetup' => 'This server isn\'t set up yet. Finish its setup in a browser first.',
+			'silo.cleartextTitle' => 'Connect without encryption?',
+			'silo.cleartextMessage' => ({required Object origin}) => '${origin} doesn\'t use HTTPS. Your sign-in would cross the network unencrypted.',
+			'silo.cleartextConfirm' => 'Connect anyway',
+			'silo.cleartextUnsafe' => 'Could not safely identify this HTTP server.',
+			'silo.signInTitle' => ({required Object server}) => 'Sign in to ${server}',
+			'silo.connecting' => 'Connecting to the server…',
+			'silo.codeVisit' => 'On your phone or computer, go to',
+			'silo.codeEnter' => 'and enter this code',
+			'silo.codeScan' => 'Or scan this code with your phone',
+			'silo.codeGetting' => 'Getting a sign-in code…',
+			'silo.codeOpened' => 'Code opened. Approve it on your other device.',
+			'silo.codeRenewed' => 'New code',
+			'silo.codeUnavailable' => 'This server doesn\'t offer sign-in codes. Use your password.',
+			'silo.codeDenied' => 'The sign-in was denied.',
+			'silo.codeFailed' => 'This sign-in code stopped working.',
+			'silo.codePaused' => 'Paused after an hour without a sign-in.',
+			'silo.codeUnreachable' => 'Can\'t reach the server. Still trying…',
+			'silo.codeRateLimited' => 'Too many requests. Still trying…',
+			'silo.codeUpdateRequired' => 'This server or Plezy needs an update.',
+			'silo.codeNew' => 'Get a new code',
+			'silo.passwordHeading' => 'Or sign in with your password',
+			'silo.username' => 'Username',
+			'silo.password' => 'Password',
+			'silo.signIn' => 'Sign in',
+			'silo.signingIn' => 'Signing in…',
+			'silo.signedInAs' => ({required Object username}) => 'Signed in as ${username}',
+			'silo.errors.usernameRequired' => 'Username required',
+			'silo.errors.passwordRequired' => 'Password required',
+			'silo.errors.invalidCredentials' => 'Invalid credentials',
+			'silo.errors.accountDisabled' => 'This account is disabled.',
+			'silo.errors.rateLimited' => 'Too many attempts. Wait a moment and try again.',
+			'silo.errors.providerUnavailable' => 'Sign-in is unavailable on this server right now.',
+			'silo.errors.localLoginDisabled' => 'This server doesn\'t allow password sign-in.',
+			'silo.errors.notPermitted' => 'This account can\'t sign in here.',
+			'silo.errors.passwordExpired' => 'Your password has expired. Change it in a browser first.',
+			'silo.errors.accountRequired' => 'This sign-in needs an account on the server.',
+			'silo.errors.identityChanged' => 'The sign-in changed while it was saving. Try again.',
+			'silo.errors.updateRequired' => 'This server or Plezy needs an update.',
+			'silo.errors.network' => 'Network error. Check the connection and try again.',
+			'silo.errors.server' => 'The server couldn\'t sign you in.',
+			'silo.profilesTitle' => 'Who\'s watching?',
+			'silo.profilesFailed' => 'Couldn\'t load profiles.',
+			'silo.enterPin' => ({required Object name}) => 'Enter the PIN for ${name}',
+			'silo.pin' => 'PIN',
+			'silo.wrongPin' => 'Wrong PIN. Try again.',
 			_ => null,
 		};
 	}

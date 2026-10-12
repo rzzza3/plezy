@@ -10,6 +10,7 @@ import '../../theme/mono_tokens.dart';
 import '../../profiles/profile.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../auth/silo_server_screen.dart';
 import '../profile/borrow_connection_screen.dart';
 import 'add_jellyfin_screen.dart';
 import 'add_plex_account_screen.dart';
@@ -40,6 +41,14 @@ class AddConnectionScreen extends StatelessWidget {
         title: t.addServer.signInWithPlexCard,
         subtitle: scoped ? t.addServer.signInWithPlexCardSubtitleScoped : t.addServer.signInWithPlexCardSubtitle,
         builder: (_) => AddPlexAccountScreen(targetProfile: targetProfile),
+      ),
+      _BackendOption(
+        backend: MediaBackend.silo,
+        title: t.silo.connectCard,
+        subtitle: scoped
+            ? t.silo.connectCardSubtitleScoped(name: targetProfile!.displayName)
+            : t.silo.connectCardSubtitle,
+        builder: (_) => SiloServerScreen(targetProfile: targetProfile),
       ),
       _BackendOption(
         backend: MediaBackend.jellyfin,
