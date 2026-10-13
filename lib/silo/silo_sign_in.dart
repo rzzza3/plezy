@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../utils/app_logger.dart';
+
 import 'silo_contract_gate.dart';
 import 'silo_device_sign_in.dart';
 import 'silo_headers.dart';
@@ -260,6 +262,7 @@ class SiloLoginController extends ChangeNotifier {
     if (_disposed || _claimed) return;
     switch (result) {
       case SiloPasswordRefused(:final error):
+        appLogger.i('Silo: password refused (${error.kind.name})');
         _password = SiloPasswordFailed(error);
         _race();
       case SiloPasswordAccepted(:final tokens, :final username):
@@ -328,6 +331,7 @@ class SiloLoginController extends ChangeNotifier {
       _heldApproval = tokens;
       return;
     }
+    appLogger.i('Silo: device code approved');
     _claimed = true;
     _setPhase(const SiloLoginCommitting());
     if (!await _commit(silo, tokens, _deviceGeneration)) {

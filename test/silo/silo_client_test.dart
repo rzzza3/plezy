@@ -35,6 +35,18 @@ void main() {
     expect(server.to('/api/v2/account/me').single.header('authorization'), 'Bearer access-A');
   });
 
+  test('sign-out calls logout with the bearer and wipes the slot', () async {
+    final (session, _) = await signedInSession();
+    final up = FakeSilo((_) => jsonResponse({}, 200));
+
+    await signOutSiloSession(siloHttpFor(up, session));
+
+    expect(up.requests.single.method, 'POST');
+    expect(up.requests.single.url.path, '/api/v2/auth/logout');
+    expect(up.requests.single.header('authorization'), 'Bearer access-A');
+    expect(session.session, isNull);
+  });
+
   test('sign-out wipes the slot even when logout fails (AuthRepository.kt:266-272)', () async {
     final (session, _) = await signedInSession();
     final down = FakeSilo((_) => jsonResponse({}, 503));

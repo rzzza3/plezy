@@ -183,6 +183,27 @@ void main() {
       expect(session.session!.tokens.accessToken, 'access-D');
     });
 
+    test('a device approval with no password signs in under the account name', () async {
+      server.pollReply = (_, n) => n == 1 ? FakeSiloServer.pending() : FakeSiloServer.approved();
+      final approving = SiloLoginController(
+        origin: siloTestOrigin,
+        device: siloTestDevice,
+        sessionFor: (_) async => session,
+        deviceName: 'Plezy Test',
+        client: server.client,
+        wait: (_) async {},
+      );
+      addTearDown(approving.dispose);
+
+      await approving.open();
+      await pumpEventQueue();
+
+      expect((approving.phase as SiloLoginSignedIn).username, 'alice');
+      expect(session.session!.tokens.accessToken, 'access-D');
+      expect(session.generation, 1);
+      expect(server.cancelledCodes, isEmpty, reason: 'an approved code is spent, not withdrawn');
+    });
+
     test('an approval after the identity moved is refused (port note 9)', () async {
       server.pollReply = (code, n) =>
           code == 'device-code-1' && n > 1 ? FakeSiloServer.approved() : FakeSiloServer.pending();

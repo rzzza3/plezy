@@ -5,6 +5,7 @@ import '../media/media_server_client.dart';
 import '../media/server_capabilities.dart';
 import '../silo/silo_app.dart';
 import '../silo/silo_http.dart';
+import '../utils/app_logger.dart';
 
 /// A Silo server bound to one profile. Carries the identity members only:
 /// every catalog, playback and download member throws [UnsupportedError]
@@ -108,11 +109,13 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
 Future<void> signOutSiloSession(SiloHttp silo) async {
   if (silo.session.session != null) {
     try {
-      await silo
+      final response = await silo
           .send(const SiloRequest.post('/api/v2/auth/logout', single: true, timeout: Duration(seconds: 10)))
           .timeout(const Duration(seconds: 10));
-    } on Object {
+      appLogger.i('Silo: logout status ${response.statusCode}');
+    } on Object catch (error) {
       // The local wipe below is what signs this device out.
+      appLogger.i('Silo: logout failed (${error.runtimeType})');
     }
   }
   await silo.session.signOut();
