@@ -178,6 +178,11 @@ class SiloLoginController extends ChangeNotifier {
   final Future<SiloSessionController> Function(String serverId) sessionFor;
   final String deviceName;
   final http.Client? _client;
+
+  /// One connection pool for every call the screen makes, like the app-wide
+  /// client in `NetworkModule.kt:17`, so the device code reuses the
+  /// connection the identity read opened instead of a new TLS handshake.
+  final http.Client _connections;
   final bool Function(String origin)? _cleartextApproved;
   final SiloDeviceSignInConfig _deviceConfig;
   final Future<void> Function(Duration)? _wait;
@@ -203,7 +208,8 @@ class SiloLoginController extends ChangeNotifier {
     this._deviceConfig = const SiloDeviceSignInConfig(),
     this._wait,
     this._now,
-  }) : origin = Uri.parse(siloOrigin(origin));
+  }) : origin = Uri.parse(siloOrigin(origin)),
+       _connections = _client ?? SiloHttp.newSiloHttpClient();
 
   SiloLoginPhase get phase => _phase;
   SiloServerIdentity? get server => _server;
@@ -218,15 +224,10 @@ class SiloLoginController extends ChangeNotifier {
       origin: origin,
       session: await SiloSessionController.load(MemorySiloSessionStore()),
       device: device,
-      client: _client,
+      client: _connections,
       cleartextApproved: _cleartextApproved,
     );
-    final SiloServerIdentity? identity;
-    try {
-      identity = await readSiloServerIdentity(probe);
-    } finally {
-      if (_client == null) probe.close();
-    }
+    final identity = await readSiloServerIdentity(probe);
     if (_disposed) return;
     if (identity == null) return _setPhase(const SiloLoginUnreachable());
     final session = await sessionFor(identity.serverId);
@@ -236,7 +237,7 @@ class SiloLoginController extends ChangeNotifier {
       origin: origin,
       session: session,
       device: device,
-      client: _client,
+      client: _connections,
       cleartextApproved: _cleartextApproved,
     );
     final deviceSignIn = _deviceSignIn = SiloDeviceSignIn(
@@ -380,17 +381,22 @@ class SiloLoginController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _closeConnections() {
+    if (_client == null) _connections.close();
+  }
+
   @override
   void dispose() {
     _disposed = true;
     final deviceSignIn = _deviceSignIn;
-    if (deviceSignIn != null) {
+    if (deviceSignIn == null) {
+      _closeConnections();
+    } else {
       deviceSignIn.state.removeListener(_onDeviceState);
-      final silo = _http;
       unawaited(
         deviceSignIn.abandon().whenComplete(() {
           deviceSignIn.dispose();
-          if (_client == null) silo?.close();
+          _closeConnections();
         }),
       );
     }
