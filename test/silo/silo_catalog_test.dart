@@ -497,6 +497,36 @@ void main() {
       expect(fake.requests.map((r) => r.url.path), ['/api/v2/catalog/search/capabilities']);
     });
   });
+
+  test('the silo preset offers hubs, ratings and favorites and none of the features Silo has no wire for', () async {
+    final (client, _) = await _client((_) => jsonResponse({}, 500));
+    final caps = client.capabilities;
+
+    expect(
+      {
+        'liveTv': caps.liveTv,
+        'liveTvDvr': caps.liveTvDvr,
+        'folderGrouping': caps.folderGrouping,
+        'externalSubtitleSearch': caps.externalSubtitleSearch,
+        'instantMix': caps.instantMix,
+        'richMetadataEdit': caps.richMetadataEdit,
+        'richHubs': caps.richHubs,
+        'numericUserRating': caps.numericUserRating,
+        'userFavorites': caps.userFavorites,
+      },
+      {
+        'liveTv': false,
+        'liveTvDvr': false,
+        'folderGrouping': false,
+        'externalSubtitleSearch': false,
+        'instantMix': false,
+        'richMetadataEdit': false,
+        'richHubs': true,
+        'numericUserRating': true,
+        'userFavorites': true,
+      },
+    );
+  });
 }
 
 MediaItem _movie() => MediaItem.silo(id: 'movie-1', kind: MediaKind.movie);
