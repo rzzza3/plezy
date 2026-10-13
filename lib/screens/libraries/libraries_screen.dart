@@ -11,6 +11,7 @@ import '../../focus/input_mode_tracker.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../mixins/tab_visibility_aware.dart';
 import '../../media/ids.dart';
+import '../../media/media_backend.dart';
 import '../../media/media_library.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
@@ -39,6 +40,8 @@ enum LibraryTabType { recommended, browse, collections, playlists }
 
 List<LibraryTabType> visibleLibraryTabs(MediaLibrary library) {
   if (library.isShared) return [LibraryTabType.browse, LibraryTabType.playlists];
+  // SiloClient reads no collections or playlists yet.
+  if (library.backend == MediaBackend.silo) return [LibraryTabType.recommended, LibraryTabType.browse];
   return LibraryTabType.values;
 }
 

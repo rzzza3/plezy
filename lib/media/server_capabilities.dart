@@ -156,16 +156,17 @@ class ServerCapabilities {
     libraryChangeEvents: true,
   );
 
-  /// Defaults for a Silo server. Every flag starts off and turns on in the
-  /// step that implements it on `SiloClient`, so no screen offers a feature
-  /// the client cannot serve yet.
+  /// Defaults for a Silo server. A flag turns on in the step that implements
+  /// it on `SiloClient`, so no screen offers a feature the client cannot
+  /// serve yet. Silo has no wire for live TV, DVR, folders, instant mixes,
+  /// metadata editing or external subtitle search.
   static const ServerCapabilities silo = ServerCapabilities(
     liveTv: false,
     liveTvDvr: false,
     videoTranscoding: false,
-    richHubs: false,
-    numericUserRating: false,
-    userFavorites: false,
+    richHubs: true,
+    numericUserRating: true,
+    userFavorites: true,
     externalSubtitleSearch: false,
     richMetadataEdit: false,
     scrubThumbnails: false,
