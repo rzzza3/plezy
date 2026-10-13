@@ -522,6 +522,19 @@ void main() {
       // the scoped read falls through to the same legacy key it was written to).
       expect(s.getLibraryOrder(), ['lib-1']);
     });
+
+    test('removes every Silo session slot and keeps the Silo device id', () async {
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('silo_session_v1.server-1', 'enc:v1:a');
+      await s.prefs.setString('silo_session_v1.server-2', 'enc:v1:b');
+      await s.prefs.setString('silo_device_id', 'device-1');
+
+      await s.clearCredentials();
+
+      expect(s.prefs.getString('silo_session_v1.server-1'), isNull);
+      expect(s.prefs.getString('silo_session_v1.server-2'), isNull);
+      expect(s.prefs.getString('silo_device_id'), 'device-1');
+    });
   });
 
   group('clearLibraryPreferences', () {

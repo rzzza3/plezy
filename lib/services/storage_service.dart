@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../profiles/profile.dart';
 import '../utils/log_redaction_manager.dart';
 import 'base_shared_preferences_service.dart';
+import 'sensitive_prefs.dart';
 
 enum LibraryPreference { filters, sort, grouping, tab }
 
@@ -208,7 +209,11 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Clear all credentials
   Future<void> clearCredentials() async {
-    await Future.wait([..._credentialKeys.map((k) => prefs.remove(k)), clearMultiServerData()]);
+    await Future.wait([
+      ..._credentialKeys.map((k) => prefs.remove(k)),
+      clearMultiServerData(),
+      _clearKeysWithPrefix('$siloSessionPref.'),
+    ]);
     LogRedactionManager.clearTrackedValues();
   }
 

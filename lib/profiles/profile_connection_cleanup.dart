@@ -62,6 +62,14 @@ class ProfileConnectionCleanup {
   /// Ends the server session and wipes its slot. Injected for tests.
   final Future<void> Function(SiloConnection connection) signOutSilo;
 
+  /// Full logout: every Silo server ends this device's session while the
+  /// bearer is still here, before the rows and credentials go.
+  Future<void> signOutAllSiloConnections() async {
+    for (final connection in (await connections.list()).whereType<SiloConnection>()) {
+      await signOutSilo(connection);
+    }
+  }
+
   Future<void> removeProfileConnection({required String profileId, required Connection connection}) async {
     final removedServerIds = _serverIdsForConnection(connection);
     await profileConnections.remove(profileId, connection.id);

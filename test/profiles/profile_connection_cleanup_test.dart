@@ -196,6 +196,24 @@ void main() {
         expect(await connections.get(silo.id), isNull);
       });
 
+      test('full logout signs out every Silo connection and leaves other kinds alone', () async {
+        final other = SiloConnection(
+          origin: 'https://other.silo.test',
+          serverId: 'server-2',
+          serverName: 'Other',
+          username: 'bob',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
+        );
+        await connections.upsert(silo);
+        await connections.upsert(other);
+        await connections.upsert(_jellyfin());
+
+        await cleanup.signOutAllSiloConnections();
+
+        expect(signedOut..sort(), ['silo:server-1', 'silo:server-2']);
+        expect((await connections.list()).length, 3, reason: 'logout clears the rows itself, after this');
+      });
+
       test('a link another profile still holds keeps the session', () async {
         await connections.upsert(silo);
         await profileConnections.upsert(

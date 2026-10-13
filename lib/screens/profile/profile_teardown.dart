@@ -366,6 +366,7 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   }
 
   await companionRemote.resetForLogout();
+  await scope.cleanup.signOutAllSiloConnections();
   // Credentials and the signed-out users' server-side preferences go first so
   // nothing below can read them back as the next sign-in's defaults.
   await scope.storage.clearUserData();
