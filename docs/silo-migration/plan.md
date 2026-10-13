@@ -178,6 +178,21 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Rebased onto S1 after the verdict, patch-id unchanged.
 - [ ] Appended to the stack. The operator lands it bottom-up.
 
+**S2 verdict draft, 2026-10-13, head `a8a745032`.** Not clean yet. Lanes 2, 4 and 9 (server side) and perf are open, and wire-parity M1 is open. Live lanes ran on the Android TV emulator with a debug build. Lanes marked Monday ran at `61d2ecf5e`. Their screenshots were lost when `/tmp` was cleared. Evidence is in `docs/silo-migration/media/s2/`, and audits are in `docs/silo-migration/audits/`.
+- Unit. `flutter test --concurrency=1 test/silo` passes 83 tests. `flutter analyze lib test` is clean. The 49 analyzer issues in the full run all sit under the vendored `packages/` tree.
+- Lane 1 pass, Monday. Head reached the Plex home. No screenshot. A profile-menu Logout later removed the Plex sign-in (`audits/s2-secrets.md`), so retaking it needs the operator to sign in to Plex again.
+- Lane 2 operator-attested; pending recorded code approval at the review gate. Monday's log shows "device code withdrawn" in the same millisecond as "signed in", which only the password path does, so the password finished first. `a6dc13444` adds `Silo: device code approved` to settle it.
+- Lane 3 pass, Monday. The password sign-in reached the picker and the code was withdrawn. No screenshot.
+- Lane 4 pending. Monday's wrong password logged nothing. `a6dc13444` adds `Silo: password refused (<kind>)`. Re-run needs a typed password.
+- Lane 5 pass, at `d0f61223d`. `lane-5-code.png` shows the code, QR and password form. After Back, `lane-5-leave.png` shows the server screen, and `lane-5-leave.log` has `device code withdrawn, status 200`.
+- Lane 6 pass, Monday. "PIN rejected" logged twice and the picker stayed. No screenshot.
+- Lane 7 pass, Monday. The right PIN entered the profile and the server was added. No screenshot.
+- Lane 8 pass, Monday. A force-stop and relaunch gave a new pid, Silo rebound online and no new code appeared. No screenshot. The emulator has no Silo sign-in left to retake it.
+- Lane 9 local pass, Monday. The session was stored as `enc:v1:…`, prefs and the connection row held no token text, no `silo_session_v1.*` key remained after sign-out, and `silo_device_id` was kept. Server side pending. `a6dc13444` adds `Silo: logout status <code>`. Wire-parity M1 (logout sent single-attempt) can fail this lane when the access token has expired.
+- Lane 10 pass, at `d0f61223d`. `lane-10-unreachable.png` shows "Can't reach this server. Check the address and try again." `lane-10-unreachable.log` has `server probe SiloServerUnreachable`.
+- Perf pending. No timing run yet.
+- Audits. `audits/s2-secrets.md` H1 (full Logout left the Silo session alive) is fixed in `d0f61223d` with tests. Open for the root are secrets M1 (a slot outlives a process killed on the picker), wire-parity M1 (single-attempt logout), secrets L1 and wire-parity L1 to L6.
+
 ## Read home sections, libraries and detail from Silo (S3)
 **Depends on.** S2.
 
