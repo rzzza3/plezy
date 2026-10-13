@@ -334,6 +334,7 @@ class SiloDeviceSignIn {
     final serverExpiry = code.serverExpiresAt;
     _skew = serverExpiry == null ? null : _deadline.difference(serverExpiry);
     _interval = code.interval;
+    appLogger.i('Silo: device code shown (renewed=$renewed)');
     _publish(SiloDeviceShowingCode(code, renewed: renewed));
   }
 
