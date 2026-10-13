@@ -47,6 +47,24 @@ void main() {
     expect(session.session, isNull);
   });
 
+  test('sign-out refreshes an expired token and retries logout (AuthApi.kt:136-138 has no singleAttempt)', () async {
+    final (session, _) = await signedInSession();
+    final server = FakeSilo((request) {
+      if (request.url.path == '/api/v2/auth/refresh') return tokenPair('access-B', 'refresh-B');
+      return request.header('authorization') == 'Bearer access-B' ? jsonResponse({}, 204) : jsonResponse({}, 401);
+    });
+
+    await signOutSiloSession(siloHttpFor(server, session));
+
+    expect(server.requests.map((r) => r.url.path), [
+      '/api/v2/auth/logout',
+      '/api/v2/auth/refresh',
+      '/api/v2/auth/logout',
+    ]);
+    expect(server.to('/api/v2/auth/logout').last.header('authorization'), 'Bearer access-B');
+    expect(session.session, isNull);
+  });
+
   test('sign-out wipes the slot even when logout fails (AuthRepository.kt:266-272)', () async {
     final (session, _) = await signedInSession();
     final down = FakeSilo((_) => jsonResponse({}, 503));

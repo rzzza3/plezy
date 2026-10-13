@@ -110,7 +110,7 @@ Future<void> signOutSiloSession(SiloHttp silo) async {
   if (silo.session.session != null) {
     try {
       final response = await silo
-          .send(const SiloRequest.post('/api/v2/auth/logout', single: true, timeout: Duration(seconds: 10)))
+          .send(const SiloRequest.post('/api/v2/auth/logout', timeout: Duration(seconds: 10)))
           .timeout(const Duration(seconds: 10));
       appLogger.i('Silo: logout status ${response.statusCode}');
     } on Object catch (error) {
