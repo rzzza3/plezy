@@ -7,7 +7,7 @@ The work lands as nine stacked branches on top of `feat/tv-silo-sidebar`, in thi
 ## How to read this
 One box is one unit of work. Every box names the evidence that checks it. A nested box is a sub-step of the box above it. Check a box only when its evidence exists, a file, a log line, a screenshot, a test run, or a SHA. The body is a how-to. The appendices explain and record.
 
-The program runs `skills/p3-mode/playbooks/autopilot-stack.md`. The root builds and verifies each branch and appends it to one linear stack. The operator reviews the review-gated branches and lands the stack bottom-up. S2, S3, S4, S5 and S7 are review-gated because they change what the user sees or does.
+The program runs `skills/p3-mode/playbooks/autopilot-stack.md`. The root builds and verifies each branch and appends it to one linear stack. The operator reviews the review-gated branches and lands the stack bottom-up. S2, S3, S4, S5, S7 and S9 are review-gated because they change what the user sees or does.
 
 Research inputs live next to this file in `research/`. `silo-auth.md`, `silo-catalog.md` and `silo-playback.md` give the wire contract. `plezy-backend-map.md` gives the Plezy side. Every Silo citation below uses those files' path prefixes. `S/` is Silo's `shared/src/commonMain/kotlin/org/siloserver/silo/`, `A/` is `android-shared/.../common/`, and `T/` is `androidTvApp/.../tv/`.
 
@@ -232,7 +232,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Lane 7. Open a show detail. Save `detail-show.png`. Pass when the initial season matches the Silo app's choice.
 - [ ] Lane 8. Search for a known title. Save `search.png`. Pass when it appears in results.
 - [ ] Lane 9. Toggle watched on a movie and reopen it. Save `watched.png`. Pass when the Silo app shows the same state.
-- [ ] Lane 10. Switch profile and reopen the home. Save `profile-switch.png`. Pass when the home shows the new profile's rows.
+- [ ] Lane 10. Switch profile and reopen the home. Save `profile-switch.png`. Pass when the home shows the new profile's rows. Until S9 a Silo profile is reached through a Plezy profile, so this lane uses two Plezy profiles bound to different Silo profiles (`media/s3/lanes-howto.md`).
 
 **Verify, perf.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
 - [ ] Metric. Cold start to first home row painted. Trunk produces it with Plex. Head produces it with Silo.
@@ -413,7 +413,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Create `test/database/schema_26_migration_test.dart`.
 
 **Build.**
-- [ ] Schema 26 deletes `connections` rows of kind `plex`, `jellyfin` and `emby`, their `profile_connections`, all `api_cache` rows, downloads and their owners, sync rules, download collections and queued offline progress for those backends. It keeps local profiles.
+- [ ] Schema 26 deletes `connections` rows of kind `plex`, `jellyfin` and `emby`, their `profile_connections`, all `api_cache` rows, downloads and their owners, sync rules, download collections and queued offline progress for those backends. It keeps local profiles, because S9 replaces them with Silo profiles and migrates them then.
 - [ ] Legacy SharedPreferences keys from `storage_service.dart` lines 15 to 32 are cleared once.
 
 **You see.**
@@ -506,22 +506,30 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Delete the matching tests.
 - [ ] Edit `lib/profiles/active_profile_binder.dart`, `lib/services/multi_server_manager.dart`, `lib/profiles/profile.dart`, `lib/main.dart`, `lib/metadata_edit/`, `lib/widgets/library_management_sheet.dart`, `lib/widgets/server_activities_button.dart`, the Seerr auth service and the companion remote auth service.
 - [ ] Edit the 22 i18n JSON sources and regenerate.
+- [ ] Delete Plezy profiles: `lib/profiles/profile_registry.dart`, `profile_connection_registry.dart`, `profile_merge.dart`, `profile_selection_policy.dart`, `profile_connection_cleanup.dart`, and `lib/screens/profile/add_local_profile_screen.dart`, `borrow_connection_screen.dart`, `profile_detail_screen.dart`, `profile_name_field.dart`, `pin_status_row.dart`, `profile_teardown.dart`.
+- [ ] Edit `lib/screens/profile/profile_switch_screen.dart`, `lib/profiles/profile_menu.dart`, `lib/profiles/active_profile_provider.dart` and `lib/screens/profile/silo_profile_screen.dart` so they list and switch Silo profiles.
+- [ ] Edit `lib/database/app_database.dart` to schema 27. Create `test/database/schema_27_migration_test.dart` and `test/silo/silo_profile_switch_test.dart`.
 
 **Build.**
+- [ ] Silo profiles replace Plezy profiles. The operator decided this on 2026-10-13. The avatar and the profile switcher list `GET /api/v2/profiles` for the signed-in server. Switching selects the profile, asking for its PIN through `verify-pin` when it has one, and rebinds the client, so the session generation moves and in-flight reads drop. There is no Plezy-side profile, PIN, name, avatar or "Add Plezy profile".
+- [ ] Schema 27 drops the `profiles` and `profile_connections` rows and keeps the Silo connection. The active Silo profile id lives in the Silo session in `CredentialVault`, as S2 stores it. A profile id the server no longer lists opens the picker.
 - [ ] Remove `Profile.plexHome`, `PlexAccountConnection`, `MediaItem.plex` and `PlexHomeService`. The binder keeps only the join-row path. `MultiServerManager` drops relay and endpoint racing.
 - [ ] Reduce `MediaBackend`, `Connection` and `MediaItem` to Silo. Remove capability flags Silo never sets, with their UI branches.
 - [ ] Derive the companion remote secret from the Silo server id and account id.
 - [ ] Remove Seerr sign-in through media-server credentials. Keep Seerr local login if Seerr offers one.
 
 **You see.**
-- [ ] The app behaves exactly as at S8, and no screen mentions Plex, Jellyfin or Emby.
+- [ ] The app behaves as at S8, and no screen mentions Plex, Jellyfin or Emby.
+- [ ] The avatar opens the Silo profile picker. Picking a profile switches the home to its rows. No screen offers to add or edit a Plezy profile.
 
 **Verify, unit.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
 - [ ] `grep -rliw "plex\|jellyfin\|emby" lib test` returns nothing except the app name. Run `flutter analyze && flutter test`.
+- [ ] `schema_27_migration_test.dart` migrates a seeded schema 26 database with two local profiles bound to one Silo connection, and asserts no profile rows remain and the connection survives.
+- [ ] `silo_profile_switch_test.dart` asserts a switch to a PIN profile calls `verify-pin` and enters only on `valid: true`, and that a home read in flight across the switch is dropped.
 
 **Verify, live.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked. Ten lanes on the `swarm workers` role in `p3-models.md` at the PR head, per the boot recipe.
 - [ ] Lane 1. Regression lane against trunk. Run S3's lane 1 scenario at S8 and at head. Save `home.png`. Pass when both match.
-- [ ] Lane 2. Repeat S2 lanes 2 and 7. Save `signin-pin.png`. Pass as there.
+- [ ] Lane 2. Repeat S2 lanes 2 and 7, then switch to another Silo profile from the avatar. Save `signin-pin.png` and `profile-switch.png`. Pass as there, and when the home shows the second profile's rows with no Plezy profile screen on the way.
 - [ ] Lane 3. Walk every settings screen. Save `settings-<n>.png`. Pass when no Plex, Jellyfin or Emby text shows.
 - [ ] Lane 4. Repeat S3 lane 7. Save `detail-show.png`. Pass as there.
 - [ ] Lane 5. Repeat S5 lane 3. Save `transcode.png`. Pass as there.
@@ -537,7 +545,10 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Baseline. Record S8's size and median first.
 - [ ] Rule. Head is not larger, and its median is within 5 percent of S8's. Fail otherwise.
 
-**Review gate.** None. S9 is not review-gated.
+**Review gate.** The operator reviews before merge, because S9 replaces Plezy profiles with Silo profiles.
+- [ ] Copy lane 2 screenshots into `docs/silo-migration/media/s9-review-*.png`.
+- [ ] Record a 30 to 60 second video of sign-in, profile pick and a profile switch. Save it as `docs/silo-migration/media/s9-review.mp4`.
+- [ ] Post the screenshots and the video in chat. Stop at merge-ready. Wait for the operator's click.
 
 **Merge.**
 - [ ] Root's clean verdict at the exact head SHA.
@@ -561,6 +572,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - **Delete Plex before Jellyfin.** The case for it is that Jellyfin stays as a working sign-in reference. Silo's sign-in is ported from Silo's own Kotlin, so that reference is not needed. Jellyfin and Emby are self-contained, so deleting them first is the smaller, safer step.
 - **Keep Plex and Jellyfin beside Silo.** The operator asked for removal.
 - **Let mpv fetch segments with static headers.** It cannot refresh on a 401 mid-stream and does not strip credentials on cross-origin redirects. A local proxy matches Silo's transport rules.
+- **Keep Plezy profiles beside Silo profiles.** Two profile layers made the user pick a Plezy profile and then a Silo profile. The operator chose Silo profiles only on 2026-10-13. They land in S9, because until then Plex Home users are Plezy profiles and the Plex regression lanes need them.
 - **Map Silo items into the Plex or Jellyfin `MediaItem` variant.** Saved caches would then decode Silo data as another backend. A `silo` variant keeps stored rows honest.
 
 ## Appendix C. Risks
@@ -568,6 +580,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - **Playback contract fit (S5).** Silo's v3 contract is shaped around Media3. An mpv client that declares only `declared` evidence may get worse plans. The owner watches S5 lanes 2 and 3 for the delivery chosen.
 - **Token refresh mid-stream (S5).** Without the proxy, long plays stall. The owner watches S5 lane 7.
 - **Profile binder rewrite (S2, S9).** A mistake strands users on the splash or leaks one profile's servers into another. The owner watches S2 lane 8 and S9 lane 2.
+- **Plezy profiles removed (S9).** Upgraded users lose Plezy profile names, PINs and avatars. Their Silo sign-in survives and the Silo picker takes over. The S9 review gate is where the operator confirms it.
 - **Persisted unions (S3, S7, S9).** `MediaItem` and `Connection` are stored. A changed union changes how every saved row decodes. The S7 migration test is the guard.
 - **Features removed with no Silo equivalent (S9).** Live TV and DVR, Plex Discover, Plex play queues, Plex match and agent editing, library scan and server activities, external subtitle search, and Seerr sign-in through Plex or Jellyfin. Silo-only features such as requests, calendar, ebooks and audiobooks are out of scope for this program.
 - **TMDB rows.** Silo's Networks row and movie-collection row need a TMDB key in the build. Plezy ships without them unless the operator supplies a key.
