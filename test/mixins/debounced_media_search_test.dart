@@ -58,4 +58,24 @@ void main() {
     expect(state.searchResults.map((item) => item.id), ['abc']);
     expect(pending.keys, ['abcd']);
   });
+
+  testWidgets('a query runs 300 ms after the last keystroke (TvSearchViewModel.kt:152)', (tester) async {
+    final queries = <String>[];
+    await tester.pumpWidget(
+      _SearchProbe(
+        search: (query) {
+          queries.add(query);
+          return Future.value(const <MediaItem>[]);
+        },
+      ),
+    );
+    final state = tester.state<_SearchProbeState>(find.byType(_SearchProbe));
+
+    state.searchController.text = 'dun';
+    await tester.pump(const Duration(milliseconds: 299));
+    expect(queries, isEmpty);
+
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(queries, ['dun']);
+  });
 }
