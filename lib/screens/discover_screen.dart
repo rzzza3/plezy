@@ -103,6 +103,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _isTabVisible = true;
 
   bool _initialLoadComplete = false;
+  bool _firstRowsLogged = false;
   bool _pendingTvBrowseRailFocus = false;
 
   /// Primary focus when the rail claim was armed; see [_railClaimAbandoned].
@@ -378,6 +379,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // Focus hero when fresh content lands, but only if no modal route is on top
     if (isNewLoad && !PlatformDetector.isTV() && _onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
       _heroFocusNode.requestFocus();
+    }
+
+    if (!_firstRowsLogged && (_onDeck.isNotEmpty || _hubs.isNotEmpty)) {
+      _firstRowsLogged = true;
+      final rows = _hubs.length + (_onDeck.isNotEmpty ? 1 : 0);
+      WidgetsBinding.instance.addPostFrameCallback((_) => appLogger.i('Home: first hub frame, rows $rows'));
     }
 
     // On initial load, focus content so the user doesn't start on the toolbar
