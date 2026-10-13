@@ -1,0 +1,582 @@
+{
+ "sections": [
+  {
+   "id": "sec-cw",
+   "section_type": "continue_watching",
+   "title": "Continue Watching",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 2,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "ep-1",
+     "play_content_id": "ep-1",
+     "type": "episode",
+     "title": "Episode One",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/ep-1/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5,
+     "series_id": "show-1",
+     "series_title": "Show A",
+     "season_number": 2,
+     "episode_number": 3,
+     "backdrop_url": "/img/ep-1/backdrop.jpg",
+     "logo_url": "/img/show-1/logo.png",
+     "runtime": 42,
+     "position_seconds": 600.0,
+     "duration_seconds": 2520.0,
+     "progress_updated_at": "2026-10-12T20:00:00Z",
+     "overview": "Synthetic overview."
+    },
+    {
+     "content_id": "movie-1",
+     "play_content_id": "movie-1",
+     "type": "movie",
+     "title": "Movie A",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-1/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5,
+     "runtime": 110,
+     "position_seconds": 1800.0,
+     "duration_seconds": 6600.0,
+     "progress_updated_at": "2026-10-11T20:00:00Z",
+     "backdrop_url": "https://cdn.example/b.jpg?exp=1&sig=x"
+    }
+   ]
+  },
+  {
+   "id": "sec-added",
+   "section_type": "recently_added",
+   "title": "Recently Added",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 30,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "movie-2",
+     "play_content_id": "movie-2",
+     "type": "movie",
+     "title": "Movie 2",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-2/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    },
+    {
+     "content_id": "movie-3",
+     "play_content_id": "movie-3",
+     "type": "movie",
+     "title": "Movie 3",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-3/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    },
+    {
+     "content_id": "movie-4",
+     "play_content_id": "movie-4",
+     "type": "movie",
+     "title": "Movie 4",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-4/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    },
+    {
+     "content_id": "movie-5",
+     "play_content_id": "movie-5",
+     "type": "movie",
+     "title": "Movie 5",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-5/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    }
+   ]
+  },
+  {
+   "id": "sec-released",
+   "section_type": "recently_released",
+   "title": "Recently Released",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 1,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "movie-6",
+     "play_content_id": "movie-6",
+     "type": "movie",
+     "title": "Movie F",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-6/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    }
+   ]
+  },
+  {
+   "id": "sec-trend",
+   "section_type": "trending_on_server",
+   "title": "Trending",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 1,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "show-1",
+     "play_content_id": "show-1",
+     "type": "series",
+     "title": "Show A",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/show-1/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    }
+   ]
+  },
+  {
+   "id": "sec-rec",
+   "section_type": "recommended_for_you",
+   "title": "For You",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 1,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "movie-7",
+     "play_content_id": "movie-7",
+     "type": "movie",
+     "title": "Movie G",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-7/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    }
+   ]
+  },
+  {
+   "id": "sec-taste",
+   "section_type": "taste_match",
+   "title": "Taste Match",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 1,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "movie-8",
+     "play_content_id": "movie-8",
+     "type": "movie",
+     "title": "Movie H",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-8/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    }
+   ]
+  },
+  {
+   "id": "sec-fav",
+   "section_type": "favorites",
+   "title": "Favorites",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 1,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "movie-9",
+     "play_content_id": "movie-9",
+     "type": "movie",
+     "title": "Movie I",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-9/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": true,
+      "is_favorite": true,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    }
+   ]
+  },
+  {
+   "id": "sec-watch",
+   "section_type": "watchlist",
+   "title": "Watchlist",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 3,
+   "is_custom": false,
+   "customized": false,
+   "items": []
+  },
+  {
+   "id": "sec-coll",
+   "section_type": "collection",
+   "title": "Collection X",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 1,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "movie-10",
+     "play_content_id": "movie-10",
+     "type": "movie",
+     "title": "Movie J",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-10/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    }
+   ]
+  },
+  {
+   "id": "sec-custom",
+   "section_type": "custom_filter",
+   "title": "Custom Row",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 0,
+   "is_custom": false,
+   "customized": false,
+   "items": []
+  },
+  {
+   "id": "sec-books",
+   "section_type": "recently_added",
+   "title": "Recently Added Books",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 1,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "book-1",
+     "play_content_id": "book-1",
+     "type": "ebook",
+     "title": "Book A",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/book-1/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    }
+   ]
+  },
+  {
+   "id": "sec-new",
+   "section_type": "mystery_recipe_v9",
+   "title": "New Recipe",
+   "featured": false,
+   "item_limit": 20,
+   "total_count": 1,
+   "is_custom": false,
+   "customized": false,
+   "items": [
+    {
+     "content_id": "movie-11",
+     "play_content_id": "movie-11",
+     "type": "movie",
+     "title": "Movie K",
+     "genres": [
+      "Drama"
+     ],
+     "keywords": [],
+     "status": "available",
+     "poster_url": "/img/movie-11/poster.jpg",
+     "overlay_summary": {
+      "resolution": "1080p",
+      "audio_channels": "5.1",
+      "video_codec": "h264",
+      "container": "mkv",
+      "aspect_ratio": "16:9"
+     },
+     "item_source": "library",
+     "user_state": {
+      "played": false,
+      "is_favorite": false,
+      "in_watchlist": false
+     },
+     "year": 2020,
+     "studios": [
+      "Studio One"
+     ],
+     "rating_tmdb": 7.5
+    }
+   ]
+  }
+ ]
+}
