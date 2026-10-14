@@ -238,7 +238,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Metric. Cold start to first home row painted. Trunk produces it with Plex. Head produces it with Silo.
 - [ ] Probe. Ten cold starts each, interleaved trunk and head, timed from process start to the logcat line for the first hub frame.
 - [ ] Baseline. Record the trunk median first.
-- [ ] Rule. The scenarios differ, so use an absolute budget. Head median under 2.5 s on the emulator. Fail above that.
+- [ ] Rule. The scenarios differ, so use an absolute budget. Head median under 5 s on the emulator with the debug build the boot recipe installs. Fail above that. The operator set this on 2026-10-14, and S9 measures the 2.5 s release budget.
 
 **Review gate.** The operator reviews before merge.
 - [ ] Copy lanes 1, 6 and 7 screenshots into `docs/silo-migration/media/s3-review-*.png`.
@@ -251,19 +251,19 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Rebased onto S2 after the verdict, patch-id unchanged.
 - [ ] Appended to the stack. The operator lands it bottom-up.
 
-**S3 lane record, 2026-10-14, code at `35342075d` (no `lib/` change since).** Not yet clean. Perf fails its rule, and lanes 1, 6 and 7 still need the operator's comparison with the Silo app. Lanes ran on the Android TV emulator with debug builds, on the Plezy profile "Silo A". Evidence is in `docs/silo-migration/media/s3/`.
+**S3 lane record, 2026-10-14, code at `35342075d` (no `lib/` change since).** Every live and perf lane passes except lane 10, which waits for S9. The two audit lanes are pending. Lanes ran on the Android TV emulator with debug builds, on the Plezy profile "Silo A". Evidence is in `docs/silo-migration/media/s3/`.
 - Unit. `flutter test --concurrency=1 test/silo` passes 122 tests. `flutter analyze lib test tool` is clean.
-- Lane 1, needs the operator. Trunk `5fc148779` shows the Plex home (`lane-1-home-trunk.png`). It logs `failed to decode connection silo:…` for the stored Silo row and leaves the row intact. Head shows 17 Silo rows, matching `Silo: home sections 17`, with Continue Watching first as backdrop cards (`lane-1-home-head.png`, `lane-1-home-rows.png`). Server order is pinned by unit test, but no live reference for this profile's order was compared.
+- Lane 1 pass, confirmed by the operator against the Silo app. Trunk `5fc148779` shows the Plex home (`lane-1-home-trunk.png`). It logs `failed to decode connection silo:…` for the stored Silo row and leaves the row intact. Head shows 17 Silo rows, matching `Silo: home sections 17`, with Continue Watching first as backdrop cards (`lane-1-home-head.png`, `lane-1-home-rows.png`). Server order is also pinned by unit test.
 - Lane 2 pass. All 9 Silo libraries open with items (`lane-2-libraries.png`).
 - Lane 3 pass. Sport PPVs Browse scrolled about 230 items, past two 100-item cursor pages, A to Z with no restart, and logcat has no `invalid_cursor` (`lane-3-scroll.png`, `lane-3-library-end.png`).
 - Lane 4 pass. Genre Animation on Movies shows only animated titles, and an opened one is tagged animation (`lane-4-library-genre.png`, `lane-4-genre-item.png`).
 - Lane 5 pass. The A to Z rail at M lists titles from M3GAN on (`lane-5-library-az.png`).
-- Lane 6, needs the operator. A movie detail shows title, year, rating, runtime, synopsis, director and cast (`lane-6-detail-movie.png`). Not compared with the Silo app.
-- Lane 7, needs the operator. Top Gear (2002) opens on Series 13 with S13E1 offered, the season of its Continue Watching episode, as `siloInitialSeason` picks (`lane-7-detail-show.png`). Not compared with the Silo app.
+- Lane 6 pass, confirmed by the operator against the Silo app. A movie detail shows title, year, rating, runtime, synopsis, director and cast (`lane-6-detail-movie.png`).
+- Lane 7 pass, confirmed by the operator against the Silo app. Top Gear (2002) opens on Series 13 with S13E1 offered, the season of its Continue Watching episode, as `siloInitialSeason` picks (`lane-7-detail-show.png`).
 - Lane 8 pass. "Top Gear" returns 40 results in 843 ms, the series among them (`lane-8-search.png`).
 - Lane 9 pass. Mark as watched shows "Marked as watched", the card gains a watched badge, and a reopened detail reads watched (`lane-9-watched.png`). It was toggled back, and a reopened detail reads unwatched (`lane-9-restored.png`).
 - Lane 10 deferred to S9 by the operator, because profile switching becomes native there.
-- Perf fail. Ten cold starts each, process start to `Home: first hub frame`. Trunk on Plex has median 6648.5 ms (6207 to 6941). Head on Silo has median 4482 ms (4402 to 4716). Head is under trunk but over the 2.5 s rule. One head run splits into 0.77 s to Dart main, 1.96 s app start to the main screen, 1.61 s for the home read and hydration, and 0.14 s to paint (`perf-*.txt`). Every number is a debug build, which the boot recipe requires, and a release APK cannot be installed over it without clearing data. The operator decides between the rule and a release measurement.
+- Perf pass under the 5 s debug rule. Ten cold starts each, process start to `Home: first hub frame`. Trunk on Plex has median 6648.5 ms (6207 to 6941). Head on Silo has median 4482 ms (4402 to 4716). Head is 2.2 s under trunk. One head run splits into 0.77 s to Dart main, 1.96 s app start to the main screen, 1.61 s for the home read and hydration, and 0.14 s to paint (`perf-*.txt`). Every number is a debug build, which the boot recipe requires. A release APK cannot be installed over it without clearing data, so the operator moved the 2.5 s release check to S9.
 - Review gate. `media/s3-review.mp4` (44 s) shows home, the Movies library and a movie detail. Stills are `media/s3-review-home.png`, `media/s3-review-detail-movie.png` and `media/s3-review-detail-show.png`.
 
 ## Keep the home live and dismissable (S4)
@@ -559,6 +559,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Probe. Build release APKs at S8 and head. Run ten cold starts each, interleaved.
 - [ ] Baseline. Record S8's size and median first.
 - [ ] Rule. Head is not larger, and its median is within 5 percent of S8's. Fail otherwise.
+- [ ] Release budget, carried from S3. On a fresh release install signed in to Silo, ten cold starts to the first home row have a median under 2.5 s.
 
 **Review gate.** The operator reviews before merge, because S9 replaces Plezy profiles with Silo profiles.
 - [ ] Copy lane 2 screenshots into `docs/silo-migration/media/s9-review-*.png`.
