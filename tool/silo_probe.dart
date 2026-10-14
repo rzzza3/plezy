@@ -25,6 +25,18 @@ read-only responses, and signs out. Tokens stay in memory.
                            rule.
   --force-refresh          Expire the access token locally before home.
   --revoked                Sign out server-side, then reuse the old tokens.
+  --actions <file|->       After the reads, run one action per line from the
+                           file or stdin, in the same session, then log out:
+                             home                   ids per section_type
+                             watched <content_id>   POST /watched/{id}
+                             unwatched <content_id> DELETE /watched/{id}
+                             watchlist-add <id>     PUT /watchlist/{id}
+                             watchlist-remove <id>  DELETE /watchlist/{id}
+                             toggle <id> <n> <s>    n watched/unwatched
+                                                    flips, s seconds apart
+                             sleep <seconds>
+                           Each write prints its status and done_ms, the
+                           epoch milliseconds the 204 arrived.
 ''';
 
 Future<void> main(List<String> args) async {
@@ -45,6 +57,7 @@ class SiloProbeOptions {
   final bool baseline;
   final bool forceRefresh;
   final bool revoked;
+  final String? actions;
 
   const SiloProbeOptions({
     required this.origin,
@@ -54,6 +67,7 @@ class SiloProbeOptions {
     this.baseline = false,
     this.forceRefresh = false,
     this.revoked = false,
+    this.actions,
   });
 
   static SiloProbeOptions? parse(List<String> args) {
@@ -65,6 +79,7 @@ class SiloProbeOptions {
     var baseline = false;
     var forceRefresh = false;
     var revoked = false;
+    String? actions;
     for (var i = 0; i < args.length; i++) {
       final arg = args[i];
       String next() => i + 1 < args.length ? args[++i] : throw const FormatException();
@@ -82,6 +97,8 @@ class SiloProbeOptions {
             forceRefresh = true;
           case '--revoked':
             revoked = true;
+          case '--actions':
+            actions = next();
           case '-h' || '--help':
             return null;
           default:
@@ -103,6 +120,7 @@ class SiloProbeOptions {
       baseline: baseline,
       forceRefresh: forceRefresh,
       revoked: revoked,
+      actions: actions,
     );
   }
 }
@@ -223,7 +241,7 @@ Future<int> runSiloProbe(
     final profile = _pickProfile(approved, profiles.isSuccess ? profiles.json() : null);
     if (profile != null) {
       await session.selectProfile(profile.id, profile.token);
-      out.writeln('profile selected pin_token=${profile.token != null}');
+      out.writeln('profile selected id=${profile.id} pin_token=${profile.token != null}');
     } else {
       out.writeln('profile none');
     }
@@ -306,6 +324,15 @@ Future<int> runSiloProbe(
         out.writeln(delta <= _perfBudgetMs ? 'perf PASS' : 'perf FAIL');
       }
     }
+    final actions = options.actions;
+    if (actions != null) {
+      final lines = actions == '-' ? stdin : File(actions).openRead();
+      await for (final line in lines.transform(utf8.decoder).transform(const LineSplitter())) {
+        final action = parseSiloProbeAction(line);
+        if (action == null) throw const _ProbeFailure(64, 'action unknown');
+        await _runAction(silo, action, out: out, wait: wait, clock: clock);
+      }
+    }
     return 0;
   } on _ProbeFailure catch (failure) {
     out.writeln(failure.message);
@@ -354,6 +381,101 @@ Future<int> _timeRawHome(Uri url, Map<String, String> headers, int n, StringSink
     return median;
   } finally {
     client.close(force: true);
+  }
+}
+
+sealed class SiloProbeAction {
+  const SiloProbeAction();
+}
+
+final class SiloProbeSkip extends SiloProbeAction {
+  const SiloProbeSkip();
+}
+
+final class SiloProbeHome extends SiloProbeAction {
+  const SiloProbeHome();
+}
+
+final class SiloProbeSleep extends SiloProbeAction {
+  final Duration duration;
+
+  const SiloProbeSleep(this.duration);
+}
+
+final class SiloProbeWrite extends SiloProbeAction {
+  final String name;
+  final String method;
+  final String path;
+
+  const SiloProbeWrite(this.name, this.method, this.path);
+}
+
+final class SiloProbeToggle extends SiloProbeAction {
+  final String id;
+  final int times;
+  final Duration interval;
+
+  const SiloProbeToggle(this.id, this.times, this.interval);
+}
+
+/// Null for an unknown command or a malformed argument.
+SiloProbeAction? parseSiloProbeAction(String line) {
+  final words = line.trim().split(RegExp(r'\s+'));
+  if (words.first.isEmpty || words.first.startsWith('#')) return const SiloProbeSkip();
+  String id(String word) => Uri.encodeComponent(word);
+  return switch (words) {
+    ['home'] => const SiloProbeHome(),
+    ['sleep', final s] when double.tryParse(s) != null => SiloProbeSleep(
+      Duration(milliseconds: (double.parse(s) * 1000).round()),
+    ),
+    ['watched', final c] => SiloProbeWrite('watched', 'POST', '/api/v2/watched/${id(c)}'),
+    ['unwatched', final c] => SiloProbeWrite('unwatched', 'DELETE', '/api/v2/watched/${id(c)}'),
+    ['watchlist-add', final c] => SiloProbeWrite('watchlist-add', 'PUT', '/api/v2/watchlist/${id(c)}'),
+    ['watchlist-remove', final c] => SiloProbeWrite('watchlist-remove', 'DELETE', '/api/v2/watchlist/${id(c)}'),
+    ['toggle', final c, final n, final s] when (int.tryParse(n) ?? 0) > 0 && double.tryParse(s) != null =>
+      SiloProbeToggle(c, int.parse(n), Duration(milliseconds: (double.parse(s) * 1000).round())),
+    _ => null,
+  };
+}
+
+/// Prints ids, statuses and times only, never a title.
+Future<void> _runAction(
+  SiloHttp silo,
+  SiloProbeAction action, {
+  required StringSink out,
+  required Future<void> Function(Duration) wait,
+  required DateTime Function() clock,
+}) async {
+  Future<void> write(SiloProbeWrite write) async {
+    final response = await silo.send(SiloRequest(write.method, write.path, single: true));
+    out.writeln(
+      'action ${write.name} ${Uri.decodeComponent(write.path.split('/').last)} ${response.statusCode} '
+      'done_ms=${clock().millisecondsSinceEpoch}',
+    );
+  }
+
+  switch (action) {
+    case SiloProbeSkip():
+      return;
+    case SiloProbeSleep(:final duration):
+      await wait(duration);
+    case SiloProbeWrite():
+      await write(action);
+    case SiloProbeToggle(:final id, :final times, :final interval):
+      for (var i = 0; i < times; i++) {
+        if (i > 0) await wait(interval);
+        await write(parseSiloProbeAction('${i.isEven ? 'watched' : 'unwatched'} $id')! as SiloProbeWrite);
+      }
+    case SiloProbeHome():
+      final home = await silo.send(const SiloRequest.get('/api/v2/home/sections'));
+      final json = home.isSuccess ? _tryJson(home.body) : null;
+      final sections = json is Map && json['sections'] is List ? json['sections'] as List : const [];
+      out.writeln('action home ${home.statusCode} sections=${sections.length}');
+      for (final section in sections.whereType<Map>()) {
+        final items = section['items'] is List ? section['items'] as List : const [];
+        final ids = [for (final item in items.whereType<Map>()) ?item['content_id']];
+        out.writeln('section ${section['section_type']} ids=${ids.join(',')}');
+      }
   }
 }
 

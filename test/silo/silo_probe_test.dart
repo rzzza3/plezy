@@ -85,6 +85,7 @@ class _FakeServer {
         },
       ),
       '/api/v2/auth/logout' when authorized => (204, null),
+      '/api/v2/watched/c1' || '/api/v2/watchlist/c1' when authorized => (204, null),
       _ => (401, {'type': 'https://silo/problems/authentication_required', 'title': 'Unauthorized', 'status': 401}),
     };
     request.response.statusCode = status;
@@ -97,6 +98,13 @@ class _FakeServer {
 
   int count(String path) => requests.where((r) => r.path == path).length;
 }
+
+final Map<String, Object?> _approved = {
+  'status': 'approved',
+  'profile_id': '',
+  'profile_token': '',
+  'tokens': {'access_token': 'access-secret', 'refresh_token': 'refresh-secret', 'expires_in': 900},
+};
 
 void main() {
   late Directory temp;
@@ -185,6 +193,88 @@ void main() {
     for (final secret in ['access-secret', 'refresh-secret', 'device-secret']) {
       expect(log, isNot(contains(secret)));
     }
+  });
+
+  test('--actions runs watched and watchlist writes in the one session, printing ids only', () async {
+    final server = await _FakeServer.start([_approved]);
+    addTearDown(() => server.server.close(force: true));
+    final actions = File('${temp.path}/actions.txt')
+      ..writeAsStringSync('''
+# lane 1
+home
+watched c1
+sleep 2
+unwatched c1
+watchlist-add c1
+watchlist-remove c1
+toggle c1 3 1.5
+''');
+    final out = StringBuffer();
+    final waits = <Duration>[];
+    var clock = DateTime.utc(2026, 10, 14);
+
+    final code = await runSiloProbe(
+      SiloProbeOptions(
+        origin: server.origin,
+        samplesDir: '${temp.path}/samples',
+        deviceIdFile: '${temp.path}/device_id',
+        actions: actions.path,
+      ),
+      out: out,
+      sleep: (d) async {
+        waits.add(d);
+        clock = clock.add(d);
+      },
+      now: () => clock,
+    );
+
+    final log = out.toString();
+    expect(code, 0, reason: log);
+    expect(log, contains('section continue_watching ids=c1\n'));
+    expect(log, contains('section recently_added ids=\n'));
+    expect(log, contains('action watched c1 204 done_ms='));
+    expect(log, contains('action watchlist-remove c1 204 done_ms='));
+    expect(server.requests.where((r) => r.path.endsWith('/c1')).map((r) => '${r.method} ${r.path}'), [
+      'POST /api/v2/watched/c1',
+      'DELETE /api/v2/watched/c1',
+      'PUT /api/v2/watchlist/c1',
+      'DELETE /api/v2/watchlist/c1',
+      'POST /api/v2/watched/c1',
+      'DELETE /api/v2/watched/c1',
+      'POST /api/v2/watched/c1',
+    ]);
+    expect(waits.skip(waits.length - 3), [
+      const Duration(seconds: 2),
+      const Duration(milliseconds: 1500),
+      const Duration(milliseconds: 1500),
+    ]);
+    expect(server.count('/api/v2/auth/device/start'), 1, reason: 'one approval covers every action');
+    expect(log.trim().split('\n').last, 'logout 204');
+    for (final secret in ['Secret Title', 'access-secret']) {
+      expect(log, isNot(contains(secret)));
+    }
+  });
+
+  test('an unknown action stops the run with 64 and still logs out', () async {
+    final server = await _FakeServer.start([_approved]);
+    addTearDown(() => server.server.close(force: true));
+    final actions = File('${temp.path}/actions.txt')..writeAsStringSync('watched c1\nrate c1 5\nunwatched c1\n');
+    final out = StringBuffer();
+
+    final code = await runSiloProbe(
+      SiloProbeOptions(
+        origin: server.origin,
+        samplesDir: '${temp.path}/samples',
+        deviceIdFile: '${temp.path}/device_id',
+        actions: actions.path,
+      ),
+      out: out,
+      sleep: (_) async {},
+    );
+
+    expect(code, 64);
+    expect(server.requests.where((r) => r.path.startsWith('/api/v2/watched/')).map((r) => r.method), ['POST']);
+    expect(out.toString().trim().split('\n').last, 'logout 204');
   });
 
   test('--baseline times the same authenticated home request on a bare HttpClient', () async {
