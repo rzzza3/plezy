@@ -25,7 +25,8 @@ class _FakeServer {
     request.headers.forEach((name, values) => headers[name.toLowerCase()] = values.join(','));
     final path = request.uri.path;
     requests.add((method: request.method, path: path, headers: headers));
-    await utf8.decoder.bind(request).join();
+    final sent = await utf8.decoder.bind(request).join();
+    final sentJson = sent.isEmpty ? null : jsonDecode(sent);
     final authorized = headers['authorization'] == 'Bearer access-secret';
     final (int status, Object? body) = switch (path) {
       '/api/v2/system/info' => (200, {'api_major': 2, 'server_version': '1.0'}),
@@ -86,6 +87,63 @@ class _FakeServer {
       ),
       '/api/v2/auth/logout' when authorized => (204, null),
       '/api/v2/watched/c1' || '/api/v2/watchlist/c1' when authorized => (204, null),
+      '/api/v2/playback/capabilities' when authorized => (
+        200,
+        {
+          'installation_id': 'inst-1',
+          'state': 'available',
+          'allowed': true,
+          'protocol_versions': [3],
+          'features': ['sequenced_progress_v1'],
+        },
+      ),
+      '/api/v2/watch/movie-1' when authorized => (
+        200,
+        {
+          'content_id': 'movie-1',
+          'title': 'Secret Title',
+          'versions': [
+            {'file_id': '41', 'resolution': '1080p', 'duration_seconds': 100.0, 'container': 'mkv'},
+          ],
+          'user_data': {'position_seconds': 50.0},
+        },
+      ),
+      '/api/v2/playback/start' when authorized => (
+        201,
+        {
+          'protocol_version': 3,
+          'server_features': ['playback_plan_v3', 'neutral_playback_v3_contract_v1'],
+          'outcome': 'playable',
+          'session_id': 'sess-secret',
+          'playback_plan': {
+            'plan_id': 'plan-1',
+            'plan_attempt_key': 'key-1',
+            'session_id': 'sess-secret',
+            'delivery': 'original_http',
+            'stream': {
+              'url': '/api/v2/stream/v3/sess-secret/file?sig=secret-sig',
+              'protocol': 'http_progressive',
+              'headers': {'X-Stream-Token': 'stream-secret'},
+            },
+            'decision_reason': 'direct_play',
+          },
+        },
+      ),
+      '/api/v2/stream/v3/sess-secret/file' when authorized && headers['x-stream-token'] == 'stream-secret' => (
+        206,
+        null,
+      ),
+      '/api/v2/playback/sess-secret/progress' when authorized => (
+        200,
+        {
+          'outcome': 'applied',
+          'accepted': {'sequence': 1, 'position': 43.0, 'is_paused': true},
+        },
+      ),
+      '/api/v2/playback/sess-secret' when authorized && request.method == 'DELETE' => (
+        200,
+        {'outcome': 'stopped', 'stop_id': (sentJson as Map)['stop_id']},
+      ),
       _ => (401, {'type': 'https://silo/problems/authentication_required', 'title': 'Unauthorized', 'status': 401}),
     };
     request.response.statusCode = status;
@@ -254,6 +312,55 @@ toggle c1 3 1.5
     expect(log.trim().split('\n').last, 'logout 204');
     for (final secret in ['Secret Title', 'access-secret']) {
       expect(log, isNot(contains(secret)));
+    }
+  });
+
+  test('--play starts, describes, reports and stops one session without printing secrets', () async {
+    final server = await _FakeServer.start([_approved]);
+    addTearDown(() => server.server.close(force: true));
+    final out = StringBuffer();
+
+    final code = await runSiloProbe(
+      SiloProbeOptions(
+        origin: server.origin,
+        samplesDir: '${temp.path}/samples',
+        deviceIdFile: '${temp.path}/device_id',
+        profile: '9',
+        play: const ['movie-1'],
+      ),
+      out: out,
+      sleep: (_) async {},
+    );
+
+    final log = out.toString();
+    printOnFailure(log);
+    expect(code, 0, reason: log);
+    expect(log, contains('playback_capabilities 200 state=available allowed=true protocols=[3]'));
+    expect(
+      log,
+      contains(
+        'watch 200 versions=1 file=41 resolution=1080p container=mkv audio=0 subtitles=0 resume=true start=43.0',
+      ),
+    );
+    expect(log, contains('start 201 session=true'));
+    expect(log, contains('decision SiloPlayable'));
+    expect(log, contains('plan delivery=original_http protocol=http_progressive header_refresh=session'));
+    expect(log, contains('plan_url /api/vN/stream/vN/SESSION/file?sig=… headers=[X-Stream-Token]'));
+    expect(log, contains('stream 206 same_origin=true'));
+    expect(log, contains('progress 200 outcome=applied accepted_sequence=1'));
+    expect(log, contains('stop 200 outcome=stopped stop_id_echoed=true'));
+    expect(
+      server.requests.map((r) => '${r.method} ${r.path}').where((r) => r.contains('playback') || r.contains('stream')),
+      [
+        'GET /api/v2/playback/capabilities',
+        'POST /api/v2/playback/start',
+        'GET /api/v2/stream/v3/sess-secret/file',
+        'POST /api/v2/playback/sess-secret/progress',
+        'DELETE /api/v2/playback/sess-secret',
+      ],
+    );
+    for (final secret in ['sess-secret', 'secret-sig', 'stream-secret', 'access-secret', 'Secret Title']) {
+      expect(log, isNot(contains(secret)), reason: 'the log leaks $secret');
     }
   });
 

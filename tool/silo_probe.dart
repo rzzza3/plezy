@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:plezy/silo/silo_contract_gate.dart';
 import 'package:plezy/silo/silo_headers.dart';
 import 'package:plezy/silo/silo_http.dart';
+import 'package:plezy/silo/silo_playback.dart';
 import 'package:plezy/silo/silo_session.dart';
 
 const String _usage = '''
@@ -20,6 +22,11 @@ read-only responses, and signs out. Tokens stay in memory.
   --device-id-file <path>  Where the X-Silo-Device-Id persists between runs.
                            Default ~/.config/plezy-silo-probe/device_id
   --time-home <n>          Time n extra GET /api/v2/home/sections calls.
+  --play <id>[@quality]    Start one playback session on the item, print
+                           the plan's structure, fetch the stream once, post
+                           one paused progress sample at the start position,
+                           then stop the session. Repeatable. The quality is
+                           the quality_preference, auto by default.
   --baseline               With --time-home, also time n of the same request
                            on a bare dart:io HttpClient and judge the 50 ms
                            rule.
@@ -57,6 +64,7 @@ class SiloProbeOptions {
   final String samplesDir;
   final String deviceIdFile;
   final int timeHome;
+  final List<String> play;
   final bool baseline;
   final bool forceRefresh;
   final bool revoked;
@@ -68,6 +76,7 @@ class SiloProbeOptions {
     required this.samplesDir,
     required this.deviceIdFile,
     this.timeHome = 0,
+    this.play = const [],
     this.baseline = false,
     this.forceRefresh = false,
     this.revoked = false,
@@ -81,6 +90,7 @@ class SiloProbeOptions {
     var deviceIdFile =
         '${Platform.environment['HOME'] ?? Directory.systemTemp.path}/.config/plezy-silo-probe/device_id';
     var timeHome = 0;
+    final play = <String>[];
     var baseline = false;
     var forceRefresh = false;
     var revoked = false;
@@ -95,6 +105,8 @@ class SiloProbeOptions {
             samples = next();
           case '--device-id-file':
             deviceIdFile = next();
+          case '--play':
+            play.add(next());
           case '--time-home':
             timeHome = int.parse(next());
           case '--baseline':
@@ -125,6 +137,7 @@ class SiloProbeOptions {
       samplesDir: samples,
       deviceIdFile: deviceIdFile,
       timeHome: timeHome,
+      play: play,
       baseline: baseline,
       forceRefresh: forceRefresh,
       revoked: revoked,
@@ -335,6 +348,17 @@ Future<int> runSiloProbe(
         out.writeln('delta_ms_median $delta');
         out.writeln(delta <= _perfBudgetMs ? 'perf PASS' : 'perf FAIL');
       }
+    }
+    for (final play in options.play) {
+      final at = play.indexOf('@');
+      await probeSiloPlayback(
+        silo,
+        session,
+        at < 0 ? play : play.substring(0, at),
+        quality: at < 0 ? 'auto' : play.substring(at + 1),
+        out: out,
+        samples: samples,
+      );
     }
     final actions = options.actions;
     if (actions != null) {
@@ -770,4 +794,232 @@ Object _mergeShapes(Object a, Object b) {
     }
   }
   return {'type': 'union', 'of': variants.values.toList()};
+}
+
+/// Replaces the session id and every digit run, and keeps query keys only,
+/// so a URL can be printed without a credential or a signed value.
+String siloUrlShape(String url, String sessionId) {
+  final uri = Uri.parse(url.replaceAll(sessionId, 'SESSION'));
+  final path = uri.path.replaceAll(RegExp(r'\d+'), 'N');
+  final keys = uri.queryParameters.keys.toList()..sort();
+  final origin = uri.hasScheme ? '${uri.scheme}://{host}' : '';
+  return '$origin$path${keys.isEmpty ? '' : '?${keys.map((k) => '$k=…').join('&')}'}';
+}
+
+/// One real start, one stream fetch, one progress sample and one stop,
+/// printed as structure only (`research/silo-playback.md` open questions).
+Future<void> probeSiloPlayback(
+  SiloHttp silo,
+  SiloSessionController session,
+  String contentId, {
+  required String quality,
+  required StringSink out,
+  required Directory samples,
+}) async {
+  final caps = await silo.send(const SiloRequest.get('/api/v2/playback/capabilities'));
+  final capsJson = caps.isSuccess ? _tryJson(caps.body) : null;
+  final admission = siloAdmission(caps.statusCode, capsJson);
+  if (capsJson is Map) {
+    out.writeln(
+      'playback_capabilities ${caps.statusCode} state=${capsJson['state']} allowed=${capsJson['allowed']} '
+      'protocols=${capsJson['protocol_versions']} features=${capsJson['features']}',
+    );
+  } else {
+    out.writeln('playback_capabilities ${caps.statusCode}');
+  }
+  await _writeSample(samples, 'playback-capabilities.json', 'GET /api/v2/playback/capabilities', caps);
+  if (admission is! SiloAdmitted) {
+    out.writeln('admission ${admission.runtimeType}');
+    return;
+  }
+
+  final watch = await silo.send(SiloRequest.get('/api/v2/watch/${Uri.encodeComponent(contentId)}'));
+  await _writeSample(samples, 'watch-detail.json', 'GET /api/v2/watch/{id}', watch);
+  final detail = SiloWatchDetail.fromJson(_tryJson(watch.body), contentId);
+  final version = selectSiloVersion(detail.versions, lastFileId: detail.lastFileId, preferredQuality: quality);
+  final start = siloStartPosition(savedPosition: detail.positionSeconds);
+  out.writeln(
+    'watch ${watch.statusCode} versions=${detail.versions.length} file=${version.fileId} '
+    'resolution=${version.resolution} container=${version.container} audio=${version.audioTracks.length} '
+    'subtitles=${version.subtitleTracks.length} resume=${detail.positionSeconds != null} start=$start',
+  );
+
+  final profileId = session.session?.profileId;
+  if (profileId == null) {
+    out.writeln('play skipped, no profile');
+    return;
+  }
+  final body = siloStartBody(
+    fileId: version.fileId,
+    profileId: profileId,
+    attemptId: _uuid(),
+    installationId: admission.installationId,
+    capabilities: siloMpvCodecCapabilities(),
+    context: siloMpvPlaybackContext((
+      formFactor: 'tv',
+      appVersion: 'probe',
+      platform: 'linux',
+      osVersion: null,
+      manufacturer: 'Plezy',
+      model: 'Silo Probe',
+    )),
+    qualityPreference: quality,
+    startPosition: start,
+  );
+  final started = await silo.send(SiloRequest.post('/api/v2/playback/start', body: body, single: true));
+  await _writeSample(samples, 'playback-start.json', 'POST /api/v2/playback/start', started);
+  final startJson = _tryJson(started.body);
+  final sessionId = startJson is Map ? startJson['session_id'] : null;
+  out.writeln('start ${started.statusCode} session=${sessionId is String && sessionId.isNotEmpty}');
+  if (started.statusCode != 201 || sessionId is! String || sessionId.isEmpty) {
+    final problem = started.problem;
+    out.writeln('start_problem ${problem?.code}');
+    return;
+  }
+
+  try {
+    final decision = parseSiloDecision(startJson);
+    out.writeln('decision ${decision.runtimeType}');
+    final SiloPlan? plan = switch (decision) {
+      SiloPlayable(:final plan) => plan,
+      SiloReplanRequired(:final plan, :final reason) => (() {
+        out.writeln('replan_required $reason');
+        return plan;
+      })(),
+      SiloTerminal(:final reason) => (() {
+        out.writeln('terminal $reason');
+        return null;
+      })(),
+      SiloIncompatible() => null,
+    };
+    if (plan != null) await _describePlan(silo, session, plan, sessionId, out);
+
+    final progress = await silo.send(
+      SiloRequest.post(
+        '/api/v2/playback/${Uri.encodeComponent(sessionId)}/progress',
+        body: {'installation_id': admission.installationId, 'sequence': 1, 'position': start ?? 0, 'is_paused': true},
+      ),
+    );
+    final progressJson = _tryJson(progress.body);
+    out.writeln(
+      'progress ${progress.statusCode} outcome=${progressJson is Map ? progressJson['outcome'] : null} '
+      'accepted_sequence=${progressJson is Map && progressJson['accepted'] is Map ? (progressJson['accepted'] as Map)['sequence'] : null}',
+    );
+  } finally {
+    final stopId = _uuid();
+    final stopped = await silo.send(
+      SiloRequest(
+        'DELETE',
+        '/api/v2/playback/${Uri.encodeComponent(sessionId)}',
+        body: {'installation_id': admission.installationId, 'stop_id': stopId},
+        single: true,
+      ),
+    );
+    final stopJson = _tryJson(stopped.body);
+    out.writeln(
+      'stop ${stopped.statusCode} outcome=${stopJson is Map ? stopJson['outcome'] : null} '
+      'stop_id_echoed=${stopJson is Map && stopJson['stop_id'] == stopId}',
+    );
+  }
+}
+
+Future<void> _describePlan(
+  SiloHttp silo,
+  SiloSessionController session,
+  SiloPlan plan,
+  String sessionId,
+  StringSink out,
+) async {
+  final t = plan.timeline;
+  out.writeln(
+    'plan delivery=${plan.delivery} protocol=${plan.stream.protocol} header_refresh=${plan.stream.headerRefresh} '
+    'reason=${plan.decisionReason} effective_file=${plan.effectiveMediaFileId} duration=${plan.sourceDurationSeconds}',
+  );
+  out.writeln('plan_url ${siloUrlShape(plan.stream.url, sessionId)} headers=${plan.stream.headers.keys.toList()}');
+  out.writeln(
+    'plan_timeline source_start=${t.sourceStartSeconds} player_start=${t.playerStartSeconds} '
+    'offset=${t.timelineOffsetSeconds} window=${t.seekWindowStartSeconds}..${t.seekWindowEndSeconds} '
+    'seek_anywhere=${t.canSeekAnywhere}',
+  );
+  out.writeln(
+    'plan_subtitles mode=${plan.subtitleMode} selected=${plan.selectedSubtitle != null} '
+    'inventory=${[for (final r in plan.subtitleInventory) '${r.source}/${r.codec}/${r.delivery}']}',
+  );
+  for (final row in plan.subtitleInventory.take(2)) {
+    final url = row.url;
+    if (url != null) out.writeln('plan_subtitle_url ${siloUrlShape(url, sessionId)}');
+  }
+
+  final current = session.session;
+  if (current == null) return;
+  final url = silo.origin.resolve(plan.stream.url);
+  final sameOrigin = isSameSiloOrigin(url, silo.origin);
+  final client = HttpClient();
+  try {
+    Future<HttpClientResponse> fetch(Uri target, {bool range = false}) async {
+      final request = await client.getUrl(target);
+      request.followRedirects = false;
+      if (isSameSiloOrigin(target, silo.origin)) {
+        request.headers.set(SiloHeaders.authorization, 'Bearer ${current.tokens.accessToken}');
+        if (current.profileId != null) request.headers.set(SiloHeaders.profileId, current.profileId!);
+        if (current.profileToken != null) request.headers.set(SiloHeaders.profileToken, current.profileToken!);
+        silo.device.toMap().forEach(request.headers.set);
+      }
+      plan.stream.headers.forEach(request.headers.set);
+      if (range) request.headers.set(HttpHeaders.rangeHeader, 'bytes=0-1');
+      return request.close();
+    }
+
+    if (plan.stream.protocol == 'hls') {
+      final master = await fetch(url);
+      final text = master.statusCode == 200 ? await utf8.decodeStream(master) : '';
+      if (master.statusCode != 200) await master.drain<void>();
+      out.writeln('stream ${master.statusCode} same_origin=$sameOrigin type=${master.headers.contentType?.mimeType}');
+      final uris = [
+        for (final line in const LineSplitter().convert(text))
+          if (line.isNotEmpty && !line.startsWith('#')) line,
+      ];
+      for (final line in uris.take(3)) {
+        out.writeln('stream_child ${siloUrlShape(line, sessionId)}');
+      }
+      if (uris.isNotEmpty && uris.first.contains('.m3u8')) {
+        final child = url.resolve(uris.first);
+        final media = await fetch(child);
+        final childText = media.statusCode == 200 ? await utf8.decodeStream(media) : '';
+        if (media.statusCode != 200) await media.drain<void>();
+        out.writeln(
+          'stream_media ${media.statusCode} same_directory=${child.path.startsWith(url.path.substring(0, url.path.lastIndexOf('/') + 1))}',
+        );
+        final segments = [
+          for (final line in const LineSplitter().convert(childText))
+            if (line.isNotEmpty && !line.startsWith('#')) line,
+        ];
+        for (final line in segments.take(2)) {
+          out.writeln('stream_segment ${siloUrlShape(line, sessionId)}');
+        }
+        out.writeln('stream_segments ${segments.length} endlist=${childText.contains('#EXT-X-ENDLIST')}');
+      }
+    } else {
+      final response = await fetch(url, range: true);
+      await response.drain<void>();
+      out.writeln(
+        'stream ${response.statusCode} same_origin=$sameOrigin accept_ranges=${response.headers.value('accept-ranges')} '
+        'content_range=${response.headers.value('content-range') != null} etag=${response.headers.value('etag') != null} '
+        'type=${response.headers.contentType?.mimeType}',
+      );
+    }
+  } on Exception catch (error) {
+    out.writeln('stream_error ${error.runtimeType}');
+  } finally {
+    client.close(force: true);
+  }
+}
+
+String _uuid() {
+  final random = Random.secure();
+  final bytes = [for (var i = 0; i < 16; i++) random.nextInt(256)];
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = [for (final b in bytes) b.toRadixString(16).padLeft(2, '0')].join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
 }
