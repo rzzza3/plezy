@@ -512,6 +512,7 @@ void main() {
         'richMetadataEdit': caps.richMetadataEdit,
         'richHubs': caps.richHubs,
         'numericUserRating': caps.numericUserRating,
+        'wholeStarRating': caps.wholeStarRating,
         'userFavorites': caps.userFavorites,
       },
       {
@@ -523,6 +524,7 @@ void main() {
         'richMetadataEdit': false,
         'richHubs': true,
         'numericUserRating': true,
+        'wholeStarRating': true,
         'userFavorites': true,
       },
     );

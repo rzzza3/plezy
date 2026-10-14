@@ -71,6 +71,26 @@ void main() {
     expect(tester.getRect(find.text(t.rateSheet.server)).top, serverRowTop);
   });
 
+  for (final (caps, expected) in [(ServerCapabilities.plex, 5.0), (ServerCapabilities.silo, 6.0)]) {
+    testWidgets('a half-star tap rates ${expected / 2} stars when wholeStarRating is ${caps.wholeStarRating}', (
+      tester,
+    ) async {
+      final client = _StubServerClient(caps);
+      await _pumpRatingSheet(tester, viewport: const Size(1280, 800), serverClient: client);
+
+      final stars = tester.getRect(
+        find.descendant(
+          of: _sheetFinder,
+          matching: find.byWidgetPredicate((w) => w is GestureDetector && w.onPanUpdate != null),
+        ),
+      );
+      await tester.tapAt(Offset(stars.left + stars.width * 0.5, stars.center.dy));
+      await tester.pumpAndSettle();
+
+      expect(client.rated, [expected]);
+    });
+  }
+
   testWidgets('tracker rows settle with an error when the item ids cannot be resolved', (tester) async {
     await _seedAllTrackerSessions(_profileUuid);
     await _pumpRatingSheet(
@@ -197,6 +217,11 @@ class _StubServerClient implements MediaServerClient {
 
   /// Thrown by [fetchExternalIds] when set — the server failing the lookup.
   final Object? externalIdsError;
+
+  final List<double> rated = [];
+
+  @override
+  Future<void> rate(MediaItem item, double rating) async => rated.add(rating);
 
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async {

@@ -30,6 +30,10 @@ class ServerCapabilities {
   /// numeric user rating, so star sliders should be hidden.
   final bool numericUserRating;
 
+  /// The server stores whole stars only, so the rating sheet steps by one
+  /// star instead of a half. Silo keeps 1 to 5 (`PersonalWrite.kt:23-30`).
+  final bool wholeStarRating;
+
   /// Per-user favorite flag ("heart") on media items. Jellyfin exposes it via
   /// `/UserFavoriteItems/{itemId}?userId=...`; Plex has no equivalent.
   final bool userFavorites;
@@ -75,6 +79,7 @@ class ServerCapabilities {
     this.videoTranscoding = true,
     this.richHubs = false,
     this.numericUserRating = false,
+    this.wholeStarRating = false,
     this.userFavorites = false,
     this.continueWatchingRemoval = false,
     this.externalSubtitleSearch = false,
@@ -166,6 +171,7 @@ class ServerCapabilities {
     videoTranscoding: false,
     richHubs: true,
     numericUserRating: true,
+    wholeStarRating: true,
     userFavorites: true,
     externalSubtitleSearch: false,
     richMetadataEdit: false,
@@ -186,6 +192,7 @@ class ServerCapabilities {
       videoTranscoding: videoTranscoding ?? this.videoTranscoding,
       richHubs: richHubs,
       numericUserRating: numericUserRating,
+      wholeStarRating: wholeStarRating,
       userFavorites: userFavorites,
       continueWatchingRemoval: continueWatchingRemoval,
       externalSubtitleSearch: externalSubtitleSearch,
