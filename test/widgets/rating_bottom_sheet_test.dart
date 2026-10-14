@@ -91,6 +91,16 @@ void main() {
     });
   }
 
+  testWidgets('a Silo server row names Silo, not Plex', (tester) async {
+    await _pumpRatingSheet(
+      tester,
+      viewport: const Size(1280, 800),
+      serverClient: _StubServerClient(ServerCapabilities.silo, backend: MediaBackend.silo),
+    );
+
+    expect(find.text('Silo - Living Room'), findsOneWidget);
+  });
+
   testWidgets('tracker rows settle with an error when the item ids cannot be resolved', (tester) async {
     await _seedAllTrackerSessions(_profileUuid);
     await _pumpRatingSheet(
@@ -210,7 +220,7 @@ void _resetTrackerBindings() {
 /// [capabilities] (which decides whether the server row renders at all),
 /// [backend], [serverName], and [serverId].
 class _StubServerClient implements MediaServerClient {
-  _StubServerClient(this.capabilities, {this.externalIdsError});
+  _StubServerClient(this.capabilities, {this.externalIdsError, this.backend = MediaBackend.plex});
 
   @override
   final ServerCapabilities capabilities;
@@ -236,7 +246,7 @@ class _StubServerClient implements MediaServerClient {
   String? get serverName => 'Living Room';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  final MediaBackend backend;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
