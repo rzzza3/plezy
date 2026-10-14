@@ -25,6 +25,9 @@ read-only responses, and signs out. Tokens stay in memory.
                            rule.
   --force-refresh          Expire the access token locally before home.
   --revoked                Sign out server-side, then reuse the old tokens.
+  --profile <id>           Act as this profile instead of the one the
+                           approval or the primary open profile gives. It
+                           must have no PIN.
   --actions <file|->       After the reads, run one action per line from the
                            file or stdin, in the same session, then log out:
                              home                   ids per section_type
@@ -58,6 +61,7 @@ class SiloProbeOptions {
   final bool forceRefresh;
   final bool revoked;
   final String? actions;
+  final String? profile;
 
   const SiloProbeOptions({
     required this.origin,
@@ -68,6 +72,7 @@ class SiloProbeOptions {
     this.forceRefresh = false,
     this.revoked = false,
     this.actions,
+    this.profile,
   });
 
   static SiloProbeOptions? parse(List<String> args) {
@@ -80,6 +85,7 @@ class SiloProbeOptions {
     var forceRefresh = false;
     var revoked = false;
     String? actions;
+    String? profile;
     for (var i = 0; i < args.length; i++) {
       final arg = args[i];
       String next() => i + 1 < args.length ? args[++i] : throw const FormatException();
@@ -99,6 +105,8 @@ class SiloProbeOptions {
             revoked = true;
           case '--actions':
             actions = next();
+          case '--profile':
+            profile = next();
           case '-h' || '--help':
             return null;
           default:
@@ -121,6 +129,7 @@ class SiloProbeOptions {
       forceRefresh: forceRefresh,
       revoked: revoked,
       actions: actions,
+      profile: profile,
     );
   }
 }
@@ -238,7 +247,10 @@ Future<int> runSiloProbe(
     final profiles = await silo.send(const SiloRequest.get('/api/v2/profiles'));
     out.writeln('profiles ${profiles.statusCode}');
     await _writeSample(samples, 'profiles.json', 'GET /api/v2/profiles', profiles);
-    final profile = _pickProfile(approved, profiles.isSuccess ? profiles.json() : null);
+    final chosen = options.profile;
+    final profile = chosen != null
+        ? (id: chosen, token: null)
+        : _pickProfile(approved, profiles.isSuccess ? profiles.json() : null);
     if (profile != null) {
       await session.selectProfile(profile.id, profile.token);
       out.writeln('profile selected id=${profile.id} pin_token=${profile.token != null}');

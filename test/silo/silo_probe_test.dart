@@ -219,6 +219,7 @@ toggle c1 3 1.5
         samplesDir: '${temp.path}/samples',
         deviceIdFile: '${temp.path}/device_id',
         actions: actions.path,
+        profile: '9',
       ),
       out: out,
       sleep: (d) async {
@@ -230,6 +231,7 @@ toggle c1 3 1.5
 
     final log = out.toString();
     expect(code, 0, reason: log);
+    expect(log, contains('profile selected id=9 pin_token=false'));
     expect(log, contains('section continue_watching ids=c1\n'));
     expect(log, contains('section recently_added ids=\n'));
     expect(log, contains('action watched c1 204 done_ms='));
@@ -253,6 +255,14 @@ toggle c1 3 1.5
     for (final secret in ['Secret Title', 'access-secret']) {
       expect(log, isNot(contains(secret)));
     }
+  });
+
+  test('--profile and --actions parse', () {
+    final options = SiloProbeOptions.parse(['--profile', 'p-7', '--actions', '-'])!;
+
+    expect(options.profile, 'p-7');
+    expect(options.actions, '-');
+    expect(SiloProbeOptions.parse(['--profile']), isNull);
   });
 
   test('an unknown action stops the run with 64 and still logs out', () async {
