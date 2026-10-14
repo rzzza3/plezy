@@ -176,3 +176,15 @@ The REST routes are under `/api/v2/watch-together`. They include `/capabilities`
 4. What format does `font_bundle_url` serve?
 5. Are `/stream/v3/{session}/...` segment URLs signed in the query string for HLS, or header-authenticated? The code handles both (`S/network/apiv2/ProxyAuxiliaryV2.kt:36-40`). Which one this server uses decides whether mpv needs per-segment headers at all.
 6. Does the server require the `X-Silo-Device-*` headers on playback calls, or only on downloads? The API client sends them everywhere (`S/network/AuthInterceptorImpl.kt:899-911`).
+
+## Live answers, 2026-10-14
+
+Measured with `tool/silo_probe.dart --play movie-tmdb-1381078 --play movie-tmdb-1381078@480p` on `https://silo.ruleone.xyz`, profile admin. The probe sent the mpv start body from `lib/silo/silo_playback.dart`, at `declared` evidence with no Media3 features.
+
+1. Capabilities are `state=available`, `allowed=true`, `protocol_versions=[3]`, and `features` include `sequenced_progress_v1`, `neutral_playback_v3_contract_v1` and `seek_reanchor_v1`.
+2. The server plans for the declared mpv context. `auto` gave `original_http` (`validated_original_playback`). `480p` gave `server_transcode_hls` (`quality_fixed_rung`).
+3. Both plans use `header_refresh: none` with empty `stream.headers`. The direct URL is `/api/v2/stream/{session}?st=…` and the transcode URL is `/api/v2/playback/transcode/{session}/master.m3u8?st=…`, so the `st` query token authenticates them. The direct stream answers ranges with `Content-Range` and an `ETag`.
+4. The transcode playlist lists segments as `segment/seg_N.m4s?{$silo_query}`, an `EXT-X-DEFINE` variable the client substitutes.
+5. Neither plan has a seek window, and `can_seek_anywhere` is true.
+6. Subtitle rows are `embedded`/`subrip`/`sidecar` at `/api/v2/stream/{session}/subtitles/N.vtt?embedded_stream_index=…&file_id=…`. They do not match the proxy-auxiliary pattern `/stream/v3/…`, so they are ordinary same-origin media requests.
+7. Progress returned `applied` with `accepted.sequence` 1, and stop returned `stopped` with the `stop_id` echoed.
