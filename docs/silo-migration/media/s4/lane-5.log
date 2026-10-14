@@ -1,0 +1,5 @@
+action watched movie-tmdb-1381078 401 done_ms=1791995723049
+action watched movie-tmdb-1381078 204 done_ms=1791995752997
+switch log:
+Silo events: idle / closed at 1791959904.125 on switch to the Plex profile
+logcat after the 204 write (10 s): no Silo or Home lines

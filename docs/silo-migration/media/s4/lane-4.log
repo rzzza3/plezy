@@ -1,0 +1,31 @@
+Disabled networking for com.edde746.plezy, appId 10088
+blocked device_s=1791959760.265
+Enabled networking for com.edde746.plezy, appId 10088
+unblocked device_s=1791959820.852
+chain3=chain:disabled plezy=com.edde746.plezy:allow
+1791959760.254 12975 12975 I flutter : [I]  Silo events: backingOff
+1791959761.256 12975 12975 I flutter : [I]  Silo events: fetchingTicket
+1791959761.268 12975 12975 I flutter : [I]  Silo events: ticket unavailable (_ClientSocketException)
+1791959761.268 12975 12975 I flutter : [I]  Silo events: backingOff
+1791959763.269 12975 12975 I flutter : [I]  Silo events: fetchingTicket
+1791959763.280 12975 12975 I flutter : [I]  Silo events: ticket unavailable (_ClientSocketException)
+1791959763.280 12975 12975 I flutter : [I]  Silo events: backingOff
+1791959767.281 12975 12975 I flutter : [I]  Silo events: fetchingTicket
+1791959767.292 12975 12975 I flutter : [I]  Silo events: ticket unavailable (_ClientSocketException)
+1791959767.292 12975 12975 I flutter : [I]  Silo events: backingOff
+1791959775.293 12975 12975 I flutter : [I]  Silo events: fetchingTicket
+1791959775.305 12975 12975 I flutter : [I]  Silo events: ticket unavailable (_ClientSocketException)
+1791959775.305 12975 12975 I flutter : [I]  Silo events: backingOff
+1791959791.306 12975 12975 I flutter : [I]  Silo events: fetchingTicket
+1791959791.329 12975 12975 I flutter : [I]  Silo events: ticket unavailable (_ClientSocketException)
+1791959791.329 12975 12975 I flutter : [I]  Silo events: backingOff
+1791959821.330 12975 12975 I flutter : [I]  Silo events: fetchingTicket
+1791959822.167 12975 12975 I flutter : [I]  Silo events: connecting
+1791959822.784 12975 12975 I flutter : [I]  Silo events: subscribed
+1791959822.784 12975 12975 I flutter : [I]  Silo events: 2 channels, 0 rejected
+1791959822.986 12975 12975 I flutter : [I]  Silo events: subscribed
+1791959822.986 12975 12975 I flutter : [I]  Silo events: 2 channels, 0 rejected
+1791959824.987 12975 12975 I flutter : [I]  Silo events: home refetch
+1791959825.769 12975 12975 I flutter : [I]  Silo: home sections 17
+1791959825.791 12975 12975 I flutter : [I]  Home: rows repainted
+Enabled networking for com.edde746.plezy, appId 10088

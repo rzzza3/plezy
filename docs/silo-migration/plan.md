@@ -317,6 +317,22 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Rebased onto S3 after the verdict, patch-id unchanged.
 - [ ] Appended to the stack. The operator lands it bottom-up.
 
+**S4 lane record, 2026-10-14, debug build of `68bc6a099` (no `lib/` change since).** Clean for every lane except lane 3, which had nothing to act on. Lanes ran on the Android TV emulator with Plezy profile "Silo A" (Silo profile admin, `2b4a12c9-…`). Changes outside Plezy came from `tool/silo_probe.dart --actions` in one device-code session that the operator approved once (`media/s4/lanes-howto.md`). Evidence is in `docs/silo-migration/media/s4/`. Times run from the probe's 204 to the device log line, with the host-to-device clock offset taken through `adb shell date`.
+- Unit. `flutter test --concurrency=1 test/silo` passes 148 tests. `flutter analyze lib test tool` is clean.
+- Lane 1 pass. Marking a Recently Released movie watched shows the badge, with `user_state.changed (watched)`, `home refetch` and `Home: rows repainted` 3.23 s after the 204 (`realtime-head.png`, `lane-1.log`). Trunk has no Silo, as in S3 lane 1.
+- Lane 2 pass. Menu (keyevent 82) on a Continue Watching card, then Remove from Continue Watching. The card goes, the server echoes `home_dismissal`, and it is still gone after a force-stop and relaunch (`dismiss.png`, `lane-2-relaunch.png`).
+- Lane 3 blocked. This server's home has no `next_up` row.
+- Lane 4 pass. Airplane mode does not cut this emulator, so Plezy alone was blocked through `FIREWALL_CHAIN_OEM_DENY_3` for 60 s. Ticket attempts backed off 1, 2, 4, 8, 16 and 30 s, and after the unblock the socket subscribed and refetched once (`reconnect.png`, `lane-4.log`).
+- Lane 5 pass. A switch to the Plex profile logs `Silo events: idle` and `closed`, and a Silo watched change afterwards logs nothing (`realtime-profile.png`, `lane-5.log`).
+- Lane 6 pass. Over 10 idle minutes the socket reconnected at each 5-minute ticket limit with a 1 s backoff. Catalog event bursts of 2 to 5 each became one refetch, and a watched change after the idle repainted in 3.26 s (`idle.png`, `lane-6.log`).
+- Lane 7 pass. A watchlist add puts the movie first in My Watchlist 3.68 s after the 204, and it was removed again (`watchlist-event.png`, `lane-7.log`).
+- Lane 8 pass. Home closes the socket. A watched change made while backgrounded shows on resume after a new ticket and one refetch, in the same process (`resume.png`, `lane-8.log`).
+- Lane 9 pass. The profile sheet's Log out signs out every account, Plex included, so Silo was removed from "Silo A" instead. `Silo: logout status 204` is followed by `idle` and `closed` 6 ms later, with no ticket fetch after it (`signout-socket.png`, `lane-9.log`). The operator approved a new code, and "Silo A" is back on the same Silo profile.
+- Lane 10 pass. No ticket or token appears in logcat (`ticket-log.png`, `lane-10-ticket-scan.txt`).
+- Perf pass. Ten flips, from the 204 to `Home: rows repainted`: 3.68 2.95 2.58 2.52 2.55 2.60 2.57 2.56 2.53 2.54 s, median 2.561 s, under the 3 s rule. The baseline, from the 204 to frame delivery, has a median of -19 ms, because the server pushes before its reply reaches the host. A typical run is 2.00 s of debounce, about 0.55 s of home read and about 0.04 s of paint (`perf.txt`).
+- Plex regression. The Plex profile home loads with its rows (`plex-profile-home.png`).
+- Findings. Silo sends `subscribed` twice per connection, and the debouncer merges them. Single-attempt writes are not refreshed first, as in Kotlin, so a write after a long gap with no reads can return 401. While Plezy is foregrounded, the socket's ticket request refreshes the token at least every 5 minutes.
+
 ## Play Silo media with the v3 playback contract (S5)
 **Depends on.** S3.
 

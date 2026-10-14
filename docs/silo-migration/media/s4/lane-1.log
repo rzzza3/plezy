@@ -1,0 +1,6 @@
+probe: action watched movie-tmdb-1381078 204 done_ms=1791981988024
+clock offset host-device ms: 35806426
+         1791946181.584 12481 12481 I flutter : [I]  Silo events: user_state.changed (watched)
+         1791946183.586 12481 12481 I flutter : [I]  Silo events: home refetch
+         1791946184.793 12481 12481 I flutter : [I]  Silo: home sections 17
+         1791946184.832 12481 12481 I flutter : [I]  Home: rows repainted

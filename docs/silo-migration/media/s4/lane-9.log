@@ -1,0 +1,11 @@
+         1791961032.892 12975 12975 I flutter : [I]  Silo: logout status 204
+         1791961032.898 12975 12975 I flutter : [I]  Silo events: idle
+         1791961032.898 12975 12975 I flutter : [I]  Silo events: closed
+         1791961032.902 12975 12975 I flutter : [I]  ActiveProfileBinder: rebinding for Silo A 
+         1791961032.903 12975 12975 I flutter : [W]  ActiveProfileBinder: Silo A has no connections
+         1791961032.903 12975 12975 I flutter : [I]  ActiveProfileBinder: rebind settled  ERROR: {profileId: local-f8d15736-7421-4e44-bb1b-441eab344ea9, success: true, elapsedMs: 1}
+         1791961032.903 12975 12975 I flutter : [I]  ActiveProfileBinder: rebinding for Silo A 
+         1791961032.904 12975 12975 I flutter : [W]  ActiveProfileBinder: Silo A has no connections
+         1791961032.904 12975 12975 I flutter : [I]  ActiveProfileBinder: rebind settled  ERROR: {profileId: local-f8d15736-7421-4e44-bb1b-441eab344ea9, success: true, elapsedMs: 0}
+fetchingTicket lines in the 20 s after: 0
+Sign-out path: Settings > Profiles > Silo A > Manage > Silo connection > Remove (Silo only). The profile sheet's Log out runs logoutAllProfiles and would also sign out Plex, so it was not used.
