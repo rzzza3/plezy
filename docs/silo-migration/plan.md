@@ -334,6 +334,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - Audits. Wire parity M1 (the events upgrade sent no device headers) is fixed in `02f92bd28`, with a test. It was rechecked live: the socket still subscribes and logcat holds no ticket (`m1-recheck.log`). The other findings are lows (`audits/s4-wire-parity.md`, `audits/s4-secrets.md`).
 - Review gate. The operator tested the build and approved it. `media/s4-review.mp4` (52 s) shows a live watched badge appearing and clearing, then a dismissal. Stills are `media/s4-review-*.png`.
 - Findings. Silo sends `subscribed` twice per connection, and the debouncer merges them. Single-attempt writes are not refreshed first, as in Kotlin, so a write after a long gap with no reads can return 401. While Plezy is foregrounded, the socket's ticket request refreshes the token at least every 5 minutes.
+- Verdict. Clean at `6d6b2f817`. The full `flutter test --concurrency=1` passes 8093 tests with 6 skipped, `flutter analyze lib test tool` is clean, every live and perf lane passes with lane 3 waived, and both audits are done with M1 fixed. S4 sits on S3's tip `a9716d723`, so no rebase was needed. The operator deferred Bugbot triage for the whole stack to the end of the plan. Nothing is pushed.
 
 ## Play Silo media with the v3 playback contract (S5)
 **Depends on.** S3.
