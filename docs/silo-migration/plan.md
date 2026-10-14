@@ -317,7 +317,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Rebased onto S3 after the verdict, patch-id unchanged.
 - [ ] Appended to the stack. The operator lands it bottom-up.
 
-**S4 lane record, 2026-10-14, debug build of `68bc6a099` (no `lib/` change since).** Clean for every lane. The operator waived lane 3 on 2026-10-14. Lanes ran on the Android TV emulator with Plezy profile "Silo A" (Silo profile admin, `2b4a12c9-…`). Changes outside Plezy came from `tool/silo_probe.dart --actions` in one device-code session that the operator approved once (`media/s4/lanes-howto.md`). Evidence is in `docs/silo-migration/media/s4/`. Times run from the probe's 204 to the device log line, with the host-to-device clock offset taken through `adb shell date`.
+**S4 lane record, 2026-10-14, debug build of `68bc6a099`. The only later `lib/` change is the M1 fix in `02f92bd28`.** Clean for every lane. The operator waived lane 3 on 2026-10-14. Lanes ran on the Android TV emulator with Plezy profile "Silo A" (Silo profile admin, `2b4a12c9-…`). Changes outside Plezy came from `tool/silo_probe.dart --actions` in one device-code session that the operator approved once (`media/s4/lanes-howto.md`). Evidence is in `docs/silo-migration/media/s4/`. Times run from the probe's 204 to the device log line, with the host-to-device clock offset taken through `adb shell date`.
 - Unit. `flutter test --concurrency=1 test/silo` passes 148 tests. `flutter analyze lib test tool` is clean.
 - Lane 1 pass. Marking a Recently Released movie watched shows the badge, with `user_state.changed (watched)`, `home refetch` and `Home: rows repainted` 3.23 s after the 204 (`realtime-head.png`, `lane-1.log`). Trunk has no Silo, as in S3 lane 1.
 - Lane 2 pass. Menu (keyevent 82) on a Continue Watching card, then Remove from Continue Watching. The card goes, the server echoes `home_dismissal`, and it is still gone after a force-stop and relaunch (`dismiss.png`, `lane-2-relaunch.png`).
@@ -331,6 +331,8 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - Lane 10 pass. No ticket or token appears in logcat (`ticket-log.png`, `lane-10-ticket-scan.txt`).
 - Perf pass. Ten flips, from the 204 to `Home: rows repainted`: 3.68 2.95 2.58 2.52 2.55 2.60 2.57 2.56 2.53 2.54 s, median 2.561 s, under the 3 s rule. The baseline, from the 204 to frame delivery, has a median of -19 ms, because the server pushes before its reply reaches the host. A typical run is 2.00 s of debounce, about 0.55 s of home read and about 0.04 s of paint (`perf.txt`).
 - Plex regression. The Plex profile home loads with its rows (`plex-profile-home.png`).
+- Audits. Wire parity M1 (the events upgrade sent no device headers) is fixed in `02f92bd28`, with a test. It was rechecked live: the socket still subscribes and logcat holds no ticket (`m1-recheck.log`). The other findings are lows (`audits/s4-wire-parity.md`, `audits/s4-secrets.md`).
+- Review gate. The operator tested the build and approved it. `media/s4-review.mp4` (52 s) shows a live watched badge appearing and clearing, then a dismissal. Stills are `media/s4-review-*.png`.
 - Findings. Silo sends `subscribed` twice per connection, and the debouncer merges them. Single-attempt writes are not refreshed first, as in Kotlin, so a write after a long gap with no reads can return 401. While Plezy is foregrounded, the socket's ticket request refreshes the token at least every 5 minutes.
 
 ## Play Silo media with the v3 playback contract (S5)
