@@ -20,10 +20,20 @@ import 'happy_eyeballs.dart';
 /// TLS, upgrade), surfaced as a [TimeoutException]; [cancel] settles [socket]
 /// with a [SocketException]. Both are idempotent and safe after completion.
 ///
-/// [headers] are sent with the upgrade request.
+/// [headers] and [protocols] are sent with the upgrade request.
 class WebSocketConnectAttempt {
-  WebSocketConnectAttempt(Uri uri, {required Duration connectTimeout, Map<String, String>? headers})
-    : this._(uri, connectTimeout: connectTimeout, headers: headers, connectionFactory: happyEyeballsConnectionFactory);
+  WebSocketConnectAttempt(
+    Uri uri, {
+    required Duration connectTimeout,
+    Map<String, String>? headers,
+    List<String>? protocols,
+  }) : this._(
+         uri,
+         connectTimeout: connectTimeout,
+         headers: headers,
+         protocols: protocols,
+         connectionFactory: happyEyeballsConnectionFactory,
+       );
 
   /// Injects only transport creation; the real HTTP/WebSocket upgrade and
   /// attempt ownership remain in use.
@@ -39,6 +49,7 @@ class WebSocketConnectAttempt {
     required Duration connectTimeout,
     required Future<ConnectionTask<Socket>> Function(Uri, String?, int?) connectionFactory,
     this.headers,
+    this.protocols,
   }) : _client = HttpClient() {
     _client.connectionFactory = (url, proxyHost, proxyPort) async {
       if (_released) throw _cancelledError();
@@ -58,6 +69,7 @@ class WebSocketConnectAttempt {
 
   final Uri uri;
   final Map<String, String>? headers;
+  final List<String>? protocols;
   final HttpClient _client;
   final _result = Completer<WebSocket>();
   final _tasks = <ConnectionTask<Socket>>[];
@@ -104,7 +116,12 @@ class WebSocketConnectAttempt {
   Future<void> _run() async {
     final WebSocket webSocket;
     try {
-      webSocket = await WebSocket.connect(uri.toString(), headers: headers, customClient: _client);
+      webSocket = await WebSocket.connect(
+        uri.toString(),
+        protocols: protocols,
+        headers: headers,
+        customClient: _client,
+      );
     } catch (error, stackTrace) {
       _fail(error, stackTrace);
       return;

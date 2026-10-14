@@ -1413,6 +1413,21 @@ void main() {
       expect(aggregation.onDeckCalls, 2);
     });
 
+    test('a home-stale push refetches every time, inside the 2 minute library cooldown', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+      expect(aggregation.hubCalls, 1);
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), homeChanged: true));
+      await settle();
+      expect(aggregation.hubCalls, 2, reason: 'the channel already debounced it 2 s (HomeRealtimeCoordinator.kt:36)');
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), homeChanged: true));
+      await settle();
+      expect(aggregation.hubCalls, 3, reason: 'a second watched change must not wait out the 2 minute cooldown');
+    });
+
     test('an event with no changes is ignored', () async {
       aggregation.onDeckResult = () => [_item('a')];
       final scoped = pushProvider();

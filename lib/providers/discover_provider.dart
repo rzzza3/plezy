@@ -114,6 +114,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       isBlocked: _isRefreshBlocked,
       runPass: _runLibraryEventRefresh,
     );
+    _homeEventPacer = RefreshPacer(
+      debounce: Duration.zero,
+      cooldown: Duration.zero,
+      blockedRetry: libraryEventBlockedRetry,
+      isBlocked: _isRefreshBlocked,
+      runPass: _runLibraryEventRefresh,
+    );
     // Late server connects (reconnect after outage, slow wave) refresh
     // discover the same way they refresh libraries. Removed in [dispose] so a
     // profile switch can't leave a stale listener on the app-global provider.
@@ -168,6 +175,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   static bool _neverBlocked() => false;
   StreamSubscription<LibraryChangeEvent>? _libraryEventSubscription;
   late final RefreshPacer _libraryEventPacer;
+
+  /// A home-stale push arrives already debounced by its channel and must
+  /// repaint within seconds, so it skips the debounce and the cooldown.
+  late final RefreshPacer _homeEventPacer;
 
   /// Authoritative fetches tell the store which items the server re-observed,
   /// so a stale local watch patch stops overriding fresh server state (#1829).
@@ -346,8 +357,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// periodically instead of continuously. The first event after a quiet
   /// period always refreshes promptly.
   void _onLibraryContentChanged(LibraryChangeEvent event) {
-    if (isDisposed || !event.hasChanges) return;
-    _libraryEventPacer.schedule();
+    if (isDisposed) return;
+    if (event.homeChanged) {
+      _homeEventPacer.schedule();
+    } else if (event.hasChanges) {
+      _libraryEventPacer.schedule();
+    }
   }
 
   bool _runLibraryEventRefresh() {
@@ -1107,6 +1122,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _libraryEventSubscription?.cancel();
     _libraryEventSubscription = null;
     _libraryEventPacer.dispose();
+    _homeEventPacer.dispose();
     _loadCoordinator.dispose();
     _pendingSystemShelfItems = null;
     super.dispose();

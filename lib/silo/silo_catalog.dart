@@ -345,6 +345,14 @@ class SiloCatalog {
   /// `PUT`/`DELETE /watchlist/{id}` (`S/network/apiv2/MembershipV2Api.kt:27-28,41-54`).
   Future<void> setWatchlisted(String id, bool listed) =>
       _write(listed ? 'PUT' : 'DELETE', '/api/v2/watchlist/${Uri.encodeComponent(id)}');
+
+  /// `PUT /home/dismissals/{surface}/{itemId}` with the card's anchor, single
+  /// attempt, 204 (`S/network/apiv2/HomeSectionsV2Api.kt:28-39`).
+  Future<void> dismissHomeItem(String surface, String itemId, String anchor) => _write(
+    'PUT',
+    '/api/v2/home/dismissals/$surface/${Uri.encodeComponent(itemId)}',
+    body: {surface == 'continue_watching' ? 'progress_updated_at' : 'series_id': anchor},
+  );
 }
 
 /// Sections with empty `items` and `total_count > 0` read their `/items`, at

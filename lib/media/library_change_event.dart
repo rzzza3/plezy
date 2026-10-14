@@ -31,6 +31,11 @@ class LibraryChangeEvent {
   final bool itemsRemoved;
   final bool itemsUpdated;
 
+  /// The server says the active profile's home is stale (Silo realtime). Only
+  /// the home acts on it, and it does not count toward [hasChanges], so the
+  /// library views do not refetch for a watched-state change.
+  final bool homeChanged;
+
   const LibraryChangeEvent({
     required this.serverId,
     this.libraryIds = const {},
@@ -38,6 +43,7 @@ class LibraryChangeEvent {
     this.itemsAdded = false,
     this.itemsRemoved = false,
     this.itemsUpdated = false,
+    this.homeChanged = false,
   });
 
   bool get hasChanges => itemsAdded || itemsRemoved || itemsUpdated;
@@ -51,7 +57,8 @@ class LibraryChangeEvent {
   @override
   String toString() =>
       'LibraryChangeEvent($serverId, libraries: $libraryIds, '
-      'added: $itemsAdded, removed: $itemsRemoved (${removedItemIds.length} ids), updated: $itemsUpdated)';
+      'added: $itemsAdded, removed: $itemsRemoved (${removedItemIds.length} ids), updated: $itemsUpdated, '
+      'home: $homeChanged)';
 }
 
 /// A live push subscription to one server's library-change notifications.

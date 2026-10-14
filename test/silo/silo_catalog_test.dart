@@ -550,6 +550,93 @@ void main() {
       },
     );
   });
+
+  group('home dismissal (HomeSectionsV2Api.kt:28-39, HomeViewModel.kt:412-446)', () {
+    Map<String, Object?> home(String progressUpdatedAt) => {
+      'sections': [
+        {
+          'id': 's-cw',
+          'section_type': 'continue_watching',
+          'title': 'Continue Watching',
+          'total_count': 1,
+          'items': [
+            {'content_id': 'movie-1', 'type': 'movie', 'title': 'M', 'progress_updated_at': progressUpdatedAt},
+          ],
+        },
+        {
+          'id': 's-nu',
+          'section_type': 'next_up',
+          'title': 'Next Up',
+          'total_count': 1,
+          'items': [
+            {
+              'content_id': 'ep-2',
+              'type': 'episode',
+              'title': 'E',
+              'series_id': 'show-1',
+              'season_number': 1,
+              'episode_number': 2,
+            },
+          ],
+        },
+      ],
+    };
+
+    Future<(SiloClient, FakeSilo, List<MediaItem>)> visibleHome() async {
+      var anchor = '2026-10-14T10:00:00Z';
+      final (client, fake) = await _client((r) {
+        if (r.url.path == '/api/v2/home/sections') {
+          final body = home(anchor);
+          anchor = '2026-10-14T10:05:00Z';
+          return jsonResponse(body, 200);
+        }
+        return http.Response('', 204);
+      });
+      return (client, fake, await client.fetchContinueWatching());
+    }
+
+    test('a continue watching card sends its progress_updated_at anchor', () async {
+      final (client, fake, cards) = await visibleHome();
+
+      await client.removeFromContinueWatching(cards.firstWhere((c) => c.id == 'movie-1'));
+
+      final put = fake.requests.last;
+      expect(put.method, 'PUT');
+      expect(put.url.path, '/api/v2/home/dismissals/continue_watching/movie-1');
+      expect(jsonDecode(put.body), {'progress_updated_at': '2026-10-14T10:00:00Z'});
+    });
+
+    test('a next up card sends its series_id anchor', () async {
+      final (client, fake, cards) = await visibleHome();
+
+      await client.removeFromContinueWatching(cards.firstWhere((c) => c.id == 'ep-2'));
+
+      final put = fake.requests.last;
+      expect(put.url.path, '/api/v2/home/dismissals/next_up/ep-2');
+      expect(jsonDecode(put.body), {'series_id': 'show-1'});
+    });
+
+    test('a card whose anchor moved since the last home read is not dismissed', () async {
+      final (client, fake, cards) = await visibleHome();
+      final stale = cards.firstWhere((c) => c.id == 'movie-1');
+      await client.markWatched(cards.firstWhere((c) => c.id == 'ep-2'));
+      final reread = await client.fetchContinueWatching();
+      expect(reread.firstWhere((c) => c.id == 'movie-1').lastViewedAt, isNot(stale.lastViewedAt));
+
+      await expectLater(client.removeFromContinueWatching(stale), throwsA(isA<MediaServerHttpException>()));
+      expect(fake.requests.where((r) => r.method == 'PUT'), isEmpty);
+    });
+
+    test('a card the home never showed is not dismissed', () async {
+      final (client, fake, _) = await visibleHome();
+
+      await expectLater(
+        client.removeFromContinueWatching(MediaItem.silo(id: 'movie-9', kind: MediaKind.movie)),
+        throwsA(isA<MediaServerHttpException>()),
+      );
+      expect(fake.requests.where((r) => r.method == 'PUT'), isEmpty);
+    });
+  });
 }
 
 MediaItem _movie() => MediaItem.silo(id: 'movie-1', kind: MediaKind.movie);

@@ -2,6 +2,7 @@ import '../connection/connection.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../media/ids.dart';
+import '../media/library_change_event.dart';
 import '../media/library_filter_result.dart';
 import '../media/library_query.dart';
 import '../media/media_backend.dart';
@@ -16,6 +17,7 @@ import '../media/media_sort.dart';
 import '../media/server_capabilities.dart';
 import '../silo/silo_app.dart';
 import '../silo/silo_catalog.dart';
+import '../silo/silo_events.dart';
 import '../silo/silo_http.dart';
 import '../silo/silo_mappers.dart';
 import '../silo/silo_models.dart';
@@ -38,6 +40,9 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   bool _offline = false;
 
   ({int generation, DateTime at, Future<List<SiloSection>> sections})? _home;
+
+  /// The last home read, which a dismissal checks the visible card against.
+  List<SiloSection> _observedHome = const [];
 
   /// Shows and seasons this client has mapped, so [fetchChildren] knows which
   /// Silo collection an id names without another detail read.
@@ -91,6 +96,10 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   @override
   void close() => http.close();
 
+  @override
+  LibraryEventChannel createLibraryEventChannel() =>
+      SiloEvents(http: http, serverId: serverId, onHomeStale: _homeChanged);
+
   /// `GET /api/v2/account/me`, the lightest call that proves the bearer.
   @override
   Future<HealthStatus> checkHealth() async {
@@ -134,6 +143,7 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final sections = catalog.homeSections().then((sections) {
       final visible = [for (final section in sections) ?siloVisibleSection(section)];
       appLogger.i('Silo: home sections ${visible.length}');
+      _observedHome = visible;
       return visible;
     });
     _home = (generation: generation, at: DateTime.now(), sections: sections);
@@ -580,6 +590,19 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   Future<void> setFavorite(MediaItem item, bool isFavorite) async {
     await catalog.setFavorite(item.id, isFavorite);
     _homeChanged();
+  }
+
+  /// Sent only while the card still matches the last home read. A stale card
+  /// is refused so the menu does not report a removal the server never made
+  /// (`S/viewmodel/HomeViewModel.kt:412-446`).
+  @override
+  Future<void> removeFromContinueWatching(MediaItem item) async {
+    final dismissal = siloHomeDismissal(item, _observedHome);
+    _homeChanged();
+    if (dismissal == null) {
+      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'Silo home card changed');
+    }
+    await catalog.dismissHomeItem(dismissal.surface, dismissal.itemId, dismissal.anchor);
   }
 
   Future<void> setWatchlisted(MediaItem item, bool listed) async {

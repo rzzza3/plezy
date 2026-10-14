@@ -53,6 +53,32 @@ SiloRowRole siloSectionRole(String sectionType) {
   return SiloRowRole.shelf;
 }
 
+typedef SiloHomeDismissal = ({String surface, String itemId, String anchor});
+
+/// Null unless the visible [card] still matches its progress row in the
+/// [observed] home: the same `progress_updated_at` for continue watching, the
+/// same series for next up (`S/viewmodel/HomeViewModel.kt:412-430`).
+SiloHomeDismissal? siloHomeDismissal(MediaItem card, List<SiloSection> observed) {
+  for (final section in observed) {
+    final role = siloSectionRole(section.sectionType);
+    for (final seen in section.items) {
+      if (seen.contentId != card.id) continue;
+      if (role == SiloRowRole.continueWatching) {
+        final anchor = seen.progressUpdatedAt;
+        if (anchor != null && anchor.isNotEmpty && _epochSeconds(anchor) == card.lastViewedAt) {
+          return (surface: 'continue_watching', itemId: card.id, anchor: anchor);
+        }
+      } else if (role == SiloRowRole.nextUp) {
+        final anchor = seen.seriesId;
+        if (anchor != null && anchor.isNotEmpty && anchor == card.grandparentId) {
+          return (surface: 'next_up', itemId: card.id, anchor: anchor);
+        }
+      }
+    }
+  }
+  return null;
+}
+
 /// Types the TV hides because it has no reader
 /// (`S/model/navigation/MediaMode.kt:53-62`).
 const Set<String> siloHiddenTypes = {'ebook', 'ebooks', 'book', 'books', 'comic', 'comics', 'manga', 'reading'};

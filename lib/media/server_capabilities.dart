@@ -178,7 +178,8 @@ class ServerCapabilities {
     scrubThumbnails: false,
     folderGrouping: false,
     instantMix: false,
-    libraryChangeEvents: false,
+    continueWatchingRemoval: true,
+    libraryChangeEvents: true,
   );
 
   /// Every flag here is fixed per backend *kind* except [videoTranscoding],
