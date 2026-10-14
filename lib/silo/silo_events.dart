@@ -133,7 +133,8 @@ class SiloWsTicket {
 }
 
 /// `ws`/`wss` on the server origin, path and channels only
-/// (`S/network/apiv2/EventsSocketV2Api.kt:82-92`).
+/// (`S/network/apiv2/EventsSocketV2Api.kt:82-92`). The upgrade carries the
+/// device headers and no credential (`S/network/AuthInterceptorImpl.kt:409-414`).
 Uri siloEventsUri(Uri origin) => Uri(
   scheme: origin.scheme == 'https' ? 'wss' : 'ws',
   host: origin.host,
@@ -142,10 +143,16 @@ Uri siloEventsUri(Uri origin) => Uri(
   queryParameters: {'channels': siloEventChannels.join(',')},
 );
 
-typedef SiloSocketConnect = LibraryEventConnection Function(Uri uri, List<String> protocols);
+typedef SiloSocketConnect =
+    LibraryEventConnection Function(Uri uri, List<String> protocols, Map<String, String> headers);
 
-LibraryEventConnection connectSiloSocket(Uri uri, List<String> protocols) {
-  final attempt = WebSocketConnectAttempt(uri, connectTimeout: const Duration(seconds: 10), protocols: protocols);
+LibraryEventConnection connectSiloSocket(Uri uri, List<String> protocols, Map<String, String> headers) {
+  final attempt = WebSocketConnectAttempt(
+    uri,
+    connectTimeout: const Duration(seconds: 10),
+    headers: headers,
+    protocols: protocols,
+  );
   return (
     channel: attempt.socket.then((socket) {
       socket.pingInterval = const Duration(seconds: 30);
@@ -255,7 +262,7 @@ class SiloEvents implements LibraryEventChannel {
     if (ticket == null || !current() || minted.elapsed >= ticket.expiresIn) return false;
 
     _enter(SiloEventsPhase.connecting);
-    final connection = _connect(siloEventsUri(http.origin), ticket.protocols);
+    final connection = _connect(siloEventsUri(http.origin), ticket.protocols, http.device.toMap());
     _pending = connection;
     final WebSocketChannel channel;
     try {

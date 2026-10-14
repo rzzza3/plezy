@@ -15,6 +15,7 @@ class _Upgrade {
   final String? authorization;
   final String? profileId;
   final String? profileToken;
+  final String? deviceId;
   final String? protocols;
 
   _Upgrade(HttpRequest request)
@@ -22,6 +23,7 @@ class _Upgrade {
       authorization = request.headers.value('authorization'),
       profileId = request.headers.value('x-profile-id'),
       profileToken = request.headers.value('x-profile-token'),
+      deviceId = request.headers.value('x-silo-device-id'),
       protocols = request.headers.value('sec-websocket-protocol');
 }
 
@@ -51,9 +53,9 @@ class _EventsServer {
     });
   }
 
-  SiloSocketConnect connect(List<List<String>> attempts) => (uri, protocols) {
+  SiloSocketConnect connect(List<List<String>> attempts) => (uri, protocols, headers) {
     attempts.add(protocols);
-    return connectSiloSocket(uri.replace(scheme: 'ws', host: '127.0.0.1', port: _server.port), protocols);
+    return connectSiloSocket(uri.replace(scheme: 'ws', host: '127.0.0.1', port: _server.port), protocols, headers);
   };
 
   Future<void> close() async {
@@ -333,7 +335,7 @@ void main() {
         events = SiloEvents(
           http: siloHttpFor(tickets, session),
           serverId: ServerId('server-1'),
-          connect: (uri, protocols) {
+          connect: (uri, protocols, headers) {
             attempts.add(protocols);
             return (channel: Future.error(const SocketException('refused')), cancel: () {});
           },
@@ -358,13 +360,13 @@ void main() {
       events = SiloEvents(
         http: siloHttpFor(tickets, session),
         serverId: ServerId('server-1'),
-        connect: (uri, protocols) {
+        connect: (uri, protocols, headers) {
           if (failNext) {
             failNext = false;
             attempts.add(protocols);
             return (channel: Future.error(const WebSocketException('lost handshake')), cancel: () {});
           }
-          return connect(uri, protocols);
+          return connect(uri, protocols, headers);
         },
         wait: (delay) async => waits.add(delay),
       );
@@ -382,9 +384,9 @@ void main() {
       events = SiloEvents(
         http: siloHttpFor(tickets, session),
         serverId: ServerId('server-1'),
-        connect: (uri, protocols) {
+        connect: (uri, protocols, headers) {
           if (failures-- > 0) return (channel: Future.error(const SocketException('refused')), cancel: () {});
-          return connect(uri, protocols);
+          return connect(uri, protocols, headers);
         },
         wait: (delay) async {
           waits.add(delay);
