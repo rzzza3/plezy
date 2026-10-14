@@ -294,9 +294,16 @@ class SiloCatalog {
     return json['people_media_scope'] == true;
   }
 
-  Future<List<SiloPerson>> people(String q, {int limit = 20}) async => [
+  /// People in [mediaScope] only. The TV's All search asks `video`, so ebook
+  /// and audiobook authors stay out (`T/ui/screens/search/TvSearchViewModel.kt:42-47`).
+  Future<List<SiloPerson>> people(String q, {String mediaScope = 'video', int limit = 20}) async => [
     for (final json in siloCompleteItems(
-      await _read(SiloRequest.get('/api/v2/catalog/people', query: {'q': q, 'limit': '${limit.clamp(1, 100)}'})),
+      await _read(
+        SiloRequest.get(
+          '/api/v2/catalog/people',
+          query: {'q': q, 'limit': '${limit.clamp(1, 100)}', 'media_scope': mediaScope},
+        ),
+      ),
     ))
       SiloPerson.fromJson(json),
   ];

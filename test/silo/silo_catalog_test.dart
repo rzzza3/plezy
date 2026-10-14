@@ -496,6 +496,27 @@ void main() {
       expect(await client.searchPeople('alpha'), isEmpty);
       expect(fake.requests.map((r) => r.url.path), ['/api/v2/catalog/search/capabilities']);
     });
+
+    test('people search asks the video scope, as the TV All filter does (TvSearchViewModel.kt:42-47)', () async {
+      final (client, fake) = await _client(
+        (r) => r.url.path.endsWith('/capabilities')
+            ? jsonResponse({'people_media_scope': true}, 200)
+            : jsonResponse({
+                'items': [
+                  {'id': '41', 'name': 'Alpha Person'},
+                ],
+              }, 200),
+      );
+
+      final people = await client.searchPeople(' alpha ');
+
+      expect(people.map((p) => p.id), ['41']);
+      expect(fake.to('/api/v2/catalog/people').single.url.queryParameters, {
+        'q': 'alpha',
+        'limit': '20',
+        'media_scope': 'video',
+      });
+    });
   });
 
   test('the silo preset offers hubs, ratings and favorites and none of the features Silo has no wire for', () async {
