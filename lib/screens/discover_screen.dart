@@ -385,6 +385,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _firstRowsLogged = true;
       final rows = _hubs.length + (_onDeck.isNotEmpty ? 1 : 0);
       WidgetsBinding.instance.addPostFrameCallback((_) => appLogger.i('Home: first hub frame, rows $rows'));
+    } else if (_firstRowsLogged && renderChanged && !_isLoading && !_areHubsLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => appLogger.i('Home: rows repainted'));
     }
 
     // On initial load, focus content so the user doesn't start on the toolbar
