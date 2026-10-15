@@ -19,6 +19,9 @@ class SiloPlaybackFailure implements Exception {
   String toString() => 'SiloPlaybackFailure($reason)';
 }
 
+/// `A/player/PlaybackSessionLifecycle.kt:666-678,931`.
+const Duration siloProgressInterval = Duration(seconds: 10);
+
 String newSiloAttemptId() {
   final random = Random.secure();
   final bytes = [for (var i = 0; i < 16; i++) random.nextInt(256)];
@@ -68,6 +71,9 @@ class SiloPlaybackSession {
   final Future<void> Function(Duration delay) _wait;
   SiloJournalEntry _entry;
   bool _stopped = false;
+  ({double position, bool paused})? _latest;
+  StreamSubscription<void>? _reporter;
+  bool _reporting = false;
 
   SiloPlaybackSession._(
     this.http,
@@ -259,6 +265,34 @@ class SiloPlaybackSession {
     return response.statusCode == 200 && _validReceipt(_json(response), sample);
   }
 
+  /// Caches where the player is, in source seconds. Only the reporter sends
+  /// it (`A/player/PlaybackSessionLifecycle.kt:411-415`).
+  void observe(double sourcePosition, {required bool paused}) {
+    if (sourcePosition.isFinite && sourcePosition >= 0) _latest = (position: sourcePosition, paused: paused);
+  }
+
+  /// Sends the cached sample on each tick, every [siloProgressInterval] by
+  /// default. A tick that finds the last send still out is skipped.
+  void startReporting({Stream<void>? ticks}) {
+    if (_stopped || _reporter != null) return;
+    _reporter = (ticks ?? Stream<void>.periodic(siloProgressInterval)).listen((_) {
+      if (!_reporting) unawaited(flush());
+    });
+  }
+
+  /// Sends the cached sample now: a reporter tick, or the final position
+  /// before a stop (`A/player/PlaybackSessionLifecycle.kt:894-900`).
+  Future<bool> flush() async {
+    final latest = _latest;
+    if (latest == null) return false;
+    _reporting = true;
+    try {
+      return await progress(latest.position, paused: latest.paused);
+    } finally {
+      _reporting = false;
+    }
+  }
+
   /// One sample in source seconds. An unconfirmed earlier sample is resent
   /// verbatim first. Each new sample takes the next sequence and is
   /// journalled before it is sent (`S/repository/SequencedPlayback.kt:396-423`).
@@ -348,6 +382,8 @@ class SiloPlaybackSession {
   /// A 404 means the server already expired the session. A stop that never
   /// lands stays journalled for the next start (`S/repository/SequencedPlayback.kt:436-459`).
   Future<bool> stop() async {
+    unawaited(_reporter?.cancel());
+    _reporter = null;
     if (_stopped) return true;
     final confirmed = await _stopEntry(http, journal, _entry, _wait, attempts: 3);
     _stopped = confirmed;

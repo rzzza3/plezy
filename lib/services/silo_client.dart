@@ -777,7 +777,13 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
-  }) async {}
+  }) async {
+    final playback = _sessionFor(playSessionId);
+    if (playback == null) return;
+    playback
+      ..observe(_source(playback, position), paused: false)
+      ..startReporting();
+  }
 
   @override
   Future<void> reportPlaybackProgress({
@@ -793,8 +799,7 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     int? subtitleStreamIndex,
   }) async {
     final playback = _sessionFor(playSessionId);
-    if (playback == null) return;
-    await playback.progress(_source(playback, position), paused: isPaused);
+    playback?.observe(_source(playback, position), paused: isPaused);
   }
 
   /// The final position goes through progress, then the session stops
@@ -813,7 +818,8 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   }) async {
     final playback = _sessionFor(playSessionId);
     if (playback == null) return;
-    await playback.progress(_source(playback, position), paused: true);
+    playback.observe(_source(playback, position), paused: true);
+    await playback.flush();
     _homeChanged();
     _lingeringStop?.cancel();
     _lingeringStop = Timer(const Duration(seconds: 2), () {

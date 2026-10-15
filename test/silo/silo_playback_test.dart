@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -248,6 +249,39 @@ void main() {
       ];
       expect(sent.map((b) => (b!['sequence'], b['position'], b['is_paused'])), [(1, 600, false), (2, 610, true)]);
     });
+
+    test(
+      'the reporter sends the latest observed sample each 10 s tick, and stop ends it (PlaybackSessionLifecycle.kt:666-678)',
+      () async {
+        final playback = await start();
+        final ticks = StreamController<void>();
+        addTearDown(ticks.close);
+        List<Object?> sent() => [
+          for (final c in server.calls)
+            if (c.$2.endsWith('/progress')) (c.$3!['sequence'], c.$3!['position'], c.$3!['is_paused']),
+        ];
+        Future<void> tick() async {
+          ticks.add(null);
+          await pumpEventQueue();
+        }
+
+        playback
+          ..observe(600, paused: false)
+          ..startReporting(ticks: ticks.stream)
+          ..observe(604, paused: false);
+        await pumpEventQueue();
+        expect(sent(), isEmpty, reason: 'player callbacks only update the cached sample');
+        await tick();
+        expect(sent(), [(1, 604, false)]);
+        playback.observe(611, paused: true);
+        await tick();
+        await tick();
+        expect(sent(), [(1, 604, false), (2, 611, true), (3, 611, true)], reason: 'each tick sends the latest');
+        await playback.stop();
+        expect(ticks.hasListener, isFalse, reason: 'stop ends the reporter');
+        expect(siloProgressInterval, const Duration(seconds: 10));
+      },
+    );
 
     test('an unconfirmed sample is resent verbatim before the next (SequencedPlayback.kt:399-405)', () async {
       final playback = await start();
