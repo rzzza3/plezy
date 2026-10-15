@@ -60,6 +60,8 @@ class _Origin {
       );
     } else if ((path.endsWith('/seg_0.m4s') || path.endsWith('/init.mp4')) && signed) {
       response.add([9, 9]);
+    } else if (path == '/stream/v3/S1/subtitles/0.srt') {
+      response.write('1\n00:00:01,000 --> 00:00:02,000\nhi\n');
     } else if (path == '/api/v2/stream/S1/subtitles/0.vtt') {
       response.write('WEBVTT\n');
     } else if (path == '/api/v2/redirect') {
@@ -271,6 +273,59 @@ void main() {
       expect(moved, isNull);
       expect(origin.seen, hasLength(2));
       expect(other.authorizations, isEmpty);
+      expect(refresher.to('/api/v2/auth/refresh'), isEmpty);
+    });
+
+    test('are validated against the stream origin and session (ProxyAuxiliaryV2.kt:28-44)', () {
+      final stream = Uri.parse('https://h/api/v2/playback/transcode/S1/master.m3u8?st=x');
+      bool valid(String url, {Uri? on}) =>
+          validSiloProxySubtitle(Uri.parse(url), stream: on ?? stream, sessionId: 'S1');
+
+      expect(valid('https://h/stream/v3/S1/subtitles/0.srt?file_id=41'), isTrue);
+      expect(valid('https://h/stream/v3/S1/subtitles/2.ass?file_id=41&embedded_stream_index=3'), isTrue);
+      expect(valid('https://other/stream/v3/S1/subtitles/0.srt?file_id=41'), isFalse, reason: 'another origin');
+      expect(valid('https://h/stream/v3/S2/subtitles/0.srt?file_id=41'), isFalse, reason: 'another session');
+      expect(valid('https://h/stream/v3/S1/subtitles/01.srt?file_id=41'), isFalse, reason: 'padded index');
+      expect(valid('https://h/stream/v3/S1/subtitles/0.exe?file_id=41'), isFalse, reason: 'unknown format');
+      expect(valid('https://h/stream/v3/S1/subtitles/0.srt'), isFalse, reason: 'no file pin');
+      expect(valid('https://h/stream/v3/S1/subtitles/0.srt?file_id=041'), isFalse, reason: 'padded file id');
+      expect(valid('https://h/stream/v3/S1/subtitles/0.srt?file_id=41&token=t'), isFalse, reason: 'unknown query');
+      expect(valid('https://u:p@h/stream/v3/S1/subtitles/0.srt?file_id=41'), isFalse, reason: 'user info');
+      expect(
+        valid('https://h/stream/v3/S1/subtitles/0.srt?file_id=41', on: Uri.parse('https://h/stream/v3/S9/master.m3u8')),
+        isFalse,
+        reason: 'a header-auth primary names the same session',
+      );
+    });
+
+    test('are written to files with the captured headers, and a refused row is left out', () async {
+      final dir = await Directory.systemTemp.createTemp('silo_subs');
+      addTearDown(() => dir.delete(recursive: true));
+
+      final files = await fetchSiloProxySubtitles(
+        [
+          '/stream/v3/S1/subtitles/0.srt?file_id=41',
+          '/stream/v3/S1/subtitles/1.srt?file_id=41',
+          '/stream/v3/S2/subtitles/0.srt?file_id=41',
+        ],
+        origin: origin.origin,
+        stream: origin.origin.resolve('/api/v2/playback/transcode/S1/master.m3u8?st=sig-secret'),
+        sessionId: 'S1',
+        captured: {'Authorization': 'Bearer access-A', 'X-Profile-Id': 'p-1'},
+        directory: dir,
+      );
+
+      expect(files.keys, ['/stream/v3/S1/subtitles/0.srt?file_id=41']);
+      expect(await files.values.single.readAsString(), contains('hi'));
+      expect(files.values.single.path, endsWith('.srt'));
+      expect(
+        [for (final s in origin.seen) (s.path, s.authorization, s.profile)],
+        [
+          ('/stream/v3/S1/subtitles/0.srt', 'Bearer access-A', 'p-1'),
+          ('/stream/v3/S1/subtitles/1.srt', 'Bearer access-A', 'p-1'),
+        ],
+        reason: 'one request each, the invalid session never fetched',
+      );
       expect(refresher.to('/api/v2/auth/refresh'), isEmpty);
     });
 

@@ -36,6 +36,10 @@ class SiloApp {
   static Future<SiloPlaybackJournal>? _journal;
 
   /// The device as the playback context describes it.
+  /// Where session proxy subtitles are written for mpv to open.
+  static Future<Directory> subtitleDirectory() async =>
+      Directory('${(await getTemporaryDirectory()).path}/silo_subtitles');
+
   static Future<SiloDeviceFacts> playbackFacts() => _facts ??= _loadFacts();
 
   /// One loopback proxy for every Silo stream this process plays.

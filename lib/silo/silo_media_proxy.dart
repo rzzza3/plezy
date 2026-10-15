@@ -241,3 +241,65 @@ Future<List<int>?> fetchSiloProxySubtitle(Uri url, Map<String, String> captured,
 
 /// Whether [url] names a session proxy subtitle (`S/network/apiv2/ProxyAuxiliaryV2.kt:6-14`).
 bool isSiloProxySubtitle(Uri url) => url.path.startsWith('/stream/v3/') && url.path.contains('/subtitles/');
+
+final RegExp _proxySubtitlePath = RegExp(
+  r'^/stream/v3/([A-Za-z0-9_-]+)/subtitles/(0|[1-9][0-9]*)\.(ass|ssa|srt|vtt|sup)$',
+);
+final RegExp _proxySessionPath = RegExp(r'^/stream/v3/([A-Za-z0-9_-]+)(?:/.*)?$');
+const Set<String> _auxiliaryQueryKeys = {
+  'file_id',
+  'embedded_stream_index',
+  'external_subtitle_key',
+  'downloaded_subtitle_id',
+  'windowed',
+  'position',
+  'duration',
+};
+
+/// A proxy subtitle must sit on the stream's origin under this session, with
+/// only the auxiliary pins and a positive `file_id`
+/// (`S/network/apiv2/ProxyAuxiliaryV2.kt:28-44`).
+bool validSiloProxySubtitle(Uri url, {required Uri stream, required String sessionId}) {
+  if ((url.scheme != 'https' && url.scheme != 'http') || url.userInfo.isNotEmpty || url.hasFragment) return false;
+  if (!isSameSiloOrigin(url, stream)) return false;
+  final subtitle = _proxySubtitlePath.firstMatch(url.path);
+  if (subtitle == null || subtitle.group(1) != sessionId) return false;
+  if (stream.path.startsWith('/stream/v3/') && _proxySessionPath.firstMatch(stream.path)?.group(1) != sessionId) {
+    return false;
+  }
+  if (!url.queryParametersAll.keys.every(_auxiliaryQueryKeys.contains)) return false;
+  final files = url.queryParametersAll['file_id'] ?? const [];
+  bool positive(String id) => (int.tryParse(id) ?? 0) > 0 && '${int.parse(id)}' == id;
+  return files.isNotEmpty && files.every(positive);
+}
+
+/// Fetches each valid session proxy subtitle in [urls] into [directory] with
+/// the [captured] start headers, and returns plan URL to local file. A row
+/// that is invalid or does not answer 200 is left out, never retried.
+Future<Map<String, File>> fetchSiloProxySubtitles(
+  Iterable<String> urls, {
+  required Uri origin,
+  required Uri stream,
+  required String sessionId,
+  required Map<String, String> captured,
+  required Directory directory,
+  HttpClient? client,
+}) async {
+  final files = <String, File>{};
+  for (final (index, planUrl) in urls.indexed) {
+    final url = origin.resolve(planUrl);
+    if (!validSiloProxySubtitle(url, stream: stream, sessionId: sessionId)) continue;
+    final List<int>? bytes;
+    try {
+      bytes = await fetchSiloProxySubtitle(url, captured, client: client);
+    } on Exception catch (error) {
+      appLogger.i('Silo playback: proxy subtitle fetch failed (${error.runtimeType})');
+      continue;
+    }
+    if (bytes == null) continue;
+    final extension = _proxySubtitlePath.firstMatch(url.path)!.group(3);
+    await directory.create(recursive: true);
+    files[planUrl] = await File('${directory.path}/silo-subtitle-$index.$extension').writeAsBytes(bytes, flush: true);
+  }
+  return files;
+}

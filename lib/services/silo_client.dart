@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import '../connection/connection.dart';
 import '../exceptions/media_server_exceptions.dart';
@@ -724,8 +725,28 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
       planHeaders: plan.stream.headers,
     );
     _route = route;
-    Uri player(String planUrl) => route.playerUrl(http.origin.resolve(planUrl));
-    final videoUrl = '${player(plan.stream.url)}';
+    final stream = http.origin.resolve(plan.stream.url);
+    final proxied = [
+      for (final row in plan.subtitleInventory)
+        if (row.url case final url? when isSiloProxySubtitle(http.origin.resolve(url))) url,
+    ];
+    final fetched = proxied.isEmpty
+        ? const <String, File>{}
+        : await fetchSiloProxySubtitles(
+            proxied,
+            origin: http.origin,
+            stream: stream,
+            sessionId: playback.sessionId,
+            captured: playback.proxySubtitleHeaders,
+            directory: await SiloApp.subtitleDirectory(),
+          );
+    Uri? sidecar(String planUrl) {
+      final upstream = http.origin.resolve(planUrl);
+      if (!isSiloProxySubtitle(upstream)) return route.playerUrl(upstream);
+      return fetched[planUrl]?.uri;
+    }
+
+    final videoUrl = '${route.playerUrl(stream)}';
     final effective = playback.detail.versions.indexWhere(
       (v) => v.fileId == (plan.effectiveMediaFileId ?? playback.version.fileId),
     );
@@ -739,14 +760,16 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
       ],
       videoUrl: videoUrl,
       mediaInfo: mediaInfo,
-      subtitleSidecars: siloSubtitleSidecars(plan, player),
+      subtitleSidecars: siloSubtitleSidecars(plan, sidecar),
       isTranscoding: plan.delivery != 'original_http',
       activeAudioStreamId: mediaInfo.defaultAudioStreamIndex,
       playSessionId: playback.sessionId,
       playMethod: plan.delivery,
       selectedMediaIndex: mediaIndex,
       timelineOffset: _seconds(timeline.timelineOffsetSeconds),
-      streamStart: timeline.timelineOffsetSeconds == 0 ? null : _seconds(timeline.toSource(timeline.playerStartSeconds)),
+      streamStart: timeline.timelineOffsetSeconds == 0
+          ? null
+          : _seconds(timeline.toSource(timeline.playerStartSeconds)),
     );
   }
 

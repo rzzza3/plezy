@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import '../utils/app_logger.dart';
+import 'silo_headers.dart';
 import 'silo_http.dart';
 import 'silo_playback.dart';
 import 'silo_playback_journal.dart';
@@ -71,6 +72,7 @@ class SiloPlaybackSession {
   final Future<void> Function(Duration delay) _wait;
   SiloJournalEntry _entry;
   List<String> _serverFeatures;
+  Map<String, String> _proxyHeaders;
   bool _stopped = false;
   ({double position, bool paused})? _latest;
   StreamSubscription<void>? _reporter;
@@ -90,6 +92,7 @@ class SiloPlaybackSession {
     this._quality,
     this._bandwidthCap,
     this._serverFeatures,
+    this._proxyHeaders,
   );
 
   SiloPlan get plan => _plan;
@@ -97,6 +100,18 @@ class SiloPlaybackSession {
   String get quality => _quality;
 
   bool get isStopped => _stopped;
+
+  /// The `Authorization` and `X-Profile-Id` the plan's start or replan went
+  /// out with, the only credentials a session proxy subtitle may carry
+  /// (`S/network/apiv2/ProxyAuxiliaryV2.kt:16-24`). Never journalled.
+  Map<String, String> get proxySubtitleHeaders => _proxyHeaders;
+
+  static Map<String, String> _captureProxyHeaders(SiloHttp http) {
+    final session = http.session.session;
+    final profile = session?.profileId;
+    if (session == null || profile == null || session.tokens.accessToken.isEmpty) return const {};
+    return {SiloHeaders.authorization: 'Bearer ${session.tokens.accessToken}', SiloHeaders.profileId: profile};
+  }
 
   /// Whether a seek to [sourceSeconds] needs the server to reanchor the
   /// stream: outside the plan's seek window, on a session that negotiated
@@ -170,6 +185,7 @@ class SiloPlaybackSession {
     );
     await journal.put(entry);
 
+    final proxyHeaders = _captureProxyHeaders(http);
     final SiloResponse started;
     try {
       started = await http.send(SiloRequest.post('/api/v2/playback/start', body: body, single: true));
@@ -213,6 +229,7 @@ class SiloPlaybackSession {
         request.quality,
         request.bandwidthCapKbps,
         decision.serverFeatures,
+        proxyHeaders,
       );
     }
     final abandoned = SiloPlaybackSession._(
@@ -238,6 +255,7 @@ class SiloPlaybackSession {
       request.quality,
       request.bandwidthCapKbps,
       const [],
+      const {},
     );
     await abandoned.stop();
     throw switch (decision) {
@@ -381,6 +399,7 @@ class SiloPlaybackSession {
       'client_playback_context': _context,
       'installation_id': _entry.installationId,
     };
+    final proxyHeaders = _captureProxyHeaders(http);
     final response = await http.send(
       SiloRequest.post('/api/v2/playback/${Uri.encodeComponent(sessionId)}/replan', body: body, single: true),
     );
@@ -405,6 +424,7 @@ class SiloPlaybackSession {
     _planAttemptId = newSiloAttemptId();
     _plan = decision.plan;
     _serverFeatures = decision.serverFeatures;
+    _proxyHeaders = proxyHeaders;
     _quality = nextQuality;
     appLogger.i('Silo playback: replanned ${operation.wire}, delivery=${decision.plan.delivery}');
     return decision.plan;

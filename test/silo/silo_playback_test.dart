@@ -151,6 +151,7 @@ void main() {
       expect(sidecars.single.sourceStreamId, 1);
       expect(sidecars.single.preload, isFalse);
       expect(sidecars.single.track.uri, 'http://127.0.0.1:9/r/x/api/v2/stream/sess-1/subtitles/0.vtt');
+      expect(siloSubtitleSidecars(transcode, (_) => null), isEmpty, reason: 'a row mpv cannot open is left out');
     });
   });
 
@@ -188,6 +189,10 @@ void main() {
       expect(server.body('POST', '/api/v2/playback/start')!['installation_id'], 'inst-1');
       expect(playback.sessionId, 'sess-1');
       expect((await journal.entries()).single.sessionId, 'sess-1', reason: 'journalled until stopped');
+      expect(playback.proxySubtitleHeaders, {
+        'Authorization': 'Bearer access-A',
+        'X-Profile-Id': 'p-1',
+      }, reason: 'captured from the start, no profile token (ProxyAuxiliaryV2.kt:16-24)');
     });
 
     test('a journalled open session is stopped before the next start (SequencedPlayback.kt:220-225)', () async {
