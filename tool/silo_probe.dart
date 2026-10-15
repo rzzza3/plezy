@@ -40,6 +40,8 @@ read-only responses, and signs out. Tokens stay in memory.
                              home                   ids per section_type
                              watch <content_id>     stored position, played
                                                     and track counts
+                             ids </api/v2/...>      every content_id in a GET,
+                                                    with type, season, episode
                              watched <content_id>   POST /watched/{id}
                              unwatched <content_id> DELETE /watched/{id}
                              watchlist-add <id>     PUT /watchlist/{id}
@@ -454,6 +456,12 @@ final class SiloProbeWatch extends SiloProbeAction {
   const SiloProbeWatch(this.id);
 }
 
+final class SiloProbeIds extends SiloProbeAction {
+  final Uri uri;
+
+  const SiloProbeIds(this.uri);
+}
+
 final class SiloProbeToggle extends SiloProbeAction {
   final String id;
   final int times;
@@ -470,6 +478,7 @@ SiloProbeAction? parseSiloProbeAction(String line) {
   return switch (words) {
     ['home'] => const SiloProbeHome(),
     ['watch', final c] => SiloProbeWatch(c),
+    ['ids', final path] when path.startsWith('/api/v2/') => SiloProbeIds(Uri.parse(path)),
     ['sleep', final s] when double.tryParse(s) != null => SiloProbeSleep(
       Duration(milliseconds: (double.parse(s) * 1000).round()),
     ),
@@ -524,6 +533,22 @@ Future<void> _runAction(
         'audio=${versions.map((v) => count(v, 'audio_tracks')).join(',')} '
         'subtitles=${versions.map((v) => count(v, 'subtitle_tracks')).join(',')}',
       );
+    case SiloProbeIds(:final uri):
+      final response = await silo.send(SiloRequest.get(uri.path, query: uri.hasQuery ? uri.queryParameters : null));
+      out.writeln('action ids ${uri.path} ${response.statusCode}');
+      void walk(Object? node) {
+        if (node is List) node.forEach(walk);
+        if (node is! Map) return;
+        if (node['content_id'] is String) {
+          out.writeln(
+            'id ${node['content_id']} type=${node['type']} '
+            'season=${node['season_number']} episode=${node['episode_number']}',
+          );
+        }
+        node.values.forEach(walk);
+      }
+
+      walk(response.isSuccess ? _tryJson(response.body) : null);
     case SiloProbeHome():
       final home = await silo.send(const SiloRequest.get('/api/v2/home/sections'));
       final json = home.isSuccess ? _tryJson(home.body) : null;

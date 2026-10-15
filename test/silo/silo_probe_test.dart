@@ -315,10 +315,10 @@ toggle c1 3 1.5
     }
   });
 
-  test('--actions watch prints the stored position and played flag, never the title', () async {
+  test('--actions watch and ids print positions and ids, never the title', () async {
     final server = await _FakeServer.start([_approved]);
     addTearDown(() => server.server.close(force: true));
-    final actions = File('${temp.path}/actions.txt')..writeAsStringSync('watch movie-1\n');
+    final actions = File('${temp.path}/actions.txt')..writeAsStringSync('watch movie-1\nids /api/v2/watch/movie-1\n');
     final out = StringBuffer();
 
     final code = await runSiloProbe(
@@ -335,6 +335,7 @@ toggle c1 3 1.5
     final log = out.toString();
     expect(code, 0, reason: log);
     expect(log, contains('action watch movie-1 200 position=50.0 played=false audio=0 subtitles=0\n'));
+    expect(log, contains('action ids /api/v2/watch/movie-1 200\nid movie-1 type=null season=null episode=null\n'));
     expect(log, isNot(contains('Secret Title')));
   });
 
