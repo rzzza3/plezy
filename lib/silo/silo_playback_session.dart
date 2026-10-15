@@ -56,8 +56,15 @@ class SiloPlaybackSession {
   final SiloPlaybackJournal journal;
   final SiloWatchDetail detail;
   final SiloFileVersion version;
-  final SiloPlan plan;
   final String sessionId;
+  final Map<String, Object?> _capabilities;
+  final Map<String, Object?> _context;
+  String _quality;
+  final int? _bandwidthCap;
+  SiloPlan _plan;
+  String _planAttemptId = newSiloAttemptId();
+  final List<String> _attemptedKeys = [];
+  int _attemptCount = 1;
   final Future<void> Function(Duration delay) _wait;
   SiloJournalEntry _entry;
   bool _stopped = false;
@@ -67,11 +74,19 @@ class SiloPlaybackSession {
     this.journal,
     this.detail,
     this.version,
-    this.plan,
+    this._plan,
     this.sessionId,
     this._entry,
     this._wait,
+    this._capabilities,
+    this._context,
+    this._quality,
+    this._bandwidthCap,
   );
+
+  SiloPlan get plan => _plan;
+
+  String get quality => _quality;
 
   bool get isStopped => _stopped;
 
@@ -112,13 +127,15 @@ class SiloPlaybackSession {
         : selectSiloVersion(detail.versions, lastFileId: detail.lastFileId, preferredQuality: request.quality);
 
     final attemptId = newSiloAttemptId();
+    final capabilities = siloMpvCodecCapabilities();
+    final context = siloMpvPlaybackContext(request.device);
     final body = siloStartBody(
       fileId: version.fileId,
       profileId: request.profileId,
       attemptId: attemptId,
       installationId: admission.installationId,
-      capabilities: siloMpvCodecCapabilities(),
-      context: siloMpvPlaybackContext(request.device),
+      capabilities: capabilities,
+      context: context,
       qualityPreference: request.quality,
       startPosition: request.startPosition,
       audioTrackIndex: request.audioTrackIndex,
@@ -156,7 +173,25 @@ class SiloPlaybackSession {
     final decision = parseSiloDecision(decisionJson);
     appLogger.i('Silo playback: started, ${decision.runtimeType}');
     if (decision is SiloPlayable) {
-      return SiloPlaybackSession._(http, journal, detail, version, decision.plan, decision.sessionId, entry, pause);
+      final plan = decision.plan;
+      appLogger.i(
+        'Silo playback: plan delivery=${plan.delivery} protocol=${plan.stream.protocol} '
+        'reason=${plan.decisionReason} subtitles=${plan.subtitleInventory.length}',
+      );
+      return SiloPlaybackSession._(
+        http,
+        journal,
+        detail,
+        version,
+        decision.plan,
+        decision.sessionId,
+        entry,
+        pause,
+        capabilities,
+        context,
+        request.quality,
+        request.bandwidthCapKbps,
+      );
     }
     final abandoned = SiloPlaybackSession._(
       http,
@@ -176,6 +211,10 @@ class SiloPlaybackSession {
       allocated,
       entry,
       pause,
+      capabilities,
+      context,
+      request.quality,
+      request.bandwidthCapKbps,
     );
     await abandoned.stop();
     throw switch (decision) {
@@ -228,10 +267,75 @@ class SiloPlaybackSession {
     final sample = (sequence: _entry.sequence + 1, position: sourcePosition, isPaused: paused);
     _entry = _entry.copyWith(sequence: sample.sequence, sample: sample, sampleReceipted: false);
     await journal.put(_entry);
-    if (!await _send(sample)) return false;
+    if (!await _send(sample)) {
+      appLogger.i('Silo playback: progress ${sample.sequence} unconfirmed');
+      return false;
+    }
     _entry = _entry.copyWith(sampleReceipted: true);
     await journal.put(_entry);
+    appLogger.i('Silo playback: progress ${sample.sequence} at ${sample.position.round()} s');
     return true;
+  }
+
+  /// A user's audio or quality change on the live session. Intent operations
+  /// carry no failure block. The body addresses the plan the server holds
+  /// (`A/player/PlaybackSessionManager.kt:880-945`,
+  /// `S/model/playback/PlaybackProtocolV3.kt:454-487`).
+  Future<SiloPlan> replan({
+    required String operation,
+    required double positionSeconds,
+    int? audioTrackIndex,
+    String? quality,
+  }) async {
+    final current = _plan;
+    final keys = {..._attemptedKeys, current.planAttemptKey}.toList();
+    final audio = audioTrackIndex ?? current.selectedAudio?.index;
+    final subtitle = current.selectedSubtitle;
+    final nextQuality = quality ?? _quality;
+    final body = {
+      'protocol_version': siloPlaybackProtocol,
+      'client_features': siloClientFeatures,
+      'operation': operation,
+      'playback_attempt_id': _entry.attemptId,
+      'replan_request_id': newSiloAttemptId(),
+      'failed_plan_id': current.planId,
+      'plan_attempt_id': _planAttemptId,
+      'plan_attempt_key': current.planAttemptKey,
+      'attempted_plan_keys': keys,
+      'local_mutations': const <String>[],
+      'attempt_count': _attemptCount,
+      'quality_preference': nextQuality.toLowerCase(),
+      'position_seconds': positionSeconds,
+      'metered': false,
+      'bandwidth_cap_kbps': ?(_bandwidthCap != null && _bandwidthCap > 0 ? _bandwidthCap : null),
+      'selected_tracks': {
+        'audio': ?(audio == null ? null : {'id': siloTrackId(version.fileId, 'audio', audio), 'index': audio}),
+        'subtitle': ?(subtitle == null ? null : {'id': subtitle.id, 'index': ?subtitle.index}),
+      },
+      'client_capabilities': _capabilities,
+      'client_playback_context': _context,
+      'installation_id': _entry.installationId,
+    };
+    final response = await http.send(
+      SiloRequest.post('/api/v2/playback/${Uri.encodeComponent(sessionId)}/replan', body: body, single: true),
+    );
+    final decision = response.statusCode == 200 ? parseSiloDecision(_json(response)) : null;
+    if (decision is! SiloPlayable) {
+      appLogger.i('Silo playback: replan refused (status ${response.statusCode}, ${decision.runtimeType})');
+      throw SiloPlaybackFailure(
+        decision is SiloTerminal ? decision.reason : 'replan_${response.statusCode}',
+        'The Silo server could not change this stream.',
+      );
+    }
+    _attemptedKeys
+      ..clear()
+      ..addAll(keys);
+    _attemptCount++;
+    _planAttemptId = newSiloAttemptId();
+    _plan = decision.plan;
+    _quality = nextQuality;
+    appLogger.i('Silo playback: replanned $operation, delivery=${decision.plan.delivery}');
+    return decision.plan;
   }
 
   /// `DELETE /playback/{session}` with one `stop_id`, at most 3 attempts.

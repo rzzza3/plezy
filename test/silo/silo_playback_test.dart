@@ -251,6 +251,39 @@ void main() {
       expect(server.paths.where((p) => p.endsWith('/progress')), isEmpty);
     });
 
+    test(
+      'a track change replans the live session with the plan the server holds (PlaybackSessionManager.kt:880-945)',
+      () async {
+        final playback = await start();
+
+        final plan = await playback.replan(operation: 'track_change', positionSeconds: 812.5, audioTrackIndex: 1);
+        final body = server.body('POST', '/api/v2/playback/sess-1/replan')!;
+
+        expect(plan.delivery, 'server_transcode_hls');
+        expect(playback.plan.planId, 'plan-2');
+        expect(body['operation'], 'track_change');
+        expect(body['failed_plan_id'], 'plan-1');
+        expect(body['plan_attempt_key'], 'key-1');
+        expect(body['attempted_plan_keys'], ['key-1']);
+        expect(body['attempt_count'], 1);
+        expect(body['position_seconds'], 812.5);
+        expect(body['selected_tracks'], {
+          'audio': {'id': 'file:41:audio:1', 'index': 1},
+        });
+        expect(body.containsKey('failure'), isFalse, reason: 'intent operations carry no failure block');
+        expect(body['installation_id'], 'inst-1');
+        expect(body['playback_attempt_id'], server.body('POST', '/api/v2/playback/start')!['playback_attempt_id']);
+
+        await playback.replan(operation: 'quality_change', positionSeconds: 900, quality: '720p');
+        final second = server.body('POST', '/api/v2/playback/sess-1/replan')!;
+        expect(second['failed_plan_id'], 'plan-2');
+        expect(second['attempted_plan_keys'], ['key-1', 'key-2']);
+        expect(second['attempt_count'], 2);
+        expect(second['quality_preference'], '720p');
+        expect(second['plan_attempt_id'], isNot(body['plan_attempt_id']));
+      },
+    );
+
     test('stop sends one stop_id, retries a 503 with 250 ms steps, and clears the journal', () async {
       final playback = await start();
       server.stopStatus = (_, attempt) => attempt < 3 ? 503 : 200;
@@ -675,6 +708,20 @@ class _PlaybackServer {
     if (path == '/api/v2/playback/start') {
       final id = 'sess-${++sessions}';
       return jsonResponse(_decision(plan: {..._plan(), 'session_id': id})..['session_id'] = id, 201);
+    }
+    final replan = RegExp(r'^/api/v2/playback/([^/]+)/replan$').firstMatch(path);
+    if (replan != null) {
+      final count = calls.where((c) => c.$2.endsWith('/replan')).length;
+      return jsonResponse(
+        _decision(
+          plan: {
+            ..._plan(delivery: 'server_transcode_hls', url: '/api/v2/playback/transcode/sess-1/master.m3u8'),
+            'plan_id': 'plan-${count + 1}',
+            'plan_attempt_key': 'key-${count + 1}',
+          },
+        ),
+        200,
+      );
     }
     final progress = RegExp(r'^/api/v2/playback/([^/]+)/progress$').firstMatch(path);
     if (progress != null) {

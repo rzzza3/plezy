@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../connection/connection.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
@@ -55,6 +57,10 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   /// The one session this client is playing, and its proxy route.
   SiloPlaybackSession? _playback;
   SiloMediaRoute? _route;
+
+  /// A stopped report holds the session for a moment, so a reload that only
+  /// changes the audio or quality can replan it instead of starting anew.
+  Timer? _lingeringStop;
 
   /// Shows and seasons this client has mapped, so [fetchChildren] knows which
   /// Silo collection an id names without another detail read.
@@ -630,14 +636,45 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   bool get marksWatchedOnPlaybackStopped => true;
 
   /// Start one server session and hand mpv its proxied stream
-  /// (`research/silo-playback.md` section 2). Any session still open on this
-  /// client is stopped first.
+  /// (`research/silo-playback.md` section 2). A reload of the same item and
+  /// file that only changes the audio track or quality replans the live
+  /// session (`A/player/PlaybackSessionManager.kt:2542-2547`). Anything
+  /// else stops the old session first.
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
-    final previous = _playback?.detail;
-    final versions = previous != null && previous.contentId == options.metadata.id
-        ? [for (final v in previous.versions) v.fileId]
-        : const <int>[];
+    _lingeringStop?.cancel();
+    _lingeringStop = null;
+    final preset = options.qualityPreset;
+    final height = preset.resolutionHeight;
+    final quality = preset.isOriginal || height == null ? 'auto' : '${height}p';
+    final audio = _audioOrdinal(options);
+    final start = options.startPosition == null ? null : options.startPosition!.inMilliseconds / 1000;
+    final previous = _playback;
+    final sameItem = previous != null && !previous.isStopped && previous.detail.contentId == options.metadata.id;
+    final versions = sameItem ? [for (final v in previous.detail.versions) v.fileId] : const <int>[];
+    final index = options.selectedMediaIndex;
+    final fileId = index >= 0 && index < versions.length ? versions[index] : null;
+
+    if (sameItem && (fileId == null || fileId == previous.version.fileId)) {
+      final qualityChanged = quality != previous.quality;
+      final audioChanged = audio != null && audio != previous.plan.selectedAudio?.index;
+      if (qualityChanged || audioChanged) {
+        try {
+          await previous.replan(
+            operation: qualityChanged ? 'quality_change' : 'track_change',
+            positionSeconds: start ?? 0,
+            audioTrackIndex: audio,
+            quality: quality,
+          );
+          return await _initialization(previous);
+        } on SiloPlaybackFailure catch (failure) {
+          appLogger.i('Silo playback: replan failed (${failure.reason}), starting afresh');
+        } on Exception catch (error) {
+          appLogger.i('Silo playback: replan failed (${error.runtimeType}), starting afresh');
+        }
+      }
+    }
+
     await _endPlayback();
     final profile = http.session.session?.profileId;
     if (profile == null) {
@@ -646,38 +683,39 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
         reason: PlaybackFailureReason.authenticationRequired,
       );
     }
-    final preset = options.qualityPreset;
-    final height = preset.resolutionHeight;
-    final index = options.selectedMediaIndex;
     final SiloPlaybackSession playback;
     try {
       playback = await SiloPlaybackSession.start(http, await SiloApp.playbackJournal(), (
         contentId: options.metadata.id,
         profileId: profile,
         device: await SiloApp.playbackFacts(),
-        fileId: index >= 0 && index < versions.length ? versions[index] : null,
-        quality: preset.isOriginal || height == null ? 'auto' : '${height}p',
-        startPosition: options.startPosition == null ? null : options.startPosition!.inMilliseconds / 1000,
-        audioTrackIndex: _audioOrdinal(options),
+        fileId: fileId,
+        quality: quality,
+        startPosition: start,
+        audioTrackIndex: audio,
         bandwidthCapKbps: preset.videoBitrateKbps,
       ));
     } on SiloPlaybackFailure catch (failure) {
       appLogger.i('Silo playback: refused (${failure.reason})');
       throw PlaybackException(failure.message);
-    } on MediaServerException catch (error) {
-      throw classifyPlaybackFailure(error);
     } on Exception catch (error) {
       throw classifyPlaybackFailure(error);
     }
+    _playback = playback;
+    return _initialization(playback);
+  }
 
+  /// A fresh proxy route for the session's current plan, replacing any
+  /// earlier one.
+  Future<PlaybackInitializationResult> _initialization(SiloPlaybackSession playback) async {
     final proxy = await SiloApp.mediaProxy();
     final plan = playback.plan;
+    _route?.close();
     final route = proxy.open(
       http: http,
       stream: http.origin.resolve(plan.stream.url),
       planHeaders: plan.stream.headers,
     );
-    _playback = playback;
     _route = route;
     Uri player(String planUrl) => route.playerUrl(http.origin.resolve(planUrl));
     final videoUrl = '${player(plan.stream.url)}';
@@ -770,8 +808,12 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final playback = _sessionFor(playSessionId);
     if (playback == null) return;
     await playback.progress(_source(playback, position), paused: true);
-    await _endPlayback();
     _homeChanged();
+    _lingeringStop?.cancel();
+    _lingeringStop = Timer(const Duration(seconds: 2), () {
+      _lingeringStop = null;
+      unawaited(_endPlayback());
+    });
   }
 
   Future<void> _endPlayback() async {
