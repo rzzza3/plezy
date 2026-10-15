@@ -657,7 +657,7 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final index = options.selectedMediaIndex;
     final fileId = index >= 0 && index < versions.length ? versions[index] : null;
 
-    final operation = sameItem && (fileId == null || fileId == previous.version.fileId)
+    final operation = sameItem && (fileId == null || fileId == previous.playingVersion.fileId)
         ? previous.replanForReload(quality: quality, audioTrackIndex: audio, startSeconds: start)
         : null;
     if (operation != null) {
@@ -678,7 +678,7 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
 
     if (previous != null) {
       appLogger.i(
-        'Silo playback: new session (same item $sameItem, file ${fileId == null || fileId == previous.version.fileId}, '
+        'Silo playback: new session (same item $sameItem, file ${fileId == null || fileId == previous.playingVersion.fileId}, '
         'quality ${previous.quality} to $quality, audio ${previous.plan.selectedAudio?.index} to $audio)',
       );
     }
@@ -747,11 +747,8 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     }
 
     final videoUrl = '${route.playerUrl(stream)}';
-    final effective = playback.detail.versions.indexWhere(
-      (v) => v.fileId == (plan.effectiveMediaFileId ?? playback.version.fileId),
-    );
-    final mediaIndex = effective < 0 ? 0 : effective;
-    final version = playback.detail.versions[mediaIndex];
+    final version = playback.playingVersion;
+    final mediaIndex = playback.detail.versions.indexOf(version);
     final mediaInfo = siloMediaSourceInfo(version, plan, videoUrl: videoUrl, mediaIndex: mediaIndex);
     return PlaybackInitializationResult(
       availableVersions: [

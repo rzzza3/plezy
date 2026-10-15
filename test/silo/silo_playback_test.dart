@@ -29,11 +29,11 @@ Map<String, Object?> _version(String fileId, {String? resolution, int bitrate = 
   'effective_audio_track_index': 0,
 };
 
-Map<String, Object?> _watch({Object? userData}) => {
+Map<String, Object?> _watch({Object? userData, List<Map<String, Object?>>? versions}) => {
   'content_id': 'movie-tmdb-1',
   'type': 'movie',
   'title': 'Secret Title',
-  'versions': [_version('41', resolution: '1080p', bitrate: 8000)],
+  'versions': versions ?? [_version('41', resolution: '1080p', bitrate: 8000)],
   'intro': {'start_seconds': 30.0, 'end_seconds': 95.0},
   'credits': {'start_seconds': 6500.0, 'end_seconds': 6780.0},
   'user_data': userData,
@@ -357,6 +357,25 @@ void main() {
         expect(second['plan_attempt_id'], isNot(body['plan_attempt_id']));
       },
     );
+
+    test('a plan on another version than the one asked for makes that version the playing file', () async {
+      server
+        ..versions = [
+          _version('41', resolution: '1080p', bitrate: 8000),
+          _version('42', resolution: '2160p', bitrate: 15000),
+        ]
+        ..planExtra = const {'effective_media_file_id': '41'};
+      final playback = await start();
+
+      await playback.replan(operation: SiloReplanOperation.trackChange, positionSeconds: 95, audioTrackIndex: 1);
+
+      expect(server.body('POST', '/api/v2/playback/start')!['file_id'], '42');
+      expect(playback.version.fileId, 42);
+      expect(playback.playingVersion.fileId, 41);
+      expect(server.body('POST', '/api/v2/playback/sess-1/replan')!['selected_tracks'], {
+        'audio': {'id': 'file:41:audio:1', 'index': 1},
+      });
+    });
 
     group('seek reanchor (PlaybackTimelineSeekPolicy.kt:131-210, PlaybackSessionManager.kt:1823-1905)', () {
       setUp(() {
@@ -821,6 +840,7 @@ class _PlaybackServer {
   List<String> serverFeatures = const ['playback_plan_v3', 'neutral_playback_v3_contract_v1'];
   List<String>? replanFeatures;
   Map<String, Object?> planExtra = const {};
+  List<Map<String, Object?>>? versions;
   late final FakeSilo fake = FakeSilo(_handle);
 
   List<String> get paths => [for (final c in calls) '${c.$1} ${c.$2}'];
@@ -842,7 +862,9 @@ class _PlaybackServer {
         'features': ['sequenced_progress_v1'],
       }, 200);
     }
-    if (path == '/api/v2/watch/movie-tmdb-1') return jsonResponse(_watch(userData: {'position_seconds': 600.0}), 200);
+    if (path == '/api/v2/watch/movie-tmdb-1') {
+      return jsonResponse(_watch(userData: {'position_seconds': 600.0}, versions: versions), 200);
+    }
     if (path == '/api/v2/playback/start') {
       final id = 'sess-${++sessions}';
       return jsonResponse(

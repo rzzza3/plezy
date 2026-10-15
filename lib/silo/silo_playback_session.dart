@@ -97,6 +97,12 @@ class SiloPlaybackSession {
 
   SiloPlan get plan => _plan;
 
+  /// The file the plan plays. The server may serve another version than the
+  /// one asked for (`effective_media_file_id`), and its tracks belong to that
+  /// file.
+  SiloFileVersion get playingVersion =>
+      detail.versions.firstWhere((v) => v.fileId == _plan.effectiveMediaFileId, orElse: () => version);
+
   String get quality => _quality;
 
   bool get isStopped => _stopped;
@@ -213,7 +219,9 @@ class SiloPlaybackSession {
       final plan = decision.plan;
       appLogger.i(
         'Silo playback: plan delivery=${plan.delivery} protocol=${plan.stream.protocol} '
-        'reason=${plan.decisionReason} subtitles=${plan.subtitleInventory.length}',
+        'reason=${plan.decisionReason} subtitles=${plan.subtitleInventory.length} '
+        'version=${detail.versions.indexOf(version)} '
+        'effective=${detail.versions.indexWhere((v) => v.fileId == plan.effectiveMediaFileId)}',
       );
       return SiloPlaybackSession._(
         http,
@@ -392,7 +400,7 @@ class SiloPlaybackSession {
       'metered': false,
       'bandwidth_cap_kbps': ?(_bandwidthCap != null && _bandwidthCap > 0 ? _bandwidthCap : null),
       'selected_tracks': {
-        'audio': ?(audio == null ? null : {'id': siloTrackId(version.fileId, 'audio', audio), 'index': audio}),
+        'audio': ?(audio == null ? null : {'id': siloTrackId(playingVersion.fileId, 'audio', audio), 'index': audio}),
         'subtitle': ?(subtitle == null ? null : {'id': subtitle.id, 'index': ?subtitle.index}),
       },
       'client_capabilities': _capabilities,
