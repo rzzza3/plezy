@@ -16,3 +16,9 @@ action watch movie-tmdb-12429 200 position=null played=null audio=2 subtitles=22
 action item movie-tmdb-12429 200 position=null played=null in_progress=null
 action watch movie-tmdb-12429 200 position=null played=null audio=2 subtitles=22 user_data_keys=
 action item movie-tmdb-12429 200 position=null played=null in_progress=null
+# after lane 5, then the restore
+action watch movie-tmdb-12429 200 position=651.234 played=false audio=2 subtitles=22 user_data_keys=position_seconds,duration_seconds,is_in_progress,watched_count,unplayed_count,in_progress_count,played,last_file_id,last_resolution,last_hdr,last_codec_video
+action item movie-tmdb-12429 200 position=651.234 played=false in_progress=true
+action unwatched movie-tmdb-12429 204 done_ms=1792099172209
+action watch movie-tmdb-12429 200 position=null played=null audio=2 subtitles=22 user_data_keys=
+action item movie-tmdb-12429 200 position=null played=null in_progress=null
