@@ -1,6 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:plezy/silo/silo_models.dart';
 import 'package:plezy/silo/silo_playback.dart';
+import 'package:plezy/silo/silo_playback_journal.dart';
+import 'package:plezy/silo/silo_playback_session.dart';
+
+import 'fake_silo.dart';
 
 Map<String, Object?> _version(String fileId, {String? resolution, int bitrate = 0, int size = 0}) => {
   'file_id': fileId,
@@ -68,6 +76,157 @@ Map<String, Object?> _plan({
 };
 
 void main() {
+  group('session (SequencedPlayback.kt)', () {
+    late _PlaybackServer server;
+    late SiloPlaybackJournal journal;
+    late List<Duration> waits;
+
+    setUp(() {
+      server = _PlaybackServer();
+      journal = SiloPlaybackJournal(MemorySiloJournalStore());
+      waits = [];
+    });
+
+    Future<SiloPlaybackSession> start() async {
+      final (session, _) = await signedInSession();
+      await session.selectProfile('p-1', null);
+      return SiloPlaybackSession.start(
+        siloHttpFor(server.fake, session),
+        journal,
+        _request(),
+        wait: (d) async => waits.add(d),
+      );
+    }
+
+    test('start admits, reads watch detail, then sends the body once (SequencedPlayback.kt:186-262)', () async {
+      final playback = await start();
+
+      expect(server.paths, [
+        'GET /api/v2/playback/capabilities',
+        'GET /api/v2/watch/movie-tmdb-1',
+        'POST /api/v2/playback/start',
+      ]);
+      expect(server.body('POST', '/api/v2/playback/start')!['start_position'], 593);
+      expect(server.body('POST', '/api/v2/playback/start')!['installation_id'], 'inst-1');
+      expect(playback.sessionId, 'sess-1');
+      expect((await journal.entries()).single.sessionId, 'sess-1', reason: 'journalled until stopped');
+    });
+
+    test('a journalled open session is stopped before the next start (SequencedPlayback.kt:220-225)', () async {
+      await start();
+      server.calls.clear();
+
+      final second = await start();
+
+      expect(server.paths, [
+        'GET /api/v2/playback/capabilities',
+        'DELETE /api/v2/playback/sess-1',
+        'GET /api/v2/watch/movie-tmdb-1',
+        'POST /api/v2/playback/start',
+      ]);
+      expect([for (final e in await journal.entries()) e.sessionId], ['sess-2']);
+      expect(second.sessionId, 'sess-2');
+    });
+
+    test('progress takes the next sequence in source seconds (SequencedPlayback.kt:406-410)', () async {
+      final playback = await start();
+
+      expect(await playback.progress(600, paused: false), isTrue);
+      expect(await playback.progress(610, paused: true), isTrue);
+
+      final sent = [
+        for (final c in server.calls)
+          if (c.$2.endsWith('/progress')) c.$3,
+      ];
+      expect(sent.map((b) => (b!['sequence'], b['position'], b['is_paused'])), [(1, 600, false), (2, 610, true)]);
+    });
+
+    test('an unconfirmed sample is resent verbatim before the next (SequencedPlayback.kt:399-405)', () async {
+      final playback = await start();
+      server.progressReceipt = (_) => {'outcome': 'bogus'};
+      expect(await playback.progress(600, paused: false), isFalse);
+      server.progressReceipt = null;
+
+      expect(await playback.progress(620, paused: false), isTrue);
+
+      final sent = [
+        for (final c in server.calls)
+          if (c.$2.endsWith('/progress')) c.$3,
+      ];
+      expect(sent.map((b) => (b!['sequence'], b['position'])), [(1, 600), (1, 600), (2, 620)]);
+    });
+
+    test('a receipt that echoes a different sample is refused (SequencedPlayback.kt:415-423)', () async {
+      final playback = await start();
+      server.progressReceipt = (b) => {
+        'outcome': 'applied',
+        'accepted': {'sequence': b['sequence'], 'position': 1.0, 'is_paused': b['is_paused']},
+      };
+
+      expect(await playback.progress(600, paused: false), isFalse);
+    });
+
+    test('negative or non-finite positions are dropped (SequencedPlayback.kt:398)', () async {
+      final playback = await start();
+
+      expect(await playback.progress(-1, paused: false), isFalse);
+      expect(await playback.progress(double.nan, paused: false), isFalse);
+      expect(server.paths.where((p) => p.endsWith('/progress')), isEmpty);
+    });
+
+    test('stop sends one stop_id, retries a 503 with 250 ms steps, and clears the journal', () async {
+      final playback = await start();
+      server.stopStatus = (_, attempt) => attempt < 3 ? 503 : 200;
+
+      expect(await playback.stop(), isTrue);
+
+      final stops = [
+        for (final c in server.calls)
+          if (c.$1 == 'DELETE') c.$3!['stop_id'],
+      ];
+      expect(stops, hasLength(3));
+      expect(stops.toSet(), hasLength(1), reason: 'built once and resent verbatim (SequencedPlayback.kt:436-440)');
+      expect(waits, [const Duration(milliseconds: 250), const Duration(milliseconds: 500)]);
+      expect(await journal.entries(), isEmpty);
+    });
+
+    test('a 404 stop counts as stopped (SequencedPlayback.kt:443-459)', () async {
+      final playback = await start();
+      server.stopStatus = (_, _) => 404;
+
+      expect(await playback.stop(), isTrue);
+      expect(await journal.entries(), isEmpty);
+    });
+
+    test('a refused stop stays journalled with its unsent sample', () async {
+      final playback = await start();
+      server.progressReceipt = (_) => {'outcome': 'bogus'};
+      await playback.progress(700, paused: true);
+      server.stopStatus = (_, _) => 400;
+
+      expect(await playback.stop(), isFalse);
+
+      final left = (await journal.entries()).single;
+      expect(left.stopId, isNotNull);
+      expect(left.stopSample, (sequence: 1, position: 700.0, isPaused: true));
+      expect(server.body('DELETE', '/api/v2/playback/sess-1')!['position'], 700);
+    });
+
+    test('the journal survives a restart on disk', () async {
+      final dir = await Directory.systemTemp.createTemp('silo_journal');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/journal.json');
+      journal = SiloPlaybackJournal(FileSiloJournalStore(file));
+      await start();
+
+      final reopened = await SiloPlaybackJournal(FileSiloJournalStore(file)).entries();
+
+      expect(reopened.single.sessionId, 'sess-1');
+      expect(reopened.single.installationId, 'inst-1');
+      expect(await file.readAsString(), isNot(contains('access-A')), reason: 'no credential is journalled');
+    });
+  });
+
   group('watch detail (WatchDetailV2Api.kt:25-55)', () {
     test('file ids are positive decimal strings', () {
       final detail = SiloWatchDetail.fromJson(
@@ -405,3 +564,72 @@ void main() {
     });
   });
 }
+
+/// A Silo server for one playback flow. Every playback request is recorded
+/// with its decoded body.
+class _PlaybackServer {
+  final List<(String, String, Map<String, Object?>?)> calls = [];
+  int sessions = 0;
+  int Function(String sessionId, int attempt) stopStatus = (_, _) => 200;
+  final Map<String, int> _stopAttempts = {};
+  Map<String, Object?> Function(Map<String, Object?> body)? progressReceipt;
+  late final FakeSilo fake = FakeSilo(_handle);
+
+  List<String> get paths => [for (final c in calls) '${c.$1} ${c.$2}'];
+
+  Map<String, Object?>? body(String method, String path) => calls.lastWhere((c) => c.$1 == method && c.$2 == path).$3;
+
+  http.Response _handle(RecordedRequest request) {
+    final path = request.url.path;
+    final body = request.body.isEmpty ? null : jsonDecode(request.body) as Map<String, Object?>;
+    if (path.startsWith('/api/v2/playback') || path.startsWith('/api/v2/watch')) {
+      calls.add((request.method, path, body));
+    }
+    if (path == '/api/v2/playback/capabilities') {
+      return jsonResponse({
+        'installation_id': 'inst-1',
+        'state': 'available',
+        'allowed': true,
+        'protocol_versions': [3],
+        'features': ['sequenced_progress_v1'],
+      }, 200);
+    }
+    if (path == '/api/v2/watch/movie-tmdb-1') return jsonResponse(_watch(userData: {'position_seconds': 600.0}), 200);
+    if (path == '/api/v2/playback/start') {
+      final id = 'sess-${++sessions}';
+      return jsonResponse(_decision(plan: {..._plan(), 'session_id': id})..['session_id'] = id, 201);
+    }
+    final progress = RegExp(r'^/api/v2/playback/([^/]+)/progress$').firstMatch(path);
+    if (progress != null) {
+      return jsonResponse(
+        progressReceipt?.call(body!) ??
+            {
+              'outcome': 'applied',
+              'accepted': {'sequence': body!['sequence'], 'position': body['position'], 'is_paused': body['is_paused']},
+            },
+        200,
+      );
+    }
+    final stop = RegExp(r'^/api/v2/playback/([^/]+)$').firstMatch(path);
+    if (stop != null && request.method == 'DELETE') {
+      final id = stop.group(1)!;
+      final attempt = _stopAttempts[id] = (_stopAttempts[id] ?? 0) + 1;
+      final status = stopStatus(id, attempt);
+      return status == 200
+          ? jsonResponse({'outcome': 'stopped', 'stop_id': body!['stop_id']}, 200)
+          : jsonResponse({}, status);
+    }
+    return jsonResponse({}, 404);
+  }
+}
+
+SiloPlaybackRequest _request({double? start = 593}) => (
+  contentId: 'movie-tmdb-1',
+  profileId: 'p-1',
+  device: _tv,
+  fileId: null,
+  quality: 'auto',
+  startPosition: start,
+  audioTrackIndex: null,
+  bandwidthCapKbps: null,
+);
