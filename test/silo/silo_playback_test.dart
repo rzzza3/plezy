@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/silo/silo_mappers.dart';
 import 'package:plezy/silo/silo_models.dart';
 import 'package:plezy/silo/silo_playback.dart';
@@ -155,6 +156,20 @@ void main() {
     });
   });
 
+  group('carried audio', () {
+    final version = SiloWatchDetail.fromJson(_watch(), 'movie-tmdb-1').versions.single;
+
+    test('a carried track resolves to the version track with its language, as the Plex carry does', () {
+      expect(siloCarriedAudioOrdinal(const AudioTrack(id: '7', language: 'fra'), version), 1);
+      expect(siloCarriedAudioOrdinal(const AudioTrack(id: '7', language: 'eng', channels: 6), version), 0);
+    });
+
+    test('no carry, or a language this version lacks, leaves the pick to the server', () {
+      expect(siloCarriedAudioOrdinal(null, version), isNull);
+      expect(siloCarriedAudioOrdinal(const AudioTrack(id: '7', language: 'jpn'), version), isNull);
+    });
+  });
+
   group('session (SequencedPlayback.kt)', () {
     late _PlaybackServer server;
     late SiloPlaybackJournal journal;
@@ -166,13 +181,13 @@ void main() {
       waits = [];
     });
 
-    Future<SiloPlaybackSession> start() async {
+    Future<SiloPlaybackSession> start({AudioTrack? carriedAudio}) async {
       final (session, _) = await signedInSession();
       await session.selectProfile('p-1', null);
       return SiloPlaybackSession.start(
         siloHttpFor(server.fake, session),
         journal,
-        _request(),
+        _request(carriedAudio: carriedAudio),
         wait: (d) async => waits.add(d),
       );
     }
@@ -194,6 +209,19 @@ void main() {
         'X-Profile-Id': 'p-1',
       }, reason: 'captured from the start, no profile token (ProxyAuxiliaryV2.kt:16-24)');
     });
+
+    test(
+      'with no track chosen, a carried audio choice names the matching ordinal (TvVideoPlaybackStarter.kt:554-557)',
+      () async {
+        await start(
+          carriedAudio: const AudioTrack(id: '7', language: 'fra', codec: 'aac', channels: 2),
+        );
+        final body = server.body('POST', '/api/v2/playback/start')!;
+
+        expect(body['audio_track_index'], 1);
+        expect(body['audio_track_id'], 'file:41:audio:1');
+      },
+    );
 
     test('a journalled open session is stopped before the next start (SequencedPlayback.kt:220-225)', () async {
       await start();
@@ -921,7 +949,7 @@ class _PlaybackServer {
   }
 }
 
-SiloPlaybackRequest _request({double? start = 593}) => (
+SiloPlaybackRequest _request({double? start = 593, AudioTrack? carriedAudio}) => (
   contentId: 'movie-tmdb-1',
   profileId: 'p-1',
   device: _tv,
@@ -929,5 +957,6 @@ SiloPlaybackRequest _request({double? start = 593}) => (
   quality: 'auto',
   startPosition: start,
   audioTrackIndex: null,
+  carriedAudio: carriedAudio,
   bandwidthCapKbps: null,
 );

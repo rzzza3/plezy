@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import '../mpv/mpv.dart';
 import '../utils/app_logger.dart';
 import 'silo_headers.dart';
 import 'silo_http.dart';
+import 'silo_mappers.dart';
 import 'silo_playback.dart';
 import 'silo_playback_journal.dart';
 
@@ -50,6 +52,7 @@ typedef SiloPlaybackRequest = ({
   String quality,
   double? startPosition,
   int? audioTrackIndex,
+  AudioTrack? carriedAudio,
   int? bandwidthCapKbps,
 });
 
@@ -180,7 +183,7 @@ class SiloPlaybackSession {
       context: context,
       qualityPreference: request.quality,
       startPosition: request.startPosition,
-      audioTrackIndex: request.audioTrackIndex,
+      audioTrackIndex: request.audioTrackIndex ?? siloCarriedAudioOrdinal(request.carriedAudio, version),
       bandwidthCapKbps: request.bandwidthCapKbps,
     );
     var entry = SiloJournalEntry(

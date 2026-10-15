@@ -649,7 +649,8 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final preset = options.qualityPreset;
     final height = preset.resolutionHeight;
     final quality = preset.isOriginal || height == null ? 'auto' : '${height}p';
-    final audio = _audioOrdinal(options);
+    final chosenAudio = _audioOrdinal(options);
+    final carriedAudio = chosenAudio == null ? options.preferredAudioTrack : null;
     final start = options.startPosition == null ? null : options.startPosition!.inMilliseconds / 1000;
     final previous = _playback;
     final sameItem = previous != null && !previous.isStopped && previous.detail.contentId == options.metadata.id;
@@ -657,6 +658,7 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final index = options.selectedMediaIndex;
     final fileId = index >= 0 && index < versions.length ? versions[index] : null;
 
+    final audio = chosenAudio ?? (sameItem ? siloCarriedAudioOrdinal(carriedAudio, previous.playingVersion) : null);
     final operation = sameItem && (fileId == null || fileId == previous.playingVersion.fileId)
         ? previous.replanForReload(quality: quality, audioTrackIndex: audio, startSeconds: start)
         : null;
@@ -699,7 +701,8 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
         fileId: fileId,
         quality: quality,
         startPosition: start,
-        audioTrackIndex: audio,
+        audioTrackIndex: chosenAudio,
+        carriedAudio: carriedAudio,
         bandwidthCapKbps: preset.videoBitrateKbps,
       ));
     } on SiloPlaybackFailure catch (failure) {

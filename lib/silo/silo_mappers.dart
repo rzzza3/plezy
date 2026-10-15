@@ -10,6 +10,7 @@ import '../media/media_role.dart';
 import '../media/media_source_info.dart';
 import '../mpv/mpv.dart';
 import '../services/playback_initialization_types.dart';
+import '../services/track_selection_service.dart';
 import 'silo_models.dart';
 import 'silo_playback.dart';
 
@@ -408,6 +409,27 @@ int siloSelectedAudioOrdinal(SiloFileVersion version, SiloPlan plan) {
   return fallback < 0 ? 0 : fallback;
 }
 
+List<MediaAudioTrack> siloAudioTracks(SiloFileVersion version, {int? selected}) => [
+  for (var i = 0; i < version.audioTracks.length; i++)
+    MediaAudioTrack(
+      id: i + 1,
+      index: i,
+      codec: version.audioTracks[i].codec,
+      language: version.audioTracks[i].language,
+      languageCode: version.audioTracks[i].language,
+      title: version.audioTracks[i].title,
+      channels: version.audioTracks[i].channels,
+      selected: i == selected,
+      isDefault: version.audioTracks[i].isDefault,
+    ),
+];
+
+/// The ordinal of [version]'s track that serves a carried audio choice, the
+/// way the other backends resolve `preferredAudioTrack`. A transcode bakes
+/// the audio in, so a reload that drops the carry loses the user's pick.
+int? siloCarriedAudioOrdinal(AudioTrack? carried, SiloFileVersion version) =>
+    carried == null ? null : findSourceAudioTrackForIntent(carried, siloAudioTracks(version))?.index;
+
 /// Track ids are the ordinal plus one, so no Silo track is 0, which other
 /// backends use for "off". The ordinal is what the start body carries
 /// (`T/ui/screens/player/TvVideoPlaybackStarter.kt:554-557`).
@@ -420,20 +442,7 @@ MediaSourceInfo siloMediaSourceInfo(
   final audio = siloSelectedAudioOrdinal(version, plan);
   return MediaSourceInfo(
     videoUrl: videoUrl,
-    audioTracks: [
-      for (var i = 0; i < version.audioTracks.length; i++)
-        MediaAudioTrack(
-          id: i + 1,
-          index: i,
-          codec: version.audioTracks[i].codec,
-          language: version.audioTracks[i].language,
-          languageCode: version.audioTracks[i].language,
-          title: version.audioTracks[i].title,
-          channels: version.audioTracks[i].channels,
-          selected: i == audio,
-          isDefault: version.audioTracks[i].isDefault,
-        ),
-    ],
+    audioTracks: siloAudioTracks(version, selected: audio),
     subtitleTracks: plan.isTranscode
         ? [
             for (final row in plan.subtitleInventory)
