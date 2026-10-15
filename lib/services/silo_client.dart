@@ -675,6 +675,12 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
       }
     }
 
+    if (previous != null) {
+      appLogger.i(
+        'Silo playback: new session (same item $sameItem, file ${fileId == null || fileId == previous.version.fileId}, '
+        'quality ${previous.quality} to $quality, audio ${previous.plan.selectedAudio?.index} to $audio)',
+      );
+    }
     await _endPlayback();
     final profile = http.session.session?.profileId;
     if (profile == null) {
