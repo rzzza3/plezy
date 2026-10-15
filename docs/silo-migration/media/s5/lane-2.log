@@ -1,0 +1,7 @@
+17:23:38.512 : [I] [MPV:display] hdr=false dv=false current=#1 1920x1080@60.000004Hz supported=[#1 1920x1080@60.000004Hz]
+17:23:39.562 : [I] Silo playback: started, SiloPlayable
+17:23:39.562 : [I] Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38
+17:23:53.230 : [I] Silo playback: progress 1 at 34 s
+17:24:03.230 : [I] Silo playback: progress 2 at 44 s
+17:24:03.513 : [I] Silo playback: progress 3 at 48 s
+17:24:05.747 : [I] Silo playback: stopped (status 200)
