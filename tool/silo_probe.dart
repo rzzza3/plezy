@@ -39,7 +39,8 @@ read-only responses, and signs out. Tokens stay in memory.
                            file or stdin, in the same session, then log out:
                              home                   ids per section_type
                              watch <content_id>     stored position, played
-                                                    and track counts
+                                                    and track counts, from
+                                                    /watch and /catalog/items
                              ids </api/v2/...>      every content_id in a GET,
                                                     with type, season, episode
                              watched <content_id>   POST /watched/{id}
@@ -531,7 +532,15 @@ Future<void> _runAction(
       out.writeln(
         'action watch $id ${watch.statusCode} position=${userData['position_seconds']} played=${userData['played']} '
         'audio=${versions.map((v) => count(v, 'audio_tracks')).join(',')} '
-        'subtitles=${versions.map((v) => count(v, 'subtitle_tracks')).join(',')}',
+        'subtitles=${versions.map((v) => count(v, 'subtitle_tracks')).join(',')} '
+        'user_data_keys=${userData.keys.join(',')}',
+      );
+      final item = await silo.send(SiloRequest.get('/api/v2/catalog/items/${Uri.encodeComponent(id)}'));
+      final itemJson = item.isSuccess ? _tryJson(item.body) : null;
+      final itemUserData = itemJson is Map && itemJson['user_data'] is Map ? itemJson['user_data'] as Map : const {};
+      out.writeln(
+        'action item $id ${item.statusCode} position=${itemUserData['position_seconds']} '
+        'played=${itemUserData['played']} in_progress=${itemUserData['is_in_progress']}',
       );
     case SiloProbeIds(:final uri):
       final response = await silo.send(SiloRequest.get(uri.path, query: uri.hasQuery ? uri.queryParameters : null));

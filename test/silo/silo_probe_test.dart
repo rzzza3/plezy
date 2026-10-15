@@ -97,6 +97,14 @@ class _FakeServer {
           'features': ['sequenced_progress_v1'],
         },
       ),
+      '/api/v2/catalog/items/movie-1' when authorized => (
+        200,
+        {
+          'content_id': 'movie-1',
+          'title': 'Secret Title',
+          'user_data': {'position_seconds': 40.0, 'played': false, 'is_in_progress': true},
+        },
+      ),
       '/api/v2/watch/movie-1' when authorized => (
         200,
         {
@@ -334,7 +342,14 @@ toggle c1 3 1.5
 
     final log = out.toString();
     expect(code, 0, reason: log);
-    expect(log, contains('action watch movie-1 200 position=50.0 played=false audio=0 subtitles=0\n'));
+    expect(
+      log,
+      contains(
+        'action watch movie-1 200 position=50.0 played=false audio=0 subtitles=0 '
+        'user_data_keys=position_seconds,played\n',
+      ),
+    );
+    expect(log, contains('action item movie-1 200 position=40.0 played=false in_progress=true\n'));
     expect(log, contains('action ids /api/v2/watch/movie-1 200\nid movie-1 type=null season=null episode=null\n'));
     expect(log, isNot(contains('Secret Title')));
   });
