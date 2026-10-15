@@ -205,6 +205,37 @@ void main() {
       expect(second.sessionId, 'sess-2');
     });
 
+    test(
+      'leftovers get one stop each, the first failure ends the pass, and other installations are dropped (SequencedPlayback.kt:470-506)',
+      () async {
+        final origin = siloTestOrigin.toString();
+        SiloJournalEntry left(String attempt, {String? session, String profile = 'p-1', String install = 'inst-1'}) =>
+            SiloJournalEntry(
+              origin: origin,
+              profileId: profile,
+              installationId: install,
+              attemptId: attempt,
+              sessionId: session,
+            );
+        await journal.put(left('a-other-install', session: 'old-0', install: 'inst-0'));
+        await journal.put(left('a-other-profile', session: 'old-p2', profile: 'p-2'));
+        await journal.put(left('a-no-session'));
+        await journal.put(left('a-fails', session: 'old-1'));
+        await journal.put(left('a-waits', session: 'old-2'));
+        server.stopStatus = (id, _) => id == 'old-1' ? 503 : 200;
+
+        await start();
+
+        expect(server.paths.where((p) => p.startsWith('DELETE')), ['DELETE /api/v2/playback/old-1']);
+        expect(waits, isEmpty, reason: 'a leftover gets one attempt, no backoff');
+        expect([for (final e in await journal.entries()) e.attemptId].where((id) => id.startsWith('a-')), [
+          'a-other-profile',
+          'a-fails',
+          'a-waits',
+        ]);
+      },
+    );
+
     test('progress takes the next sequence in source seconds (SequencedPlayback.kt:406-410)', () async {
       final playback = await start();
 

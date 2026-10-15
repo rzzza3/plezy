@@ -111,7 +111,13 @@ class SiloPlaybackSession {
     }
 
     try {
-      await settleSiloLeftovers(http, journal, wait: pause);
+      await settleSiloLeftovers(
+        http,
+        journal,
+        profileId: request.profileId,
+        installationId: admission.installationId,
+        wait: pause,
+      );
     } on Exception catch (error) {
       appLogger.i('Silo playback: leftover stop failed (${error.runtimeType})');
     }
@@ -343,7 +349,7 @@ class SiloPlaybackSession {
   /// lands stays journalled for the next start (`S/repository/SequencedPlayback.kt:436-459`).
   Future<bool> stop() async {
     if (_stopped) return true;
-    final confirmed = await _stopEntry(http, journal, _entry, _wait);
+    final confirmed = await _stopEntry(http, journal, _entry, _wait, attempts: 3);
     _stopped = confirmed;
     return confirmed;
   }
@@ -353,8 +359,9 @@ Future<bool> _stopEntry(
   SiloHttp http,
   SiloPlaybackJournal journal,
   SiloJournalEntry entry,
-  Future<void> Function(Duration delay) wait,
-) async {
+  Future<void> Function(Duration delay) wait, {
+  required int attempts,
+}) async {
   final sessionId = entry.sessionId;
   if (sessionId == null) {
     await journal.remove(entry.attemptId);
@@ -373,7 +380,7 @@ Future<bool> _stopEntry(
     'position': ?sample?.position,
     'is_paused': ?sample?.isPaused,
   };
-  for (var attempt = 1; attempt <= 3; attempt++) {
+  for (var attempt = 1; attempt <= attempts; attempt++) {
     int? status;
     Object? receipt;
     try {
@@ -397,23 +404,31 @@ Future<bool> _stopEntry(
       return true;
     }
     if (status != null && status != 503) break;
-    if (attempt < 3) await wait(Duration(milliseconds: 250 * attempt));
+    if (attempt < attempts) await wait(Duration(milliseconds: 250 * attempt));
   }
   appLogger.i('Silo playback: stop left in the journal');
   return false;
 }
 
-/// One stop for each session an earlier run left open on this server. An
-/// entry with no session allocated nothing and is dropped
-/// (`S/repository/SequencedPlayback.kt:220-225,462-506`).
+/// One stop attempt for each session this profile left open on this server
+/// under the current installation. The first that fails ends the pass, and
+/// the rest wait for the next start. An attempt under another installation
+/// can never be stopped and is dropped, and one with no session allocated
+/// nothing (`S/repository/SequencedPlayback.kt:462-506`).
 Future<void> settleSiloLeftovers(
   SiloHttp http,
   SiloPlaybackJournal journal, {
+  required String profileId,
+  required String installationId,
   Future<void> Function(Duration delay)? wait,
 }) async {
   final origin = http.origin.toString();
   for (final entry in await journal.entries()) {
-    if (entry.origin != origin) continue;
-    await _stopEntry(http, journal, entry, wait ?? Future<void>.delayed);
+    if (entry.origin != origin || entry.profileId != profileId) continue;
+    if (entry.installationId != installationId) {
+      await journal.remove(entry.attemptId);
+      continue;
+    }
+    if (!await _stopEntry(http, journal, entry, wait ?? Future<void>.delayed, attempts: 1)) return;
   }
 }
