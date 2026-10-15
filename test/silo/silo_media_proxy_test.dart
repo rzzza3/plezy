@@ -218,6 +218,17 @@ void main() {
     expect(refresher.to('/api/v2/auth/refresh'), hasLength(1));
   });
 
+  test('a second 401 goes back to mpv with no further refresh (AuthenticatedDataSourceFactory.kt:103-118)', () async {
+    origin.token = 'never';
+    final route = proxy.open(http: http, stream: origin.origin.resolve('/api/v2/stream/S1?st=sig-secret'));
+
+    final got = await _get(route.playerUrl(origin.origin.resolve('/api/v2/stream/S1?st=sig-secret')));
+
+    expect(got.status, 401);
+    expect(origin.seen, hasLength(2));
+    expect(refresher.to('/api/v2/auth/refresh'), hasLength(1));
+  });
+
   test(
     'plan headers go only to the stream directory, credentials to the whole origin (SiloPlayerFactory.kt:549-573)',
     () async {
