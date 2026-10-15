@@ -37,5 +37,19 @@ void main() {
       expect(resolveOpenResumePosition(), isNull);
       expect(resolveOpenResumePosition(offlineOffsetMs: 0), isNull);
     });
+
+    test('a Silo resume of 30 s or more starts 7 s earlier (PlaybackStartPosition.kt:59-72)', () {
+      expect(resolveOpenResumePosition(viewOffsetMs: 120_000, rewindResume: true), const Duration(seconds: 113));
+      expect(resolveOpenResumePosition(viewOffsetMs: 30_000, rewindResume: true), const Duration(seconds: 23));
+      expect(resolveOpenResumePosition(viewOffsetMs: 29_000, rewindResume: true), const Duration(seconds: 29));
+    });
+
+    test('an explicit request or shuffle is never rewound', () {
+      expect(
+        resolveOpenResumePosition(requested: const Duration(minutes: 5), viewOffsetMs: 120_000, rewindResume: true),
+        const Duration(minutes: 5),
+      );
+      expect(resolveOpenResumePosition(shuffleFromBeginning: true, rewindResume: true), Duration.zero);
+    });
   });
 }

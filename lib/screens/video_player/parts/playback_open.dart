@@ -71,18 +71,27 @@ class _MediaOpenResult {
 /// caller request (version switch, stream recovery, Watch Together), the
 /// shuffle-starts-from-beginning override (#2303), locally tracked offline
 /// progress, then the server-side view offset.
+///
+/// [rewindResume] starts a saved resume of 30 s or more 7 s earlier, as
+/// Silo's TV app does (`S/model/playback/PlaybackStartPosition.kt:40-72`).
+/// An explicit request and Start Over are never rewound.
 Duration? resolveOpenResumePosition({
   Duration? requested,
   bool shuffleFromBeginning = false,
   int? offlineOffsetMs,
   int? viewOffsetMs,
+  bool rewindResume = false,
 }) {
   if (requested != null) return requested;
   if (shuffleFromBeginning) return Duration.zero;
-  if (offlineOffsetMs != null && offlineOffsetMs > 0) {
-    return Duration(milliseconds: offlineOffsetMs);
+  Duration rewound(int ms) {
+    final saved = Duration(milliseconds: ms);
+    if (!rewindResume || saved < const Duration(seconds: 30)) return saved;
+    return saved - const Duration(seconds: 7);
   }
-  return viewOffsetMs != null ? Duration(milliseconds: viewOffsetMs) : null;
+
+  if (offlineOffsetMs != null && offlineOffsetMs > 0) return rewound(offlineOffsetMs);
+  return viewOffsetMs != null ? rewound(viewOffsetMs) : null;
 }
 
 /// Shared building blocks for opening media on the live player.
@@ -217,6 +226,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       shuffleFromBeginning: shuffleFromBeginning,
       offlineOffsetMs: offlineOffsetMs,
       viewOffsetMs: metadata.viewOffsetMs,
+      rewindResume: metadata.backend == MediaBackend.silo,
     );
   }
 

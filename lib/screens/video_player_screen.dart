@@ -1770,6 +1770,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
               requested: widget.initialPosition,
               shuffleFromBeginning: widget.initialPosition == null && _opensShuffledFromBeginning(settingsService),
               viewOffsetMs: _currentMetadata.viewOffsetMs,
+              rewindResume: _currentMetadata.backend == MediaBackend.silo,
             ),
           ),
           offlineLibraryMode: false,

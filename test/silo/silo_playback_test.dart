@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:plezy/silo/silo_mappers.dart';
 import 'package:plezy/silo/silo_models.dart';
 import 'package:plezy/silo/silo_playback.dart';
 import 'package:plezy/silo/silo_playback_journal.dart';
@@ -76,6 +77,82 @@ Map<String, Object?> _plan({
 };
 
 void main() {
+  group('player mapping', () {
+    final version = SiloFileVersion.fromJson(_version('41', resolution: '1080p'));
+    SiloPlan plan(String delivery, {String url = '/api/v2/stream/sess-1', Map<String, Object?> extra = const {}}) =>
+        (parseSiloDecision(
+                  _decision(
+                    plan: _plan(delivery: delivery, url: url, extra: extra),
+                  ),
+                )
+                as SiloPlayable)
+            .plan;
+
+    test(
+      'audio ids are the ordinal plus one, and the plan\'s pick is selected (TvVideoPlaybackStarter.kt:554-557)',
+      () {
+        final info = siloMediaSourceInfo(
+          version,
+          plan(
+            'original_http',
+            extra: {
+              'selected_tracks': {
+                'audio': {'id': 'file:41:audio:1', 'index': 1},
+              },
+            },
+          ),
+          videoUrl: 'http://127.0.0.1:1/r/x/s',
+          mediaIndex: 0,
+        );
+
+        expect(info.audioTracks.map((t) => (t.id, t.index, t.codec, t.selected)), [
+          (1, 0, 'eac3', false),
+          (2, 1, 'aac', true),
+        ]);
+        expect(info.defaultAudioStreamIndex, 2);
+        expect(info.mediaSourceId, '41');
+      },
+    );
+
+    test('direct play lists the container subtitles and loads no sidecar', () {
+      final direct = plan('original_http');
+      final info = siloMediaSourceInfo(version, direct, videoUrl: 'u', mediaIndex: 0);
+
+      expect(info.subtitleTracks.map((t) => (t.id, t.language)), [(1, 'eng')]);
+      expect(siloSubtitleSidecars(direct, (url) => Uri.parse('http://p$url')), isEmpty);
+    });
+
+    test('a transcode lists the inventory and loads its sidecars lazily through the player URL', () {
+      final transcode = plan(
+        'server_transcode_hls',
+        url: '/api/v2/playback/transcode/sess-1/master.m3u8',
+        extra: {
+          'subtitle': {
+            'inventory': [
+              {
+                'track_id': 't0',
+                'combined_index': 0,
+                'source': 'embedded',
+                'codec': 'subrip',
+                'language': 'eng',
+                'delivery': 'sidecar',
+                'url': '/api/v2/stream/sess-1/subtitles/0.vtt',
+              },
+            ],
+          },
+        },
+      );
+
+      final info = siloMediaSourceInfo(version, transcode, videoUrl: 'u', mediaIndex: 0);
+      final sidecars = siloSubtitleSidecars(transcode, (url) => Uri.parse('http://127.0.0.1:9/r/x$url'));
+
+      expect(info.subtitleTracks.single.usesExternalDelivery, isTrue);
+      expect(sidecars.single.sourceStreamId, 1);
+      expect(sidecars.single.preload, isFalse);
+      expect(sidecars.single.track.uri, 'http://127.0.0.1:9/r/x/api/v2/stream/sess-1/subtitles/0.vtt');
+    });
+  });
+
   group('session (SequencedPlayback.kt)', () {
     late _PlaybackServer server;
     late SiloPlaybackJournal journal;

@@ -7,7 +7,11 @@ import '../media/media_library.dart';
 import '../media/media_person.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
+import '../media/media_source_info.dart';
+import '../mpv/mpv.dart';
+import '../services/playback_initialization_types.dart';
 import 'silo_models.dart';
+import 'silo_playback.dart';
 
 /// How Plezy's home treats a Silo row.
 enum SiloRowRole {
@@ -391,3 +395,95 @@ SiloEpisode? siloNextUpEpisode(List<SiloEpisode> episodes) =>
     episodes.where((e) => e.userData?.isInProgress ?? false).firstOrNull ??
     episodes.where((e) => !(e.userData?.played ?? false)).firstOrNull ??
     episodes.firstOrNull;
+
+/// The ordinal of the audio track the plan plays: the server's pick, else
+/// the file's effective track, else the first default, else the first.
+int siloSelectedAudioOrdinal(SiloFileVersion version, SiloPlan plan) {
+  final count = version.audioTracks.length;
+  bool valid(int? i) => i != null && i >= 0 && i < count;
+  final picked = plan.selectedAudio?.index;
+  if (valid(picked)) return picked!;
+  if (valid(version.effectiveAudioTrackIndex)) return version.effectiveAudioTrackIndex!;
+  final fallback = version.audioTracks.indexWhere((t) => t.isDefault);
+  return fallback < 0 ? 0 : fallback;
+}
+
+/// Track ids are the ordinal plus one, so no Silo track is 0, which other
+/// backends use for "off". The ordinal is what the start body carries
+/// (`T/ui/screens/player/TvVideoPlaybackStarter.kt:554-557`).
+MediaSourceInfo siloMediaSourceInfo(
+  SiloFileVersion version,
+  SiloPlan plan, {
+  required String videoUrl,
+  required int mediaIndex,
+}) {
+  final audio = siloSelectedAudioOrdinal(version, plan);
+  return MediaSourceInfo(
+    videoUrl: videoUrl,
+    audioTracks: [
+      for (var i = 0; i < version.audioTracks.length; i++)
+        MediaAudioTrack(
+          id: i + 1,
+          index: i,
+          codec: version.audioTracks[i].codec,
+          language: version.audioTracks[i].language,
+          languageCode: version.audioTracks[i].language,
+          title: version.audioTracks[i].title,
+          channels: version.audioTracks[i].channels,
+          selected: i == audio,
+          isDefault: version.audioTracks[i].isDefault,
+        ),
+    ],
+    subtitleTracks: plan.isTranscode
+        ? [
+            for (final row in plan.subtitleInventory)
+              MediaSubtitleTrack(
+                id: row.combinedIndex + 1,
+                index: row.combinedIndex,
+                codec: row.codec,
+                language: row.language,
+                languageCode: row.language,
+                title: row.label,
+                selected: false,
+                forced: row.forced,
+                usesExternalDelivery: row.url != null,
+              ),
+          ]
+        : [
+            for (var i = 0; i < version.subtitleTracks.length; i++)
+              MediaSubtitleTrack(
+                id: i + 1,
+                index: i,
+                codec: version.subtitleTracks[i].codec,
+                language: version.subtitleTracks[i].language,
+                languageCode: version.subtitleTracks[i].language,
+                title: version.subtitleTracks[i].title,
+                selected: false,
+                forced: version.subtitleTracks[i].forced,
+              ),
+          ],
+    chapters: const [],
+    mediaSourceId: '${version.fileId}',
+    mediaIndex: mediaIndex,
+    defaultAudioStreamIndex: version.audioTracks.isEmpty ? null : audio + 1,
+  );
+}
+
+/// Sidecars for a transcode, which carries no subtitle track of its own.
+/// Direct play reads embedded tracks from the container, as Jellyfin's
+/// direct play does. [playerUrl] maps a plan URL to what mpv opens.
+List<PlaybackSubtitleSidecar> siloSubtitleSidecars(SiloPlan plan, Uri Function(String planUrl) playerUrl) => [
+  if (plan.isTranscode)
+    for (final row in plan.subtitleInventory)
+      if (row.delivery == 'sidecar' && row.url != null)
+        PlaybackSubtitleSidecar(
+          sourceStreamId: row.combinedIndex + 1,
+          track: SubtitleTrack.uri(
+            '${playerUrl(row.url!)}',
+            title: row.label ?? row.language,
+            language: row.language,
+            codec: row.codec,
+            isForced: row.forced,
+          ),
+        ),
+];

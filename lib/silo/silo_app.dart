@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../services/base_shared_preferences_service.dart';
 import '../utils/app_logger.dart';
@@ -10,6 +11,9 @@ import '../utils/platform_detector.dart';
 import 'silo_contract_gate.dart';
 import 'silo_headers.dart';
 import 'silo_http.dart';
+import 'silo_media_proxy.dart';
+import 'silo_playback.dart';
+import 'silo_playback_journal.dart';
 import 'silo_server_probe.dart';
 import 'silo_session.dart';
 import 'silo_vault_store.dart';
@@ -27,6 +31,21 @@ class SiloApp {
   static final Map<String, Future<SiloSessionController>> _sessions = {};
   static final Map<String, SiloContractGate> _gates = {};
   static Future<SiloCleartextConsent>? _consent;
+  static Future<SiloDeviceFacts>? _facts;
+  static Future<SiloMediaProxy>? _proxy;
+  static Future<SiloPlaybackJournal>? _journal;
+
+  /// The device as the playback context describes it.
+  static Future<SiloDeviceFacts> playbackFacts() => _facts ??= _loadFacts();
+
+  /// One loopback proxy for every Silo stream this process plays.
+  static Future<SiloMediaProxy> mediaProxy() => _proxy ??= SiloMediaProxy.start();
+
+  /// The playback journal, kept in app support so it survives a restart.
+  static Future<SiloPlaybackJournal> playbackJournal() => _journal ??= () async {
+    final directory = await getApplicationSupportDirectory();
+    return SiloPlaybackJournal(FileSiloJournalStore(File('${directory.path}/silo_playback_journal.json')));
+  }();
 
   static Future<SiloHeaders> device() => _device ??= _loadDevice();
 
@@ -57,6 +76,37 @@ class SiloApp {
       device: await device(),
       gate: gate(siloOrigin(origin)),
       cleartextApproved: consent.isApproved,
+    );
+  }
+
+  static Future<SiloDeviceFacts> _loadFacts() async {
+    String? manufacturer;
+    String? model;
+    String? osVersion;
+    var appVersion = 'unknown';
+    try {
+      if (Platform.isAndroid) {
+        final info = await DeviceInfoPlugin().androidInfo;
+        manufacturer = info.manufacturer;
+        model = info.model;
+        osVersion = info.version.release;
+      }
+      appVersion = (await PackageInfo.fromPlatform()).version;
+    } catch (error) {
+      appLogger.d('Silo playback device facts unavailable', error: error);
+    }
+    final formFactor = PlatformDetector.isTV()
+        ? 'tv'
+        : Platform.isAndroid || Platform.isIOS
+        ? 'mobile'
+        : 'desktop';
+    return (
+      formFactor: formFactor,
+      appVersion: appVersion,
+      platform: Platform.operatingSystem,
+      osVersion: osVersion,
+      manufacturer: manufacturer,
+      model: model,
     );
   }
 

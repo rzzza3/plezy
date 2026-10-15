@@ -14,15 +14,23 @@ import '../media/media_library.dart';
 import '../media/media_person.dart';
 import '../media/media_server_client.dart';
 import '../media/media_sort.dart';
+import '../media/media_source_info.dart';
+import '../media/playback_report_metadata.dart';
+import '../media/media_version.dart';
 import '../media/server_capabilities.dart';
 import '../silo/silo_app.dart';
 import '../silo/silo_catalog.dart';
 import '../silo/silo_events.dart';
 import '../silo/silo_http.dart';
 import '../silo/silo_mappers.dart';
+import '../silo/silo_media_proxy.dart';
 import '../silo/silo_models.dart';
+import '../silo/silo_playback.dart';
+import '../silo/silo_playback_session.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController;
+import 'playback_initialization_types.dart';
+import 'scrub_preview_source.dart';
 
 /// A Silo server bound to one profile. Carries the identity and catalog
 /// members; playback and download members throw [UnsupportedError] until the
@@ -43,6 +51,10 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
 
   /// The last home read, which a dismissal checks the visible card against.
   List<SiloSection> _observedHome = const [];
+
+  /// The one session this client is playing, and its proxy route.
+  SiloPlaybackSession? _playback;
+  SiloMediaRoute? _route;
 
   /// Shows and seasons this client has mapped, so [fetchChildren] knows which
   /// Silo collection an id names without another detail read.
@@ -609,6 +621,220 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     await catalog.setWatchlisted(item.id, listed);
     _homeChanged();
   }
+
+  @override
+  double get watchedThreshold => 0.9;
+
+  /// The server settles watched state from the session's progress.
+  @override
+  bool get marksWatchedOnPlaybackStopped => true;
+
+  /// Start one server session and hand mpv its proxied stream
+  /// (`research/silo-playback.md` section 2). Any session still open on this
+  /// client is stopped first.
+  @override
+  Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
+    final previous = _playback?.detail;
+    final versions = previous != null && previous.contentId == options.metadata.id
+        ? [for (final v in previous.versions) v.fileId]
+        : const <int>[];
+    await _endPlayback();
+    final profile = http.session.session?.profileId;
+    if (profile == null) {
+      throw PlaybackException(
+        t.messages.playbackAuthenticationRequired,
+        reason: PlaybackFailureReason.authenticationRequired,
+      );
+    }
+    final preset = options.qualityPreset;
+    final height = preset.resolutionHeight;
+    final index = options.selectedMediaIndex;
+    final SiloPlaybackSession playback;
+    try {
+      playback = await SiloPlaybackSession.start(http, await SiloApp.playbackJournal(), (
+        contentId: options.metadata.id,
+        profileId: profile,
+        device: await SiloApp.playbackFacts(),
+        fileId: index >= 0 && index < versions.length ? versions[index] : null,
+        quality: preset.isOriginal || height == null ? 'auto' : '${height}p',
+        startPosition: options.startPosition == null ? null : options.startPosition!.inMilliseconds / 1000,
+        audioTrackIndex: _audioOrdinal(options),
+        bandwidthCapKbps: preset.videoBitrateKbps,
+      ));
+    } on SiloPlaybackFailure catch (failure) {
+      appLogger.i('Silo playback: refused (${failure.reason})');
+      throw PlaybackException(failure.message);
+    } on MediaServerException catch (error) {
+      throw classifyPlaybackFailure(error);
+    } on Exception catch (error) {
+      throw classifyPlaybackFailure(error);
+    }
+
+    final proxy = await SiloApp.mediaProxy();
+    final plan = playback.plan;
+    final route = proxy.open(
+      http: http,
+      stream: http.origin.resolve(plan.stream.url),
+      planHeaders: plan.stream.headers,
+    );
+    _playback = playback;
+    _route = route;
+    Uri player(String planUrl) => route.playerUrl(http.origin.resolve(planUrl));
+    final videoUrl = '${player(plan.stream.url)}';
+    final effective = playback.detail.versions.indexWhere(
+      (v) => v.fileId == (plan.effectiveMediaFileId ?? playback.version.fileId),
+    );
+    final mediaIndex = effective < 0 ? 0 : effective;
+    final version = playback.detail.versions[mediaIndex];
+    final mediaInfo = siloMediaSourceInfo(version, plan, videoUrl: videoUrl, mediaIndex: mediaIndex);
+    return PlaybackInitializationResult(
+      availableVersions: [
+        for (final v in playback.detail.versions)
+          MediaVersion(id: '${v.fileId}', videoResolution: v.resolution, bitrate: v.bitrate, container: v.container),
+      ],
+      videoUrl: videoUrl,
+      mediaInfo: mediaInfo,
+      subtitleSidecars: siloSubtitleSidecars(plan, player),
+      isTranscoding: plan.delivery != 'original_http',
+      activeAudioStreamId: mediaInfo.defaultAudioStreamIndex,
+      playSessionId: playback.sessionId,
+      playMethod: plan.delivery,
+      selectedMediaIndex: mediaIndex,
+    );
+  }
+
+  /// Plezy's audio ids are the Silo ordinal plus one.
+  int? _audioOrdinal(PlaybackInitializationOptions options) {
+    final id = options.selectedAudioStreamId;
+    return id != null && id > 0 ? id - 1 : null;
+  }
+
+  SiloPlaybackSession? _sessionFor(String? playSessionId) {
+    final playback = _playback;
+    return playback != null && !playback.isStopped && playback.sessionId == playSessionId ? playback : null;
+  }
+
+  double _source(SiloPlaybackSession playback, Duration position) {
+    final source = playback.plan.timeline.toSource(position.inMilliseconds / 1000);
+    final duration = playback.plan.sourceDurationSeconds;
+    return duration != null && source > duration ? duration : source;
+  }
+
+  /// The first sample waits for the 10 s reporter, as on Android
+  /// (`A/player/PlaybackSessionLifecycle.kt:666-678`).
+  @override
+  Future<void> reportPlaybackStarted({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? playMethod,
+    String? liveStreamId,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) async {}
+
+  @override
+  Future<void> reportPlaybackProgress({
+    required String itemId,
+    required Duration position,
+    required Duration duration,
+    bool isPaused = false,
+    String? playSessionId,
+    String? playMethod,
+    String? liveStreamId,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) async {
+    final playback = _sessionFor(playSessionId);
+    if (playback == null) return;
+    await playback.progress(_source(playback, position), paused: isPaused);
+  }
+
+  /// The final position goes through progress, then the session stops
+  /// (`A/player/PlaybackSessionLifecycle.kt:894-900`).
+  @override
+  Future<void> reportPlaybackStopped({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? liveStreamId,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
+  }) async {
+    final playback = _sessionFor(playSessionId);
+    if (playback == null) return;
+    await playback.progress(_source(playback, position), paused: true);
+    await _endPlayback();
+    _homeChanged();
+  }
+
+  Future<void> _endPlayback() async {
+    final playback = _playback;
+    _playback = null;
+    _route?.close();
+    _route = null;
+    if (playback != null && !playback.isStopped) await playback.stop();
+  }
+
+  /// Intro and credits from watch detail (`S/network/apiv2/WatchDetailV2Api.kt:43-49`).
+  @override
+  Future<PlaybackExtras> fetchPlaybackExtras(
+    String itemId, {
+    String? introPattern,
+    String? creditsPattern,
+    bool forceChapterFallback = false,
+    bool forceRefresh = false,
+  }) async {
+    final cached = _playback;
+    final SiloWatchDetail detail;
+    if (cached != null && cached.detail.contentId == itemId) {
+      detail = cached.detail;
+    } else {
+      final response = await http.send(SiloRequest.get('/api/v2/watch/${Uri.encodeComponent(itemId)}'));
+      if (response.statusCode != 200) return PlaybackExtras(chapters: const [], markers: const []);
+      detail = SiloWatchDetail.fromJson(response.json(), itemId);
+    }
+    MediaMarker? marker(int id, String type, SiloTimeRange? range) => range == null || range.end <= range.start
+        ? null
+        : MediaMarker(
+            id: id,
+            type: type,
+            startTimeOffset: (range.start * 1000).round(),
+            endTimeOffset: (range.end * 1000).round(),
+          );
+    return PlaybackExtras(
+      chapters: const [],
+      markers: [?marker(1, 'intro', detail.intro), ?marker(2, 'credits', detail.credits)],
+    );
+  }
+
+  @override
+  Future<PlaybackExtras?> fetchPlaybackExtrasFromCacheOnly(
+    String itemId, {
+    String? introPattern,
+    String? creditsPattern,
+    bool forceChapterFallback = false,
+  }) async => null;
+
+  @override
+  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(
+    String itemId, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    String? preferredVersionSignature,
+  }) async => null;
+
+  @override
+  Future<ScrubPreviewSource?> createScrubPreviewSource({
+    required MediaItem item,
+    required MediaSourceInfo mediaSource,
+  }) async => null;
 
   /// Silo artwork URLs are absolute and presigned, and carry no credentials.
   @override

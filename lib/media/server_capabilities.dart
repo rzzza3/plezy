@@ -168,7 +168,7 @@ class ServerCapabilities {
   static const ServerCapabilities silo = ServerCapabilities(
     liveTv: false,
     liveTvDvr: false,
-    videoTranscoding: false,
+    videoTranscoding: true,
     richHubs: true,
     numericUserRating: true,
     wholeStarRating: true,
