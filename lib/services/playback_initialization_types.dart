@@ -165,6 +165,15 @@ class PlaybackInitializationResult {
   /// null and the id is derived from [availableVersions] instead.
   final String? selectedMediaSourceId;
 
+  /// Item time at the stream's zero, when the server's stream starts part
+  /// way into the item. The player lays the stream onto the item timeline,
+  /// so everything above it speaks item time.
+  final Duration timelineOffset;
+
+  /// Where the server says the stream starts, in item time. Wins over the
+  /// resume position the player asked for.
+  final Duration? streamStart;
+
   /// True when [videoUrl] points at a downloaded/local copy. This is a media
   /// source detail, not a statement about whether server reporting is possible.
   bool get usesLocalMedia => isOffline;
@@ -191,6 +200,8 @@ class PlaybackInitializationResult {
     this.playMethod,
     this.selectedMediaIndex = 0,
     this.selectedMediaSourceId,
+    this.timelineOffset = Duration.zero,
+    this.streamStart,
   });
 }
 

@@ -637,9 +637,10 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
 
   /// Start one server session and hand mpv its proxied stream
   /// (`research/silo-playback.md` section 2). A reload of the same item and
-  /// file that only changes the audio track or quality replans the live
-  /// session (`A/player/PlaybackSessionManager.kt:2542-2547`). Anything
-  /// else stops the old session first.
+  /// file that changes the audio track or quality, or seeks where the stream
+  /// cannot reach, replans the live session
+  /// (`A/player/PlaybackSessionManager.kt:2542-2547`). Anything else stops
+  /// the old session first.
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     _lingeringStop?.cancel();
@@ -655,23 +656,22 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final index = options.selectedMediaIndex;
     final fileId = index >= 0 && index < versions.length ? versions[index] : null;
 
-    if (sameItem && (fileId == null || fileId == previous.version.fileId)) {
-      final qualityChanged = quality != previous.quality;
-      final audioChanged = audio != null && audio != previous.plan.selectedAudio?.index;
-      if (qualityChanged || audioChanged) {
-        try {
-          await previous.replan(
-            operation: qualityChanged ? 'quality_change' : 'track_change',
-            positionSeconds: start ?? 0,
-            audioTrackIndex: audio,
-            quality: quality,
-          );
-          return await _initialization(previous);
-        } on SiloPlaybackFailure catch (failure) {
-          appLogger.i('Silo playback: replan failed (${failure.reason}), starting afresh');
-        } on Exception catch (error) {
-          appLogger.i('Silo playback: replan failed (${error.runtimeType}), starting afresh');
-        }
+    final operation = sameItem && (fileId == null || fileId == previous.version.fileId)
+        ? previous.replanForReload(quality: quality, audioTrackIndex: audio, startSeconds: start)
+        : null;
+    if (operation != null) {
+      try {
+        await previous!.replan(
+          operation: operation,
+          positionSeconds: start ?? 0,
+          audioTrackIndex: audio,
+          quality: quality,
+        );
+        return await _initialization(previous);
+      } on SiloPlaybackFailure catch (failure) {
+        appLogger.i('Silo playback: replan failed (${failure.reason}), starting afresh');
+      } on Exception catch (error) {
+        appLogger.i('Silo playback: replan failed (${error.runtimeType}), starting afresh');
       }
     }
 
@@ -716,6 +716,7 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   Future<PlaybackInitializationResult> _initialization(SiloPlaybackSession playback) async {
     final proxy = await SiloApp.mediaProxy();
     final plan = playback.plan;
+    final timeline = plan.timeline;
     _route?.close();
     final route = proxy.open(
       http: http,
@@ -744,8 +745,12 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
       playSessionId: playback.sessionId,
       playMethod: plan.delivery,
       selectedMediaIndex: mediaIndex,
+      timelineOffset: _seconds(timeline.timelineOffsetSeconds),
+      streamStart: timeline.timelineOffsetSeconds == 0 ? null : _seconds(timeline.toSource(timeline.playerStartSeconds)),
     );
   }
+
+  static Duration _seconds(double seconds) => Duration(microseconds: (seconds * 1000000).round());
 
   /// Plezy's audio ids are the Silo ordinal plus one.
   int? _audioOrdinal(PlaybackInitializationOptions options) {
@@ -758,8 +763,18 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     return playback != null && !playback.isStopped && playback.sessionId == playSessionId ? playback : null;
   }
 
+  /// Whether a seek to [position] must reopen so the server reanchors the
+  /// stream there, which the reopen's [getPlaybackInitialization] asks for.
+  bool reopensToSeek(Duration position) {
+    final playback = _playback;
+    return playback != null && !playback.isStopped && playback.needsReanchor(position.inMilliseconds / 1000);
+  }
+
+  /// The player already speaks source time, since [_initialization] hands
+  /// it the plan's timeline offset. Only the clamp to the server's duration
+  /// is left (`T/ui/screens/player/TvPlayerViewModel.kt:3063-3066`).
   double _source(SiloPlaybackSession playback, Duration position) {
-    final source = playback.plan.timeline.toSource(position.inMilliseconds / 1000);
+    final source = position.inMilliseconds / 1000;
     final duration = playback.plan.sourceDurationSeconds;
     return duration != null && source > duration ? duration : source;
   }

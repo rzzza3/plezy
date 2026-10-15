@@ -321,7 +321,11 @@ void main() {
       () async {
         final playback = await start();
 
-        final plan = await playback.replan(operation: 'track_change', positionSeconds: 812.5, audioTrackIndex: 1);
+        final plan = await playback.replan(
+          operation: SiloReplanOperation.trackChange,
+          positionSeconds: 812.5,
+          audioTrackIndex: 1,
+        );
         final body = server.body('POST', '/api/v2/playback/sess-1/replan')!;
 
         expect(plan.delivery, 'server_transcode_hls');
@@ -339,7 +343,7 @@ void main() {
         expect(body['installation_id'], 'inst-1');
         expect(body['playback_attempt_id'], server.body('POST', '/api/v2/playback/start')!['playback_attempt_id']);
 
-        await playback.replan(operation: 'quality_change', positionSeconds: 900, quality: '720p');
+        await playback.replan(operation: SiloReplanOperation.qualityChange, positionSeconds: 900, quality: '720p');
         final second = server.body('POST', '/api/v2/playback/sess-1/replan')!;
         expect(second['failed_plan_id'], 'plan-2');
         expect(second['attempted_plan_keys'], ['key-1', 'key-2']);
@@ -348,6 +352,67 @@ void main() {
         expect(second['plan_attempt_id'], isNot(body['plan_attempt_id']));
       },
     );
+
+    group('seek reanchor (PlaybackTimelineSeekPolicy.kt:131-210, PlaybackSessionManager.kt:1823-1905)', () {
+      setUp(() {
+        server
+          ..serverFeatures = const ['playback_plan_v3', 'neutral_playback_v3_contract_v1', 'seek_reanchor_v1']
+          ..planExtra = const {
+            'timeline': {
+              'player_start_seconds': 0.0,
+              'source_start_seconds': 120.0,
+              'timeline_offset_seconds': 120.0,
+              'seek_window_start_seconds': 120.0,
+              'seek_window_end_seconds': 400.0,
+              'can_seek_anywhere': false,
+            },
+          };
+      });
+
+      test('a reload decides quality, then audio, then a seek outside the window', () async {
+        final playback = await start();
+
+        expect(playback.replanForReload(quality: 'auto', startSeconds: 300), isNull, reason: 'inside the window');
+        expect(playback.replanForReload(quality: 'auto', startSeconds: 2000), SiloReplanOperation.seekReanchor);
+        expect(
+          playback.replanForReload(quality: 'auto', audioTrackIndex: 1, startSeconds: 2000),
+          SiloReplanOperation.trackChange,
+        );
+        expect(playback.replanForReload(quality: '720p', audioTrackIndex: 1), SiloReplanOperation.qualityChange);
+        expect(playback.replanForReload(quality: 'auto'), isNull, reason: 'a plain reopen starts a fresh session');
+      });
+
+      test('the reanchor body carries the source target and no failure block', () async {
+        final playback = await start();
+
+        await playback.replan(operation: SiloReplanOperation.seekReanchor, positionSeconds: 2000);
+
+        final body = server.body('POST', '/api/v2/playback/sess-1/replan')!;
+        expect(body['operation'], 'seek_reanchor');
+        expect(body['position_seconds'], 2000);
+        expect(body['failed_plan_id'], 'plan-1');
+        expect(body.containsKey('failure'), isFalse);
+      });
+
+      test('a reanchor answered without the negotiated feature is refused', () async {
+        final playback = await start();
+        server.replanFeatures = const ['playback_plan_v3', 'neutral_playback_v3_contract_v1'];
+
+        await expectLater(
+          playback.replan(operation: SiloReplanOperation.seekReanchor, positionSeconds: 2000),
+          throwsA(isA<SiloPlaybackFailure>()),
+        );
+        expect(playback.plan.planId, 'plan-1', reason: 'the rendered plan stays');
+      });
+
+      test('a session that did not negotiate reanchoring seeks natively', () async {
+        server.serverFeatures = const ['playback_plan_v3', 'neutral_playback_v3_contract_v1'];
+        final playback = await start();
+
+        expect(playback.needsReanchor(2000), isFalse);
+        expect(playback.replanForReload(quality: 'auto', startSeconds: 2000), isNull);
+      });
+    });
 
     test('stop sends one stop_id, retries a 503 with 250 ms steps, and clears the journal', () async {
       final playback = await start();
@@ -748,6 +813,9 @@ class _PlaybackServer {
   int Function(String sessionId, int attempt) stopStatus = (_, _) => 200;
   final Map<String, int> _stopAttempts = {};
   Map<String, Object?> Function(Map<String, Object?> body)? progressReceipt;
+  List<String> serverFeatures = const ['playback_plan_v3', 'neutral_playback_v3_contract_v1'];
+  List<String>? replanFeatures;
+  Map<String, Object?> planExtra = const {};
   late final FakeSilo fake = FakeSilo(_handle);
 
   List<String> get paths => [for (final c in calls) '${c.$1} ${c.$2}'];
@@ -772,7 +840,16 @@ class _PlaybackServer {
     if (path == '/api/v2/watch/movie-tmdb-1') return jsonResponse(_watch(userData: {'position_seconds': 600.0}), 200);
     if (path == '/api/v2/playback/start') {
       final id = 'sess-${++sessions}';
-      return jsonResponse(_decision(plan: {..._plan(), 'session_id': id})..['session_id'] = id, 201);
+      return jsonResponse(
+        _decision(
+          plan: {
+            ..._plan(extra: planExtra),
+            'session_id': id,
+          },
+          features: serverFeatures,
+        )..['session_id'] = id,
+        201,
+      );
     }
     final replan = RegExp(r'^/api/v2/playback/([^/]+)/replan$').firstMatch(path);
     if (replan != null) {
@@ -780,10 +857,15 @@ class _PlaybackServer {
       return jsonResponse(
         _decision(
           plan: {
-            ..._plan(delivery: 'server_transcode_hls', url: '/api/v2/playback/transcode/sess-1/master.m3u8'),
+            ..._plan(
+              delivery: 'server_transcode_hls',
+              url: '/api/v2/playback/transcode/sess-1/master.m3u8',
+              extra: planExtra,
+            ),
             'plan_id': 'plan-${count + 1}',
             'plan_attempt_key': 'key-${count + 1}',
           },
+          features: replanFeatures ?? serverFeatures,
         ),
         200,
       );

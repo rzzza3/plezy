@@ -70,6 +70,7 @@ class SiloPlaybackSession {
   int _attemptCount = 1;
   final Future<void> Function(Duration delay) _wait;
   SiloJournalEntry _entry;
+  List<String> _serverFeatures;
   bool _stopped = false;
   ({double position, bool paused})? _latest;
   StreamSubscription<void>? _reporter;
@@ -88,6 +89,7 @@ class SiloPlaybackSession {
     this._context,
     this._quality,
     this._bandwidthCap,
+    this._serverFeatures,
   );
 
   SiloPlan get plan => _plan;
@@ -95,6 +97,13 @@ class SiloPlaybackSession {
   String get quality => _quality;
 
   bool get isStopped => _stopped;
+
+  /// Whether a seek to [sourceSeconds] needs the server to reanchor the
+  /// stream: outside the plan's seek window, on a session that negotiated
+  /// reanchoring (`A/player/seek/PlaybackTimelineSeekPolicy.kt:131-210`,
+  /// `A/player/PlaybackSessionManager.kt:1823-1829`).
+  bool needsReanchor(double sourceSeconds) =>
+      _serverFeatures.contains(siloSeekReanchorFeature) && !_plan.timeline.canSeekNatively(sourceSeconds);
 
   /// Admission, a stop for each session an earlier run left open, watch
   /// detail, then one `POST /playback/start` journalled before it is sent
@@ -203,6 +212,7 @@ class SiloPlaybackSession {
         context,
         request.quality,
         request.bandwidthCapKbps,
+        decision.serverFeatures,
       );
     }
     final abandoned = SiloPlaybackSession._(
@@ -227,6 +237,7 @@ class SiloPlaybackSession {
       context,
       request.quality,
       request.bandwidthCapKbps,
+      const [],
     );
     await abandoned.stop();
     throw switch (decision) {
@@ -263,6 +274,19 @@ class SiloPlaybackSession {
       ),
     );
     return response.statusCode == 200 && _validReceipt(_json(response), sample);
+  }
+
+  /// How a reload of this item and file keeps the session: a quality change,
+  /// else an audio change, else a seek the stream cannot reach. Null means
+  /// the reload starts a fresh session.
+  SiloReplanOperation? replanForReload({required String quality, int? audioTrackIndex, double? startSeconds}) {
+    if (_stopped) return null;
+    if (quality != _quality) return SiloReplanOperation.qualityChange;
+    if (audioTrackIndex != null && audioTrackIndex != _plan.selectedAudio?.index) {
+      return SiloReplanOperation.trackChange;
+    }
+    if (startSeconds != null && needsReanchor(startSeconds)) return SiloReplanOperation.seekReanchor;
+    return null;
   }
 
   /// Caches where the player is, in source seconds. Only the reporter sends
@@ -317,12 +341,13 @@ class SiloPlaybackSession {
     return true;
   }
 
-  /// A user's audio or quality change on the live session. Intent operations
-  /// carry no failure block. The body addresses the plan the server holds
-  /// (`A/player/PlaybackSessionManager.kt:880-945`,
+  /// An audio or quality change, or a seek the stream cannot reach, on the
+  /// live session. None carries a failure block. The body addresses the plan
+  /// the server holds, and a reanchor must come back on this session with
+  /// the feature still negotiated (`A/player/PlaybackSessionManager.kt:880-945,1851-1905`,
   /// `S/model/playback/PlaybackProtocolV3.kt:454-487`).
   Future<SiloPlan> replan({
-    required String operation,
+    required SiloReplanOperation operation,
     required double positionSeconds,
     int? audioTrackIndex,
     String? quality,
@@ -335,7 +360,7 @@ class SiloPlaybackSession {
     final body = {
       'protocol_version': siloPlaybackProtocol,
       'client_features': siloClientFeatures,
-      'operation': operation,
+      'operation': operation.wire,
       'playback_attempt_id': _entry.attemptId,
       'replan_request_id': newSiloAttemptId(),
       'failed_plan_id': current.planId,
@@ -359,7 +384,13 @@ class SiloPlaybackSession {
     final response = await http.send(
       SiloRequest.post('/api/v2/playback/${Uri.encodeComponent(sessionId)}/replan', body: body, single: true),
     );
-    final decision = response.statusCode == 200 ? parseSiloDecision(_json(response)) : null;
+    final parsed = response.statusCode == 200 ? parseSiloDecision(_json(response)) : null;
+    final reanchorKept =
+        operation != SiloReplanOperation.seekReanchor ||
+        (parsed is SiloPlayable &&
+            parsed.sessionId == sessionId &&
+            parsed.serverFeatures.contains(siloSeekReanchorFeature));
+    final decision = reanchorKept ? parsed : null;
     if (decision is! SiloPlayable) {
       appLogger.i('Silo playback: replan refused (status ${response.statusCode}, ${decision.runtimeType})');
       throw SiloPlaybackFailure(
@@ -373,8 +404,9 @@ class SiloPlaybackSession {
     _attemptCount++;
     _planAttemptId = newSiloAttemptId();
     _plan = decision.plan;
+    _serverFeatures = decision.serverFeatures;
     _quality = nextQuality;
-    appLogger.i('Silo playback: replanned $operation, delivery=${decision.plan.delivery}');
+    appLogger.i('Silo playback: replanned ${operation.wire}, delivery=${decision.plan.delivery}');
     return decision.plan;
   }
 

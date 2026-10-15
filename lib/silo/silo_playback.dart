@@ -8,6 +8,18 @@ import 'silo_models.dart';
 
 const int siloPlaybackProtocol = 3;
 const String siloSequencedProgressFeature = 'sequenced_progress_v1';
+const String siloSeekReanchorFeature = 'seek_reanchor_v1';
+
+/// The replans Plezy asks for (`S/model/playback/PlaybackProtocolV3.kt:67-78`).
+enum SiloReplanOperation {
+  trackChange('track_change'),
+  qualityChange('quality_change'),
+  seekReanchor('seek_reanchor');
+
+  const SiloReplanOperation(this.wire);
+
+  final String wire;
+}
 
 String? _str(SiloJson json, String key) {
   final value = json[key];
@@ -662,8 +674,9 @@ sealed class SiloDecision {
 final class SiloPlayable extends SiloDecision {
   final SiloPlan plan;
   final String sessionId;
+  final List<String> serverFeatures;
 
-  const SiloPlayable(this.plan, this.sessionId);
+  const SiloPlayable(this.plan, this.sessionId, {this.serverFeatures = const []});
 }
 
 final class SiloTerminal extends SiloDecision {
@@ -779,5 +792,5 @@ SiloDecision parseSiloDecision(Object? body) {
   if (plan.delivery == 'original_http' && plan.transformations.any((t) => t.executor == 'server')) {
     return SiloReplanRequired('invalid_original_server_transformation', plan, session);
   }
-  return SiloPlayable(plan, session);
+  return SiloPlayable(plan, session, serverFeatures: features);
 }

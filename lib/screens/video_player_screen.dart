@@ -30,6 +30,7 @@ import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
 import '../services/plex_client.dart';
 import '../services/jellyfin_client.dart';
+import '../services/silo_client.dart';
 import '../media/account_preferences.dart';
 import '../media/account_ref.dart';
 import '../utils/session_identifier.dart';
@@ -408,6 +409,8 @@ _PlaybackOpenTiming _playbackOpenTiming({
   required Duration? resumePosition,
   required int? durationMs,
   MediaPartTimeline? partTimeline,
+  Duration streamOffset = Duration.zero,
+  Duration? streamStart,
 }) {
   if (partTimeline != null) {
     // One file of a stacked item: the player lays it onto the item timeline.
@@ -428,8 +431,11 @@ _PlaybackOpenTiming _playbackOpenTiming({
     );
   }
   return _PlaybackOpenTiming(
-    mediaStart: resumePosition,
-    timelineDuration: isTranscoding && durationMs != null ? Duration(milliseconds: durationMs) : null,
+    mediaStart: streamStart ?? resumePosition,
+    timelineDuration: (isTranscoding || streamOffset > Duration.zero) && durationMs != null
+        ? Duration(milliseconds: durationMs)
+        : null,
+    timelineOffset: streamOffset,
   );
 }
 

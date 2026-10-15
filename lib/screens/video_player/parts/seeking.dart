@@ -22,6 +22,19 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
       await _eofRecovery.retry(reason: 'seek', resumePosition: target);
       return;
     }
+    // Outside a Silo stream's seek window: the server reanchors on reopen.
+    final client = _getMediaServerClient(context);
+    if (!widget.isLive && client is SiloClient && client.reopensToSeek(target)) {
+      if (!(isCurrent?.call() ?? true)) return;
+      await _reloadMediaInPlace(
+        metadata: _currentMetadata,
+        resumePosition: target,
+        preserveCurrentTrackSelection: true,
+        startPaused: !_playbackIntentShouldPlay,
+        reason: 'seek outside the stream',
+      );
+      return;
+    }
     // A stacked item's other file: a native seek cannot leave the open one.
     final partTimeline = _currentMediaInfo?.partTimeline;
     if (!widget.isLive && partTimeline != null && !partTimeline.covers(target)) {
