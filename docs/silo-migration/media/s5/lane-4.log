@@ -1,0 +1,66 @@
+21:49:15.230 : [I] [MPV:display] hdr=false dv=false current=#1 1920x1080@60.000004Hz supported=[#1 1920x1080@60.000004Hz]
+21:49:15.879 : [I] Silo playback: started, SiloPlayable
+21:49:15.879 : [I] Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=22 version=0 effective=0
+21:49:32.035 : [I] Silo playback: progress 1 at 4 s
+21:49:41.633 : [I] Silo playback: progress 2 at 14 s
+21:49:51.639 : [I] Silo playback: progress 3 at 67 s
+21:50:01.631 : [I] Silo playback: progress 4 at 67 s
+21:50:11.673 : [I] Silo playback: progress 5 at 67 s
+21:50:21.652 : [I] Silo playback: progress 6 at 67 s
+21:50:31.636 : [I] Silo playback: progress 7 at 67 s
+21:50:41.629 : [I] Silo playback: progress 8 at 67 s
+21:50:51.628 : [I] Silo playback: progress 9 at 67 s
+21:51:01.626 : [I] Silo playback: progress 10 at 67 s
+21:51:11.636 : [I] Silo playback: progress 11 at 67 s
+21:51:19.307 : [I] Silo playback: progress 12 at 67 s
+21:51:19.962 : [I] Silo playback: replanned quality_change, delivery=server_transcode_hls
+21:51:21.628 : [I] Silo playback: progress 13 at 67 s
+21:51:31.632 : [I] Silo playback: progress 14 at 67 s
+21:51:41.639 : [I] Silo playback: progress 15 at 67 s
+21:51:51.634 : [I] Silo playback: progress 16 at 67 s
+21:52:01.651 : [I] Silo playback: progress 17 at 71 s
+21:52:11.629 : [I] Silo playback: progress 18 at 81 s
+21:52:21.639 : [I] Silo playback: progress 19 at 91 s
+21:52:31.639 : [I] Silo playback: progress 20 at 94 s
+21:52:41.631 : [I] Silo playback: progress 21 at 94 s
+21:52:42.440 : [I] Silo playback: progress 22 at 94 s
+21:52:43.022 : [I] Silo playback: replanned track_change, delivery=server_transcode_hls
+21:52:51.627 : [I] Silo playback: progress 23 at 94 s
+21:53:01.638 : [I] Silo playback: progress 24 at 97 s
+21:53:11.636 : [I] Silo playback: progress 25 at 107 s
+21:53:21.627 : [I] Silo playback: progress 26 at 117 s
+21:53:24.072 : [I] Silo playback: progress 27 at 128 s
+21:53:26.766 : [I] Silo playback: stopped (status 200)
+21:58:55.860 : [I] [MPV:display] hdr=false dv=false current=#1 1920x1080@60.000004Hz supported=[#1 1920x1080@60.000004Hz]
+21:58:56.554 : [I] Silo playback: started, SiloPlayable
+21:58:56.554 : [I] Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=22 version=0 effective=0
+21:59:10.360 : [I] Silo playback: progress 1 at 6 s
+21:59:20.373 : [I] Silo playback: progress 2 at 18 s
+21:59:30.362 : [I] Silo playback: progress 3 at 16 s
+21:59:40.360 : [I] Silo playback: progress 4 at 16 s
+21:59:50.364 : [I] Silo playback: progress 5 at 16 s
+22:00:00.369 : [I] Silo playback: progress 6 at 16 s
+22:00:07.955 : [I] Silo playback: progress 7 at 16 s
+22:00:08.604 : [I] Silo playback: replanned quality_change, delivery=server_transcode_hls
+22:00:10.377 : [I] Silo playback: progress 8 at 16 s
+22:00:20.359 : [I] Silo playback: progress 9 at 16 s
+22:00:30.360 : [I] Silo playback: progress 10 at 16 s
+22:00:40.356 : [I] Silo playback: progress 11 at 16 s
+22:00:50.360 : [I] Silo playback: progress 12 at 23 s
+22:01:00.359 : [I] Silo playback: progress 13 at 34 s
+22:01:10.355 : [I] Silo playback: progress 14 at 43 s
+22:01:20.376 : [I] Silo playback: progress 15 at 53 s
+22:01:30.370 : [I] Silo playback: progress 16 at 63 s
+22:01:40.365 : [I] Silo playback: progress 17 at 74 s
+22:01:50.367 : [I] Silo playback: progress 18 at 83 s
+22:02:00.357 : [I] Silo playback: progress 19 at 93 s
+22:02:09.484 : [I] Silo playback: progress 20 at 104 s
+22:02:10.157 : [I] Silo playback: replanned track_change, delivery=server_transcode_hls
+22:02:10.880 : [I] Silo playback: progress 21 at 104 s
+22:02:20.367 : [I] Silo playback: progress 22 at 106 s
+22:02:30.354 : [I] Silo playback: progress 23 at 113 s
+22:02:40.375 : [I] Silo playback: progress 24 at 123 s
+22:02:50.354 : [I] Silo playback: progress 25 at 133 s
+22:03:00.370 : [I] Silo playback: progress 26 at 143 s
+22:03:05.541 : [I] Silo playback: progress 27 at 158 s
+22:03:07.814 : [I] Silo playback: stopped (status 200)
