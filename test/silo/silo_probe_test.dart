@@ -105,7 +105,7 @@ class _FakeServer {
           'versions': [
             {'file_id': '41', 'resolution': '1080p', 'duration_seconds': 100.0, 'container': 'mkv'},
           ],
-          'user_data': {'position_seconds': 50.0},
+          'user_data': {'position_seconds': 50.0, 'played': false},
         },
       ),
       '/api/v2/playback/start' when authorized => (
@@ -313,6 +313,29 @@ toggle c1 3 1.5
     for (final secret in ['Secret Title', 'access-secret']) {
       expect(log, isNot(contains(secret)));
     }
+  });
+
+  test('--actions watch prints the stored position and played flag, never the title', () async {
+    final server = await _FakeServer.start([_approved]);
+    addTearDown(() => server.server.close(force: true));
+    final actions = File('${temp.path}/actions.txt')..writeAsStringSync('watch movie-1\n');
+    final out = StringBuffer();
+
+    final code = await runSiloProbe(
+      SiloProbeOptions(
+        origin: server.origin,
+        samplesDir: '${temp.path}/samples',
+        deviceIdFile: '${temp.path}/device_id',
+        actions: actions.path,
+        profile: '9',
+      ),
+      out: out,
+    );
+
+    final log = out.toString();
+    expect(code, 0, reason: log);
+    expect(log, contains('action watch movie-1 200 position=50.0 played=false audio=0 subtitles=0\n'));
+    expect(log, isNot(contains('Secret Title')));
   });
 
   test('--play starts, describes, reports and stops one session without printing secrets', () async {

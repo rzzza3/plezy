@@ -38,6 +38,8 @@ read-only responses, and signs out. Tokens stay in memory.
   --actions <file|->       After the reads, run one action per line from the
                            file or stdin, in the same session, then log out:
                              home                   ids per section_type
+                             watch <content_id>     stored position, played
+                                                    and track counts
                              watched <content_id>   POST /watched/{id}
                              unwatched <content_id> DELETE /watched/{id}
                              watchlist-add <id>     PUT /watchlist/{id}
@@ -446,6 +448,12 @@ final class SiloProbeWrite extends SiloProbeAction {
   const SiloProbeWrite(this.name, this.method, this.path);
 }
 
+final class SiloProbeWatch extends SiloProbeAction {
+  final String id;
+
+  const SiloProbeWatch(this.id);
+}
+
 final class SiloProbeToggle extends SiloProbeAction {
   final String id;
   final int times;
@@ -461,6 +469,7 @@ SiloProbeAction? parseSiloProbeAction(String line) {
   String id(String word) => Uri.encodeComponent(word);
   return switch (words) {
     ['home'] => const SiloProbeHome(),
+    ['watch', final c] => SiloProbeWatch(c),
     ['sleep', final s] when double.tryParse(s) != null => SiloProbeSleep(
       Duration(milliseconds: (double.parse(s) * 1000).round()),
     ),
@@ -502,6 +511,19 @@ Future<void> _runAction(
         if (i > 0) await wait(interval);
         await write(parseSiloProbeAction('${i.isEven ? 'watched' : 'unwatched'} $id')! as SiloProbeWrite);
       }
+    case SiloProbeWatch(:final id):
+      final watch = await silo.send(SiloRequest.get('/api/v2/watch/${Uri.encodeComponent(id)}'));
+      final json = watch.isSuccess ? _tryJson(watch.body) : null;
+      final userData = json is Map && json['user_data'] is Map ? json['user_data'] as Map : const {};
+      final versions = json is Map && json['versions'] is List
+          ? (json['versions'] as List).whereType<Map>()
+          : const <Map>[];
+      int count(Map version, String key) => version[key] is List ? (version[key] as List).length : 0;
+      out.writeln(
+        'action watch $id ${watch.statusCode} position=${userData['position_seconds']} played=${userData['played']} '
+        'audio=${versions.map((v) => count(v, 'audio_tracks')).join(',')} '
+        'subtitles=${versions.map((v) => count(v, 'subtitle_tracks')).join(',')}',
+      );
     case SiloProbeHome():
       final home = await silo.send(const SiloRequest.get('/api/v2/home/sections'));
       final json = home.isSuccess ? _tryJson(home.body) : null;
