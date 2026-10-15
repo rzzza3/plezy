@@ -1,0 +1,19 @@
+17:29:24.631 : [I] ActiveProfileBinder: rebinding for Silo A (local-f8d15736-7421-4e44-bb1b-441eab344ea9)
+17:29:25.344 : [I] Added Silo server: Silo (online)
+17:29:25.348 : [I] Silo events: fetchingTicket
+17:29:25.607 : [I] Silo events: connecting
+17:29:26.361 : [I] Silo events: subscribed
+17:29:26.361 : [I] Silo events: 2 channels, 0 rejected
+17:29:26.561 : [I] Silo events: subscribed
+17:29:26.561 : [I] Silo events: 2 channels, 0 rejected
+17:29:26.898 : [I] Silo: home sections 17
+17:29:27.040 : [I] Home: first hub frame, rows 1
+17:29:27.042 : [I] Home: rows repainted
+17:29:28.561 : [I] Silo events: home refetch
+17:29:29.349 : [I] Silo: home sections 17
+17:29:29.391 : [I] Home: rows repainted
+17:30:22.747 : [I] [MPV:display] hdr=false dv=false current=#1 1920x1080@60.000004Hz supported=[#1 1920x1080@60.000004Hz]
+17:30:23.440 : [I] Silo playback: started, SiloPlayable
+17:30:23.440 : [I] Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+17:30:33.598 : [I] Silo playback: progress 1 at 7 s
+17:30:35.874 : [I] Silo playback: stopped (status 200)
