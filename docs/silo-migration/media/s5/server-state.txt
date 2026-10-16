@@ -38,3 +38,9 @@ action item movie-tmdb-1381078 200 position=2365.646 played=false in_progress=tr
 action unwatched movie-tmdb-1381078 204 done_ms=1792115307340
 action watch movie-tmdb-1381078 200 position=null played=null audio=1,1,1 subtitles=38,38,38 user_data_keys=
 action item movie-tmdb-1381078 200 position=null played=null in_progress=null
+# lanes 7 (cut) and 8 on M, then the restore
+action watch movie-tmdb-1381078 200 position=null played=null audio=1,1,1 subtitles=38,38,38 user_data_keys=
+action item movie-tmdb-1381078 200 position=null played=null in_progress=null
+action unwatched movie-tmdb-1381078 204 done_ms=1792116123453
+action watch movie-tmdb-1381078 200 position=null played=null audio=1,1,1 subtitles=38,38,38 user_data_keys=
+action item movie-tmdb-1381078 200 position=null played=null in_progress=null
