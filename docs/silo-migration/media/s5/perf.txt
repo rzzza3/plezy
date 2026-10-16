@@ -43,3 +43,45 @@ From the start, mpv's first video packet comes at 2.76 s and the first frame at 
 trunk's 2.15 s and 2.48 s. On a resume at 602 s, the first frame comes 4.6 s after the plan.
 So about 2 s of the head median is mpv opening the original over HTTP at a 602 s offset.
 Trunk resumes Clown Panic from a few seconds in, so the two sides did not start at the same offset.
+
+== Like-for-like re-run, 2026-10-16 15:44-16:13 ==
+One marker build of c795e2952 for both sides (temporary `Perf: first frame` marker plus
+`Perf proxy` timing lines, never committed). Debug logging off for timed runs.
+Plex "Clown Panic" (SmellyCats copy) and Silo M (Love of Your Life, original_http) both
+resumed from 627-663 s, kept within 30 s of each other, alternating P/S.
+Key event to `Perf: first frame`, seconds.
+p01 4.169  s01 6.313
+p02 4.332  s02 6.677
+p03 4.875  s03 4.652
+p04 6.269  s04 4.588
+p05 4.556  s05 5.232
+p06 4.749  s06 4.548
+p07 4.259  s07 4.838
+p08 4.557  s08 4.817
+p09 4.886  s09 4.904
+p10 4.978  s10 6.191
+Dropped: two warm-ups before a relaunch (5.362 P, 6.311 S), x-p01 at 711 s (out of window),
+x-s05 and x-s10 (Dart heap exhaustion overlapped the run; both redone after a relaunch).
+
+Plex sorted: 4.169 4.259 4.332 4.556 4.557 4.749 4.875 4.886 4.978 6.269  median 4.653
+Silo sorted: 4.548 4.588 4.652 4.817 4.838 4.904 5.232 6.191 6.313 6.677  median 4.871
+Gap at equal offset: 0.218 s. The 2.1 s gap in the first run was the offset, not Silo.
+Neither side meets the 3 s rule on a resume at ~640 s on the emulator.
+
+Where the time goes. Untimed debug runs: Silo 5.43 s, Plex 5.46 s. Both spend most of it on
+mpv's four sequential range requests while it opens the file at the resume offset. Silo pays
+0.18-0.43 s for the plan, and gets most of it back on upstream speed and connection reuse.
+Upstream through the proxy: a new connection costs 0.6-0.75 s to first byte, a reused one
+about 0.2 s. Silo's slow tail (s01, s02, s10) follows the first byte of the seek-target
+request, which varied from 0.61 to 2.02 s. That is server time, not the proxy.
+
+Side finding: Dart heap exhaustion. The debug app hit `Exhausted heap space` several times.
+Most were during Plex hub loads on the home (e.g. 16:03:18, 16:05:17, 16:07:07); one overlapped
+s10, and one at 16:08 aborted the process (signal 6). PSS sat at 490-535 MB per fresh process.
+The worker linked it to Plex hub responses plus media bytes passing through the Dart proxy
+next to mpv's readahead. Not reproduced or root-caused; flagged for review.
+
+Restores. Silo M marked unwatched through the app, pixel-identical to its before shot.
+Plex Clown Panic unscrobbled (200), Play again. The Silo copy of Clown Panic picked up the
+Plex progress through the server's sync during the runs and still showed Resume at 20:35;
+marked unwatched through the app, now Play. The clean head build was reinstalled.
