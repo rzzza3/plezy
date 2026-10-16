@@ -1,0 +1,31 @@
+11:10:31.189 : [I] Video decoders: hevc=hw av1=none
+11:10:31.357 : [I] ActiveProfileBinder: rebinding for Silo A (local-f8d15736-7421-4e44-bb1b-441eab344ea9)
+11:10:32.590 : [I] Added Silo server: Silo (online)
+11:10:32.596 : [I] Silo events: fetchingTicket
+11:10:32.904 : [I] Silo events: connecting
+11:10:33.863 : [I] Silo events: subscribed
+11:10:33.863 : [I] Silo events: 2 channels, 0 rejected
+11:10:34.115 : [I] Silo events: subscribed
+11:10:34.115 : [I] Silo events: 2 channels, 0 rejected
+11:10:34.496 : [I] Silo: home sections 17
+11:10:36.116 : [I] Silo events: home refetch
+11:10:37.270 : [I] Silo: home sections 17
+11:11:55.476 : [I] Silo playback: started, SiloPlayable
+11:11:55.476 : [I] Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+11:12:09.423 : [I] Silo playback: progress 1 at 6 s
+11:12:19.382 : [I] Silo playback: progress 2 at 26 s
+11:12:29.358 : [I] Silo playback: progress 3 at 132 s
+11:12:39.358 : [I] Silo playback: progress 4 at 140 s
+11:12:49.358 : [I] Silo playback: progress 5 at 306 s
+11:12:59.372 : [I] Silo playback: progress 6 at 596 s
+11:13:09.419 : [I] Silo playback: progress 7 at 605 s
+11:13:19.365 : [I] Silo playback: progress 8 at 609 s
+11:13:29.353 : [I] Silo playback: progress 9 at 609 s
+11:13:37.853 : [I] Silo playback: progress 10 at 609 s
+11:13:39.360 : [I] Silo playback: progress 11 at 609 s
+11:13:40.130 : [I] Silo playback: stopped (status 200)
+11:13:53.126 : [I] Silo events: idle
+11:13:53.126 : [I] Silo events: closed
+11:13:54.856 : [I] Video decoders: hevc=hw av1=none
+11:13:55.022 : [I] ActiveProfileBinder: rebinding for Silo A (local-f8d15736-7421-4e44-bb1b-441eab344ea9)
+11:13:55.971 : [I] Added Silo server: Silo (online)
