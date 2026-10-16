@@ -411,7 +411,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - Open issue 2. After an audio switch on direct play, a quality change drops the chosen audio (`lane-4-audio-after-quality.png`). Not fixed in S5.
 - Restores. M, Ponyo, Dementium and E9 went back to unwatched, by the probe's `unwatched` early on and by Plezy's own Mark as Unwatched later, which sends the same `DELETE /api/v2/watched/{id}`. E10 never changed. Plex Clown Panic holds no progress. Lane 1's position is gone, and the perf plays left none. After a force-stop and relaunch, each item matches its `before-*.png` (`after-*.png`). Probe reads are in `server-state.txt`.
 - Review gate. Stills are `media/s5-review-lane1-resume.png`, `-lane3-transcode.png`, `-lane5-subs.png` and `-lane5-subs-off.png`. Lane 1's play shot is a near-black opening frame, so it is left out. `media/s5-review.mp4` (56 s, Ponyo) shows a resume, a switch from English to Japanese with the sheet reopened to show the check, a seek, a stop at Resume, then a resume 7 s before the stop and a second stop.
-- Not done. The root verdict, Bugbot triage and the operator's review click wait. The perf rule fails, so the operator decides whether a resumed direct play may exceed 3 s or whether resume opening needs work.
+- Verdict. Approved by the operator ("Go", 2026-10-16) at `e1fbda206`, with the perf result as recorded: at equal resume offset Silo is 0.22 s behind Plex and neither meets 3 s. Open issues 1 and 2, mpv's spurious-EOF extra session, and the Dart heap exhaustion carry forward unfixed. Lane 7 was cut by the operator. The operator deferred Bugbot triage for the whole stack to the end of the plan. Nothing is pushed.
 
 ## Download Silo media for offline play (S6)
 **Depends on.** S5.
