@@ -1,0 +1,45 @@
+S5 perf lane, 2026-10-16. Time from the host sending DPAD_CENTER on the detail page's Play
+to the device logcat line 'Perf: first frame' (logcat -v epoch). Emulator Television_1080p.
+Trunk: ~/s5work/perf-trunk.apk (main plus the marker), Plex profile, Clown Panic (SmellyCats, 1080p H.264).
+Head: f2fd0ac64 code plus the marker, never committed, Silo A, M movie-tmdb-1381078 at Original,
+resumed from the stored 609 s (start 602 s). All ten head plans were delivery=original_http.
+Order: trunk 1-5, head 1-5, trunk 6-10, head 6-10. Each block of five follows one install and launch,
+because each build swap also needs a profile switch. 'adb shell input keyevent' returns in 14-17 ms here.
+
+label key_epoch frame_epoch seconds
+t01 1792146278.651469423 1792146281.571 2.920
+t02 1792146302.789808294 1792146305.339 2.549
+t03 1792146314.310470616 1792146318.269 3.959
+t04 1792146327.246521021 1792146330.644 3.397
+t05 1792146339.580489295 1792146343.202 3.622
+t06 1792147016.395924053 1792147018.896 2.500
+t07 1792147027.780604562 1792147030.260 2.479
+t08 1792147039.106760415 1792147041.622 2.515
+t09 1792147050.453175816 1792147053.187 2.734
+t10 1792147062.178480388 1792147064.942 2.764
+h01 1792146463.165908501 1792146469.960 6.794
+h02 1792146489.029705315 1792146494.072 5.042
+h03 1792146503.963667216 1792146508.526 4.562
+h04 1792146518.404363445 1792146523.020 4.616
+h05 1792146532.722451494 1792146537.668 4.946
+h06 1792147171.762639112 1792147176.623 4.860
+h07 1792147186.540653284 1792147191.369 4.828
+h08 1792147201.286228922 1792147206.309 5.023
+h09 1792147216.209148540 1792147221.055 4.846
+h10 1792147230.700392913 1792147235.441 4.741
+
+trunk sorted: 2.479 2.500 2.515 2.549 2.734 2.764 2.920 3.397 3.622 3.959  median 2.749
+head sorted:  4.562 4.616 4.741 4.828 4.846 4.860 4.946 5.023 5.042 6.794  median 4.853
+Rule: head median under 3 s for direct play. 4.853 s. FAIL.
+
+Diagnostic, not part of the rule: head, M via the menu's Play from Beginning (start 0 s).
+d01 1792147283.624411670 1792147286.812 3.188
+d02 1792147304.580306612 1792147307.376 2.796
+d03 1792147325.140854659 1792147328.026 2.885
+sorted: 2.796 2.885 3.188  median 2.885
+
+Where the time goes (h07, d02, t07 timelines). The Silo plan is ready 0.18-0.43 s after the key.
+From the start, mpv's first video packet comes at 2.76 s and the first frame at 2.80 s, against
+trunk's 2.15 s and 2.48 s. On a resume at 602 s, the first frame comes 4.6 s after the plan.
+So about 2 s of the head median is mpv opening the original over HTTP at a 602 s offset.
+Trunk resumes Clown Panic from a few seconds in, so the two sides did not start at the same offset.
