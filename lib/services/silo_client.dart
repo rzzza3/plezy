@@ -1087,10 +1087,10 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   }
 
   /// Saves one manifest subtitle with this profile's credentials.
-  Future<void> downloadSubtitle(String url, File target) {
+  Future<void> downloadSubtitle(String url, File target) async {
     final parsed = Uri.parse(url);
     if (!isSameSiloOrigin(parsed, http.origin)) throw const SiloDownloadException('invalid_subtitle_reference');
-    return downloads.fetchSidecar(parsed.path, target);
+    await downloads.fetchSidecar(parsed.path, target);
   }
 
   /// Members the later steps implement fail as a rejected future, so an
