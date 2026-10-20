@@ -38,6 +38,8 @@ class ApiCacheSingleton<T extends ApiCache> {
     return value;
   }
 
+  T? get instanceOrNull => _instance;
+
   void install(T instance) {
     _instance = instance;
     ApiCache.registerInstance(instance, backends);

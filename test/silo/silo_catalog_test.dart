@@ -2,14 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/connection/connection.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_filter.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/silo_client.dart';
 import 'package:plezy/silo/silo_catalog.dart';
 
@@ -456,6 +460,31 @@ void main() {
         ('e1', 'show-1', 3, 1),
         ('e2', 'show-1', 3, 2),
       ]);
+    });
+
+    test('an item read is kept in the Silo cache under the profile scope, for offline use', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      SiloApiCache.initialize(db);
+      final (client, _) = await _client(
+        (_) => jsonResponse({
+          'content_id': 'episode-1',
+          'type': 'episode',
+          'title': 'Physics',
+          'cast': [],
+          'crew': [],
+          'versions': [],
+          'subtitles': [],
+        }, 200),
+      );
+
+      final item = await client.fetchItem('episode-1');
+      final cached = await SiloApiCache.instance.getMetadata(ServerId('silo:server-1/p-1'), 'episode-1');
+
+      expect(client.cache, same(SiloApiCache.instance));
+      expect(cached?.globalKey, item?.globalKey);
+      expect(cached?.title, 'Physics');
+      expect(await SiloApiCache.instance.getMetadata(ServerId('server-1'), 'episode-1'), isNull);
     });
 
     test('a missing item reads as null', () async {

@@ -31,6 +31,7 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
@@ -564,6 +565,74 @@ void main() {
       expect(all.items['plex-machine:item-1']?.title, 'Offline Plex');
       expect(all.scopesByServer, {'plex-machine': scope.cacheServerId});
       expect(item?.title, 'Offline Plex');
+    });
+
+    test('cold Silo hydration reads the Silo profile each Plezy profile is bound to', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      SiloApiCache.initialize(db);
+      addTearDown(db.close);
+      final serverId = ServerId('silo-srv');
+      final scopeAdmin = SiloProfileScopeId(serverId: serverId, profileId: 'admin');
+      await db
+          .into(db.connections)
+          .insert(
+            ConnectionsCompanion.insert(
+              id: 'silo:silo-srv',
+              kind: 'silo',
+              displayName: 'Silo',
+              configJson: '{}',
+              createdAt: 0,
+            ),
+          );
+      for (final (profile, siloProfile) in [('profile-a', 'admin'), ('profile-b', 'kid')]) {
+        await db
+            .into(db.profileConnections)
+            .insert(
+              ProfileConnectionsCompanion.insert(
+                profileId: profile,
+                connectionId: 'silo:silo-srv',
+                userIdentifier: siloProfile,
+              ),
+            );
+      }
+      await db.insertDownload(
+        serverId: serverId,
+        clientScopeId: scopeAdmin,
+        ratingKey: 'ep-1',
+        globalKey: 'silo-srv:ep-1',
+        type: 'episode',
+        status: DownloadStatus.completed.index,
+      );
+      for (final profile in ['profile-a', 'profile-b']) {
+        await db.addDownloadOwner(profileId: profile, globalKey: 'silo-srv:ep-1');
+      }
+      await SiloApiCache.instance.putItem(
+        ServerId(scopeAdmin),
+        const MediaItem.silo(id: 'ep-1', kind: MediaKind.episode, title: 'Offline Silo', serverId: 'silo-srv'),
+      );
+      await SiloApiCache.instance.pinForOffline(ServerId(scopeAdmin), 'ep-1');
+      // Offline the binder leaves the server invisible: no live client.
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+      );
+
+      final admin = await manager.getAllPinnedMetadata(activeProfileId: 'profile-a');
+      final item = await manager.lookupMetadata(
+        serverId,
+        'ep-1',
+        preferActiveScope: true,
+        activeProfileId: 'profile-a',
+      );
+      final kid = await manager.getAllPinnedMetadata(activeProfileId: 'profile-b');
+
+      expect(admin.items['silo-srv:ep-1']?.title, 'Offline Silo');
+      expect(admin.scopesByServer, {'silo-srv': scopeAdmin});
+      expect(item?.title, 'Offline Silo');
+      expect(kid.items, isEmpty, reason: 'another Silo profile never reads this one');
     });
 
     test('active Plex lookup selects the exact profile namespace without bare fallback', () async {

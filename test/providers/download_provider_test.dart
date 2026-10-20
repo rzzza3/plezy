@@ -3546,6 +3546,34 @@ void main() {
       p.dispose();
     });
 
+    test('a Silo episode with no stored show row lists under a synthesized Silo show', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {'srv:e1': const DownloadProgress(globalKey: 'srv:e1', status: DownloadStatus.completed)},
+        metadata: {
+          'srv:e1': const MediaItem.silo(
+            id: 'e1',
+            kind: MediaKind.episode,
+            title: 'Physics',
+            parentId: 'season-1',
+            parentIndex: 1,
+            index: 1,
+            grandparentId: 'show-1',
+            grandparentTitle: 'Taskmaster (US)',
+            serverId: 'srv',
+          ),
+        },
+      );
+
+      final show = p.downloadedShows.single;
+      expect(show.backend, MediaBackend.silo);
+      expect(show.id, 'show-1');
+      expect(show.title, 'Taskmaster (US)');
+      expect(show.leafCount, 1);
+      p.dispose();
+    });
+
     test('downloadedAlbums derives library identity from stamped tracks', () async {
       MediaItem track(String id, {String? libraryId, String? libraryTitle}) => testMediaItem(
         id: id,

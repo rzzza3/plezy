@@ -34,9 +34,11 @@ import '../silo/silo_playback.dart';
 import '../silo/silo_playback_session.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController;
+import 'api_cache.dart';
 import 'download_artwork_helpers.dart';
 import 'playback_initialization_types.dart';
 import 'scrub_preview_source.dart';
+import 'silo_api_cache.dart';
 
 /// A Silo server bound to one profile. Carries the identity and catalog
 /// members; playback and download members throw [UnsupportedError] until the
@@ -373,13 +375,25 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   }
 
   @override
+  ApiCache get cache => SiloApiCache.instance;
+
+  /// Reads through to [SiloApiCache], so the item a download pins is there
+  /// when the app starts offline. A failed cache write never fails the read.
+  @override
   Future<MediaItem?> fetchItem(String id) async {
+    final MediaItem item;
     try {
-      return _detailItem(await catalog.itemDetail(id));
+      item = _detailItem(await catalog.itemDetail(id));
     } on MediaServerHttpException catch (error) {
       if (error.statusCode == 404) return null;
       rethrow;
     }
+    try {
+      await SiloApiCache.instanceOrNull?.putItem(ServerId(cacheServerId), item);
+    } on Exception catch (error) {
+      appLogger.w('Silo: item cache write failed (${error.runtimeType})');
+    }
+    return item;
   }
 
   MediaItem _detailItem(SiloItemDetail detail) {

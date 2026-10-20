@@ -580,14 +580,31 @@ class DownloadManagerService {
   }
 
   Future<String?> _profileScopeIdForBackend(MediaBackend backend, ServerId serverId, String activeProfileId) async {
-    // A Silo download belongs to the Silo profile the server's client is
-    // bound to, so another profile on the same server never sees it.
-    if (backend == MediaBackend.silo) return activeClientScopeIdForServer(serverId);
+    // A Silo download belongs to the Silo profile this Plezy profile enters,
+    // so another profile on the same server never sees it. The persisted
+    // binding wins: offline the binder leaves the server invisible, so there
+    // is no live client to ask.
+    if (backend == MediaBackend.silo) {
+      return await _boundSiloScopeId(serverId, activeProfileId) ?? activeClientScopeIdForServer(serverId);
+    }
     if (backend.usesMediaBrowserApi) {
       final persisted = await JellyfinCacheResolver(_database).findProfileScopeId(serverId, activeProfileId);
       return persisted ?? activeClientScopeIdForServer(serverId);
     }
     return buildPlexProfileScopeId(serverId: serverId, profileId: activeProfileId);
+  }
+
+  /// The `silo:<server_id>/<profile_id>` scope of [activeProfileId]'s join
+  /// row for the Silo server [serverId], whose `userIdentifier` is the Silo
+  /// profile it enters.
+  Future<String?> _boundSiloScopeId(ServerId serverId, String activeProfileId) async {
+    final binding =
+        await (_database.select(_database.profileConnections)
+              ..where((t) => t.profileId.equals(activeProfileId))
+              ..where((t) => t.connectionId.equals(SiloConnection.idFor(serverId))))
+            .getSingleOrNull();
+    final siloProfileId = binding?.userIdentifier ?? '';
+    return siloProfileId.isEmpty ? null : SiloProfileScopeId.tryParse('silo:$serverId/$siloProfileId');
   }
 
   /// Resolves the backend and the profile-visible cache namespace once per
