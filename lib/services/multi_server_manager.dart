@@ -258,6 +258,11 @@ class MultiServerManager {
   MediaServerClient? getClientByScope(String clientScopeId) {
     final jellyfin = getJellyfinClientByCompoundId(clientScopeId);
     if (jellyfin != null) return jellyfin;
+    final siloScope = SiloProfileScopeId.tryParse(clientScopeId);
+    if (siloScope != null) {
+      final client = _clients[siloScope.publicServerId];
+      return client is SiloClient && client.cacheServerId == clientScopeId ? client : null;
+    }
     final plexScope = PlexProfileScopeId.tryParse(clientScopeId);
     if (plexScope == null || _plexScopeByServer[plexScope.publicServerId] != plexScope) return null;
     final client = _clients[plexScope.publicServerId];

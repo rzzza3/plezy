@@ -4,6 +4,7 @@ import 'dart:io';
 import '../connection/connection.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
+import '../media/download_resolution.dart';
 import '../media/ids.dart';
 import '../media/library_change_event.dart';
 import '../media/library_filter_result.dart';
@@ -23,6 +24,7 @@ import '../media/media_version.dart';
 import '../media/server_capabilities.dart';
 import '../silo/silo_app.dart';
 import '../silo/silo_catalog.dart';
+import '../silo/silo_downloads.dart';
 import '../silo/silo_events.dart';
 import '../silo/silo_http.dart';
 import '../silo/silo_mappers.dart';
@@ -32,6 +34,7 @@ import '../silo/silo_playback.dart';
 import '../silo/silo_playback_session.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController;
+import 'download_artwork_helpers.dart';
 import 'playback_initialization_types.dart';
 import 'scrub_preview_source.dart';
 
@@ -855,7 +858,10 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     final playback = _sessionFor(playSessionId);
-    if (playback == null) return;
+    if (playback == null) {
+      if (playSessionId == null) await _syncLocalProgress(itemId, position, duration, report);
+      return;
+    }
     playback.observe(_source(playback, position), paused: true);
     await playback.flush();
     _homeChanged();
@@ -864,6 +870,26 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
       _lingeringStop = null;
       unawaited(_endPlayback());
     });
+  }
+
+  /// A downloaded file plays with no server session, so its last position
+  /// goes through the personal-data progress path instead
+  /// (`A/player/PlaybackSessionLifecycle.kt:870-908`). A failure throws, so
+  /// the tracker or the offline queue keeps the position for later.
+  Future<void> _syncLocalProgress(
+    String itemId,
+    Duration position,
+    Duration? duration,
+    PlaybackReportMetadata report,
+  ) async {
+    await siloSyncProgress(
+      http,
+      contentId: itemId,
+      position: position.inMilliseconds / 1000,
+      duration: (duration?.inMilliseconds ?? 0) / 1000,
+      recordedAt: report.recordedAt ?? DateTime.now(),
+    );
+    _homeChanged();
   }
 
   Future<void> _endPlayback() async {
@@ -938,8 +964,134 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   @override
   Map<String, String> get streamHeaders => const {};
 
+  /// Silo cards carry their library from the browse that produced them, and
+  /// no Silo call names an item's library from its id alone, so the item is
+  /// returned as it is.
   @override
   Future<MediaItem> stampLibrary(MediaItem item) async => item;
+
+  /// Silo artwork URLs are absolute, so they are stored as they are.
+  @override
+  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) => buildArtworkSpecs(item, (url) => url);
+
+  late final SiloDownloads downloads = SiloDownloads(http, profileId: profileId);
+
+  /// Registry rows by download id, from the last [resolveDownload] of each.
+  final Map<String, ({SiloDownloadRecord record, String? container})> _downloadRecords = {};
+
+  /// Gates on the capability, then creates the file's download once
+  /// (`research/silo-playback.md` section 7). An episode is registered under
+  /// its series with the episode as `episode_id`. The manifest's subtitles
+  /// are only read once the server holds the download as completed; before
+  /// that they stay unresolved so the pipeline asks again afterwards.
+  @override
+  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
+    try {
+      return await _resolveDownload(item, mediaIndex: mediaIndex, mediaSourceId: mediaSourceId);
+    } on SiloDownloadException catch (error) {
+      throw MediaServerHttpException(
+        type: MediaServerHttpErrorType.unknown,
+        statusCode: error.status,
+        message: 'Silo download ${error.code}',
+      );
+    } on MediaServerException {
+      rethrow;
+    } on FormatException {
+      rethrow;
+    } on Exception catch (error) {
+      throw MediaServerHttpException.from(error);
+    }
+  }
+
+  Future<DownloadResolution> _resolveDownload(MediaItem item, {required int mediaIndex, String? mediaSourceId}) async {
+    final capability = await downloads.capability();
+    if (!capability.isUsable) throw const SiloDownloadException('downloads_unavailable', status: 403);
+    final watch = await http.send(SiloRequest.get('/api/v2/watch/${Uri.encodeComponent(item.id)}'));
+    if (watch.statusCode != 200) throw SiloDownloadException('watch_failed', status: watch.statusCode);
+    final detail = SiloWatchDetail.fromJson(watch.json(), item.id);
+    final chosen = int.tryParse(mediaSourceId ?? '');
+    final version =
+        detail.versions.where((v) => v.fileId == chosen).firstOrNull ??
+        (mediaIndex > 0 && mediaIndex < detail.versions.length ? detail.versions[mediaIndex] : null) ??
+        selectSiloVersion(detail.versions, lastFileId: detail.lastFileId, preferredQuality: 'original');
+    final series = item.kind == MediaKind.episode ? item.grandparentId : null;
+    final record = await downloads.create(
+      SiloDownloadRequest(
+        contentId: series ?? item.id,
+        episodeId: series == null ? null : item.id,
+        fileId: version.fileId,
+      ),
+    );
+    _downloadRecords[record.id] = (record: record, container: version.container);
+
+    var subtitles = const <DownloadSubtitleSpec>[];
+    var resolved = false;
+    if (record.isCompleted) {
+      final manifest = await downloads.manifest(record.id);
+      if (manifest != null) {
+        resolved = true;
+        subtitles = [
+          for (final row in manifest.subtitles)
+            DownloadSubtitleSpec(
+              id: row.ordinal,
+              url: http.origin.resolve(row.fetchUrl).toString(),
+              codec: row.format == 'pgs' ? 'pgs' : row.format,
+              language: row.language,
+              languageCode: row.language,
+              forced: row.forced,
+              displayTitle: row.title,
+            ),
+        ];
+      }
+    }
+    return DownloadResolution(
+      videoUrl: http.origin.resolve('/api/v2/downloads/${Uri.encodeComponent(record.id)}/file').toString(),
+      mediaSourceId: '${version.fileId}',
+      externalSubtitles: subtitles,
+      externalSubtitlesResolved: resolved,
+    );
+  }
+
+  /// The download id inside a [resolveDownload] file URL.
+  static String? downloadIdOf(String videoUrl) {
+    final segments = Uri.tryParse(videoUrl)?.pathSegments ?? const [];
+    final at = segments.length - 3;
+    return at >= 0 && segments[at] == 'downloads' && segments.last == 'file' ? segments[at + 1] : null;
+  }
+
+  /// The delivered file's extension, when the server sends the original.
+  String? downloadExtension(String videoUrl) {
+    final entry = _downloadRecords[downloadIdOf(videoUrl)];
+    final format = entry?.record.deliveryFormat;
+    final container = entry?.container?.trim().toLowerCase();
+    if (container == null || container.isEmpty || (format != null && format != 'original')) return null;
+    return RegExp(r'^[a-z0-9]{1,5}$').hasMatch(container) ? container : null;
+  }
+
+  /// Streams the file [resolveDownload] created into [target], resuming a
+  /// partial from an earlier attempt when it still matches.
+  Future<void> transferDownload(
+    String videoUrl,
+    File target, {
+    void Function(int written, int total)? onProgress,
+    SiloTransferCancel? cancel,
+  }) async {
+    final id = downloadIdOf(videoUrl);
+    if (id == null) throw const SiloDownloadException('invalid_download_url');
+    final record =
+        _downloadRecords[id]?.record ??
+        (await downloads.list()).where((row) => row.id == id).firstOrNull ??
+        (throw const SiloDownloadException('download_gone'));
+    await SiloDownloadTransfer(downloads).run(record: record, target: target, onProgress: onProgress, cancel: cancel);
+    _downloadRecords.remove(id);
+  }
+
+  /// Saves one manifest subtitle with this profile's credentials.
+  Future<void> downloadSubtitle(String url, File target) {
+    final parsed = Uri.parse(url);
+    if (!isSameSiloOrigin(parsed, http.origin)) throw const SiloDownloadException('invalid_subtitle_reference');
+    return downloads.fetchSidecar(parsed.path, target);
+  }
 
   /// Members the later steps implement fail as a rejected future, so an
   /// awaiting caller sees an ordinary error instead of a synchronous throw.

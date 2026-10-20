@@ -25,6 +25,9 @@ import 'download_artwork_service.dart';
 import 'jellyfin_cache_resolver.dart';
 import 'plex_api_cache.dart';
 import 'settings_service.dart';
+import '../connection/connection.dart' show SiloConnection;
+import 'silo_client.dart';
+import '../silo/silo_downloads.dart';
 import 'saf_storage_service.dart';
 import 'package:saf_util/saf_util_platform_interface.dart' show SafDocumentFile;
 import '../models/download_models.dart';
@@ -170,6 +173,12 @@ class DownloadManagerService {
   final Future<void> Function() _refreshDownloadStorage;
 
   final SerialFutureQueue _safOwnershipQueue = SerialFutureQueue();
+
+  /// Running Silo transfers by task id, and the target each download's
+  /// partial sits beside.
+  final Map<String, SiloTransferCancel> _siloTransfers = {};
+  final Map<String, File> _siloPartials = {};
+  static const _siloProgressInterval = Duration(milliseconds: 500);
   final _progressController = StreamController<DownloadProgress>.broadcast();
   Stream<DownloadProgress> get progressStream => _progressController.stream;
 
@@ -571,6 +580,9 @@ class DownloadManagerService {
   }
 
   Future<String?> _profileScopeIdForBackend(MediaBackend backend, ServerId serverId, String activeProfileId) async {
+    // A Silo download belongs to the Silo profile the server's client is
+    // bound to, so another profile on the same server never sees it.
+    if (backend == MediaBackend.silo) return activeClientScopeIdForServer(serverId);
     if (backend.usesMediaBrowserApi) {
       final persisted = await JellyfinCacheResolver(_database).findProfileScopeId(serverId, activeProfileId);
       return persisted ?? activeClientScopeIdForServer(serverId);
@@ -704,7 +716,11 @@ class DownloadManagerService {
     // Prefer a live client — `MediaServerClient.backend` is in memory.
     final live = _getClient(serverId);
     if (live != null) return live.backend;
-    final row = await JellyfinCacheResolver(_database).findConnection(serverId);
+    final row =
+        await JellyfinCacheResolver(_database).findConnection(serverId) ??
+        await (_database.select(
+          _database.connections,
+        )..where((t) => t.id.equals(SiloConnection.idFor(serverId)))).getSingleOrNull();
     if (row == null) return null;
     // Keep the persisted discriminator intact even though both MediaBrowser
     // values dispatch to the same cache implementation.
@@ -712,6 +728,7 @@ class DownloadManagerService {
       'jellyfin' => MediaBackend.jellyfin,
       'emby' => MediaBackend.emby,
       'plex' => MediaBackend.plex,
+      'silo' => MediaBackend.silo,
       _ => null,
     };
   }
@@ -1431,6 +1448,9 @@ class DownloadManagerService {
     if (!downloadsSupported) return;
     final ids = taskIds.where((id) => id.isNotEmpty).toSet();
     if (ids.isEmpty) return;
+    for (final id in ids) {
+      _siloTransfers.remove(id)?.cancel();
+    }
 
     try {
       final cancelled = await _nativeOps.cancelTaskIds(ids);
@@ -2247,7 +2267,9 @@ class DownloadManagerService {
   }) async {
     final serverId = parseGlobalKey(globalKey)?.serverId;
     if (serverId == null) throw Exception('Invalid globalKey: $globalKey');
-    final firstExt = downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4';
+    final silo = client is SiloClient ? client : null;
+    final firstExt =
+        silo?.downloadExtension(resolution.videoUrl!) ?? downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4';
     final url = partIndex == 0 ? resolution.videoUrl! : resolution.additionalParts[partIndex - 1].url;
     final ext = partIndex == 0 ? firstExt : downloadExtensionFromUrl(url) ?? 'mp4';
     String partTarget(String firstFile) =>
@@ -2272,6 +2294,9 @@ class DownloadManagerService {
       final DownloadTask task;
       final String filePath;
       final String? safRootUri;
+      if (silo != null && _storageService.isUsingSaf && safBaseUri != null) {
+        throw StateError('Silo downloads need app storage');
+      }
       if (_storageService.isUsingSaf && safBaseUri != null) {
         final rootUri = await _safStorage.resolvePersistedPermissionUri(safBaseUri);
         if (rootUri == null) {
@@ -2326,9 +2351,11 @@ class DownloadManagerService {
         // The file name carries this item's identity, so anything at the
         // target is this item's own leftover — never another server's or
         // library's copy of the same title, nor a user file.
+        // A Silo transfer keeps its own partial there, which it resumes
+        // only while its saved validator still matches the server's file.
         await Future.wait([
           _deleteFileIfExists(File(downloadFilePath), 'stale video before re-download'),
-          _deleteFileIfExists(File('$downloadFilePath.part'), 'stale .part before re-download'),
+          if (silo == null) _deleteFileIfExists(File('$downloadFilePath.part'), 'stale .part before re-download'),
         ]);
 
         await File(downloadFilePath).parent.create(recursive: true);
@@ -2365,8 +2392,83 @@ class DownloadManagerService {
         safRootUri: safRootUri,
       );
 
+      if (silo != null) return _startSiloTransfer(globalKey, task, silo, url, filePath);
       return _enqueuePreparedTask(globalKey, task, safRootUri != null ? 'SAF download' : 'download');
     });
+  }
+
+  /// Runs a Silo file transfer in Dart instead of the native downloader: the
+  /// file route needs the session's bearer and profile headers, which must
+  /// never be written into a native task. [task] is never enqueued; it only
+  /// names the target and carries the transfer's events through the same
+  /// handlers a native task's events take.
+  Future<bool> _startSiloTransfer(
+    String globalKey,
+    DownloadTask task,
+    SiloClient client,
+    String url,
+    String filePath,
+  ) async {
+    await _database.updateBgTaskId(globalKey, task.taskId);
+    if (await _cancelEnqueuedTaskIfInactive(globalKey, task.taskId)) return true;
+    final cancel = SiloTransferCancel();
+    _siloTransfers[task.taskId] = cancel;
+    _siloPartials[globalKey] = File(filePath);
+    appLogger.i('Started Silo transfer ${task.taskId} for $globalKey');
+    unawaited(_runSiloTransfer(task, client, url, File(filePath), cancel));
+    return false;
+  }
+
+  Future<void> _runSiloTransfer(
+    DownloadTask task,
+    SiloClient client,
+    String url,
+    File target,
+    SiloTransferCancel cancel,
+  ) async {
+    final started = DateTime.now();
+    var reportedAt = DateTime.fromMillisecondsSinceEpoch(0);
+    int? firstByte;
+    TaskStatusUpdate outcome;
+    try {
+      await _handleTaskStatusChanged(TaskStatusUpdate(task, TaskStatus.running));
+      await client.transferDownload(
+        url,
+        target,
+        cancel: cancel,
+        onProgress: (written, total) {
+          firstByte ??= written;
+          final now = DateTime.now();
+          if (now.difference(reportedAt) < _siloProgressInterval && written != total) return;
+          reportedAt = now;
+          final seconds = now.difference(started).inMilliseconds / 1000;
+          final speed = seconds > 0 ? (written - firstByte!) / seconds / (1024 * 1024) : -1.0;
+          unawaited(
+            _handleTaskProgress(TaskProgressUpdate(task, total > 0 ? written / total : 0.0, total, speed.toDouble())),
+          );
+        },
+      );
+      outcome = TaskStatusUpdate(task, TaskStatus.complete);
+    } on SiloTransferCancelledException {
+      outcome = TaskStatusUpdate(task, TaskStatus.canceled);
+    } on Object catch (error) {
+      outcome = siloTransferFailure(task, error);
+    } finally {
+      if (identical(_siloTransfers[task.taskId], cancel)) _siloTransfers.remove(task.taskId);
+    }
+    if (outcome.status == TaskStatus.complete) _siloPartials.remove(task.metaData);
+    await _handleTaskStatusChanged(outcome);
+  }
+
+  /// Deletes the partial bytes a Silo transfer kept for a resume.
+  Future<void> _discardSiloPartial(String globalKey) async {
+    final target = _siloPartials.remove(globalKey);
+    if (target == null) return;
+    try {
+      await SiloDownloadTransfer.discard(target);
+    } catch (e) {
+      appLogger.w('Failed to delete Silo partial for $globalKey', error: e);
+    }
   }
 
   /// Fetch file [partIndex] of a stacked download once the previous file
@@ -3377,7 +3479,11 @@ class DownloadManagerService {
             continue;
           }
           await file.parent.create(recursive: true);
-          await _http.downloadFile(subtitle.url, subtitlePath);
+          if (client is SiloClient) {
+            await client.downloadSubtitle(subtitle.url, file);
+          } else {
+            await _http.downloadFile(subtitle.url, subtitlePath);
+          }
           appLogger.d('Downloaded subtitle ${subtitle.id} for $globalKey');
         } catch (e, st) {
           allSettled = false;
@@ -3452,6 +3558,7 @@ class DownloadManagerService {
       _cancelDownloadTimers(globalKey);
       final bgTaskId = await _database.getBgTaskId(globalKey);
       await _cancelNativeTasksForGlobalKey(globalKey, exceptTaskId: bgTaskId, reason: 'duplicate task before pause');
+      if (bgTaskId != null) _siloTransfers.remove(bgTaskId)?.cancel();
       if (bgTaskId != null && downloadsSupported) {
         final task = await FileDownloader().taskForId(bgTaskId);
         if (task != null && task is DownloadTask) {
@@ -3573,6 +3680,7 @@ class DownloadManagerService {
       body: () async {
         await _transitionStatus(globalKey, DownloadStatus.cancelled);
         await _database.removeFromQueue(globalKey);
+        await _discardSiloPartial(globalKey);
       },
     );
   }
@@ -3589,6 +3697,7 @@ class DownloadManagerService {
       globalKey,
       reason: 'delete download',
       body: () async {
+        await _discardSiloPartial(globalKey);
         final parsed = parseGlobalKey(globalKey);
         if (parsed == null) {
           await _deleteDownloadRowAndRelease(globalKey);
@@ -4514,4 +4623,24 @@ String? _safeDownloadExtension(String raw) {
   final ext = raw.split(RegExp(r'[,|]')).first.trim().replaceFirst(RegExp(r'^\.+'), '').toLowerCase();
   if (ext.isEmpty || !RegExp(r'^[a-z0-9][a-z0-9._-]{0,39}$').hasMatch(ext)) return null;
   return ext;
+}
+
+/// The native-style terminal event for a failed Silo transfer. A refusal
+/// keeps its HTTP status; everything else reads as an interrupted transfer,
+/// which the app retries and the next attempt resumes. The description is
+/// a fixed phrase, so no server text reaches the row or the log.
+@visibleForTesting
+TaskStatusUpdate siloTransferFailure(Task task, Object error) {
+  if (error is SiloDownloadException && error.status == 404) return TaskStatusUpdate(task, TaskStatus.notFound);
+  if (error is SiloDownloadException && error.status != null && error.status != 416) {
+    return TaskStatusUpdate(task, TaskStatus.failed, TaskHttpException('HTTP ${error.status}', error.status!));
+  }
+  if (error is FileSystemException) {
+    return TaskStatusUpdate(
+      task,
+      TaskStatus.failed,
+      TaskFileSystemException('${error.message} ${error.osError ?? ''}'),
+    );
+  }
+  return TaskStatusUpdate(task, TaskStatus.failed, TaskConnectionException('Silo transfer interrupted'));
 }
