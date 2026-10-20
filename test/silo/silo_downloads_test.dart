@@ -452,6 +452,24 @@ void main() {
       expect(target.existsSync(), isFalse);
     });
 
+    test(
+      'with no Content-Length, progress is read against the entry file_size (DownloadWorker.kt:283,316-326)',
+      () async {
+        final target = File('${dir.path}/movie.mkv');
+        final fake = fileServer((_) => http.Response.bytes(_bytes, 200, headers: {'etag': '"v1"'}));
+        final totals = <int>[];
+
+        final downloads = SiloDownloads(await _http(fake), profileId: 'p-1');
+        await SiloDownloadTransfer(
+          downloads,
+        ).run(record: record, target: target, onProgress: (written, total) => totals.add(total));
+
+        expect(totals, isNotEmpty);
+        expect(totals, everyElement(10), reason: 'DownloadWorker.kt:323 keeps existing.fileSize when total <= 0');
+        expect(target.readAsBytesSync(), _bytes);
+      },
+    );
+
     test('a 409 means not ready yet and keeps the partial (DownloadWorker.kt:246-253)', () async {
       final target = File('${dir.path}/movie.mkv');
       final fake = fileServer((_) => jsonResponse({}, 409));

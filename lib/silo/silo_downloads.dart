@@ -715,6 +715,7 @@ class SiloDownloadTransfer {
     final startedAt = now();
     await _report(record, 'downloading', startedAt);
 
+    int shownTotal() => total > 0 ? total : (record.fileSize >= written ? record.fileSize : -1);
     final done = Completer<void>();
     StreamSubscription<List<int>>? subscription;
     void finish([Object? error]) {
@@ -728,7 +729,7 @@ class SiloDownloadTransfer {
           (chunk) {
             sink.add(chunk);
             written += chunk.length;
-            onProgress?.call(written, total);
+            onProgress?.call(written, shownTotal());
           },
           onError: (Object error) => finish(error),
           onDone: finish,
