@@ -88,6 +88,20 @@ class SiloResponse {
   SiloProblem? get problem => SiloProblem.tryParse(body);
 }
 
+class SiloStreamedResponse {
+  final int statusCode;
+  final Uri url;
+  final Map<String, String> headers;
+  final Stream<List<int>> stream;
+
+  const SiloStreamedResponse({
+    required this.statusCode,
+    required this.url,
+    required this.headers,
+    required this.stream,
+  });
+}
+
 /// One wire exchange, for request logs. Carries header names only, never
 /// values, so a log can never leak a credential.
 class SiloExchange {
@@ -221,6 +235,78 @@ class SiloHttp {
     );
     if (outcome is! SiloRefreshed || session.generation != generation) return response;
     return _exchange(request, url, outcome.session);
+  }
+
+  /// A bearer GET whose body is streamed, not buffered, for download bytes.
+  /// [headers] are added to the session and device headers. Redirects are
+  /// followed under the same origin rules as [send], and a 401 is refreshed
+  /// once and replayed.
+  Future<SiloStreamedResponse> openStream(String path, {Map<String, String> headers = const {}}) async {
+    gate.check();
+    if (origin.scheme == 'http' && !_cleartextApproved(origin.toString())) {
+      throw SiloCleartextNotApprovedException(origin.toString());
+    }
+    final url = origin.resolve(path);
+    final generation = session.generation;
+    final current = session.session;
+    if (current == null || !isSameSiloOrigin(Uri.parse(current.origin), origin)) {
+      throw const SiloCredentialsRepudiatedException();
+    }
+    Map<String, String> headersFor(SiloSession credentials) => {
+      ..._headersFor(credentials, withProfile: true)..remove('Content-Type'),
+      ...headers,
+    };
+    final response = await _openStream(url, headersFor(current));
+    if (response.statusCode != HttpStatus.unauthorized) return response;
+    if (!isSameSiloOrigin(response.url, origin) || session.generation != generation) return response;
+    final outcome = await refresh(sentAccessToken: current.tokens.accessToken, generation: generation);
+    if (outcome is! SiloRefreshed || session.generation != generation) return response;
+    await response.stream.drain<void>();
+    return _openStream(url, headersFor(outcome.session));
+  }
+
+  Future<SiloStreamedResponse> _openStream(Uri url, Map<String, String> headers) async {
+    var hopUrl = url;
+    var trusted = true;
+    for (var hop = 0; ; hop++) {
+      final hopHeaders = trusted
+          ? headers
+          : {
+              for (final entry in headers.entries)
+                if (!SiloHeaders.isCredentialHeader(entry.key)) entry.key: entry.value,
+            };
+      final request = http.Request('GET', hopUrl)
+        ..followRedirects = false
+        ..headers.addAll(hopHeaders);
+      final started = DateTime.now();
+      http.StreamedResponse? response;
+      try {
+        response = await _client.send(request).timeout(siloRequestTimeout);
+      } finally {
+        onExchange?.call(
+          SiloExchange(
+            method: 'GET',
+            url: hopUrl,
+            headerNames: hopHeaders.keys.toList(growable: false),
+            statusCode: response?.statusCode,
+            elapsed: DateTime.now().difference(started),
+          ),
+        );
+      }
+      final location = response.headers['location'];
+      if (!_isRedirect(response.statusCode) || location == null) {
+        return SiloStreamedResponse(
+          statusCode: response.statusCode,
+          url: hopUrl,
+          headers: response.headers,
+          stream: response.stream,
+        );
+      }
+      await response.stream.drain<void>();
+      if (hop >= _maxRedirects) throw http.ClientException('Too many redirects', url);
+      hopUrl = hopUrl.resolve(location);
+      trusted = trusted && isSameSiloOrigin(hopUrl, origin);
+    }
   }
 
   /// One refresh at a time. Inside the lock, a token that differs from the
