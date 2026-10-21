@@ -787,7 +787,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// selection so the filter editor can count a pending edit.
   LibraryQuery _buildQuery({required List<LibraryFilter> clauses, required int offset, required int limit}) {
     final typeParam = _browseTypeParam();
-    final baseQuery = libraryQueryFromSelection(
+    return libraryQueryFromSelection(
       clauses: clauses,
       libraryKind: typeParam != null ? null : widget.library.kind,
       typeParam: typeParam,
@@ -796,12 +796,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       offset: offset,
       limit: limit,
     );
-    return (baseQuery.kind == null || baseQuery.kind == MediaKind.folder) &&
-            baseQuery.includeKinds.isEmpty &&
-            _selectedGrouping == browseGroupingAll &&
-            widget.library.defaultBrowseKinds.isNotEmpty
-        ? baseQuery.copyWith(includeKinds: widget.library.defaultBrowseKinds)
-        : baseQuery;
   }
 
   /// Fetch the first flat page. [epoch] is the snapshot of the full load that
@@ -2243,10 +2237,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 ///
 /// Plex returns categories from `/library/sections/{id}/filters` and sort
 /// options from `/library/sections/{id}/sorts` separately, with values
-/// fetched lazily per-category via `FiltersBottomSheet`. Jellyfin returns
-/// categories *and* values together via `/Items/Filters` (so [cachedValues]
-/// is populated up-front) and has no sort-listing endpoint, so its sorts
-/// come from a client-side hardcoded list.
+/// fetched lazily per-category via `FiltersBottomSheet`. Silo returns
+/// categories *and* values together via `GET /catalog/filters` (so
+/// [cachedValues] is populated up-front), and its sorts come from a
+/// client-side hardcoded list.
 class LoadedFiltersAndSorts {
   final List<MediaFilter> filters;
   final List<MediaSort> sorts;

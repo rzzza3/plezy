@@ -30,12 +30,6 @@ enum ImageType {
 /// transcode path:
 /// - **Plex**: `/photo/:/transcode?width=W&height=H&url=...&X-Plex-Token=...`
 ///   constructed by [MediaServerClient.thumbnailUrl] (PlexClient impl).
-/// - **Jellyfin**: `/Items/{id}/Images/{type}?MaxWidth=W&MaxHeight=H&api_key=...`
-///   constructed by [MediaServerClient.thumbnailUrl] (JellyfinClient impl).
-///
-/// Self-contained absolute URLs (Jellyfin items pre-absolutized at the
-/// model layer) get sized via query-param append so they pick up the same
-/// DPR scaling and cache-bucket rounding as Plex.
 ///
 /// External URLs (EPG provider images, etc.) that the local server doesn't
 /// host get proxied through Plex's photo transcoder when a Plex client is
@@ -250,29 +244,6 @@ class MediaImageHelper {
     final basePath = thumbPath;
 
     if (basePath.startsWith('http://') || basePath.startsWith('https://')) {
-      // Self-contained Jellyfin URLs already carry their own auth
-      // (`api_key=...`). Append `maxWidth/maxHeight` so we still get DPR
-      // scaling and cache-bucket rounding — Jellyfin's image endpoint
-      // honours those query params.
-      if (basePath.contains('api_key=')) {
-        final (width, height) = calculateOptimalDimensions(
-          maxWidth: maxWidth,
-          maxHeight: maxHeight,
-          pixelRatio: pixelRatio,
-          imageType: imageType,
-        );
-        final uri = Uri.parse(basePath);
-        final params = Map<String, String>.from(uri.queryParameters);
-        final lowerKeys = params.keys.map((k) => k.toLowerCase()).toSet();
-        if (!lowerKeys.contains('maxwidth') && !lowerKeys.contains('width')) {
-          params['maxWidth'] = '$width';
-        }
-        if (!lowerKeys.contains('maxheight') && !lowerKeys.contains('height')) {
-          params['maxHeight'] = '$height';
-        }
-        return uri.replace(queryParameters: params).toString();
-      }
-
       // EPG / external URL — proxy through the server's transcoder. Plex
       // implements [externalImageUrl] via `/photo/:/transcode?url=...`;
       // backends without a comparable endpoint return the URL unchanged.
@@ -287,8 +258,7 @@ class MediaImageHelper {
     }
 
     // Relative path — let the client build the sized URL using its native
-    // size-hint params (`/photo/:/transcode` for Plex, `MaxWidth/MaxHeight`
-    // for Jellyfin). The interface guarantees both honour width/height.
+    // size-hint params (`/photo/:/transcode` for Plex).
     if (client == null) {
       // Offline + relative path: the cached entry already exists under the
       // URL originally fetched, so returning '' matches pre-refactor behaviour.

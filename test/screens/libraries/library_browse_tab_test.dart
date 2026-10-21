@@ -29,7 +29,6 @@ import 'package:plezy/screens/libraries/alpha_scroll_handle.dart';
 import 'package:plezy/screens/libraries/sort_bottom_sheet.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
-import 'package:plezy/services/jellyfin_mappers.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -205,25 +204,6 @@ void main() {
     expect(find.byType(EmptyStateWidget), findsOneWidget);
 
     debugDefaultTargetPlatformOverride = null;
-  });
-
-  testWidgets('mixed library all grouping applies its explicit root kinds', (tester) async {
-    final client = _BrowseClient('server-a', 'Mixed');
-    final harness = _BrowseHarness(clientA: client);
-    addTearDown(harness.dispose);
-    harness.selectedLibrary.value = JellyfinMappers.library({
-      'Id': 'mixed-library',
-      'Name': 'Mixed',
-      'Type': 'CollectionFolder',
-      'IsFolder': true,
-    }, serverId: client.serverId)!;
-
-    await _pumpHarness(tester, harness);
-
-    expect(client.pageQueries, hasLength(1));
-    expect(client.pageQueries.single.kind, MediaKind.folder);
-    expect(client.pageQueries.single.includeKinds, const [MediaKind.movie, MediaKind.show]);
-    expect(client.pageLibraryKinds.single, MediaKind.folder);
   });
 
   testWidgets('a server push repopulates the visible grid in place (#1646)', (tester) async {
@@ -463,7 +443,7 @@ Future<void> _pushNewFirstItem(WidgetTester tester, _BrowseClient client, {Futur
       items: [
         testMediaItem(
           id: 'fresh-item',
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
           kind: MediaKind.artist,
           title: 'Fresh Arrival',
           serverId: client.serverId.value,
@@ -471,7 +451,7 @@ Future<void> _pushNewFirstItem(WidgetTester tester, _BrowseClient client, {Futur
         ),
         testMediaItem(
           id: '${client.serverId.value}-item',
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
           kind: MediaKind.artist,
           title: client.itemTitle,
           serverId: client.serverId.value,
@@ -525,7 +505,7 @@ LibraryPage<MediaItem> _pageFor(_BrowseClient client, String title) {
     items: [
       testMediaItem(
         id: '${client.serverId.value}-item',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.artist,
         title: title,
         serverId: client.serverId.value,
@@ -561,7 +541,7 @@ class _BrowseHarness {
   MediaLibrary _libraryFor(_BrowseClient client) {
     return MediaLibrary(
       id: '${client.serverId.value}-library',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       title: client.itemTitle,
       kind: MediaKind.artist,
       serverId: client.serverId,
@@ -740,10 +720,10 @@ class _BrowseClient implements MediaServerClient {
   String get serverName => itemTitle;
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) {
