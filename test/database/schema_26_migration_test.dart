@@ -379,6 +379,28 @@ void main() {
       expect(await _snapshot(reopened), migrated);
     });
 
+    test('the upgrade gives the purged cache space back to the file system', () async {
+      final seeded = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
+      final payload = 'x' * 4096;
+      await seeded.batch((batch) {
+        for (var i = 0; i < 500; i++) {
+          batch.insert(
+            seeded.apiCache,
+            ApiCacheCompanion.insert(cacheKey: 'plex-machine:/library/metadata/$i', data: payload),
+          );
+        }
+      });
+      await seeded.close();
+      final before = await file.length();
+
+      final db = AppDatabase.forTesting(NativeDatabase(file));
+      await db.customSelect('SELECT 1').get();
+      await db.close();
+
+      expect(before, greaterThan(2000000));
+      expect(await file.length(), lessThan(before - 2000000));
+    });
+
     test('a fresh schema 26 database keeps Silo rows written after creation', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);

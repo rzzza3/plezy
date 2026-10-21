@@ -389,6 +389,9 @@ class AppDatabase extends _$AppDatabase {
       // through `_openConnection`.
       beforeOpen: (details) async {
         await customStatement('PRAGMA foreign_keys = ON');
+        if (details.hadUpgrade && (details.versionBefore ?? 0) < 26 && details.versionNow >= 26) {
+          await _reclaimSpaceAfterPurge();
+        }
       },
       onCreate: (Migrator m) async {
         await m.createAll();
@@ -831,6 +834,19 @@ class AppDatabase extends _$AppDatabase {
         OR queue_json LIKE '%"backend":"jellyfin"%'
         OR queue_json LIKE '%"backend":"emby"%'
     ''');
+  }
+
+  /// Shrinks the file once the v26 purge has freed the old backends' pages.
+  /// SQLite keeps freed pages inside the file, and VACUUM cannot run inside
+  /// the migration's transaction. A failure, such as too little free space for
+  /// the rebuilt copy, leaves the database valid and only logs.
+  Future<void> _reclaimSpaceAfterPurge() async {
+    try {
+      await customStatement('VACUUM');
+      await customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
+    } catch (e) {
+      appLogger.w('Could not reclaim space after the v26 migration', error: e);
+    }
   }
 
   /// True when [column] holds a `silo:<server_id>/<profile_id>` scope. False,
