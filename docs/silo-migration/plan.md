@@ -522,7 +522,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 **Review gate.** The operator reviews before merge.
 - [x] Copy lanes 1 and 3 screenshots into `docs/silo-migration/media/s7-review-*.png`.
 - [x] Record a 30 to 60 second video of an upgrade and sign-in. Save it as `docs/silo-migration/media/s7-review.mp4`.
-- [ ] Post the screenshots and the video in chat. Stop at merge-ready. Wait for the operator's click.
+- [x] Post the screenshots and the video in chat. Stop at merge-ready. Wait for the operator's click.
 
 **Merge.**
 - [ ] Root's clean verdict at the exact head SHA.
@@ -552,7 +552,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - Open issue 1. The Settings > Profiles subtitle still reads "Add profiles to mix managed users and local identities", where managed users are Plex Home users. Left for S9, which replaces the profiles.
 - Open issue 2. A profile with no connection shows "Unable to load Discover" on Home. This predates S7.
 - Review gate. Stills are `media/s7-review-lane1-upgrade.png`, `-lane1-silo-home.png` and `-lane3-auth.png`. `media/s7-review.mp4` (40 s) shows the trunk Plex home, the upgrade, the picker with `Silo A` only, and the `Silo A` home.
-- Verdict. Waiting for the operator's review. Nothing is pushed.
+- Verdict. Approved by the operator ("Go", 2026-10-21) at `face01086`, with lane 7 skipped and lanes 1 to 3 run on the current data by the operator's decisions above. Open issues 1 and 2 carry forward. Bugbot triage stays deferred to the end of the plan. Nothing is pushed.
 
 ## Delete Jellyfin and Emby (S8)
 **Depends on.** S7.
