@@ -506,9 +506,8 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
           try {
             final result = await _syncAction(client, action, clientScopeId: clientScopeId);
             if (!result.persisted) {
-              // The write did not land — MediaBrowser drops a stop for a
-              // session its Started never opened. Leave the row queued and
-              // count the attempt so a later pass retries it.
+              // The write did not land. Leave the row queued and count the
+              // attempt so a later pass retries it.
               appLogger.d('Action ${action.id} did not persist; keeping it queued');
               await _database.updateSyncAttemptIfUnchanged(action.id, action.updatedAt, 'write did not persist');
               return;
@@ -636,8 +635,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
   /// Sync a single action to the server.
   ///
-  /// Uses the neutral [MediaServerClient] surface so Jellyfin's
-  /// `/UserPlayedItems/{id}` and `/Sessions/Playing*` endpoints receive
+  /// Uses the neutral [MediaServerClient] surface so every backend receives
   /// the same queued state Plex's `/:/scrobble` and `/:/timeline` do.
   Future<_OfflineWatchReplayResult> _syncAction(
     MediaServerClient client,
@@ -869,7 +867,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
       appLogger.i('Syncing watch states from server for ${downloadedItems.length} items');
 
       // Separate episodes (with season parent) from other items (movies,
-      // etc.), using the active scoped client for user-owned Jellyfin watch
+      // etc.), using the active scoped client for user-owned watch
       // state. Downloads are shared, but server watch state is per user.
       // Structure: (serverId, clientScopeId) -> seasonRatingKey -> Set<episodeRatingKey>
       final episodesByScopeAndSeason = <({ServerId serverId, String? clientScopeId}), Map<String, Set<String>>>{};

@@ -19,7 +19,7 @@ import 'profile_name_field.dart';
 /// Create a local "Plezy" profile — name + optional 4-digit PIN.
 ///
 /// On save, routes into [AddConnectionScreen] so the user can either add
-/// a brand-new Plex/Jellyfin connection to this profile or borrow one from
+/// a brand-new Silo connection to this profile or borrow one from
 /// an existing profile. Profiles with zero connections are stored but
 /// blocked from activation.
 class AddLocalProfileScreen extends StatefulWidget {

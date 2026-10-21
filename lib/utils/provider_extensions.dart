@@ -12,7 +12,7 @@ import 'app_logger.dart';
 extension ProviderExtensions on BuildContext {
   /// Internal: resolve a [PlexClient] from a serverId or fall back to the
   /// first online server. Returns null if neither yields a Plex client.
-  /// Non-Plex servers (Jellyfin) are skipped — these helpers exist for
+  /// Non-Plex servers are skipped — these helpers exist for
   /// Plex-only flows that have no neutral equivalent (DVR tuning, match).
   /// Backend-agnostic flows use the [_resolveMediaClient]
   /// helpers below.

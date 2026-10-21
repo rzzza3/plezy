@@ -1,6 +1,6 @@
 import 'media_item.dart';
 
-/// Client-only play queue used by Jellyfin and any backend without a
+/// Client-only play queue used by any backend without a
 /// server-side queue concept.
 ///
 /// Plex server-side queues (`/playQueues`) flow through the Plex

@@ -102,8 +102,7 @@ class TrackerIdResolver {
 
   /// Fetch external IDs for an item via the neutral
   /// [MediaServerClient.fetchExternalIds] surface — Plex hits
-  /// `/library/metadata/{id}?includeGuids=1`, Jellyfin reads the inline
-  /// `ProviderIds` map.
+  /// `/library/metadata/{id}?includeGuids=1`.
   Future<ExternalIds> _fetchExternalIds(String itemId) =>
       _externalIdLoads.run(itemId, () => _client.fetchExternalIds(itemId));
 

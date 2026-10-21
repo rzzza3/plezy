@@ -70,13 +70,11 @@ int compareLibraryCopies(MediaItem a, MediaItem b) {
 /// Fold a re-resolved copy into the one already known for its
 /// [MediaItem.globalKey].
 ///
-/// The addition is fresher, but a degraded pass must not erase context. The
-/// Jellyfin library stamp is a best-effort `/Items/{id}/Ancestors` call that
-/// hands back an unstamped item when it fails, and a copy that lost its
-/// library title is indistinguishable from its sibling in the same server's
-/// other library — exactly the ambiguity the chooser exists to resolve. The
-/// library pair follows [_libraryPair]; the version list behind the
-/// resolution hint is treated the same way as the stamp.
+/// The addition is fresher, but a degraded pass must not erase context. A
+/// copy that lost its library title is indistinguishable from its sibling in
+/// the same server's other library — exactly the ambiguity the chooser exists
+/// to resolve. The library pair follows [_libraryPair]; the version list
+/// behind the resolution hint is treated the same way.
 ///
 /// Shared by the on-screen union ([mergeLibraryCopies]) and the per-server
 /// replacement in `CatalogLibraryMatcher`, so one policy decides what a

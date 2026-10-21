@@ -89,7 +89,7 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
   Future<void> _loadPrograms() async {
     final multiServer = context.read<MultiServerProvider>();
     final now = DateTime.now().toUtc();
-    // Jellyfin maps `from` to minStartDate, which would exclude programs that
+    // Some backends map `from` to a minimum start date, which would exclude programs that
     // started before the sheet opened; look back an hour to keep the current
     // airing searchable (same idiom as the show-schedule screen).
     final from = now.subtract(const Duration(hours: 1));

@@ -3,8 +3,8 @@
 /// height for non-standard sizes). Returns `null` when [height] is null.
 ///
 /// Plex hands the label back already in its `Media.videoResolution` field;
-/// Jellyfin only gives raw pixel dimensions, which the Jellyfin mapper feeds
-/// through [resolutionLabelFromDimensions] to produce the same shape.
+/// backends that only give raw pixel dimensions feed them through
+/// [resolutionLabelFromDimensions] to produce the same shape.
 String? resolutionLabelFromHeight(int? height) {
   if (height == null) return null;
   if (height >= 2160) return '4k';

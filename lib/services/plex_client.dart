@@ -404,8 +404,7 @@ class PlexClient
   final Future<void> Function(String newBaseUrl)? _onEndpointChanged;
   final VoidCallback? _onAllEndpointsExhausted;
 
-  /// Test seam for [_validateFailoverCandidate]'s ephemeral probe client,
-  /// mirroring [JellyfinClient.forTesting]'s `endpointProbeHttpClientFactory`.
+  /// Test seam for [_validateFailoverCandidate]'s ephemeral probe client.
   /// Each validation constructs (and closes) its own client, so this is a
   /// factory rather than a shared instance.
   final http.Client Function()? _endpointProbeHttpClientFactory;
@@ -568,8 +567,8 @@ class PlexClient
   }
 
   /// Test-only factory that injects an [http.Client] so URL-builder tests can
-  /// capture the request URI without spinning up a real Plex server. Mirrors
-  /// [JellyfinClient.forTesting]. Skips the [_initMediaProviders] step from
+  /// capture the request URI without spinning up a real Plex server. Skips
+  /// the [_initMediaProviders] step from
   /// [create] — tests that need libraries should mock the `/media/providers`
   /// response themselves.
   @visibleForTesting
@@ -1045,7 +1044,7 @@ class PlexClient
   /// Hits the root `/` MediaContainer (auth-required) rather than `/identity`
   /// (an unauthenticated discovery endpoint). With `/identity`, a server with
   /// a revoked or expired token would still report healthy, only to 401 on
-  /// the very next real call. Mirrors Jellyfin's `/Users/Me` choice.
+  /// the very next real call.
   ///
   /// Distinguishes 401 (token revoked / wrong user) as [HealthStatus.authError]
   /// and 403 (the server refuses this account) as [HealthStatus.accessDenied]
@@ -2361,9 +2360,8 @@ class PlexClient
   ///
   /// Date Added (`addedAt`), plays (`viewCount`), and the signed-in user's
   /// rating (`userRating`) sort correctly on video libraries, so we surface
-  /// them client-side (mirroring how the Jellyfin sort list is built). De-duped
-  /// by key so we never double up if a future Plex version starts advertising
-  /// them.
+  /// them client-side. De-duped by key so we never double up if a future Plex
+  /// version starts advertising them.
   ///
   /// `clip` covers home-video / "Other Videos" sections. Those are
   /// `type="movie"` on the wire — only [PlexMappers.mediaLibrary] folds their
@@ -3635,7 +3633,7 @@ class PlexClient
   /// station uri's trailing `?type=10` (track results) is part of the
   /// station path and rides inside the encoded uri value. Consumed as a
   /// plain track list — music playback is queue-managed client-side.
-  /// Failures propagate (matching the Jellyfin implementation) so callers
+  /// Failures propagate so callers
   /// can tell a failed mix from a genuinely empty one.
   @override
   Future<List<MediaItem>> fetchInstantMix(String itemId, {int limit = 100}) async {

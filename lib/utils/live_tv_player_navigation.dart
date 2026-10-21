@@ -18,8 +18,8 @@ import '../services/playback_launch_observer.dart';
 
 /// Navigate to the video player for a live TV channel — the single live
 /// entry for both backends. The player starts the backend-neutral
-/// `LiveTvPlaybackSession` itself (Plex tune / Jellyfin stream negotiation
-/// run under its loading spinner), so this only validates that the
+/// `LiveTvPlaybackSession` itself (e.g. Plex tune
+/// runs under its loading spinner), so this only validates that the
 /// channel's server is reachable and packages the UX arguments.
 ///
 /// [channels] is the full channel list for channel up/down navigation.

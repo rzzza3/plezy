@@ -95,9 +95,8 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   /// Internal helper to play items with optional shuffle.
   ///
   /// Dispatches to the right launcher implementation based on the item's
-  /// backend — Plex uses server-side `/playQueues`, Jellyfin builds an
-  /// in-memory queue client-side. Both show the loading indicator while
-  /// their round trips are in flight.
+  /// backend — Plex uses server-side `/playQueues`. The loading indicator
+  /// shows while the round trips are in flight.
   Future<void> _playWithShuffle(bool shuffle) async {
     if (items.isEmpty) {
       if (mounted) {

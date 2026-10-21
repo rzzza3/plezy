@@ -52,7 +52,7 @@ class _LibraryPlaylistsTabState extends PaginatedCardGridTabState<MediaPlaylist,
   @override
   Future<LibraryPage<MediaPlaylist>> fetchPage(int start, int size, AbortController? abort) {
     // Both backends return playlists scoped to the server (not the library) —
-    // neither Plex nor Jellyfin's API filters playlists by section. Music
+    // neither backend's API filters playlists by section. Music
     // libraries surface audio playlists; everything else keeps video.
     final client = getMediaClientForLibrary();
     final playlistType = widget.library.kind == MediaKind.artist ? 'audio' : 'video';

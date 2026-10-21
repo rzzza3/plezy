@@ -329,7 +329,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Backend-neutral client for the active item's server. Used by flows
-  /// that work for Jellyfin too (downloads, basic browse). Like
+  /// that work on every backend (downloads, basic browse). Like
   /// [_getClientForItem], never another server's client for an item that
   /// names its own.
   MediaServerClient _getMediaClientForItem() {
@@ -431,10 +431,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       return _MenuContext.downloadsFolder(mediaItem);
     }
 
-    // Check if user has admin privileges. Backend-neutral: Plex uses the
-    // server-owned flag (folded with the active Plex Home profile's admin
-    // bit, when applicable); MediaBrowser servers use `JellyfinConnection.isAdministrator`
-    // captured at sign-in.
+    // Check if user has admin privileges. Plex uses the server-owned flag
+    // (folded with the active Plex Home profile's admin bit, when
+    // applicable).
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
     final activeProfile = context.read<ActiveProfileProvider>().active;
     final isOwnerOrAdmin =
@@ -667,8 +666,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final isMovieOrEpisode = mediaKind == MediaKind.movie || mediaKind == MediaKind.episode;
     // Play Version (for episodes and movies). Hidden when there's
     // nothing to choose: a single source on a backend that can't
-    // transcode (Jellyfin v1, or Plex installs without a working
-    // transcoder) would just bounce straight to playback with default
+    // transcode (e.g. Plex installs without a working transcoder)
+    // would just bounce straight to playback with default
     // settings, which is what the regular Play action already does.
     // A row's version list, when present, is complete (the
     // [MediaItem.mediaVersions] contract), so the count is known up
@@ -681,10 +680,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (isMovieOrEpisode && (hasVersionChoice || menu.canTranscode) && menu.itemServerOnline)
         _MenuAction(value: 'play_version', icon: Symbols.video_file_rounded, label: t.mediaMenu.playVersion),
       // File Info — every file-backed leaf kind (movies, episodes, tracks,
-      // clips). Backend-neutral: both PlexClient and JellyfinClient implement
-      // [MediaServerClient.getFileInfo], reading codec/stream metadata from
-      // `Media`/`MediaSources` respectively. Container kinds are excluded by
-      // [MediaKind.hasFileInfo] because neither backend attaches media sources
+      // clips). Backend-neutral: every client implements
+      // [MediaServerClient.getFileInfo]. Container kinds are excluded by
+      // [MediaKind.hasFileInfo] because backends attach no media sources
       // to them — a show/season/album/artist entry would only ever produce the
       // "not available" snackbar. Hidden when the item has no backend marker
       // so we don't fan out to an arbitrary client.
@@ -1210,7 +1208,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Quick-tag flow: load the editable draft, let the user toggle the 'label'
   /// field in [TagEditDialog] with server/recents suggestions, then save
-  /// through the adapter so Plex tag diffs and Emby name-pair writes apply.
+  /// through the adapter so Plex tag diffs apply.
   Future<void> _showQuickTagDialog(BuildContext context, MediaItem item) async {
     final client = _getMediaClientForItem();
     final profileId = context.read<ActiveProfileProvider>().activeId;
@@ -1357,9 +1355,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Handle shuffle play using play queues — dispatches via the
-  /// neutral [MediaListPlaybackLauncher] so Jellyfin items get routed to
-  /// `JellyfinSequentialLauncher` instead of falling through to the
-  /// Plex-only `/playQueues` flow.
+  /// neutral [MediaListPlaybackLauncher].
   Future<void> _handleShufflePlayWithQueue(BuildContext context) async {
     final mediaItem = _mediaItem;
     if (mediaItem == null) return;
@@ -1638,8 +1634,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Launch playback for collection or playlist.
   ///
   /// Dispatches to the right launcher implementation based on the item's
-  /// backend — Plex uses server-side `/playQueues`, Jellyfin builds an
-  /// in-memory queue locally.
+  /// backend — Plex uses server-side `/playQueues`.
   Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
     final playlist = _playlist;
     if (playlist != null && playlist.playlistType == 'audio') {
@@ -1775,7 +1770,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Handle download action
   Future<void> _handleDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    // Backend-agnostic resolve so Jellyfin items can be downloaded too.
+    // Backend-agnostic resolve so every backend's items can be downloaded.
     final client = _getMediaClientForItem();
     await queueDownloadWithFeedback(context, metadata: _mediaItem!, client: client, downloadProvider: downloadProvider);
   }

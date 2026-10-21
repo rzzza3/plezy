@@ -501,10 +501,10 @@ class _MainScreenState extends State<MainScreen>
   final Set<String> _resumeCoveredServerIds = {};
 
   /// Listener that fires when [ActiveProfileBinder] settles (Plex *and*
-  /// Jellyfin both bound). Drives the once-per-launch priming of
+  /// Silo both bound). Drives the once-per-launch priming of
   /// LibrariesProvider + watch sync + tab fullRefresh — wiring this off
   /// the first online-server emission instead would prime before
-  /// Jellyfin gets added, leaving its libraries out of the navbar.
+  /// Silo gets added, leaving its libraries out of the navbar.
   VoidCallback? _bindingSettleListener;
   bool _startupServicesPrimed = false;
   Timer? _startupSettleTimeout;
@@ -643,7 +643,7 @@ class _MainScreenState extends State<MainScreen>
   /// [SetupScreen] path used to do all this before navigating to
   /// MainScreen; with the binder taking over for the connect, we hook
   /// into [ActiveProfileProvider.isBinding] (for the once-only priming,
-  /// which must wait for *all* connections — Plex *and* Jellyfin — to
+  /// which must wait for *all* connections — Plex *and* Silo — to
   /// land so the navbar shows libraries from both backends) and
   /// [MultiServerManager.statusStream] (for download resume, which
   /// re-fires whenever a server comes online that the last resume didn't
@@ -658,8 +658,8 @@ class _MainScreenState extends State<MainScreen>
       if (_startupServicesPrimed || !mounted) return;
       // Wait for the binder to finish — `_rebind` only flips `isBinding`
       // false after both `_bindPlexHome` AND `_bindJoinRows` (where
-      // Jellyfin gets added) complete. Priming on the first Plex status
-      // emit instead would load libraries before Jellyfin is registered.
+      // Silo gets added) complete. Priming on the first Plex status
+      // emit instead would load libraries before Silo is registered.
       //
       // The `fromTimeout` escape hatch lets the [_startupSettleTimeout]
       // bypass this gate if the binder has somehow not flipped the flag
@@ -687,13 +687,13 @@ class _MainScreenState extends State<MainScreen>
       // Wait for any online client before firing the resume — the download
       // pipeline is backend-neutral (resumeQueuedDownloads accepts a
       // MediaServerClient and per-item resolution picks up the right
-      // backend), so a Jellyfin-only setup can resume too.
+      // backend), so a Silo-only setup can resume too.
       final onlineClients = manager.onlineClients;
       _resumeQueuedDownloadsForServers(onlineClients.keys.toSet(), onlineClients.values.firstOrNull);
     }
 
     // Listen for binding-settle so the once-only priming runs after both
-    // Plex and Jellyfin are wired up.
+    // Plex and Silo are wired up.
     _bindingSettleListener = () => primeServicesOnBindingSettle();
     activeProfile.addListener(_bindingSettleListener!);
 

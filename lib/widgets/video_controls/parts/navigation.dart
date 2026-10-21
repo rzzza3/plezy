@@ -78,7 +78,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     if (!mounted) return SubtitleDownloadApplyOutcome.unavailable;
 
     // Plex-only: the OpenSubtitles polling flow uses [getVideoPlaybackData]
-    // and the Plex token. Jellyfin has no analogue and the entry point
+    // and the Plex token. Other backends have no analogue and the entry point
     // (`subtitleSearchSupported`) is already gated on backend, but guard
     // here too in case a future caller wires the same handler elsewhere.
     if (widget.metadata.backend != MediaBackend.plex) return SubtitleDownloadApplyOutcome.unavailable;

@@ -134,9 +134,8 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
 
   /// Sections eligible as recording targets for the selected entry.
   ///
-  /// Only Plex records into a library section. MediaBrowser servers record
-  /// into their own configured folder, and Emby's numeric library ids must not
-  /// be mistaken for Plex section ids.
+  /// Only Plex records into a library section; other backends' library ids must
+  /// not be mistaken for Plex section ids.
   List<MediaLibrary> get _eligibleLibraries {
     final kind = _entryLibraryKind;
     if (kind == null || widget.client.backend != MediaBackend.plex) return const [];

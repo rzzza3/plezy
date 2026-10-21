@@ -310,8 +310,8 @@ class DataAggregationService {
     var filteredOnDeck = _withoutHiddenLibraries(fetched.items, hiddenLibraryKeys);
 
     // Sort by most recently viewed, falling back to addedAt for unwatched items.
-    // Same key as JellyfinClient's continue-watching merge (MediaItem.recencySortKey)
-    // so per-server and cross-server ordering can't drift apart.
+    // Shared key (MediaItem.recencySortKey) so per-server and cross-server
+    // ordering can't drift apart.
     filteredOnDeck.sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
 
     filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
@@ -676,8 +676,8 @@ class DataAggregationService {
   }
 
   /// Per-library hub fetch for a single client. Filters to visible libraries
-  /// of [kinds] (movie/show/clip/artist by default — clip covers Jellyfin
-  /// musicvideos/homevideos, #1476; artist brings music rows to home) and
+  /// of [kinds] (movie/show/clip/artist by default — clip covers music-video
+  /// and home-video libraries, #1476; artist brings music rows to home) and
   /// concatenates the results. The rich-hub music append passes
   /// `{MediaKind.artist}` to fetch only what the global endpoint misses.
   ///
@@ -772,9 +772,9 @@ class DataAggregationService {
     return filtered;
   }
 
-  /// Search across all online servers (Plex + Jellyfin) for titles and
-  /// people. Per-server outcomes distinguish authoritative empty results from
-  /// failed or cancelled legs; they describe the title search only. The
+  /// Search across all online servers for titles and people. Per-server
+  /// outcomes distinguish authoritative empty results from failed or
+  /// cancelled legs; they describe the title search only. The
   /// people search on each server is best-effort, like Plex's supplemental
   /// category legs: a failure there costs that server's people, never its
   /// titles or its place in `succeededServerIds`.

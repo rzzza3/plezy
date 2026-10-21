@@ -479,8 +479,7 @@ MediaSourceInfo siloMediaSourceInfo(
 }
 
 /// Sidecars for a transcode, which carries no subtitle track of its own.
-/// Direct play reads embedded tracks from the container, as Jellyfin's
-/// direct play does. [playerUrl] maps a plan URL to what mpv opens, or to
+/// Direct play reads embedded tracks from the container. [playerUrl] maps a plan URL to what mpv opens, or to
 /// null when mpv cannot open it.
 List<PlaybackSubtitleSidecar> siloSubtitleSidecars(SiloPlan plan, Uri? Function(String planUrl) playerUrl) => [
   if (plan.isTranscode)

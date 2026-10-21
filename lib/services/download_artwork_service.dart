@@ -18,8 +18,8 @@ class _ArtworkDownloadOperation {
 /// Centralized helper for downloaded artwork keys, paths, and file writes.
 ///
 /// Downloaded artwork is addressed by a normalized storage key rather than the
-/// raw metadata path. This matters for Jellyfin because metadata URLs include
-/// `api_key`, while local filenames must not contain long-lived tokens.
+/// raw metadata path, because local filenames must not contain the long-lived
+/// tokens a metadata URL may carry.
 class DownloadArtworkService {
   static final Map<String, _ArtworkDownloadOperation> _downloadsByPath = <String, _ArtworkDownloadOperation>{};
 

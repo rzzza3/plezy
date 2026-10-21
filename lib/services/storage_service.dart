@@ -237,8 +237,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   /// Return the persisted device identifier, generating and saving a UUID on
   /// first call. Used by Plex's `X-Plex-Client-Identifier` header so plex.tv
-  /// sees the same device across launches; not Plex-specific in itself —
-  /// Jellyfin's `DeviceId` header reuses the same value too.
+  /// sees the same device across launches.
   Future<String> getOrCreateClientIdentifier() async {
     final existing = readNullableString(_keyClientId);
     if (existing != null && existing.isNotEmpty) return existing;

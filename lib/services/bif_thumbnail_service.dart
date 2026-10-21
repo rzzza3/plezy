@@ -70,7 +70,7 @@ class BifThumbnailService implements ScrubPreviewSource {
   double? _aspectRatio;
 
   /// Download and parse the BIF file through [fetchBytes] (Plex's
-  /// `/library/parts/{id}/indexes/sd`, Emby's `/Videos/{id}/index.bif`).
+  /// `/library/parts/{id}/indexes/sd`).
   /// Returns silently on failure (thumbnails simply won't be available).
   Future<void> load(Future<Uint8List?> Function() fetchBytes, {double? aspectRatio}) async {
     _aspectRatio = aspectRatio;

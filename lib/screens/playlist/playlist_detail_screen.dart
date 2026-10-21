@@ -66,7 +66,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   /// True when the playlist can't be reordered or have items removed.
   /// Currently only Plex smart playlists (server-side rule-based; managed via
-  /// filter rules, not direct edits). Jellyfin has no equivalent concept.
+  /// filter rules, not direct edits).
   bool get _isReadOnly => widget.playlist.smart;
 
   /// Audio playlists play through the music session (mini-player /
@@ -122,8 +122,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         showDownload: isDownloadablePlaylist && (items.isNotEmpty || hasRule),
         onDownload: _downloadPlaylist,
       ),
-      // Delete works on both backends now (Jellyfin uses /Items/{id} DELETE,
-      // wrapped in the neutral [MediaServerClient.deletePlaylist]). Smart
+      // Delete goes through the neutral
+      // [MediaServerClient.deletePlaylist]. Smart
       // playlists are still skipped — they're a Plex concept and are
       // managed server-side via filter rules, not via DELETE.
       if (!widget.playlist.smart)
@@ -722,7 +722,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         ...buildStateSlivers(),
         if (items.isNotEmpty) ...[
           if (_isReadOnly)
-            // Smart playlists / Jellyfin playlists: focusable grid view
+            // Read-only playlists: focusable grid view
             // (read-only, no reordering or removal)
             buildFocusableGrid(items: items, onRefresh: updateItem, shape: _isAudioPlaylist ? CardShape.square : null)
           else

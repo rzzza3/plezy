@@ -12,13 +12,13 @@ enum PersonCredit { actor, director }
 /// watched, and opens a filmography rather than a detail screen.
 class MediaPerson {
   /// Backend person id — the value [MediaServerClient.fetchPersonMediaPage]
-  /// takes: a Plex tag id, a MediaBrowser `Person` item id.
+  /// takes: a Plex tag id, a Silo person id.
   final String id;
   final String name;
 
-  /// Absolute URL (Plex `metadata-static.plex.tv`, MediaBrowser `api_key`
-  /// URLs) or a server-relative path, resolved through this person's server
-  /// client. Null when the server has no image.
+  /// Absolute URL (Plex `metadata-static.plex.tv`) or a server-relative
+  /// path, resolved through this person's server client. Null when the server
+  /// has no image.
   final String? thumbPath;
 
   /// Null when the backend does not say which credit matched.

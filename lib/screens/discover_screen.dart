@@ -121,7 +121,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final _userMenuKey = GlobalKey<AppMenuButtonState<String>>();
 
   /// Backend-neutral hero client lookup. Returns the actual
-  /// [MediaServerClient] for the item's server (Plex or Jellyfin) so
+  /// [MediaServerClient] for the item's server so
   /// [MediaImageHelper] uses the right transcoder for sized URLs.
   MediaServerClient? _getMediaClientForItem(MediaItem? item) {
     final serverId = item?.serverId;
@@ -827,10 +827,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ],
                     ),
                   ),
-                  // Server Tasks — Plex-only (`/activities` API has no
-                  // Jellyfin equivalent), hide the button entirely on
-                  // Jellyfin-only profiles so the chrome doesn't show
-                  // a permanently empty popover.
+                  // Server Tasks — Plex-only (`/activities` API), hide the
+                  // button entirely on profiles without a Plex server so the
+                  // chrome doesn't show a permanently empty popover.
                   if (PlatformDetector.isDesktop(context) &&
                       context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
                     FocusableAction(
@@ -1277,8 +1276,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: Builder(
                         builder: (context) {
                           // heroClient resolves to the actual server's client
-                          // (Plex or Jellyfin) so each backend's transcoder
-                          // builds sized URLs.
+                          // so each backend's transcoder builds sized URLs.
                           return blurArtwork(
                             CyclingMediaBackdrop(
                               mediaKey: heroItem.globalKey,

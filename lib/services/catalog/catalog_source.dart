@@ -151,7 +151,7 @@ abstract interface class CatalogHubSource {
 }
 
 /// A pluggable external catalog provider backing the Explore tab (Trakt
-/// today; Overseerr/Jellyfin or MAL later).
+/// today; Overseerr or MAL later).
 ///
 /// Implementations wrap an authenticated API client owned by their account
 /// provider; disposing a source must not dispose that client.

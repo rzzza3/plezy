@@ -143,9 +143,8 @@ Future<DeleteImpact> _resolve(MediaItem item, MediaServerClient client, _ProbeCa
   final siblings = (await client.fetchChildren(parentId)).where((sibling) => sibling.id != item.id).toList();
 
   // Resolved one sibling at a time, bailing on the first whose paths stay
-  // unknown. Both backends normally carry paths on browse rows (Plex
-  // `/children` includes `Part.file`; Jellyfin episode rows request
-  // `MediaSources`), so a detail refetch here is the degraded path — but on a
+  // unknown. Plex normally carries paths on browse rows (`/children` includes
+  // `Part.file`), so a detail refetch here is the degraded path — but on a
   // thin season it is the rule, and `Future.wait` would then fan out one
   // request per episode. Rows that already carry paths cost no request at all.
   final shared = <MediaItem>[];

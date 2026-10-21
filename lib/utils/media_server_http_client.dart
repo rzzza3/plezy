@@ -441,10 +441,9 @@ class MediaServerHttpClient {
 
     // Structured bodies are always JSON-encoded, so default the content type
     // to match. `request.headers` is case-insensitive and already carries the
-    // caller/default headers, so an explicit content type wins (Jellyfin pins
-    // `application/json` in its defaults). Without this, `request.body` falls
-    // back to text/plain, which Plex's cloud endpoints reject — the favorites
-    // PUT to epg.provider.plex.tv answered 400 (#1878).
+    // caller/default headers, so an explicit content type wins. Without this,
+    // `request.body` falls back to text/plain, which Plex's cloud endpoints
+    // reject — the favorites PUT to epg.provider.plex.tv answered 400 (#1878).
     request.headers.putIfAbsent('content-type', () => 'application/json');
     request.body = jsonEncode(body);
   }

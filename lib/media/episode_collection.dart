@@ -6,8 +6,7 @@ import 'media_server_client.dart';
 
 /// Collect every episode below a show or season into [out] using the backend's
 /// one-shot recursive-leaves call ([MediaServerClient.fetchPlayableDescendants]
-/// — Plex's `/library/metadata/{id}/allLeaves`, Jellyfin's
-/// `/Items?Recursive=true&IncludeItemTypes=Movie,Episode`). This avoids walking
+/// — e.g. Plex's `/library/metadata/{id}/allLeaves`). This avoids walking
 /// show → seasons → episodes client-side and is not capped by a page size.
 ///
 /// A failure propagates to the caller so download and sync transactions can
@@ -35,7 +34,7 @@ Future<void> collectEpisodes(
 /// expanded into their tracks (audio playlists/collections). Clips, nested
 /// collections/playlists, and unknown types are skipped. [unwatchedOnly] applies
 /// the same played-state filter to every kind — for tracks that means
-/// Plex/Jellyfin play counts.
+/// server play counts.
 ///
 /// Shared by the one-shot "download this list" queue and the sync rule that
 /// keeps the same list downloaded, so both expand a list to the same items.
@@ -57,8 +56,7 @@ Future<void> collectListLeaves(
         await collectEpisodes(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);
       case MediaKind.album:
       case MediaKind.artist:
-        // One recursive-leaves call per container on both backends
-        // (Jellyfin retries tag-only artists by album-artist credit).
+        // One recursive-leaves call per container.
         for (final track in await client.fetchPlayableDescendants(item.id)) {
           if (unwatchedOnly && !track.isUnwatchedOrInProgress) continue;
           out.add(track);
@@ -185,8 +183,7 @@ int compareEpisodesSpecialsLast(MediaItem a, MediaItem b) {
 
 /// Air date used to order episodes in [compareEpisodesByWatchOrder], or null
 /// when absent. Both backends normalize [MediaItem.originallyAvailableAt] to
-/// `YYYY-MM-DD` (Plex natively, Jellyfin from `PremiereDate`), so a plain
-/// lexicographic comparison is chronological.
+/// `YYYY-MM-DD`, so a plain lexicographic comparison is chronological.
 String? _airDateKey(MediaItem episode) {
   final date = episode.originallyAvailableAt;
   return (date == null || date.isEmpty) ? null : date;
@@ -210,8 +207,8 @@ SpecialsOrdering effectiveSpecialsOrdering() =>
 ///   respect, so it falls back to Specials-last: the safe order for "next N"
 ///   cuts (#1414) and offline auto-advance. Online queue builders implement
 ///   the mode themselves: `createShowPlayQueue` picks the Plex source URI and
-///   the Jellyfin/Plex `fetchClientSideEpisodeQueue` overrides decide between
-///   preserving the response order and calling back into this sort.
+///   the Plex `fetchClientSideEpisodeQueue` override calls back into this
+///   sort.
 void sortEpisodesByWatchOrder(List<MediaItem> episodes, {SpecialsOrdering? ordering}) {
   final mode = ordering ?? effectiveSpecialsOrdering();
   episodes.sort(mode == SpecialsOrdering.airDate ? compareEpisodesByWatchOrder : compareEpisodesSpecialsLast);

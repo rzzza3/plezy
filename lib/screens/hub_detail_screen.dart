@@ -120,7 +120,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       // - /hubs/sections/1/... (Plex)
       // - /library/sections/1/all?... (Plex)
       // - /hubs/home/recentlyAdded?type=2&sectionID=1 (Plex home hubs — id in query)
-      // - home.recent / library.<id>.continue (Jellyfin synthesized)
+      // - home.recent / library.<id>.continue (synthesized hub ids)
       // - continue_watching / explore:… (aggregated and catalog rows; no server)
       // Only a Plex library-scoped key names a section whose sort options can
       // be fetched; every other shape falls back to the default sorts by design.

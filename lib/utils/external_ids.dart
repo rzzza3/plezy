@@ -52,8 +52,6 @@ class ExternalSeasonRef {
 ///   instead — the `Guid` array only exists for the Plex Movie / Plex TV
 ///   Series agents. Use [ExternalIds.fromGuids] and [fillFrom] with
 ///   [ExternalIds.fromLegacyPlexGuid] so both shapes are read.
-/// - **Jellyfin** stores them inline as a `ProviderIds` map on every
-///   `BaseItemDto`. Use [ExternalIds.fromJellyfinProviderIds].
 class ExternalIds {
   final String? imdb;
   final int? tmdb;

@@ -75,7 +75,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
 
   /// Per-profile borrowed connections. Does **not** include the Plex Home
   /// parent — that's implicit via [Profile.parentConnectionId]. Plex Home
-  /// profiles can have entries here too (e.g. borrowed Jellyfin servers).
+  /// profiles can have entries here too (e.g. borrowed servers).
   Map<String, List<ProfileConnection>> get connectionsByProfile => _connectionsByProfile;
 
   Map<String, Connection> get connectionsById => _connectionsById;

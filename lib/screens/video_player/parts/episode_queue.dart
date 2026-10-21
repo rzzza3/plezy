@@ -15,9 +15,9 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
       return;
     }
 
-    // Plex-only — Jellyfin's local queue is published by
+    // Plex-only — other backends' local queue is published by
     // EpisodeNavigationService._ensureLocalEpisodeQueue from
-    // _loadAdjacentEpisodes, so this method is a no-op for it.
+    // _loadAdjacentEpisodes, so this method is a no-op for them.
     if (_currentMetadata.backend != MediaBackend.plex) return;
 
     try {
@@ -155,7 +155,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
   /// API cache while the current episode plays (#1867).
   ///
   /// Adjacency comes from queue containers, so the per-item metadata row
-  /// (Plex `/library/metadata/{id}`, Jellyfin `/Users/{uid}/Items/{id}`) is
+  /// (e.g. Plex `/library/metadata/{id}`) is
   /// cold at the exact moment the transition needs it. Both backends'
   /// [MediaServerClient.fetchItem] fetch network-first and write that same
   /// row — the one playback initialization falls back to when the server is

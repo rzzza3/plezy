@@ -20,8 +20,7 @@ class RatingInfo {
 ///
 /// Rotten Tomatoes picks fresh/rotten and upright/spilled by the 60% threshold
 /// the tomatometer itself uses — the same state Plex encodes in
-/// `image.rating.ripe` / `.rotten` and Jellyfin's own web client applies to
-/// `CriticRating`.
+/// `image.rating.ripe` / `.rotten`.
 ///
 /// Returns null for keys with no brand badge (`critic`, `audience`, `simkl`,
 /// `mal`, `anilist`, `trakt`); those stay labelled with their source name.

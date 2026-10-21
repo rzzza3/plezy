@@ -21,7 +21,7 @@ class EndpointRaceSelection<C, R> {
   });
 }
 
-/// Shared two-phase endpoint discovery used by Plex and Jellyfin.
+/// Shared two-phase endpoint discovery used by Plex.
 ///
 /// Phase 1 emits the first reachable endpoint quickly. A cached/preferred
 /// endpoint is probed first and wins deterministically when it answers within

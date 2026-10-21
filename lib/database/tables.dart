@@ -1,10 +1,10 @@
 import 'package:drift/drift.dart';
 
-/// Key-value cache table for media-server API responses (Plex, Jellyfin).
+/// Key-value cache table for media-server API responses (Plex, Silo).
 /// Used for offline support - stores raw JSON responses.
 class ApiCache extends Table {
   /// Composite key: serverId:endpoint (e.g., "abc123:/library/metadata/12345"
-  /// for Plex, "abc123:/Users/.../Items/..." for Jellyfin)
+  /// for Plex)
   TextColumn get cacheKey => text()();
 
   TextColumn get data => text()();
@@ -40,10 +40,10 @@ class DownloadedMedia extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get serverId => text()();
   // Downloads are intentionally app-wide/shared, keyed by the public
-  // serverId:ratingKey globalKey below. For Jellyfin, clientScopeId records
-  // which scoped client produced the cached metadata/download request; it is
-  // not part of download ownership and must not be used to hide or duplicate
-  // the physical downloaded item per user/profile.
+  // serverId:ratingKey globalKey below. clientScopeId records which scoped
+  // client produced the cached metadata/download request; it is not part of
+  // download ownership and must not be used to hide or duplicate the physical
+  // downloaded item per user/profile.
   TextColumn get clientScopeId => text().nullable()();
   TextColumn get ratingKey => text()();
   TextColumn get globalKey => text().unique()();
@@ -73,7 +73,7 @@ class DownloadedMedia extends Table {
 
   /// Owning library identity, stamped at enqueue time so downloads can be
   /// grouped/filtered by library while offline. Plex items carry
-  /// librarySectionID/Title natively; Jellyfin resolves them via ancestors.
+  /// librarySectionID/Title natively.
   /// Null for rows enqueued before v23 or when resolution was skipped/failed.
   TextColumn get libraryId => text().nullable()();
   TextColumn get libraryTitle => text().nullable()();
@@ -104,7 +104,7 @@ class DownloadOwners extends Table {
 /// or mirrors the current contents of a collection/playlist.
 /// Rules are owned by the active top-level profile. Downloads remain app-wide
 /// and shared by public serverId:ratingKey identity, but rule ownership must not
-/// cross users because Jellyfin permissions and watch state are user-scoped.
+/// cross users because permissions and watch state are user-scoped.
 @DataClassName('SyncRuleItem')
 @TableIndex(name: 'idx_sync_rules_profile', columns: {#profileId})
 class SyncRules extends Table {
@@ -186,10 +186,10 @@ class DownloadCollectionSyncs extends Table {
 @TableIndex(name: 'idx_connections_kind', columns: {#kind})
 class Connections extends Table {
   /// Stable identifier for the connection. For Plex it's a generated UUID
-  /// (one per account); for Jellyfin it's the server's machineId.
+  /// (one per account); for Silo it's `silo:<server_id>`.
   TextColumn get id => text()();
 
-  /// Backend kind: `'plex'`, `'jellyfin'`, or `'emby'`.
+  /// Backend kind: `'plex'` or `'silo'`.
   TextColumn get kind => text()();
 
   /// User-visible label (account email, server name).
@@ -251,9 +251,6 @@ class Profiles extends Table {
 /// lazy-fetch sentinel — the binder calls `/switch` on first activation.
 /// The Dart-side [ProfileConnection] model surfaces empty as `null`; the
 /// column stays non-nullable here to avoid a schema migration.
-///
-/// For Jellyfin: `userToken` mirrors the Connection's accessToken (one user
-/// per Jellyfin connection) and `userIdentifier` is the Jellyfin user id.
 @DataClassName('ProfileConnectionRow')
 @TableIndex(name: 'idx_profile_connections_connection_id', columns: {#connectionId})
 @TableIndex(name: 'idx_profile_connections_profile_id', columns: {#profileId})

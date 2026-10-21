@@ -193,7 +193,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     return _serverManager.getClient(serverId);
   }
 
-  /// Get the [PlexClient] for a server, or `null` if the server is Jellyfin
+  /// Get the [PlexClient] for a server, or `null` if the server isn't Plex
   /// (or not registered). Use for Plex-only flows that don't yet have a
   /// backend-neutral equivalent.
   PlexClient? getPlexClientForServer(ServerId serverId) {

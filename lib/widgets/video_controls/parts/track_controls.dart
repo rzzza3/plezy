@@ -212,9 +212,9 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       ratingKey: widget.metadata.id,
       mediaTitle: widget.metadata.title,
       onSubtitleDownloaded: _onSubtitleDownloaded,
-      // Plex proxies OpenSubtitles via its server-side plugin; Jellyfin
-      // doesn't expose an equivalent so the Search Subtitles tile is hidden
-      // for Jellyfin items. The check uses the registered client type for
+      // Plex proxies OpenSubtitles via its server-side plugin; other backends
+      // don't expose an equivalent so the Search Subtitles tile is hidden
+      // for their items. The check uses the registered client type for
       // this metadata's serverId.
       subtitleSearchSupported: _isPlexBackedMetadata(),
     );

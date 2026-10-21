@@ -5,14 +5,14 @@ import 'media_backend.dart';
 /// Backend-neutral playlist record. Holds metadata only — items are fetched
 /// separately via the client.
 class MediaPlaylist {
-  /// Backend-opaque identifier (Plex `ratingKey`, Jellyfin playlist `Id`).
+  /// Backend-opaque identifier (e.g. Plex `ratingKey`).
   final String id;
   final MediaBackend backend;
   final String title;
   final String? summary;
   final String? guid;
 
-  /// Plex smart-playlist marker; always false for Jellyfin (no equivalent).
+  /// Plex smart-playlist marker; always false on backends with no equivalent.
   final bool smart;
 
   /// `video`, `audio`, or `photo`. Drives default sort and rendering.
@@ -28,7 +28,7 @@ class MediaPlaylist {
   final int? updatedAt;
   final int? lastViewedAt;
 
-  /// Plex composite (auto-generated grid). Null on Jellyfin.
+  /// Plex composite (auto-generated grid). Null on other backends.
   final String? compositeImagePath;
   final String? thumbPath;
 

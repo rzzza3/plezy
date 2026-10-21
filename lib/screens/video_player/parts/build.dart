@@ -64,7 +64,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       }
     }
     // No fallback to `MediaSubtitleTrack.selected`. That flag is the server's
-    // *request* (Plex `Stream.selected`, Jellyfin `DefaultSubtitleStreamIndex`)
+    // *request* (Plex `Stream.selected`)
     // and feeds `TrackSelectionService.selectSubtitleTrack` Priority 2 as an
     // input; it is never a report of what the resolver settled on, and live
     // tune metadata can carry it stale. Reading it back here ticked rows that

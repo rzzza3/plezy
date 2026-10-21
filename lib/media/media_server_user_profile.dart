@@ -25,8 +25,8 @@ enum SubtitlePlaybackMode {
 /// preferences screen writes.
 ///
 /// Language strings are server-shaped (Plex returns 639-2/B like "fre",
-/// Jellyfin returns 639-2/T like "fra"); [LanguageCodes.getVariations]
-/// handles either when matching against mpv-reported track languages.
+/// other servers may return 639-2/T like "fra");
+/// [LanguageCodes.getVariations] handles either when matching against mpv-reported track languages.
 abstract class MediaServerUserProfile {
   /// Whether the player should auto-pick an audio track based on the
   /// language preferences. False means "keep the file's default track".

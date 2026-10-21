@@ -9,11 +9,10 @@ enum LiveStreamRetryResult { succeeded, failed, stale }
 /// from stale attempts are intentionally ignored because a newer operation
 /// owns the player and its error UI.
 ///
-/// A recovery may hand back the very session it was asked to recover
-/// (Jellyfin's `recover` returns the receiver), so a failed attempt must not
-/// discard — terminally release — the session that is still current and
-/// will be re-adopted by the next retry. [currentSession] guards the discard
-/// by identity.
+/// A recovery may hand back the very session it was asked to recover, so a
+/// failed attempt must not discard — terminally release — the session that is
+/// still current and will be re-adopted by the next retry. [currentSession]
+/// guards the discard by identity.
 Future<LiveStreamRetryResult> runLiveStreamRetry<Session>({
   required LiveStreamRecovery<Session> recover,
   required LiveStreamUrlLookup<Session> lookupStreamUrl,

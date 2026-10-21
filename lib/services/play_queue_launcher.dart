@@ -67,7 +67,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     final provider = Provider.of<MultiServerProvider>(context, listen: false);
     PlexClient? plexClient;
     if (itemServerId != null) {
-      // Plex-only: server-side `/playQueues` resource has no Jellyfin equivalent.
+      // Plex-only: server-side `/playQueues` resource.
       plexClient = provider.getPlexClientForServer(ServerId(itemServerId));
     }
     if (plexClient == null) {

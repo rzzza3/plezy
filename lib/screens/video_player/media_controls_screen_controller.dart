@@ -52,7 +52,7 @@ class MediaControlsScreenController {
   final bool isLive;
 
   /// Whether the tuned stream has a capture buffer to skip through. Live TV
-  /// without one (Jellyfin negotiates a session-less URL) can only play,
+  /// without one can only play,
   /// pause and stop.
   final bool Function() _hasLiveSeekWindow;
 
@@ -134,7 +134,7 @@ class MediaControlsScreenController {
       canSeek: contentCanSeek && canControlPlayback,
       canStop: true,
       // In-track skips work on live TV only through the capture buffer; a
-      // channel without one (Jellyfin) has nothing to step through, and the
+      // channel without one has nothing to step through, and the
       // skip would fall through to the VOD accumulator as an absolute seek
       // against a live playhead.
       canSkip: canControlPlayback && (!isLive || _hasLiveSeekWindow()),

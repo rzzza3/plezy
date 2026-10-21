@@ -75,7 +75,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   late final Future<void> _initFuture;
 
   // Track download progress by public globalKey (serverId:ratingKey).
-  // Downloads are shared across profiles/users; scoped Jellyfin state lives in
+  // Downloads are shared across profiles/users; scoped per-user state lives in
   // watch actions, cache namespaces, and sync-rule ownership.
   final Map<String, DownloadProgress> _downloads = {};
 
@@ -840,8 +840,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Fill [target]'s missing library identity from [sources] — the
   /// row-stamped identity survives on leaves even when a container's own
-  /// metadata predates stamping (or was fetched without it, e.g. Jellyfin
-  /// album/show parents), and vice versa for leaves whose container row is
+  /// metadata predates stamping (or was fetched without it), and vice versa for leaves whose container row is
   /// stamped.
   MediaItem _withLibraryFallback(MediaItem target, List<MediaItem> sources) {
     var libraryId = target.libraryId;
@@ -2257,8 +2256,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<void> applyDownloadOnWifiOnly(bool wifiOnly) => _downloadManager.applyDownloadOnWifiOnly(wifiOnly);
 
   /// Backend-aware metadata lookup for offline UI. Routes through
-  /// [DownloadManagerService] which dispatches to [PlexApiCache] or
-  /// [JellyfinApiCache] based on the connection's `kind`.
+  /// [DownloadManagerService] which dispatches to the [ApiCache] registered
+  /// for the item's backend.
   ///
   /// Resolves via the active profile's persisted scope — never the download
   /// creator's `clientScopeId` — so a shared download can't leak another
@@ -2284,7 +2283,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     // Walk every download — not just keys we already have metadata for. The
     // initial `_loadPersistedDownloads` may have raced with connection setup
-    // (Jellyfin's cache reads need a [Connections] row) and skipped entries;
+    // and skipped entries;
     // this lets a later refresh actually populate them.
     final keys = <String>{..._downloads.keys.where(_ownsDownloadKey)};
     if (keys.isEmpty) {

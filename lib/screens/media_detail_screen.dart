@@ -821,7 +821,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _invalidatePlaybackProbes(refreshItems: true);
     if (widget.isOffline) return;
     // Backend-neutral. Plex bundles metadata + on-deck in one round-trip
-    // (`?includeOnDeck=1`); Jellyfin's [fetchItemWithOnDeck] returns
+    // (`?includeOnDeck=1`); other backends' [fetchItemWithOnDeck] return
     // onDeckEpisode=null and on-deck repopulates from cached lists on
     // the next navigation.
     final mediaClient = _getMediaClientForMetadata(context);
@@ -1446,7 +1446,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Returns a
-  /// [MediaServerClient] for Jellyfin items too, so image URLs use the
+  /// [MediaServerClient] for non-Plex items too, so image URLs use the
   /// right server's transcoder.
   MediaServerClient? _getMediaClientForMetadata(BuildContext context) {
     return getServerBoundMediaClient(context);
@@ -1636,7 +1636,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     try {
       // Backend-neutral lookup. Plex returns the OnDeck episode bundled in
-      // the same response (`?includeOnDeck=1`); Jellyfin's
+      // the same response (`?includeOnDeck=1`); other backends'
       // [fetchItemWithOnDeck] returns onDeckEpisode=null and the UI
       // populates resume separately if needed.
       final client = getServerBoundMediaClient(context);
@@ -1690,7 +1690,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         return base;
       }
 
-      // Jellyfin needs a second round trip for on-deck, which the screen does
+      // Other backends need a second round trip for on-deck, which the screen does
       // not need in order to paint. Publishing the item as soon as it lands
       // takes that round trip off the critical path (#1784).
       //
@@ -1762,10 +1762,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     try {
       // Plex has a server-side "flatten seasons" preference;
-      // Jellyfin has no equivalent, so fetch the prefs only when we have
+      // Other backends have no equivalent, so fetch the prefs only when we have
       // a Plex client and a section id. The library section id came from
       // Plex as an int but lands in [MediaItem.libraryId] as the string
-      // form (or null on Jellyfin items).
+      // form (or null on non-Plex items).
       final sectionId = _metadata.libraryId;
       final seasonsFuture = client.fetchChildren(_metadata.id);
       // Prefs are a per-library nicety (Plex "flatten seasons"); a failure here
@@ -1789,7 +1789,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           )
           .toList();
 
-      // Plex can override the library season mode per show; Jellyfin falls
+      // Plex can override the library season mode per show; other backends fall
       // through to "flatten when there's a single season".
       bool shouldShowEpisodesDirectly;
       if (client is PlexClient) {
@@ -1996,8 +1996,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           generation: generation,
         );
       } else {
-        // Resolve the right backend client so Jellyfin (where the typed
-        // PlexClient helper returns null) loads episodes too.
+        // Resolve the right backend client so other backends (where the typed
+        // PlexClient helper returns null) load episodes too.
         final mediaClient = _getMediaClientForMetadata(context);
         if (mediaClient == null) {
           _completeSeasonEpisodesLoad(
@@ -2260,7 +2260,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Load related hubs (collections, similar, "more from" director/actor).
-  /// Backend-neutral — both Plex and Jellyfin implement
+  /// Backend-neutral via
   /// [MediaServerClient.fetchRelatedHubs].
   Future<void> _loadRelatedHubs() {
     return _loadSupplementalSection<List<MediaHub>>(
@@ -3318,7 +3318,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Handle shuffle play. Routes through [MediaListPlaybackLauncher.forItem]
-  /// so Plex uses its server-side `/playQueues` and Jellyfin builds a local
+  /// so Plex uses its server-side `/playQueues` and other backends build a local
   /// shuffled queue from `fetchClientSideEpisodeQueue`.
   Future<void> _handleShufflePlayWithQueue(BuildContext context, MediaItem metadata) async {
     if (!_canUseDetail) return;

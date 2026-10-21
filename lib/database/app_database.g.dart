@@ -646,7 +646,7 @@ class DownloadedMediaItem extends DataClass
 
   /// Owning library identity, stamped at enqueue time so downloads can be
   /// grouped/filtered by library while offline. Plex items carry
-  /// librarySectionID/Title natively; Jellyfin resolves them via ancestors.
+  /// librarySectionID/Title natively.
   /// Null for rows enqueued before v23 or when resolution was skipped/failed.
   final String? libraryId;
   final String? libraryTitle;
@@ -2301,7 +2301,7 @@ class $ApiCacheTable extends ApiCache
 
 class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
   /// Composite key: serverId:endpoint (e.g., "abc123:/library/metadata/12345"
-  /// for Plex, "abc123:/Users/.../Items/..." for Jellyfin)
+  /// for Plex)
   final String cacheKey;
   final String data;
 
@@ -5301,10 +5301,10 @@ class $ConnectionsTable extends Connections
 
 class ConnectionRow extends DataClass implements Insertable<ConnectionRow> {
   /// Stable identifier for the connection. For Plex it's a generated UUID
-  /// (one per account); for Jellyfin it's the server's machineId.
+  /// (one per account); for Silo it's `silo:<server_id>`.
   final String id;
 
-  /// Backend kind: `'plex'`, `'jellyfin'`, or `'emby'`.
+  /// Backend kind: `'plex'` or `'silo'`.
   final String kind;
 
   /// User-visible label (account email, server name).

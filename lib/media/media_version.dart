@@ -37,8 +37,7 @@ class MediaVersion {
 
   /// Human-readable name for this version (e.g. "Director's Cut").
   /// Plex doesn't surface a name on `Media` entries, so this is null on the
-  /// Plex path and set from `MediaSource.Name` on the Jellyfin path when the
-  /// names differ across sources.
+  /// Plex path.
   final String? name;
 
   const MediaVersion({
@@ -64,7 +63,7 @@ class MediaVersion {
   /// Approximate vertical resolution, for ordering versions best-first.
   ///
   /// Plex reports either a numeric height (`"1080"`) or a named tier
-  /// (`"sd"`, `"4k"`) and usually both; Jellyfin reports [height] directly.
+  /// (`"sd"`, `"4k"`) and usually both.
   /// Null when the backend gave neither.
   int? get resolutionHeight {
     final reported = height;

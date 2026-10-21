@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../media/media_backend.dart';
 
-/// Tiny SVG badge for a [MediaBackend] (Plex chevron / Jellyfin or Emby mark).
+/// Tiny SVG badge for a [MediaBackend] (Plex chevron / Silo mark).
 /// All assets render in `currentColor` so they pick up whatever foreground
 /// the parent provides — pass [color] to override, otherwise inherits from
 /// [DefaultTextStyle] / `IconTheme`.

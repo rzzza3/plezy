@@ -304,7 +304,7 @@ class _SearchScreenState extends State<SearchScreen>
       final multiServer = context.read<MultiServerProvider>();
       final updated = await multiServer.getClientForServer(ServerId(serverId))?.fetchItem(source.id);
       if (!mounted || updated == null) return;
-      // A fresh Jellyfin `fetchItem` carries no library field, and a
+      // A fresh `fetchItem` may carry no library field, and a
       // library-less row would lose its label (#1970); keep the identity
       // and library context the search stamped on the original row.
       final merged = mergeFetchedMediaItem(fetched: updated, fallbackServerId: ServerId(serverId), existing: source);
@@ -328,7 +328,7 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   /// Chip display order. `folder`/`unknown` are never search kinds, and
-  /// `clip`/`photo` rows (Plex extras, Jellyfin/Emby home and music videos)
+  /// `clip`/`photo` rows (e.g. Plex extras)
   /// stay reachable under "All" without a chip of their own.
   static const List<MediaKind> _kindFilterOrder = [
     MediaKind.movie,

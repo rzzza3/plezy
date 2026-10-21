@@ -36,8 +36,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         await _setLiveStreamOptions(currentPlayer);
         if (!attempt.isCurrent) return;
 
-        // Start the session inside the player for both backends (loading
-        // spinner covers Plex's tune / Jellyfin's stream negotiation).
+        // Start the session inside the player (loading spinner covers
+        // Plex's tune).
         final channel = widget.live!.channel;
         final session = await _startLiveSession(channel);
         if (session == null) {

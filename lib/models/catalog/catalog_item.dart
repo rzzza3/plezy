@@ -91,7 +91,7 @@ class CatalogItemIds {
   }
 
   /// Every id-form key. Membership checks match on any of these so that two
-  /// sides carrying different id subsets (e.g. Jellyfin tmdb-only vs a Trakt
+  /// sides carrying different id subsets (e.g. a tmdb-only item vs a Trakt
   /// entry keyed by imdb) still intersect.
   List<String> get allKeys => [
     if (imdb != null) 'imdb:$imdb',

@@ -27,9 +27,7 @@ Future<void> closeArtworkHttpClientGracefully({Duration drainTimeout = const Dur
   return _artworkHttpClient.closeGracefully(drainTimeout: drainTimeout);
 }
 
-/// Shared cache manager for media-server image artwork. Used for both Plex and
-/// Jellyfin artwork (the class name predates Jellyfin support — it's
-/// backend-neutral).
+/// Shared cache manager for media-server image artwork. Backend-neutral.
 ///
 /// Artwork rails are the widest fan-out in the app, so the wrapper below keeps
 /// it bounded — weak TV devices must not decode a whole rail at once — while
@@ -92,8 +90,8 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
   }
 }
 
-/// Query parameters that carry a media-server credential in artwork URLs:
-/// Plex's `X-Plex-Token` and Jellyfin/Emby's `api_key`. Plex's photo
+/// Query parameters that carry a media-server credential in artwork URLs,
+/// e.g. Plex's `X-Plex-Token`. Plex's photo
 /// transcoder URLs also nest one inside their percent-encoded `url=` value.
 final _artworkCredentialParam = RegExp(
   r'((?:X-Plex-Token|api_key|ApiKey)(?:=|%3D|%253D))[^&#%]+',

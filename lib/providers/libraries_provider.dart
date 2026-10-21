@@ -113,11 +113,9 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   /// so epoch marking and live refreshes always agree (#1646). An event with
   /// no library ids targets the whole server; so does one naming any id that
   /// matches no loaded library on that server (a brand-new library, or a
-  /// backend id the app never sees as a library — Jellyfin reports physical
-  /// collection folders, and a grouped view's folders never appear as its
-  /// id). Partial resolution widens rather than narrows: the unresolved ids
-  /// may belong to any loaded library, so every one of them is marked
-  /// alongside the exact matches. Only a fully resolved id set stays precise.
+  /// backend id the app never sees as a library). Partial resolution widens
+  /// rather than narrows: the unresolved ids may belong to any loaded
+  /// library, so every one of them is marked alongside the exact matches. Only a fully resolved id set stays precise.
   bool eventTargetsLibrary(LibraryChangeEvent event, MediaLibrary library) {
     if (library.serverId == null || library.serverId != event.serverId.value) return false;
     return event.libraryIds.contains(library.id) || _eventCoversServer(event);
@@ -192,7 +190,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
   /// Reload libraries when the set of online servers has grown since the last
   /// load. Servers connect in waves — the owner Plex account, then each
-  /// borrowed/shared connection, then Jellyfin, plus slow servers that
+  /// borrowed/shared connection, plus slow servers that
   /// reconnect after timing out — and each wave must surface in the sidebar
   /// without a profile re-switch or app restart.
   ///
@@ -297,9 +295,9 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     }
 
     try {
-      // Fetch libraries from every connected backend (Plex + Jellyfin).
+      // Fetch libraries from every connected backend (Plex + Silo).
       // The aggregation service converts Plex-typed responses to MediaLibrary
-      // internally; Jellyfin clients return MediaLibrary natively.
+      // internally; Silo clients return MediaLibrary natively.
       final result = await _aggregationService!.getMediaLibrariesFromAllServers();
       if (isDisposed) return;
 

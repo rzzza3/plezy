@@ -1132,8 +1132,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     if (beforeTrackSetup != null && !await beforeTrackSetup()) return false;
 
     // Track manager: owns track selection and Plex immediate stream writes.
-    // Jellyfin persists selected stream indexes through playback progress
-    // reports instead.
     final trackManager = _buildTrackManager(
       forPlayer: currentPlayer,
       metadata: metadata,
