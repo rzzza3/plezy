@@ -1,7 +1,14 @@
 import 'dart:convert';
 
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/credential_vault.dart';
+import 'package:plezy/services/sensitive_prefs.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+import 'package:shared_preferences_platform_interface/types.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -77,4 +84,74 @@ void main() {
       expect(result.migrated, isTrue);
     });
   });
+
+  group('CredentialVault key lookup', () {
+    test('keeps other cached preferences readable while it reads the store', () async {
+      final store = _GatedPreferences({'active_app_profile_id': 'local-profile'});
+      SharedPreferencesAsyncPlatform.instance = store;
+      BaseSharedPreferencesService.resetForTesting();
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+
+      final reads = store.hold();
+      final protecting = CredentialVault.protect('secret');
+      await reads;
+
+      // A profile switch reads the active id while the first reveal of the
+      // session resolves the key.
+      expect(prefs.getString('active_app_profile_id'), 'local-profile');
+
+      store.release();
+      expect(await CredentialVault.reveal(await protecting), 'secret');
+    });
+
+    test('adopts a key another isolate already stored', () async {
+      final protected = await CredentialVault.protect('secret');
+      final cached = await BaseSharedPreferencesService.sharedCache();
+      final key = cached.getString(credentialVaultKeyPref)!;
+
+      // A second isolate starts with a cache snapshot taken before the key
+      // was written.
+      SharedPreferencesAsyncPlatform.instance = InMemorySharedPreferencesAsync.empty();
+      BaseSharedPreferencesService.resetForTesting();
+      await BaseSharedPreferencesService.sharedCache();
+      CredentialVault.resetKeyForTesting();
+      await SharedPreferencesAsyncPlatform.instance!.setString(
+        credentialVaultKeyPref,
+        key,
+        const SharedPreferencesOptions(),
+      );
+
+      expect(await CredentialVault.reveal(protected), 'secret');
+    });
+  });
+}
+
+/// Holds store reads open until [release], so a test can look at the shared
+/// cache while a read is in flight.
+final class _GatedPreferences extends InMemorySharedPreferencesAsync {
+  _GatedPreferences(super.data) : super.withData();
+
+  Completer<void>? _gate;
+  Completer<void>? _reached;
+
+  /// Holds the next reads. Completes once one of them reaches the store.
+  Future<void> hold() {
+    _gate = Completer<void>();
+    return (_reached = Completer<void>()).future;
+  }
+
+  void release() => _gate?.complete();
+
+  @override
+  Future<Map<String, Object>> getPreferences(
+    GetPreferencesParameters parameters,
+    SharedPreferencesOptions options,
+  ) async {
+    final gate = _gate;
+    if (gate != null) {
+      if (!(_reached?.isCompleted ?? true)) _reached!.complete();
+      await gate.future;
+    }
+    return super.getPreferences(parameters, options);
+  }
 }
