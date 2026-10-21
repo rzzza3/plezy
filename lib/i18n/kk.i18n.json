@@ -978,8 +978,6 @@
   "connections": {
     "sectionTitle": "Қосылымдар",
     "addConnection": "Қосылым қосу",
-    "addConnectionSubtitleNoProfile": "Plex арқылы кіріңіз немесе Jellyfin не Emby серверіне қосылыңыз",
-    "addConnectionSubtitleScoped": "${displayName} профиліне қосу: Plex, Jellyfin, Emby немесе басқа қосылым",
     "sessionExpiredOne": "${name} үшін сеанс мерзімі өтті",
     "sessionExpiredMany": "${count} сервер үшін сеанс мерзімі өтті",
     "accessDeniedOne": "${name} бұл тіркелгіге кіруден бас тартты",

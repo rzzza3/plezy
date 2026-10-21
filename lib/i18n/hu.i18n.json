@@ -978,8 +978,6 @@
   "connections": {
     "sectionTitle": "Kapcsolatok",
     "addConnection": "Kapcsolat hozzáadása",
-    "addConnectionSubtitleNoProfile": "Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert",
-    "addConnectionSubtitleScoped": "Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat",
     "sessionExpiredOne": "A(z) ${name} munkamenete lejárt",
     "sessionExpiredMany": "${count} szerver munkamenete lejárt",
     "accessDeniedOne": "A(z) ${name} megtagadta a hozzáférést ettől a fióktól",

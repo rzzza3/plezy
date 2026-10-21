@@ -974,8 +974,6 @@
   "connections": {
     "sectionTitle": "接続",
     "addConnection": "接続を追加",
-    "addConnectionSubtitleNoProfile": "Plexでサインインするか、JellyfinまたはEmbyサーバーに接続",
-    "addConnectionSubtitleScoped": "${displayName}に追加：Plex、Jellyfin、Emby、または別のプロフィールの接続",
     "sessionExpiredOne": "${name} のセッションの有効期限が切れました",
     "sessionExpiredMany": "${count} 台のサーバーのセッションの有効期限が切れました",
     "accessDeniedOne": "${name} がこのアカウントへのアクセスを拒否しました",

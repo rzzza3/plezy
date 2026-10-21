@@ -978,8 +978,6 @@
   "connections": {
     "sectionTitle": "Conexões",
     "addConnection": "Adicionar conexão",
-    "addConnectionSubtitleNoProfile": "Entre com Plex ou conecte um servidor Jellyfin ou Emby",
-    "addConnectionSubtitleScoped": "Adicionar a ${displayName}: Plex, Jellyfin, Emby ou outra conexão de perfil",
     "sessionExpiredOne": "Sessão de ${name} expirada",
     "sessionExpiredMany": "Sessões expiradas em ${count} servidores",
     "accessDeniedOne": "${name} negou acesso a esta conta",

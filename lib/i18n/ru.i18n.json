@@ -986,8 +986,6 @@
   "connections": {
     "sectionTitle": "Подключения",
     "addConnection": "Добавить подключение",
-    "addConnectionSubtitleNoProfile": "Войдите через Plex или подключите сервер Jellyfin или Emby",
-    "addConnectionSubtitleScoped": "Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля",
     "sessionExpiredOne": "Сессия истекла для ${name}",
     "sessionExpiredMany": "Сессия истекла для ${count} серверов",
     "accessDeniedOne": "${name} отказал в доступе этой учётной записи",

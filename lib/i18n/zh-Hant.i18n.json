@@ -974,8 +974,6 @@
   "connections": {
     "sectionTitle": "連線",
     "addConnection": "新增連線",
-    "addConnectionSubtitleNoProfile": "使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器",
-    "addConnectionSubtitleScoped": "新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線",
     "sessionExpiredOne": "${name} 的工作階段已過期",
     "sessionExpiredMany": "${count} 個伺服器的工作階段已過期",
     "accessDeniedOne": "${name} 拒絕此帳戶存取",

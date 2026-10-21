@@ -978,8 +978,6 @@
   "connections": {
     "sectionTitle": "Връзки",
     "addConnection": "Добави връзка",
-    "addConnectionSubtitleNoProfile": "Влезте с Plex или свържете Jellyfin или Emby сървър",
-    "addConnectionSubtitleScoped": "Добави към ${displayName}: Plex, Jellyfin, Emby или връзка от друг профил",
     "sessionExpiredOne": "Сесията за ${name} е изтекла",
     "sessionExpiredMany": "Сесиите за ${count} сървъра са изтекли",
     "accessDeniedOne": "${name} отказа достъп за този профил",

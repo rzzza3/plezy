@@ -974,8 +974,6 @@
   "connections": {
     "sectionTitle": "连接",
     "addConnection": "添加连接",
-    "addConnectionSubtitleNoProfile": "使用 Plex 登录，或连接 Jellyfin 或 Emby 服务器",
-    "addConnectionSubtitleScoped": "添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接",
     "sessionExpiredOne": "${name} 的会话已过期",
     "sessionExpiredMany": "${count} 个服务器的会话已过期",
     "accessDeniedOne": "${name} 拒绝此账户访问",

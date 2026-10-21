@@ -2885,11 +2885,11 @@ class Translations$connections$en {
 	/// en: 'Add connection'
 	String get addConnection => 'Add connection';
 
-	/// en: 'Sign in with Plex or connect a Jellyfin or Emby server'
-	String get addConnectionSubtitleNoProfile => 'Sign in with Plex or connect a Jellyfin or Emby server';
+	/// en: 'Connect to a Silo server'
+	String get addConnectionSubtitleNoProfile => 'Connect to a Silo server';
 
-	/// en: 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection'
-	String addConnectionSubtitleScoped({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection';
+	/// en: 'Add to ${displayName}: a Silo server or another profile's connection'
+	String addConnectionSubtitleScoped({required Object displayName}) => 'Add to ${displayName}: a Silo server or another profile\'s connection';
 
 	/// en: 'Session expired for ${name}'
 	String sessionExpiredOne({required Object name}) => 'Session expired for ${name}';
@@ -8485,8 +8485,8 @@ extension on Translations {
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
-			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
+			'connections.addConnectionSubtitleNoProfile' => 'Connect to a Silo server',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: a Silo server or another profile\'s connection',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',

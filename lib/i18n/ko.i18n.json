@@ -974,8 +974,6 @@
   "connections": {
     "sectionTitle": "연결",
     "addConnection": "연결 추가",
-    "addConnectionSubtitleNoProfile": "Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결",
-    "addConnectionSubtitleScoped": "${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결",
     "sessionExpiredOne": "${name}의 세션이 만료되었습니다",
     "sessionExpiredMany": "${count}개 서버의 세션이 만료되었습니다",
     "accessDeniedOne": "${name}에서 이 계정의 접근을 거부했습니다",

@@ -978,8 +978,6 @@
   "connections": {
     "sectionTitle": "Anslutningar",
     "addConnection": "Lägg till anslutning",
-    "addConnectionSubtitleNoProfile": "Logga in med Plex eller anslut en Jellyfin- eller Emby-server",
-    "addConnectionSubtitleScoped": "Lägg till för ${displayName}: Plex, Jellyfin, Emby eller en annan profilanslutning",
     "sessionExpiredOne": "Sessionen har gått ut för ${name}",
     "sessionExpiredMany": "Sessionen har gått ut för ${count} servrar",
     "accessDeniedOne": "${name} nekade åtkomst för det här kontot",
