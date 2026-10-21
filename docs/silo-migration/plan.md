@@ -417,36 +417,36 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 **Depends on.** S5.
 
 **Files.**
-- [ ] Create `lib/silo/silo_downloads.dart`.
-- [ ] Edit `lib/services/silo_client.dart` at `resolveDownload`, `resolveDownloadArtwork`, `stampLibrary`.
-- [ ] Edit `lib/services/download_manager_service.dart` where the file request is built.
-- [ ] Create `test/silo/silo_downloads_test.dart`.
+- [x] Create `lib/silo/silo_downloads.dart`.
+- [x] Edit `lib/services/silo_client.dart` at `resolveDownload`, `resolveDownloadArtwork`, `stampLibrary`.
+- [x] Edit `lib/services/download_manager_service.dart` where the file request is built.
+- [x] Create `test/silo/silo_downloads_test.dart`.
 
 **Build.**
-- [ ] Follow `research/silo-playback.md` section 7. Gate on `/capabilities/downloads`, create with `POST /downloads` once, stream `GET /downloads/{id}/file` with `Range` and `If-Range`, fetch `/manifest` for tracks, and report state with `PATCH` and a revision.
-- [ ] Download rows use the `silo:<server_id>/<profile_id>` scope id.
-- [ ] Offline progress syncs through the personal-data progress path, not playback sessions.
+- [x] Follow `research/silo-playback.md` section 7. Gate on `/capabilities/downloads`, create with `POST /downloads` once, stream `GET /downloads/{id}/file` with `Range` and `If-Range`, fetch `/manifest` for tracks, and report state with `PATCH` and a revision.
+- [x] Download rows use the `silo:<server_id>/<profile_id>` scope id.
+- [x] Offline progress syncs through the personal-data progress path, not playback sessions.
 
 **You see.**
-- [ ] Download on a movie completes, and the movie plays with the network off.
+- [x] Download on a movie completes, and the movie plays with the network off.
 
 **Verify, unit.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
-- [ ] `silo_downloads_test.dart` asserts a resume sends `Range: bytes=N-` and `If-Range`, and a 416 restarts from zero. Run `flutter test test/silo`.
+- [x] `silo_downloads_test.dart` asserts a resume sends `Range: bytes=N-` and `If-Range`, and a 416 restarts from zero. Run `flutter test test/silo`.
 
 **Verify, live.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked. Ten lanes on the `swarm workers` role in `p3-models.md` at the PR head, per the boot recipe.
-- [ ] Lane 1. Regression lane against trunk. Download a movie at trunk with Plex and at head with Silo. Trunk lacks Silo, so gate head's completed download. Save `download-head.png`. Pass when it completes.
-- [ ] Lane 2. Play the download offline. Save `offline-play.png`. Pass when video renders.
-- [ ] Lane 3. Interrupt the network mid-download. Save `download-resume.png`. Pass when it resumes, not restarts.
+- [x] Lane 1. Regression lane against trunk. Download a movie at trunk with Plex and at head with Silo. Trunk lacks Silo, so gate head's completed download. Save `download-head.png`. Pass when it completes.
+- [x] Lane 2. Play the download offline. Save `offline-play.png`. Pass when video renders.
+- [x] Lane 3. Interrupt the network mid-download. Save `download-resume.png`. Pass when it resumes, not restarts.
 - [ ] Lane 4. Download an episode with subtitles. Save `download-subs.png`. Pass when subtitles render offline.
-- [ ] Lane 5. Watch offline, then go online. Save `offline-sync.png`. Pass when the server shows the position.
-- [ ] Lane 6. Delete the download. Save `download-delete.png`. Pass when the file is gone.
+- [x] Lane 5. Watch offline, then go online. Save `offline-sync.png`. Pass when the server shows the position.
+- [x] Lane 6. Delete the download. Save `download-delete.png`. Pass when the file is gone.
 - [ ] Lane 7. Retry a failed download in bulk. Save `download-retry.png`. Pass when it completes.
 - [ ] Lane 8. Download a season. Save `download-season.png`. Pass when every episode completes.
 - [ ] Lane 9. Switch profile. Save `download-profile.png`. Pass when the other profile cannot see this download.
-- [ ] Lane 10. Relaunch offline. Save `offline-launch.png`. Pass when the downloads list opens.
+- [x] Lane 10. Relaunch offline. Save `offline-launch.png`. Pass when the downloads list opens.
 
 **Verify, perf.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
-- [ ] Metric. Download throughput for one 1 GB file. Trunk produces it with Plex. Head produces it with Silo.
+- [x] Metric. Download throughput for one 1 GB file. Trunk produces it with Plex. Head produces it with Silo.
 - [ ] Probe. Three downloads each, interleaved, timed from start to completion.
 - [ ] Baseline. Record `curl` throughput for the same Silo file first.
 - [ ] Rule. Head throughput at least 80 percent of `curl`. Fail below that.
@@ -458,6 +458,28 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Bugbot triage done.
 - [ ] Rebased onto S5 after the verdict, patch-id unchanged.
 - [ ] Appended to the stack. The operator lands it bottom-up.
+
+
+**S6 lane record, 2026-10-20 to 2026-10-21, debug builds of `feat/silo-s6-downloads`. The last `lib/` change is `fc35e90e9`.** Lanes ran one at a time on the Android TV emulator `Television_1080p`, on the Plezy profile "Silo A" (Silo profile admin) against `https://silo.ruleone.xyz`, per `media/s6/lanes-howto.md`. Trunk is `5fc148779` on the Plex profile. Evidence is in `docs/silo-migration/media/s6/`. Lanes 1, 2, 3, 5, 6 and 10 pass. Lanes 4, 7 and 8 did not finish. Lane 9 was skipped by the operator.
+- Items. Taskmaster (US) S1E1 "Physics" (`episode-tvdb-344961-1-1`, 441,046,679 B) stood in for Movie M in lanes 1 to 3, 5, 6, 10 and perf, and its RULEONE Plex copy is the trunk side. Lanes 4 and 7 used Taskmaster (SE) S7E9 and S7E10.
+- Fixes found by the lanes. `86981ee05` reads download progress against the entry size when the response has no Content-Length. `fc35e90e9` keeps Silo download metadata for offline use (a `SiloApiCache`, the scope read from the profile's `profile_connections` row) and replaces the Downloads TV Shows stub that crashed on a Silo episode.
+- Unit pass. `flutter test test/silo test/services/download_manager_service_test.dart` at `fc35e90e9`: 349 tests pass.
+- Lane 1 pass. Trunk downloads the Plex copy (`download-trunk.png`). Head logs `Started Silo transfer` at 22:23:01 and `Download completed` at 22:34:48, with no `report failed` (`download-head.png`, `lane-1-head.log`).
+- Lane 2 pass. The download plays with the app's network cut (`offline-play.png`).
+- Lane 3 pass. The network was cut at 132,382,720 B. The next attempt logs `Silo downloads: resuming at byte 132415488` and completes at 22:58:35, with no `restarting from zero` (`download-resume.png`, `lane-3.log`).
+- Lane 4 not done. The S7E9 download was resuming at 8 % when the operator cancelled the run and said to assume it works. Subtitles were not shown offline.
+- Lane 5 pass. Stopped offline at about 10:34. The queued row held `view_offset=640430`. After network on and Reconnect the queue emptied, and the server read back `viewOffsetMs=640430` (`offline-sync*.png`, `lane-5.log`). The emulator's per-app firewall toggle raises no connectivity event, so the queue flushed only on the in-app Reconnect.
+- Lane 6 pass. The row is gone and no `.part`, `.part.silo` or video file remains (`download-delete.png`, `lane-6-files.txt`).
+- Lane 7 not done. With E9 and E10 queued, the network was cut at 100.3 MB into E9. E9 used its three retries and failed, and Retry all on Season 7 resumed it (`resuming at byte 103940096`). E10 never transferred, because its create was refused with 429 (open issue 1). Both rows read failed before the retry (`download-retry-failed.png`). The run was cancelled before either completed.
+- Lane 8 not run, on the operator's call. Open issue 1 would very likely stop every episode after the first.
+- Lane 9 skipped by the operator.
+- Lane 10 pass after `fc35e90e9`. Before the fix the download vanished from Downloads after an offline relaunch (`offline-launch-before-fix.png`, `lane-10-before-fix.log`). After it, the list opens offline with artwork and the item plays (`offline-launch.png`, `offline-launch-manage.png`).
+- Perf. Taskmaster (US) S1E1, 441,046,679 B, timed from Select to `Download completed`. Trunk on Plex took 20.32, 22.41 and 6.69 s (median 20.32 s, 21.7 MB/s). T3 was probably served from the Plex server's cache. Head on Silo ran once: 712.40 s, 0.619 MB/s. The operator waived the curl baseline and the 80 percent rule (2026-10-21), because the Silo server is capped at about 0.62 MB/s. H1 matches that cap, so the app adds no measurable cost. H2 and H3 were skipped with the operator's leave (`perf.txt`).
+- Incident. Game of Thrones moved to S4E9 on Plex and Silo, with E6 to E8 watched, after 18:19 on 2026-10-20. The lanes' only touch was an accidental play of about 10 s, so another viewer moved it. It was left as is (`incident-got-before.png`, `incident-got-s4-now.png`).
+- Restores. Taskmaster (US) S1E1 is unwatched with no progress on Silo and both Plex copies, and Continue Watching matches the before shots (`before-*.png`, `after-*.png`). Taskmaster (SE) S7E9 and S7E10 were never played and match `before-taskmaster-se-s7e9-e10.png`. Every download is deleted, `/data` has 7.1 GB free, and the clean `fc35e90e9` build is installed. The server's download registry keeps its entries, since Plezy sends no `DELETE /api/v2/downloads/{id}`.
+- Open issue 1. A create sent while another Silo download from this device is active is refused with `429 rate_limited` (`POST /api/v2/downloads`). `SiloClient.resolveDownload` converts it into a non-transient `MediaServerHttpException`, so `_isRetryablePrepareFailure` (`lib/services/download_manager_service.dart:2795`) fails the row with no auto-retry and the text "an unexpected error occurred". Kotlin does not retry a create 429 either, but it creates a season's episodes one at a time. Whether the server limits by time window or by active transfer is not pinned down. Not fixed in S6, on the operator's call.
+- Open issue 2. A Silo series' cache row stays pinned after its last episode is deleted. This happens on every backend. The delete dialog for a single-episode group names the show, not the episode.
+- Verdict pending. Nothing is pushed.
 
 ## Make Silo the only way in and migrate stored data (S7)
 **Depends on.** S6.
