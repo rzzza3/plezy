@@ -484,6 +484,77 @@ void main() {
     });
   });
 
+  group('clearLegacyBackendPrefsOnce', () {
+    const legacy = {
+      'plex_token': 'legacy-token',
+      'current_user_uuid': 'uuid-1',
+      'servers_list': '[]',
+      'server_order': '[]',
+      'selected_library_key': 'plex-machine:1',
+      'library_filters': '{}',
+      'library_order': '["plex-machine:1"]',
+      'hidden_libraries': '[]',
+      'home_users_cache': '[]',
+      'home_users_cache_expiry': '0',
+      'server_endpoint_plex-machine': 'https://plex.example',
+      'plex_home_users_plex-account': '[]',
+      'library_filters_plex-machine:1': '{}',
+      'library_sort_plex-machine:1': '{}',
+      'library_grouping_plex-machine:1': 'all',
+      'library_tab_plex-machine:1': 'browse',
+    };
+    const kept = {
+      'active_app_profile_id': 'local-1',
+      'client_identifier': 'device-1',
+      'silo_device_id': 'silo-device-1',
+      'silo_session_v1.origin': 'https://silo.example',
+      'user_local-1_selected_library_key': 'silo-srv:movies',
+      'user_local-1_library_sort_silo-srv:movies': '{}',
+      'user_local-1_library_order': '["silo-srv:movies"]',
+    };
+
+    Future<StorageService> seeded() async {
+      final s = await StorageService.getInstance();
+      for (final entry in {...legacy, ...kept}.entries) {
+        await s.prefs.setString(entry.key, entry.value);
+      }
+      await s.prefs.setInt('profile_last_used_local-1', 42);
+      return s;
+    }
+
+    test('removes the legacy Plex keys and Plex-era library prefixes', () async {
+      final s = await seeded();
+
+      await s.clearLegacyBackendPrefsOnce();
+
+      expect(s.prefs.keys.where(legacy.containsKey), isEmpty);
+    });
+
+    test('keeps profile-scoped prefs, the active profile, recency and device ids', () async {
+      final s = await seeded();
+
+      await s.clearLegacyBackendPrefsOnce();
+
+      for (final entry in kept.entries) {
+        expect(s.prefs.getString(entry.key), entry.value, reason: entry.key);
+      }
+      expect(s.prefs.getInt('profile_last_used_local-1'), 42);
+    });
+
+    test('runs once, so keys written afterwards stay', () async {
+      var s = await seeded();
+      await s.clearLegacyBackendPrefsOnce();
+
+      await s.prefs.setString('library_sort_silo-srv:movies', '{}');
+      await s.clearLegacyBackendPrefsOnce();
+      BaseSharedPreferencesService.resetForTesting();
+      s = await StorageService.getInstance();
+      await s.clearLegacyBackendPrefsOnce();
+
+      expect(s.prefs.getString('library_sort_silo-srv:movies'), '{}');
+    });
+  });
+
   group('clearCredentials', () {
     test('removes credential keys, plex token, and multi-server data', () async {
       final s = await StorageService.getInstance();

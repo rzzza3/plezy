@@ -37,6 +37,33 @@ class StorageService extends BaseSharedPreferencesService {
 
   static const List<String> _libraryPreferenceKeys = [_keyLibraryFilters, _keyLibraryOrder, _keyHiddenLibraries];
 
+  /// Set once [clearLegacyBackendPrefsOnce] has run.
+  static const String _keyLegacyBackendPrefsCleared = 'legacy_backend_prefs_cleared_v1';
+
+  /// Unscoped slots from before connections and profiles moved into the
+  /// database. Every one holds Plex state or a Plex-era library preference.
+  static const List<String> _legacyBackendKeys = [
+    _keyPlexToken,
+    _keyCurrentUserUUID,
+    _keyServersList,
+    _keyServerOrder,
+    _keySelectedLibraryKey,
+    _keyLibraryFilters,
+    _keyLibraryOrder,
+    _keyHiddenLibraries,
+    'home_users_cache',
+    'home_users_cache_expiry',
+  ];
+
+  static const List<String> _legacyBackendPrefixes = [
+    _prefixServerEndpoint,
+    _prefixPlexHomeUsers,
+    _prefixLibraryFilters,
+    _prefixLibrarySort,
+    _prefixLibraryGrouping,
+    _prefixLibraryTab,
+  ];
+
   StorageService._();
 
   static Future<StorageService> getInstance() {
@@ -88,6 +115,19 @@ class StorageService extends BaseSharedPreferencesService {
       }
       await prefs.remove(key);
     }
+  }
+
+  /// Removes the legacy Plex and Plex-era keys once, so neither
+  /// [ConnectionBootstrap] nor an unscoped library preference brings back a
+  /// backend the schema 26 migration removed. Profile-scoped preferences, the
+  /// active profile, profile recency and the device identifier stay.
+  Future<void> clearLegacyBackendPrefsOnce() async {
+    if (prefs.getBool(_keyLegacyBackendPrefsCleared) ?? false) return;
+    final keys = prefs.keys
+        .where((key) => _legacyBackendKeys.contains(key) || _legacyBackendPrefixes.any(key.startsWith))
+        .toList(growable: false);
+    await Future.wait(keys.map(prefs.remove));
+    await prefs.setBool(_keyLegacyBackendPrefsCleared, true);
   }
 
   // User-scoped storage for per-profile library settings

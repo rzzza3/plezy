@@ -2069,6 +2069,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     _setStatus(t.common.checkingNetwork);
 
     final storage = await StorageService.getInstance();
+    await storage.clearLegacyBackendPrefsOnce();
     final registry = ServerRegistry(storage);
 
     // Idempotent: brings legacy SharedPreferences state (plexToken,
