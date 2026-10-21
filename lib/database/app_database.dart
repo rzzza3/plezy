@@ -64,17 +64,20 @@ final class AppDatabaseBootstrap {
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase._(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore})
-    : this._withRecovery(executor, recoveryStore);
+  AppDatabase._(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore, int? schemaVersion})
+    : this._withRecovery(executor, recoveryStore, schemaVersion);
 
   /// Test-only constructor — inject an in-memory [QueryExecutor]
   /// (e.g. `NativeDatabase.memory()`) so tests don't touch real disk.
+  /// [schemaVersion] stops migrations at an older version, so a test of one
+  /// step is not undone by a later one.
   @visibleForTesting
-  AppDatabase.forTesting(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore})
-    : this._withRecovery(executor, recoveryStore);
-  AppDatabase._withRecovery(super.e, this._recoveryStore);
+  AppDatabase.forTesting(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore, int? schemaVersion})
+    : this._withRecovery(executor, recoveryStore, schemaVersion);
+  AppDatabase._withRecovery(super.e, this._recoveryStore, this._schemaVersionOverride);
 
   final TvosDatabaseRecoveryStore? _recoveryStore;
+  final int? _schemaVersionOverride;
   static final Object _durabilityZoneKey = Object();
   static final SerialFutureQueue _tvosRecoveryQueue = SerialFutureQueue();
 
@@ -89,6 +92,7 @@ class AppDatabase extends _$AppDatabase {
     QueryExecutor Function(File file)? executorFactory,
     TvosDatabaseRecoveryStore? recoveryStore,
     TvosDatabaseRecoveryPriorInstallEvidence? priorInstallEvidence,
+    @visibleForTesting int? schemaVersion,
   }) async {
     final file = databaseFile ?? await _resolveProductionDatabaseFile();
     if (!await file.parent.exists()) {
@@ -105,7 +109,11 @@ class AppDatabase extends _$AppDatabase {
 
     final prefs = preferences ?? await BaseSharedPreferencesService.sharedCache();
     final store = recoveryStore ?? TvosDatabaseRecoveryStore(prefs, isTvos: isTvos);
-    final database = AppDatabase._((executorFactory ?? _createNativeDatabase)(file), recoveryStore: store);
+    final database = AppDatabase._(
+      (executorFactory ?? _createNativeDatabase)(file),
+      recoveryStore: store,
+      schemaVersion: schemaVersion,
+    );
     try {
       if (!isTvos) {
         // Drift executors open lazily. Force the connection through setup and
@@ -368,7 +376,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => _schemaVersionOverride ?? 26;
 
   @override
   MigrationStrategy get migration {
@@ -765,9 +773,75 @@ class AppDatabase extends _$AppDatabase {
           await _ignoreAlreadyExists('DownloadCollections table', () => m.createTable(downloadCollections));
           await _ignoreAlreadyExists('DownloadCollectionSyncs table', () => m.createTable(downloadCollectionSyncs));
         }
+        if (from < 26 && to >= 26) {
+          appLogger.i('Removing Plex, Jellyfin and Emby data (v26 migration)');
+          await purgeNonSiloBackendData();
+        }
       },
     );
   }
+
+  /// Deletes every stored row that belongs to a backend other than Silo:
+  /// connections and their profile joins, Plex Home profile rows, downloads
+  /// with their owners and queue entries, sync rules, download collections,
+  /// queued offline progress, music sessions holding another backend's items,
+  /// and every cache row outside a `silo:` scope. Local profiles and Silo rows
+  /// stay. A second run finds nothing to delete.
+  ///
+  /// Downloaded files stay on disk. Deleting them needs the download
+  /// manager's storage and SAF services, which do not exist while the
+  /// database migrates.
+  @visibleForTesting
+  Future<void> purgeNonSiloBackendData() async {
+    await customStatement(
+      "DELETE FROM profile_connections WHERE connection_id NOT IN (SELECT id FROM connections WHERE kind = 'silo')",
+    );
+    await customStatement("DELETE FROM connections WHERE kind != 'silo'");
+    await customStatement("DELETE FROM profiles WHERE kind = 'plex_home'");
+    await customStatement('''
+      DELETE FROM downloaded_media
+      WHERE NOT (${_siloScoped('client_scope_id')} OR ${_siloServer('downloaded_media.server_id')})
+    ''');
+    await customStatement('''
+      DELETE FROM download_owners
+      WHERE global_key NOT IN (SELECT global_key FROM downloaded_media)
+        AND backend IS NOT 'silo'
+        AND NOT ${_siloScoped('client_scope_id')}
+    ''');
+    await customStatement(
+      'DELETE FROM download_queue WHERE media_global_key NOT IN (SELECT global_key FROM downloaded_media)',
+    );
+    await customStatement('DELETE FROM sync_rules WHERE NOT ${_siloServer('sync_rules.server_id')}');
+    await customStatement('DELETE FROM sync_rule_downloads WHERE sync_rule_id NOT IN (SELECT id FROM sync_rules)');
+    await customStatement(
+      'DELETE FROM download_collections WHERE NOT ${_siloServer('download_collections.server_id')}',
+    );
+    await customStatement(
+      'DELETE FROM download_collection_syncs WHERE NOT ${_siloServer('download_collection_syncs.server_id')}',
+    );
+    await customStatement('''
+      DELETE FROM offline_watch_progress
+      WHERE NOT (${_siloScoped('client_scope_id')} OR ${_siloServer('offline_watch_progress.server_id')})
+    ''');
+    await customStatement("DELETE FROM api_cache WHERE NOT ${_siloScoped('cache_key')}");
+    await customStatement('''
+      DELETE FROM music_sessions
+      WHERE queue_json NOT LIKE '%"backend":"silo"%'
+        OR queue_json LIKE '%"backend":"plex"%'
+        OR queue_json LIKE '%"backend":"jellyfin"%'
+        OR queue_json LIKE '%"backend":"emby"%'
+    ''');
+  }
+
+  /// True when [column] holds a `silo:<server_id>/<profile_id>` scope. False,
+  /// not null, for a null column.
+  static String _siloScoped(String column) => "coalesce(substr($column, 1, 5) = 'silo:', 0)";
+
+  /// True when [column] names a Silo server: one with a Silo connection, or
+  /// one a Silo-scoped download came from.
+  static String _siloServer(String column) =>
+      "(EXISTS (SELECT 1 FROM connections WHERE kind = 'silo' AND id = 'silo:' || $column) "
+      "OR $column IN (SELECT server_id FROM downloaded_media WHERE ${_siloScoped('client_scope_id')}))";
 
   Future<void> _ignoreAlreadyExists(String label, Future<void> Function() operation) async {
     try {

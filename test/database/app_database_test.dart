@@ -218,7 +218,7 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           expect(await reopened.select(reopened.connections).get(), isEmpty);
         } finally {
           await reopened?.close();
@@ -244,7 +244,7 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           expect(await reopened.select(reopened.connections).get(), isEmpty);
           final rows = await reopened
               .customSelect("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_connections_kind'")
@@ -316,12 +316,12 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           await expectMigratedState(reopened);
           await reopened.close();
           reopened = null;
 
-          reopenedAgain = AppDatabase.forTesting(NativeDatabase(file));
+          reopenedAgain = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           await expectMigratedState(reopenedAgain);
         } finally {
           await reopenedAgain?.close();
@@ -457,7 +457,7 @@ class _AppDatabaseTestSuite {
             await seeded.close();
             seeded = null;
 
-            reopened = AppDatabase.forTesting(NativeDatabase(file));
+            reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
             await expectTransferState(reopened);
             expect(await reopened.select(reopened.downloadOwners).get(), isEmpty);
 
@@ -468,7 +468,7 @@ class _AppDatabaseTestSuite {
             await reopened.close();
             reopened = null;
 
-            reopenedAgain = AppDatabase.forTesting(NativeDatabase(file));
+            reopenedAgain = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
             await expectTransferState(reopenedAgain);
             expect(await reopenedAgain.select(reopenedAgain.downloadOwners).get(), isEmpty);
 
@@ -603,7 +603,12 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          final bootstrap = await AppDatabase.open(isTvos: true, databaseFile: file, preferences: prefs);
+          final bootstrap = await AppDatabase.open(
+            isTvos: true,
+            databaseFile: file,
+            preferences: prefs,
+            schemaVersion: 25,
+          );
           opened = bootstrap.database;
           expect(bootstrap.recoveryOutcome, TvosDatabaseRecoveryOutcome.adoptedExistingDatabase);
 
@@ -675,7 +680,7 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           final row = await reopened.select(reopened.downloadedMedia).getSingle();
           expect(row.id, 42);
           expect(row.serverId, 'server');
@@ -849,6 +854,7 @@ class _AppDatabaseTestSuite {
             databaseFile: file,
             preferences: prefs,
             executorFactory: (databaseFile) => NativeDatabase(databaseFile).interceptWith(openTracker),
+            schemaVersion: 25,
           );
           reopened = bootstrap.database;
           expect(openTracker.calls, greaterThanOrEqualTo(1));
@@ -902,7 +908,7 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           final legacyRule = await reopened.getSyncRule('profile-a|server:playlist');
           expect(legacyRule, isNotNull);
           expect(legacyRule!.downloadLinksInitialized, isFalse);
@@ -957,7 +963,7 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           final connectionColumns = (await reopened.customSelect("PRAGMA table_info('connections')").get())
               .map((row) => row.read<String>('name'))
               .toSet();
@@ -1006,7 +1012,7 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           await reopened.upsertMusicSession(
             MusicSessionRow(
               profileId: 'p1',
@@ -1056,7 +1062,7 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           final columns = (await reopened.customSelect("PRAGMA table_info('downloaded_media')").get())
               .map((row) => row.read<String>('name'))
               .toSet();
@@ -1110,7 +1116,7 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           final columns = (await reopened.customSelect("PRAGMA table_info('downloaded_media')").get())
               .map((row) => row.read<String>('name'))
               .toSet();
@@ -1157,7 +1163,7 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 25);
           for (final profileId in ['p1', 'p2']) {
             await reopened.replaceDownloadCollections(
               profileId: profileId,
