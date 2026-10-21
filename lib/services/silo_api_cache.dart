@@ -109,8 +109,8 @@ class SiloApiCache extends ApiCache {
   }
 
   static MediaItem? _decode(Map<String, dynamic> json) {
-    final item = MediaItem.fromJson(json);
-    return item.backend == MediaBackend.silo ? item : null;
+    final item = MediaItem.tryFromJson(json);
+    return item?.backend == MediaBackend.silo ? item : null;
   }
 
   static ({String scope, String itemId})? _parseKey(String cacheKey) {

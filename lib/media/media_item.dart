@@ -384,15 +384,25 @@ sealed class MediaItem with _$MediaItem {
     SiloMediaItem() => MediaBackend.silo,
   };
 
-  /// Restore a [MediaItem] from a [toJson] payload. Missing/unknown backend
-  /// values use [MediaBackend.fromString] so old offline cache rows remain
-  /// readable instead of throwing before union dispatch.
+  /// Restore a [MediaItem] from a [toJson] payload. A missing backend reads
+  /// as Plex through [MediaBackend.fromString]. An unknown one throws a
+  /// [FormatException], so callers that decode stored rows drop the row;
+  /// [tryFromJson] returns `null` for it instead.
   factory MediaItem.fromJson(Map<String, dynamic> json) {
+    final item = tryFromJson(json);
+    if (item == null) throw FormatException('Unknown MediaBackend id: ${json['backend']}');
+    return item;
+  }
+
+  /// Like [MediaItem.fromJson], but `null` when the payload names an unknown
+  /// backend.
+  static MediaItem? tryFromJson(Map<String, dynamic> json) {
     return switch (MediaBackend.fromString(json['backend'] as String?)) {
       MediaBackend.plex => _$PlexMediaItemFromJson(json),
       MediaBackend.jellyfin => _$JellyfinMediaItemFromJson(json),
       MediaBackend.emby => _$JellyfinMediaItemFromJson(json).copyWith(dialect: MediaBrowserDialect.emby),
       MediaBackend.silo => _$SiloMediaItemFromJson(json),
+      null => null,
     };
   }
 

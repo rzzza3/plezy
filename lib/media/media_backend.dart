@@ -27,22 +27,27 @@ enum MediaBackend {
     _ => throw ArgumentError('Unknown MediaBackend id: $id'),
   };
 
-  /// Like [fromId] but tolerates legacy/missing values by defaulting to Plex.
-  /// Used by JSON deserialization of cached offline data:
-  /// - `null` is the pre-Jellyfin shape and silently defaults to Plex.
-  /// - An unrecognized non-null id logs a warning and defaults to Plex; this
-  ///   surfaces corrupted cache rows or schema drift instead of silently
-  ///   misclassifying Jellyfin items as Plex.
-  static MediaBackend fromString(String? id) {
-    if (id != null && id != 'plex' && id != 'jellyfin' && id != 'emby' && id != 'silo') {
-      appLogger.w('Unknown MediaBackend id "$id"; defaulting to plex');
-    }
+  /// Like [fromId] but tolerant of persisted values, for JSON deserialization
+  /// of cached offline data:
+  /// - `null` is the pre-Jellyfin shape, which only Plex wrote, so it reads
+  ///   as Plex.
+  /// - An unrecognized non-null id logs a warning and returns `null`, so the
+  ///   caller drops the row instead of decoding another backend's data as
+  ///   Plex.
+  static MediaBackend? fromString(String? id) {
+    if (id == null) return MediaBackend.plex;
     return switch (id) {
+      'plex' => MediaBackend.plex,
       'jellyfin' => MediaBackend.jellyfin,
       'emby' => MediaBackend.emby,
       'silo' => MediaBackend.silo,
-      _ => MediaBackend.plex,
+      _ => _unknown(id),
     };
+  }
+
+  static MediaBackend? _unknown(String id) {
+    appLogger.w('Unknown MediaBackend id "$id"; dropping the row');
+    return null;
   }
 
   /// True for backends served by the MediaBrowser HTTP API — Jellyfin and its
