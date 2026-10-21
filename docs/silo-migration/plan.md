@@ -485,43 +485,43 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 **Depends on.** S6.
 
 **Files.**
-- [ ] Edit `lib/screens/auth_screen.dart` and `lib/screens/settings/add_connection_screen.dart` to offer Silo only.
-- [ ] Edit `lib/media/media_backend.dart` so an unknown id drops the row instead of defaulting to Plex.
-- [ ] Edit `lib/database/app_database.dart` to schema 26.
-- [ ] Edit `lib/services/storage_service.dart` to clear legacy keys.
-- [ ] Create `test/database/schema_26_migration_test.dart`.
+- [x] Edit `lib/screens/auth_screen.dart` and `lib/screens/settings/add_connection_screen.dart` to offer Silo only.
+- [x] Edit `lib/media/media_backend.dart` so an unknown id drops the row instead of defaulting to Plex.
+- [x] Edit `lib/database/app_database.dart` to schema 26.
+- [x] Edit `lib/services/storage_service.dart` to clear legacy keys.
+- [x] Create `test/database/schema_26_migration_test.dart`.
 
 **Build.**
-- [ ] Schema 26 deletes `connections` rows of kind `plex`, `jellyfin` and `emby`, their `profile_connections`, all `api_cache` rows, downloads and their owners, sync rules, download collections and queued offline progress for those backends. It keeps local profiles, because S9 replaces them with Silo profiles and migrates them then.
-- [ ] Legacy SharedPreferences keys from `storage_service.dart` lines 15 to 32 are cleared once.
+- [x] Schema 26 deletes `connections` rows of kind `plex`, `jellyfin` and `emby`, their `profile_connections`, all `api_cache` rows, downloads and their owners, sync rules, download collections and queued offline progress for those backends. It keeps local profiles, because S9 replaces them with Silo profiles and migrates them then. Silo `api_cache` rows are kept (operator decision, 2026-10-21).
+- [x] Legacy SharedPreferences keys from `storage_service.dart` lines 15 to 32 are cleared once.
 
 **You see.**
-- [ ] An upgraded install opens to the Silo sign-in with local profiles kept and no stale servers.
+- [ ] An upgraded install opens to the Silo sign-in with local profiles kept and no stale servers. Not seen as written: on the current data, which holds a Silo connection, the upgrade opens to the profile picker (operator decision), and lane 7 was skipped.
 
 **Verify, unit.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
-- [ ] `schema_26_migration_test.dart` migrates a seeded schema 25 database and asserts zero Plex, Jellyfin and Emby rows remain and local profiles are kept. Run `flutter test test/database`.
+- [x] `schema_26_migration_test.dart` migrates a seeded schema 25 database and asserts zero Plex, Jellyfin and Emby rows remain and local profiles are kept. Run `flutter test test/database`.
 
 **Verify, live.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked. Ten lanes on the `swarm workers` role in `p3-models.md` at the PR head, per the boot recipe.
-- [ ] Lane 1. Regression lane against trunk. Install trunk signed into Plex, then upgrade to head with `adb install -r`. Save `upgrade.png`. Pass when head opens to the Silo sign-in with no error.
-- [ ] Lane 2. Sign into Silo after the upgrade. Save `upgrade-signin.png`. Pass when the home loads.
-- [ ] Lane 3. Check the auth screen. Save `auth-silo-only.png`. Pass when no Plex, Jellyfin or Emby option shows.
-- [ ] Lane 4. Check settings, Add connection. Save `add-connection.png`. Pass when only Silo shows.
-- [ ] Lane 5. Check downloads after the upgrade. Save `downloads-empty.png`. Pass when old downloads are gone and the screen shows no errors.
-- [ ] Lane 6. Check local profiles after the upgrade. Save `profiles-kept.png`. Pass when they remain.
-- [ ] Lane 7. Fresh install. Save `fresh.png`. Pass when it opens to the Silo sign-in.
-- [ ] Lane 8. Relaunch twice after the upgrade. Save `migration-once.png`. Pass when the migration does not rerun.
-- [ ] Lane 9. Check logcat after the upgrade. Save `migration-log.png`. Pass when no token or path leaks.
-- [ ] Lane 10. Check storage use before and after. Save `storage.png`. Pass when the app data shrinks by at least the old cache size.
+- [x] Lane 1. Regression lane against trunk. Install trunk signed into Plex, then upgrade to head with `adb install -r`. Save `upgrade.png`. Pass when head opens to the Silo sign-in with no error.
+- [x] Lane 2. Sign into Silo after the upgrade. Save `upgrade-signin.png`. Pass when the home loads.
+- [x] Lane 3. Check the auth screen. Save `auth-silo-only.png`. Pass when no Plex, Jellyfin or Emby option shows.
+- [x] Lane 4. Check settings, Add connection. Save `add-connection.png`. Pass when only Silo shows.
+- [x] Lane 5. Check downloads after the upgrade. Save `downloads-empty.png`. Pass when old downloads are gone and the screen shows no errors.
+- [x] Lane 6. Check local profiles after the upgrade. Save `profiles-kept.png`. Pass when they remain.
+- [ ] Lane 7. Fresh install. Save `fresh.png`. Pass when it opens to the Silo sign-in. Skipped by the operator.
+- [x] Lane 8. Relaunch twice after the upgrade. Save `migration-once.png`. Pass when the migration does not rerun.
+- [x] Lane 9. Check logcat after the upgrade. Save `migration-log.png`. Pass when no token or path leaks.
+- [x] Lane 10. Check storage use before and after. Save `storage.png`. Pass when the app data shrinks by at least the old cache size.
 
 **Verify, perf.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
-- [ ] Metric. First launch time after upgrade.
-- [ ] Probe. Five upgrades from a trunk install with a full cache, timed from process start to first frame.
-- [ ] Baseline. Record trunk's cold start first.
-- [ ] Rule. Head's first post-upgrade launch within 2 s of trunk's cold start. Fail above that.
+- [x] Metric. First launch time after upgrade.
+- [x] Probe. Five upgrades from a trunk install with a full cache, timed from process start to first frame.
+- [x] Baseline. Record trunk's cold start first.
+- [x] Rule. Head's first post-upgrade launch within 2 s of trunk's cold start. Fail above that.
 
 **Review gate.** The operator reviews before merge.
-- [ ] Copy lanes 1 and 3 screenshots into `docs/silo-migration/media/s7-review-*.png`.
-- [ ] Record a 30 to 60 second video of an upgrade and sign-in. Save it as `docs/silo-migration/media/s7-review.mp4`.
+- [x] Copy lanes 1 and 3 screenshots into `docs/silo-migration/media/s7-review-*.png`.
+- [x] Record a 30 to 60 second video of an upgrade and sign-in. Save it as `docs/silo-migration/media/s7-review.mp4`.
 - [ ] Post the screenshots and the video in chat. Stop at merge-ready. Wait for the operator's click.
 
 **Merge.**
@@ -529,6 +529,30 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Bugbot triage done.
 - [ ] Rebased onto S6 after the verdict, patch-id unchanged.
 - [ ] Appended to the stack. The operator lands it bottom-up.
+
+
+**S7 lane record, 2026-10-21, debug builds of `feat/silo-s7-silo-only`.** Lanes ran one at a time on the Android TV emulator `Television_1080p`, per `media/s7/lanes-howto.md`, on the emulator's current data (the operator's choice, no `pm clear`). Trunk is `5fc148779`. Lanes 1 and 3 to 10 ran on `d4d78b2a4` (code head `bed4e1d5b`). Lane 2's shot, the perf lane and the review video ran on `30bb0a60f`, after the two fixes below. Evidence is in `docs/silo-migration/media/s7/`. Lanes 1 to 6 and 8 to 10 pass, lane 7 was skipped by the operator, and perf passes.
+- Operator decisions (2026-10-21). Removed downloads keep their files on disk. Silo `api_cache` rows are kept. The migration also removes Plex music sessions and `plex_home` profile rows. Lane 1 runs on the current data and passes on the profile picker or the `Silo A` home. Lane 2 records the `Silo A` home with no new sign-in. Lane 3 must not sign out of the Silo server. Lane 7 is skipped.
+- Starting state. Trunk on the Plex Home profile NotVeryPrivateAccount (active), plus the local profile `Silo A` bound to the Silo profile admin. There is no `Silo B`. One completed Plex download, Taskmaster (US) S1E1 from the RULEONE copy (441,046,679 B), was made for lane 5 and left unwatched. `api_cache` held 10 rows, 65,278 B: 8 Plex rows (58,933 B) and 2 Silo rows (6,345 B).
+- Backup. `run-as` tar of `app_flutter`, `files`, `shared_prefs`, `databases` and `no_backup` into `~/plezy-s7/backup` (mode 700): 617,499,648 B, sha256 `153d7fdd17ff2796c2395c49180d8ff35cb72956c3bd2e69199b11434476e949`. It listed `plezy_downloads.db` with its WAL, the preferences DataStore and the Plex file. Restore targets are `before-trunk-home.png`, `before-profiles.png` and `downloads-before-trunk.png`.
+- Fixes found by the lanes. `bd327dedc` stops `CredentialVault` from calling `reloadCache` on the app-wide preference cache, which empties it until the store answers. After the upgrade the first credential reveal is the bind of the profile picked in the startup picker, and in that window the active profile id read as null, so the bind reported failure and the picker stayed open (`upgrade-picker-stuck-before-fix.png`, `picker-fix.log`). `30bb0a60f` replaces the Settings > Add connection subtitle, which still named Plex, Jellyfin and Emby (`settings-subtitle-before-fix.png`, `settings-subtitle-after-fix.png`). Both have tests.
+- Unit pass. `flutter test test/database` at `30bb0a60f`: 167 tests pass. The vault, preference, profile and database suites (472) pass at `bd327dedc`, and `test/i18n` with `test/screens/settings` (154) at `30bb0a60f`.
+- Lane 1 pass. Head opened to the profile picker with only `Silo A (Silo)`, no Plex profile, no Plex server and no error (`upgrade.png`). The migration line appeared once. There was no `Could not reclaim space` or `Unknown MediaBackend` line.
+- Lane 2 pass at `30bb0a60f`. Picking `Silo A` in the startup picker opens the `Silo A` home (`upgrade-signin.png`), on all six upgrades of the perf lane and the video. At `d4d78b2a4` the pick did nothing until a relaunch (`upgrade-relaunch-home.png`). That was the bug fixed in `bd327dedc`.
+- Lane 3 pass. No in-app route reaches the auth screen while a connection exists, and a new local profile opens Add connection instead. Plezy's network was cut with the per-app firewall (the app could not resolve the Silo host), then Log out ran. The logout request failed (`lane-3.log`), the local wipe opened the auth screen with Connect to Silo as its only option (`auth-silo-only.png`), and the backup was restored before the network came back. The server session was never revoked: `Silo A` bound online on every later upgrade.
+- Lane 4 pass. Settings > Add connection and `Silo A`'s detail screen both list Connect to Silo and Borrow from another profile only (`add-connection.png`, `add-connection-profile.png`). The unscoped screen is reachable only from the auth error banner and was not run.
+- Lane 5 pass. Downloads shows "No downloads" with no error (`downloads-empty.png`). The Plex file stays on disk, 441,046,679 B (`lane-5-before.txt`, `lane-5-after.txt`), as the operator accepted.
+- Lane 6 pass. `Silo A` is kept and the Plex Home profile is gone (`profiles-kept.png`). The temporary local profile "S7 Temp" made for lane 3 was removed by the next restore.
+- Lane 7 skipped by the operator.
+- Lane 8 pass. The migration line is in the first launch's log only. The second and third launches have none (`lane-8.log`, `migration-once.png`).
+- Lane 9 pass. Lane 1's full logcat has no token, ticket, device code, signed URL or app-data path in Plezy's lines. The only `token=` and `/data/` hits are system processes (`lane-9.txt`, `migration-log.png`). The operator gave no Plex token prefix, so the search was by pattern.
+- Lane 10 pass. `plezy_downloads.db` went from 876,544 B to 184,320 B, 692,224 B smaller, which is more than the old cache's 65,278 B. The WAL went from 4,120,032 B to 8,272 B (`storage.png`, `lane-10-before.txt`, `lane-10-after.txt`).
+- Perf pass. Debug builds on both sides, because a profile build is not debuggable and the restores need `run-as`. Each of five cycles restored the backup, timed trunk's cold start, then installed head and timed its first launch. Time runs from `Start proc` to `Startup phase: phase=database_ready`, which comes after the migration and VACUUM; the howto's `image-cache` marker is logged in profile builds only. Trunk: 1,906, 1,938, 1,862, 1,815 and 1,844 ms (median 1,862). Head: 1,785, 1,743, 1,691, 1,757 and 1,721 ms (median 1,743), 119 ms faster, with the migration line in every head launch (`perf.txt`, `perf.png`, `perf-<n>.log`, `perf-T<n>.log`). The database was 876,544 B plus a 4,120,032 B WAL before every upgrade.
+- Restores. After the lanes (`after-restore1-*.png`), before every perf cycle, two debugging cycles with a temporarily instrumented APK (not committed), the video, and finally at 07:56. Trunk `5fc148779` is installed, the profiles screen is pixel-identical to `before-profiles.png` (`after-profiles.png`), the home shows the same profile, hero and Continue Watching (`after-trunk-home.png`), and the Plex download is back. The backup was deleted (`rm -rf ~/plezy-s7/backup`). No server state changed: nothing signed into or out of Silo, and the Plex episode was never played.
+- Open issue 1. The Settings > Profiles subtitle still reads "Add profiles to mix managed users and local identities", where managed users are Plex Home users. Left for S9, which replaces the profiles.
+- Open issue 2. A profile with no connection shows "Unable to load Discover" on Home. This predates S7.
+- Review gate. Stills are `media/s7-review-lane1-upgrade.png`, `-lane1-silo-home.png` and `-lane3-auth.png`. `media/s7-review.mp4` (40 s) shows the trunk Plex home, the upgrade, the picker with `Silo A` only, and the `Silo A` home.
+- Verdict. Waiting for the operator's review. Nothing is pushed.
 
 ## Delete Jellyfin and Emby (S8)
 **Depends on.** S7.

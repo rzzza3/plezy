@@ -1,0 +1,10 @@
+# Lane 10: storage before (trunk 5fc148779, stopped) and after (head d4d78b2a4, stopped)
+                              before        after
+plezy_downloads.db (bytes)    876,544       184,320    (-692,224)
+plezy_downloads.db-wal        4,120,032     8,272
+app_flutter/downloads (KiB)   430,768       430,768    (Plex file left on disk by design)
+app data total du -k .        902,340       898,436
+
+old api_cache: 10 rows, 65,278 B (Plex 8 rows 58,933 B; Silo 2 rows 6,345 B kept)
+rule: db file shrank by >= old cache size  ->  692,224 >= 65,278  PASS
+no 'Could not reclaim space after the v26 migration' in the upgrade log
