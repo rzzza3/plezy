@@ -61,10 +61,10 @@ class _FakeClient implements MediaServerClient {
   ServerId get serverId => ServerId('server-1');
 
   @override
-  MediaBackend backend = MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.plex;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
   LiveTvSupport get liveTv => _FakeLiveTv(dvr);
@@ -78,14 +78,13 @@ class _FakeClient implements MediaServerClient {
 
 LiveTvProgram _program() => LiveTvProgram(title: 'Pilot', guid: 'prog-1');
 
-/// A MediaBrowser-shaped template entry: no target library section, settings
-/// keyed by timer DTO field names.
-MediaSubscription _mediaBrowserEntry() => const MediaSubscription(
+/// A template entry that names no target library section.
+MediaSubscription _untargetedEntry() => const MediaSubscription(
   key: '',
   type: MediaSubscription.typeEpisode,
   title: 'Record Episode',
   selected: true,
-  parameters: '{"ServiceName":"Emby"}',
+  parameters: 'hints[ratingKey]=prog-1',
   settings: [SubscriptionSetting(id: 'PrePaddingSeconds', label: 'Start early (seconds)', type: 'int', value: 60)],
 );
 
@@ -124,21 +123,20 @@ Future<RecordOutcome?> _pumpAndSave(
 }
 
 void main() {
-  testWidgets('create succeeds without a target when the template carries none (MediaBrowser)', (tester) async {
+  testWidgets('create succeeds without a target when the template carries none and no library is eligible', (tester) async {
     final client = _FakeClient();
 
-    final outcome = await _pumpAndSave(tester, client, _mediaBrowserEntry());
+    final outcome = await _pumpAndSave(tester, client, _untargetedEntry());
 
     expect(outcome, RecordOutcome.scheduled);
     final request = client.dvr.created.single;
     expect(request.targetLibrarySectionID, isNull);
-    expect(request.parameters, '{"ServiceName":"Emby"}');
+    expect(request.parameters, 'hints[ratingKey]=prog-1');
     expect(request.prefs['PrePaddingSeconds'], 60);
   });
 
   testWidgets('create still requires a target when eligible libraries exist and none resolves', (tester) async {
     final client = _FakeClient()
-      ..backend = MediaBackend.plex
       // An int-id show library makes the picker eligible, but nothing is
       // selected and the template names no section — the Plex guard holds.
       ..libraries = [
@@ -151,36 +149,17 @@ void main() {
         ),
       ];
 
-    final outcome = await _pumpAndSave(tester, client, _mediaBrowserEntry());
+    final outcome = await _pumpAndSave(tester, client, _untargetedEntry());
 
     expect(outcome, RecordOutcome.targetMissing);
     expect(client.dvr.created, isEmpty);
-  });
-
-  testWidgets('Emby numeric library ids are not treated as Plex recording targets', (tester) async {
-    final client = _FakeClient()
-      ..backend = MediaBackend.emby
-      ..libraries = [
-        MediaLibrary(
-          id: '12',
-          title: 'TV',
-          kind: MediaKind.show,
-          backend: MediaBackend.emby,
-          serverId: ServerId('server-1'),
-        ),
-      ];
-
-    final outcome = await _pumpAndSave(tester, client, _mediaBrowserEntry());
-
-    expect(outcome, RecordOutcome.scheduled);
-    expect(client.dvr.created.single.targetLibrarySectionID, isNull);
   });
 
   testWidgets('RecordingConflictException maps to the alreadyScheduled outcome', (tester) async {
     final client = _FakeClient();
     client.dvr.createError = const RecordingConflictException('duplicate');
 
-    final outcome = await _pumpAndSave(tester, client, _mediaBrowserEntry());
+    final outcome = await _pumpAndSave(tester, client, _untargetedEntry());
 
     expect(outcome, RecordOutcome.alreadyScheduled);
   });

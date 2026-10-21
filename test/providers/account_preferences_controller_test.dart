@@ -6,19 +6,13 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/media/account_preferences.dart';
-import 'package:plezy/media/account_ref.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/services/plex_auth_service.dart';
-import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
-import '../test_helpers/backend_client_fixtures.dart';
-import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_stack.dart';
 
@@ -139,163 +133,59 @@ void main() {
       expect(notified, 1);
     });
 
-    test('a Jellyfin account with the remember flag off gets it turned on, once, with its other fields kept', () async {
-      // The flag gates whether the server keeps the stream indexes Plezy
-      // reports at all. Jellyfin replaces the whole UserConfiguration on write,
-      // so the sibling flag and the fields Plezy does not model must survive.
-      final fixture = await _Fixture.local();
+    test('Home jpn survives a borrowed Silo default, inverse changes and profile switches', () async {
+      final fixture = await _Fixture.plexHome(switchedToken: 'home-token');
       addTearDown(fixture.dispose);
       await fixture.controller.ensureActiveLoaded();
-      final borrowed = testJellyfinConnection();
+      final home = fixture.stack.active.active!;
+      final borrowed = _siloConnection();
       await fixture.bindBorrowed(borrowed);
       await pumpEventQueue();
-      final posts = <http.Request>[];
-      fixture.registerBorrowedClient(
-        borrowed,
-        configuration: {
-          'AudioLanguagePreference': 'deu',
-          'RememberAudioSelections': false,
-          'RememberSubtitleSelections': false,
-          'OrderedViews': ['movies', 'shows'],
-        },
-        onPost: posts.add,
-      );
-      final ref = AccountRef.mediaBrowser(backend: MediaBackend.jellyfin, connectionId: borrowed.id);
+      await fixture.controller.ensureActiveLoaded();
+      expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
 
-      expect(
-        await fixture.controller.ensureRemembersTrackSelections(ref, AccountPreferenceKey.rememberAudioSelections),
-        isTrue,
-      );
-      expect(posts.map((post) => post.url.path), ['/Users/user-1/Configuration']);
-      expect(jsonDecode(posts.single.body), {
-        'AudioLanguagePreference': 'deu',
-        'RememberAudioSelections': true,
-        'RememberSubtitleSelections': false,
-        'OrderedViews': ['movies', 'shows'],
-      });
-
-      // The next pick of the same type is answered from the cache.
-      expect(
-        await fixture.controller.ensureRemembersTrackSelections(ref, AccountPreferenceKey.rememberAudioSelections),
-        isTrue,
-      );
-      expect(posts, hasLength(1));
-
-      // The sibling flag is its own switch.
-      expect(
-        await fixture.controller.ensureRemembersTrackSelections(ref, AccountPreferenceKey.rememberSubtitleSelections),
-        isTrue,
-      );
-      expect(posts, hasLength(2));
-      expect(jsonDecode(posts.last.body), containsPair('RememberSubtitleSelections', true));
+      await fixture.stack.profileConnections.setDefault(home.id, _Fixture.parentAccountId);
+      await pumpEventQueue();
+      await fixture.controller.ensureActiveLoaded();
+      expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
+      await fixture.stack.profileConnections.setDefault(home.id, borrowed.id);
+      await pumpEventQueue();
+      final other = Profile.local(id: 'other', displayName: 'Other', createdAt: DateTime(2026));
+      await fixture.stack.profiles.upsert(other);
+      await fixture.stack.active.activate(other);
+      expect(fixture.controller.activePreferences, isNull);
+      await fixture.stack.active.activate(home);
+      await fixture.controller.ensureActiveLoaded();
+      expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
+      await fixture.stack.profileConnections.remove(home.id, borrowed.id);
+      await pumpEventQueue();
+      await fixture.controller.ensureActiveLoaded();
+      expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
+      expect(fixture.requests.every((request) => request.headers['X-Plex-Token'] == 'home-token'), isTrue);
     });
 
-    test('an Emby account cannot be asked to remember picks and is not written', () async {
+    test('a local Silo default has no preferences and no reachable-account substitution', () async {
       final fixture = await _Fixture.local();
       addTearDown(fixture.dispose);
       await fixture.controller.ensureActiveLoaded();
-      final borrowed = testJellyfinConnection(dialect: MediaBrowserDialect.emby);
+      final borrowed = _siloConnection();
       await fixture.bindBorrowed(borrowed);
       await pumpEventQueue();
-      var requests = 0;
-      fixture.registerBorrowedClient(
-        borrowed,
-        configuration: {'RememberAudioSelections': false},
-        onRequest: () => requests++,
-      );
-      final ref = AccountRef.mediaBrowser(backend: MediaBackend.emby, connectionId: borrowed.id);
-
-      expect(
-        await fixture.controller.ensureRemembersTrackSelections(ref, AccountPreferenceKey.rememberAudioSelections),
-        isFalse,
-      );
-      expect(requests, 0);
-    });
-
-    for (final dialect in MediaBrowserDialect.values) {
-      test('Home jpn survives a borrowed $dialect default, inverse changes and profile switches', () async {
-        final fixture = await _Fixture.plexHome(switchedToken: 'home-token');
-        addTearDown(fixture.dispose);
-        await fixture.controller.ensureActiveLoaded();
-        final home = fixture.stack.active.active!;
-        final borrowed = testJellyfinConnection(dialect: dialect);
-        await fixture.bindBorrowed(borrowed);
-        await pumpEventQueue();
-        await fixture.controller.ensureActiveLoaded();
-        expect(fixture.controller.accounts.first.ref.connectionId, borrowed.id);
-        expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
-
-        fixture.registerBorrowedClient(borrowed, language: 'deu');
-        final borrowedRef = fixture.controller.accounts.first.ref;
-        await fixture.controller.repository.load(borrowedRef);
-        expect(fixture.controller.repository.cached(borrowedRef)?.defaultAudioLanguage, 'deu');
-        expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
-
-        await fixture.stack.profileConnections.setDefault(home.id, _Fixture.parentAccountId);
-        await pumpEventQueue();
-        await fixture.controller.ensureActiveLoaded();
-        expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
-        await fixture.stack.profileConnections.setDefault(home.id, borrowed.id);
-        await pumpEventQueue();
-        final other = Profile.local(id: 'other', displayName: 'Other', createdAt: DateTime(2026));
-        await fixture.stack.profiles.upsert(other);
-        await fixture.stack.active.activate(other);
-        expect(fixture.controller.activePreferences, isNull);
-        await fixture.stack.active.activate(home);
-        await fixture.controller.ensureActiveLoaded();
-        expect(fixture.controller.accounts.first.ref.connectionId, borrowed.id);
-        expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
-        await fixture.stack.profileConnections.remove(home.id, borrowed.id);
-        await pumpEventQueue();
-        await fixture.controller.ensureActiveLoaded();
-        expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
-        expect(fixture.requests.every((request) => request.headers['X-Plex-Token'] == 'home-token'), isTrue);
-      });
-
-      test('local $dialect default selects its own preferences without reachable-account substitution', () async {
-        final fixture = await _Fixture.local();
-        addTearDown(fixture.dispose);
-        await fixture.controller.ensureActiveLoaded();
-        final borrowed = testJellyfinConnection(dialect: dialect);
-        await fixture.bindBorrowed(borrowed);
-        await pumpEventQueue();
-        await fixture.controller.ensureActiveLoaded();
-        expect(fixture.controller.activePreferences, isNull);
-        fixture.registerBorrowedClient(borrowed, language: 'deu');
-        await fixture.controller.ensureActiveLoaded();
-        expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'deu');
-        await fixture.stack.profileConnections.setDefault(fixture.stack.active.activeId!, 'plex-b');
-        await pumpEventQueue();
-        await fixture.controller.ensureActiveLoaded();
-        expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'fra');
-      });
-    }
-
-    test('a non-default Jellyfin account still reads its Next Up rewatching switch', () async {
-      final fixture = await _Fixture.local();
-      addTearDown(fixture.dispose);
       await fixture.controller.ensureActiveLoaded();
-      final other = testJellyfinConnection();
-      fixture.registerBorrowedClient(other, rewatchingInNextUp: true);
-      await fixture.bindBorrowed(other, isDefault: false);
+      expect(fixture.controller.activePreferences, isNull);
+      await fixture.stack.profileConnections.setDefault(fixture.stack.active.activeId!, 'plex-b');
       await pumpEventQueue();
       await fixture.controller.ensureActiveLoaded();
-      await pumpEventQueue();
-
-      // Playback defaults still come from the default Plex account.
       expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'fra');
-      expect(fixture.serverManager.getJellyfinClientByCompoundId(other.id)?.sendNextUpRewatching, isTrue);
     });
 
     test('a borrowed default before Home token mint never supplies playback preferences', () async {
       final fixture = await _Fixture.plexHome();
       addTearDown(fixture.dispose);
-      final borrowed = testJellyfinConnection();
-      fixture.registerBorrowedClient(borrowed, language: 'deu');
+      final borrowed = _siloConnection();
       await fixture.bindBorrowed(borrowed);
       await pumpEventQueue();
       await fixture.controller.ensureActiveLoaded();
-      expect(fixture.controller.accounts.single.ref.connectionId, borrowed.id);
       expect(fixture.controller.activePreferences, isNull);
       expect(fixture.requests, isEmpty);
       final loaded = fixture.nextLoad();
@@ -308,7 +198,6 @@ void main() {
         ),
       );
       await loaded;
-      expect(fixture.controller.accounts.first.ref.connectionId, borrowed.id);
       expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'jpn');
     });
 
@@ -316,7 +205,7 @@ void main() {
       final fixture = await _Fixture.plexHome(switchedToken: 'home-token');
       addTearDown(fixture.dispose);
       await fixture.controller.ensureActiveLoaded();
-      final borrowed = testJellyfinConnection();
+      final borrowed = _siloConnection();
       await fixture.bindBorrowed(borrowed);
       await pumpEventQueue();
       final observed = <String?>[];
@@ -381,7 +270,7 @@ void main() {
 }
 
 class _Fixture {
-  _Fixture._(this.stack, this.controller, this.requests, this.serverManager);
+  _Fixture._(this.stack, this.controller, this.requests);
 
   static const parentAccountId = 'plex-parent';
   static const homeUserUuid = 'home-user-a';
@@ -390,60 +279,19 @@ class _Fixture {
   final AccountPreferencesController controller;
   final List<http.Request> requests;
   String audioLanguage = 'jpn';
-  final MultiServerManager serverManager;
   Future<void>? responseGate;
   Completer<void>? requestStarted;
 
-  Future<void> bindBorrowed(JellyfinConnection connection, {bool isDefault = true}) async {
+  Future<void> bindBorrowed(SiloConnection connection, {bool isDefault = true}) async {
     await stack.connections.upsert(connection);
     await stack.profileConnections.upsert(
       ProfileConnection(
         profileId: stack.active.activeId!,
         connectionId: connection.id,
-        userIdentifier: connection.userId,
-        userToken: connection.accessToken,
+        userIdentifier: connection.username,
         isDefault: isDefault,
       ),
       makeDefault: isDefault,
-    );
-  }
-
-  /// Serve a MediaBrowser account whose `UserConfiguration` starts as
-  /// [configuration] (plus [language], when given). Configuration writes are
-  /// applied to the served state, because the client re-reads after posting.
-  void registerBorrowedClient(
-    JellyfinConnection connection, {
-    String? language,
-    Map<String, dynamic> configuration = const {},
-    bool rewatchingInNextUp = false,
-    void Function(http.Request request)? onPost,
-    void Function()? onRequest,
-  }) {
-    final served = <String, dynamic>{...configuration, 'AudioLanguagePreference': ?language};
-    serverManager.debugRegisterJellyfinClientForTesting(
-      testJellyfinClient(
-        connection: connection,
-        handler: (request) async {
-          onRequest?.call();
-          final isDisplayPreferences = request.url.path.contains('/DisplayPreferences/');
-          if (request.method == 'POST') {
-            onPost?.call(request);
-            if (!isDisplayPreferences) {
-              served
-                ..clear()
-                ..addAll(jsonDecode(request.body) as Map<String, dynamic>);
-            }
-            return http.Response('', 204);
-          }
-          return jsonResponse(
-            isDisplayPreferences
-                ? {
-                    'CustomPrefs': <String, dynamic>{if (rewatchingInNextUp) 'enableRewatchingInNextUp': 'true'},
-                  }
-                : {'Configuration': served},
-          );
-        },
-      ),
     );
   }
 
@@ -528,7 +376,6 @@ class _Fixture {
 
   static _Fixture _attach(ProfileStack stack, {required String audioLanguage}) {
     final requests = <http.Request>[];
-    final serverManager = MultiServerManager();
     late final _Fixture fixture;
     final controller =
         AccountPreferencesController(
@@ -545,18 +392,24 @@ class _Fixture {
           connections: stack.connections,
           profileConnections: stack.profileConnections,
           activeProfile: stack.active,
-          serverManager: serverManager,
         );
-    fixture = _Fixture._(stack, controller, requests, serverManager)..audioLanguage = audioLanguage;
+    fixture = _Fixture._(stack, controller, requests)..audioLanguage = audioLanguage;
     return fixture;
   }
 
   Future<void> dispose() async {
     controller.dispose();
-    serverManager.dispose();
     await stack.dispose();
   }
 }
+
+SiloConnection _siloConnection() => SiloConnection(
+  origin: 'https://silo.example.com',
+  serverId: 'silo-server',
+  serverName: 'Silo',
+  username: 'alice',
+  createdAt: DateTime(2026),
+);
 
 PlexHomeUser _homeUser({required String uuid, required String title}) {
   return PlexHomeUser(

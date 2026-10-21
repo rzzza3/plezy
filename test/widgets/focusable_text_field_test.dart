@@ -319,7 +319,7 @@ void main() {
 
   testWidgets('Apple TV native Go submits once and deactivates input', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
-    final controller = TextEditingController(text: 'https://jellyfin.example.com');
+    final controller = TextEditingController(text: 'https://silo.example.com');
     final fieldFocusNode = FocusNode(debugLabel: 'native_url_field');
     final submissions = <String>[];
     addTearDown(controller.dispose);
@@ -346,18 +346,18 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.go);
     await tester.pump();
 
-    expect(submissions, ['https://jellyfin.example.com']);
+    expect(submissions, ['https://silo.example.com']);
     expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
     expect(fieldFocusNode.hasPrimaryFocus, isTrue);
 
     tester.testTextInput.closeConnection();
     await tester.pump();
-    expect(submissions, ['https://jellyfin.example.com']);
+    expect(submissions, ['https://silo.example.com']);
   });
 
   testWidgets('Apple TV native submit fires both onEditingComplete and onSubmitted', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
-    final controller = TextEditingController(text: 'https://jellyfin.example.com');
+    final controller = TextEditingController(text: 'https://silo.example.com');
     final fieldFocusNode = FocusNode(debugLabel: 'native_url_field');
     final submissions = <String>[];
     var completed = 0;
@@ -389,7 +389,7 @@ void main() {
     // EditableText calls the two independently; withholding onSubmitted from
     // the widget on the native path must not collapse them into an either/or.
     expect(completed, 1);
-    expect(submissions, ['https://jellyfin.example.com']);
+    expect(submissions, ['https://silo.example.com']);
     expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
   });
 

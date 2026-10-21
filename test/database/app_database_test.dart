@@ -1583,59 +1583,7 @@ class _AppDatabaseTestSuite {
         expect(await db.getDownloadOwnerKeysForProfile('profile-existing'), {'srv1:2'});
       });
 
-      test(
-        'ownerless Jellyfin download adopts the profile connection scope instead of the removed user scope',
-        () async {
-          final now = DateTime.now().millisecondsSinceEpoch;
-          await db
-              .into(db.profiles)
-              .insert(
-                ProfilesCompanion.insert(
-                  id: 'profile-b',
-                  kind: 'local',
-                  displayName: 'Profile B',
-                  configJson: '{}',
-                  createdAt: now,
-                ),
-              );
-          await db
-              .into(db.connections)
-              .insert(
-                ConnectionsCompanion.insert(
-                  id: 'jf-machine/user-b',
-                  kind: 'jellyfin',
-                  displayName: 'User B',
-                  configJson: jsonEncode({'serverMachineId': 'jf-machine', 'userId': 'user-b'}),
-                  createdAt: now,
-                ),
-              );
-          await db
-              .into(db.profileConnections)
-              .insert(
-                ProfileConnectionsCompanion.insert(
-                  profileId: 'profile-b',
-                  connectionId: 'jf-machine/user-b',
-                  userIdentifier: 'user-b',
-                ),
-              );
-          await insertMovie(
-            serverId: 'jf-machine',
-            clientScopeId: 'jf-machine/user-a',
-            ratingKey: 'ownerless',
-            status: DownloadStatus.completed.index,
-          );
-
-          await db.adoptLegacyDownloadsForProfile('profile-b');
-
-          final row = await db.getDownloadedMedia('jf-machine:ownerless');
-          final owner = await db.getDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:ownerless');
-          expect(row?.clientScopeId, 'jf-machine/user-b');
-          expect(owner?.backend, 'jellyfin');
-          expect(owner?.clientScopeId, 'jf-machine/user-b');
-        },
-      );
-
-      test('ownerless Jellyfin download defers adoption when the profile has multiple user scopes', () async {
+      test('ownerless download with a legacy compound user scope is never adopted', () async {
         final now = DateTime.now().millisecondsSinceEpoch;
         for (final userId in const ['user-b', 'user-c']) {
           await db
@@ -1757,7 +1705,7 @@ class _AppDatabaseTestSuite {
         expect(rows.first.shouldMarkWatched, isTrue);
       });
 
-      test('upsertProgressAction keeps scoped Jellyfin users separate', () async {
+      test('upsertProgressAction keeps distinct client scopes separate', () async {
         await db.upsertProgressAction(
           serverId: ServerId('srv'),
           clientScopeId: 'srv/user-a',

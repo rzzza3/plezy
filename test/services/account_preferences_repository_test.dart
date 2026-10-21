@@ -4,8 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/account_preferences.dart';
 import 'package:plezy/media/account_preferences_source.dart';
 import 'package:plezy/media/account_ref.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/models/jellyfin/jellyfin_account_preferences.dart';
 import 'package:plezy/services/account_preferences_repository.dart';
 
 void main() {
@@ -14,7 +12,12 @@ void main() {
   const currentPreferences = AccountPreferences(preferredAudioLanguage: 'fra');
 
   test('a mixed supported and unsupported patch fails before any account request', () async {
-    final source = _PendingSource();
+    final source = _PendingSource(
+      capabilities: const AccountPreferencesCapabilities(
+        supportedKeys: {AccountPreferenceKey.autoSelectAudio},
+        subtitleModes: {},
+      ),
+    );
     final repository = AccountPreferencesRepository(sourceFor: (_) async => source);
     addTearDown(repository.dispose);
     await expectLater(
@@ -22,7 +25,7 @@ void main() {
         ref,
         AccountPreferencesPatch({
           AccountPreferenceKey.autoSelectAudio: false,
-          AccountPreferenceKey.hidePlayedInLatest: true,
+          AccountPreferenceKey.watchedIndicator: WatchedIndicatorScope.movies,
         }),
       ),
       throwsA(isA<UnsupportedError>()),
@@ -54,7 +57,6 @@ void main() {
   });
 
   test('concurrent account updates preserve disjoint full-configuration changes', () async {
-    const account = AccountRef.mediaBrowser(backend: MediaBackend.jellyfin, connectionId: 'server/user');
     final source = _ConfigurationSource();
     final sourceGate = Completer<AccountPreferencesSource?>();
     var sourceLookups = 0;
@@ -66,10 +68,10 @@ void main() {
     );
     addTearDown(repository.dispose);
 
-    final first = repository.update(account, AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, false));
+    final first = repository.update(ref, AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, false));
     final second = repository.update(
-      account,
-      AccountPreferencesPatch.of(AccountPreferenceKey.hidePlayedInLatest, true),
+      ref,
+      AccountPreferencesPatch.of(AccountPreferenceKey.watchedIndicator, WatchedIndicatorScope.movies),
     );
     final updates = Future.wait([first, second]);
     await pumpEventQueue();
@@ -81,14 +83,12 @@ void main() {
     source.firstWriteGate.complete();
     await updates;
 
-    expect(source.configuration, {
-      'PlayDefaultAudioTrack': false,
-      'HidePlayedInLatest': true,
-      'OrderedViews': ['movies', 'shows'],
-    });
-    final cached = repository.cached(account)!;
+    expect(source.configuration.playDefaultAudioTrack, isFalse);
+    expect(source.configuration.watchedIndicator, WatchedIndicatorScope.movies);
+    expect(source.configuration.preferredAudioLanguage, 'jpn');
+    final cached = repository.cached(ref)!;
     expect(cached.autoSelectAudio, isFalse);
-    expect(cached.hidePlayedInLatest, isTrue);
+    expect(cached.watchedIndicator, WatchedIndicatorScope.movies);
     expect(sourceLookups, 2);
   });
 
@@ -333,6 +333,8 @@ void main() {
 }
 
 class _PendingSource extends AccountPreferencesSource {
+  _PendingSource({this.capabilities = AccountPreferencesCapabilities.plex});
+
   final readStarted = Completer<void>();
   final writeStarted = Completer<void>();
   final readResult = Completer<AccountPreferences>();
@@ -340,7 +342,7 @@ class _PendingSource extends AccountPreferencesSource {
   AccountPreferencesPatch? written;
 
   @override
-  AccountPreferencesCapabilities get capabilities => AccountPreferencesCapabilities.plex;
+  final AccountPreferencesCapabilities capabilities;
 
   @override
   Future<AccountPreferences> read() {
@@ -358,25 +360,36 @@ class _PendingSource extends AccountPreferencesSource {
 }
 
 class _ConfigurationSource extends AccountPreferencesSource {
-  Map<String, dynamic> configuration = {
-    'PlayDefaultAudioTrack': true,
-    'HidePlayedInLatest': false,
-    'OrderedViews': ['movies', 'shows'],
-  };
+  AccountPreferences configuration = const AccountPreferences(
+    preferredAudioLanguage: 'jpn',
+    playDefaultAudioTrack: true,
+    watchedIndicator: WatchedIndicatorScope.none,
+  );
   final firstReadStarted = Completer<void>();
   final firstWriteGate = Completer<void>();
 
   @override
-  AccountPreferencesCapabilities get capabilities => AccountPreferencesCapabilities.jellyfin;
+  AccountPreferencesCapabilities get capabilities => AccountPreferencesCapabilities.plex;
 
   @override
-  Future<AccountPreferences> read() async => JellyfinAccountPreferences.fromConfiguration(configuration);
+  Future<AccountPreferences> read() async => configuration;
 
   @override
   Future<AccountPreferences> write(AccountPreferencesPatch patch, {void Function()? checkCurrent}) async {
-    // A MediaBrowser POST replaces the entire Configuration from a fresh
-    // read. Delay the first POST so an overlapping write would lose a key.
-    final merged = JellyfinAccountPreferences.mergePatch(configuration, patch);
+    // Replace the whole stored configuration from a fresh read. Delay the
+    // first write so an overlapping write would lose a key.
+    final current = configuration;
+    final merged = AccountPreferences(
+      preferredAudioLanguage: patch.contains(AccountPreferenceKey.preferredAudioLanguage)
+          ? patch.languageAt(AccountPreferenceKey.preferredAudioLanguage)
+          : current.preferredAudioLanguage,
+      playDefaultAudioTrack: patch.contains(AccountPreferenceKey.autoSelectAudio)
+          ? patch.boolAt(AccountPreferenceKey.autoSelectAudio)
+          : current.playDefaultAudioTrack,
+      watchedIndicator: patch.contains(AccountPreferenceKey.watchedIndicator)
+          ? patch[AccountPreferenceKey.watchedIndicator] as WatchedIndicatorScope?
+          : current.watchedIndicator,
+    );
     if (!firstReadStarted.isCompleted) {
       firstReadStarted.complete();
       await firstWriteGate.future;

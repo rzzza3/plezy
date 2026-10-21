@@ -262,7 +262,7 @@ Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
     VideoPlayerRoute(
       builder: (_) => VideoPlayerScreen(
         key: key,
-        metadata: testMediaItem(id: 'switch', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+        metadata: testMediaItem(id: 'switch', serverId: 'srv-1', backend: MediaBackend.silo),
         selectedQualityPreset: selectedQualityPreset,
         selectedAudioStreamId: 1,
       ),
@@ -378,9 +378,9 @@ class _SwitchClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   String get serverName => 'Server';
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
   @override
   double get watchedThreshold => 0.9;
   @override

@@ -779,7 +779,7 @@ void main() {
   });
 
   testWidgets('a re-resolve that lost its library stamp keeps the one already shown', (tester) async {
-    // Jellyfin stamps a copy's library with a best-effort ancestors lookup
+    // A backend may stamp a copy's library with a best-effort ancestors lookup
     // that returns the item bare when it fails. A row that fell back to the
     // server name would be indistinguishable from its sibling in the same
     // server's other library.

@@ -82,26 +82,6 @@ class _RecordingClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _SeasonPagingRecordingClient extends _RecordingClient implements SeasonEpisodePagingClient {
-  _SeasonPagingRecordingClient({this.seasonPageBySeason = const {}});
-
-  final Map<({String seriesId, String seasonId}), List<MediaItem>> seasonPageBySeason;
-  final seasonEpisodePageCalls = <({String seriesId, String seasonId, int? start, int? size})>[];
-
-  @override
-  Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
-    String seriesId,
-    String seasonId, {
-    int? start,
-    int? size,
-    abort,
-  }) async {
-    seasonEpisodePageCalls.add((seriesId: seriesId, seasonId: seasonId, start: start, size: size));
-    final all = seasonPageBySeason[(seriesId: seriesId, seasonId: seasonId)] ?? const <MediaItem>[];
-    return fakeLibraryPage(all, start: start, size: size);
-  }
-}
-
 class _LeavesClient implements MediaServerClient {
   _LeavesClient(this.leaves);
 
@@ -389,21 +369,6 @@ void main() {
     expect(client.childrenPageCalls, [(parentId: 'season-1', start: 0, size: 1)]);
   });
 
-  test('fetchFirstEpisodeForSeason uses season episode paging when available', () async {
-    final episode = _episode('episode-1');
-    final client = _SeasonPagingRecordingClient(
-      seasonPageBySeason: {
-        (seriesId: 'show-1', seasonId: 'season-1'): [episode, _episode('episode-2')],
-      },
-    );
-
-    final result = await fetchFirstEpisodeForSeason(client, 'season-1', seriesId: 'show-1');
-
-    expect(result, same(episode));
-    expect(client.childrenPageCalls, isEmpty);
-    expect(client.seasonEpisodePageCalls, [(seriesId: 'show-1', seasonId: 'season-1', start: 0, size: 1)]);
-  });
-
   test('fetchSeasonEpisodePage normalizes show and season identity', () async {
     final show = testMediaItem(
       id: 'show-1',
@@ -435,23 +400,6 @@ void main() {
     expect(page.items.single.parentId, season.id);
     expect(page.items.single.parentIndex, season.index);
     expect(page.items.single.libraryId, show.libraryId);
-  });
-
-  test('fetchSeasonEpisodePage uses season episode paging when available', () async {
-    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
-    final season = _season('season-1');
-    final row = _episode('episode-1');
-    final client = _SeasonPagingRecordingClient(
-      seasonPageBySeason: {
-        (seriesId: show.id, seasonId: season.id): [row],
-      },
-    );
-
-    final page = await fetchSeasonEpisodePage(client, show: show, season: season, start: 0, size: 10);
-
-    expect(client.childrenPageCalls, isEmpty);
-    expect(client.seasonEpisodePageCalls, [(seriesId: show.id, seasonId: season.id, start: 0, size: 10)]);
-    expect(page.items.single.id, row.id);
   });
 
   test('normalizeSeasonEpisodes ignores non-episode rows', () {

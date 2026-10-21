@@ -541,8 +541,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Server • Movies'), findsOneWidget);
 
-    // A fresh fetchItem carries no library context (a Jellyfin /Items/{id}
-    // response has none); the merge must keep the stamp search applied.
+    // A fresh fetchItem carries no library context; the merge must keep the
+    // stamp search applied.
     client.itemResult = testMediaItem(
       id: 'movie_1',
       backend: MediaBackend.plex,

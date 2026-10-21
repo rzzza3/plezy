@@ -91,7 +91,7 @@ void main() {
       initialLibraries: const [
         MediaLibrary(
           id: 'maestro-movies',
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
           title: 'Maestro Movies',
           kind: MediaKind.movie,
         ),

@@ -29,7 +29,7 @@ AccountPreferences _profile({
   );
 }
 
-AccountPreferences _jellyfinProfile({
+AccountPreferences _subtitleModeProfile({
   String? defaultAudioLanguage,
   String? defaultSubtitleLanguage,
   SubtitlePlaybackMode? subtitleMode,
@@ -331,7 +331,7 @@ void main() {
       expect(result.track.language, 'fre');
     });
 
-    test('Jellyfin selected audio stream wins over DefaultAudioStreamIndex', () {
+    test('Silo selected audio stream wins over the default stream index', () {
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
       final info = _info(
         defaultAudioStreamIndex: 1,
@@ -341,25 +341,7 @@ void main() {
         ],
       );
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        info: info,
-      ).selectAudioTrack(tracks, null);
-      expect(result, isNotNull);
-      expect(result!.priority, TrackSelectionPriority.serverSelected);
-      expect(result.track.language, 'fre');
-    });
-
-    test('Jellyfin DefaultAudioStreamIndex selects audio when selected flag is missing', () {
-      final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
-      final info = _info(
-        defaultAudioStreamIndex: 2,
-        audio: [
-          _plexAudio(1, index: 1, language: 'eng', languageCode: 'eng'),
-          _plexAudio(2, index: 2, language: 'fre', languageCode: 'fre'),
-        ],
-      );
-      final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
+        metadata: _meta(backend: MediaBackend.silo),
         info: info,
       ).selectAudioTrack(tracks, null);
       expect(result, isNotNull);
@@ -601,7 +583,7 @@ void main() {
       );
     });
 
-    test('Jellyfin selected subtitle stream wins over DefaultSubtitleStreamIndex', () {
+    test('Silo selected subtitle stream wins over the default stream index', () {
       final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
       final info = _info(
         defaultSubtitleStreamIndex: 10,
@@ -611,7 +593,7 @@ void main() {
         ],
       );
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
+        metadata: _meta(backend: MediaBackend.silo),
         info: info,
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.serverSelected);
@@ -632,7 +614,7 @@ void main() {
       expect(result.track.id, 'no');
     });
 
-    test('Jellyfin media info with subs but none selected falls through to default fallback', () {
+    test('Silo media info with subs but none selected falls through to default fallback', () {
       final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre', isDefault: true)];
       final info = _info(
         subs: [
@@ -641,33 +623,16 @@ void main() {
         ],
       );
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
+        metadata: _meta(backend: MediaBackend.silo),
         info: info,
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.defaultTrack);
       expect(result.track.id, '2');
     });
 
-    test('Jellyfin DefaultSubtitleStreamIndex selects subtitle when selected flag is missing', () {
-      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
-      final info = _info(
-        defaultSubtitleStreamIndex: 11,
-        subs: [
-          _plexSub(10, index: 10, language: 'eng', languageCode: 'eng'),
-          _plexSub(11, index: 11, language: 'fre', languageCode: 'fre'),
-        ],
-      );
-      final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        info: info,
-      ).selectSubtitleTrack(tracks, null, null)!;
-      expect(result.priority, TrackSelectionPriority.serverSelected);
-      expect(result.track.language, 'fre');
-    });
-
-    group('Jellyfin direct play (issue #1696)', () {
-      // JellyfinClient strips sidecar identity from rows it did not fetch, so
-      // a direct-played embedded stream reaches selection as a plain row.
+    group('direct play with plain source rows (issue #1696)', () {
+      // A direct-played embedded stream can reach selection as a plain row
+      // with no sidecar identity.
       MediaSourceInfo directPlayInfo() => _info(
         defaultSubtitleStreamIndex: 3,
         subs: [
@@ -691,7 +656,7 @@ void main() {
 
       test('applies the server default instead of waiting for a sidecar', () {
         final result = _svc(
-          metadata: _meta(backend: MediaBackend.jellyfin),
+          metadata: _meta(backend: MediaBackend.silo),
           info: directPlayInfo(),
         ).selectSubtitleTrack(nativeTracks, null, null);
 
@@ -702,7 +667,7 @@ void main() {
       test('resolves a source preference carried over from the open', () {
         final result =
             _svc(
-              metadata: _meta(backend: MediaBackend.jellyfin),
+              metadata: _meta(backend: MediaBackend.silo),
               info: directPlayInfo(),
             ).selectSubtitleTrack(
               nativeTracks,
@@ -721,7 +686,7 @@ void main() {
         // the unresolvable preference must fall through, not defer forever.
         final result =
             _svc(
-              metadata: _meta(backend: MediaBackend.jellyfin),
+              metadata: _meta(backend: MediaBackend.silo),
               info: directPlayInfo(),
             ).selectSubtitleTrack(
               nativeTracks,
@@ -747,7 +712,7 @@ void main() {
         );
         final arrivedTracks = [_sub('sw', lang: 'swe', codec: 'srt', isDefault: true, isExternal: true)];
         final service = _svc(
-          metadata: _meta(backend: MediaBackend.jellyfin),
+          metadata: _meta(backend: MediaBackend.silo),
           info: info,
         );
 
@@ -759,7 +724,7 @@ void main() {
           language: 'eng',
           codec: 'srt',
           isExternal: true,
-          uri: 'https://jf.example.com/Subtitles/3?api_key=tok',
+          uri: 'https://silo.example.com/Subtitles/3?token=tok',
         );
         final resolved = service.selectSubtitleTrack([...arrivedTracks, selectedNative], null, null);
         expect(resolved?.priority, TrackSelectionPriority.serverSelected);
@@ -779,7 +744,7 @@ void main() {
         );
         final nativeTracks = [_sub('1', lang: 'eng', codec: 'srt', isDefault: true)];
         final service = _svc(
-          metadata: _meta(backend: MediaBackend.jellyfin),
+          metadata: _meta(backend: MediaBackend.silo),
           info: info,
         );
         final preferred = SubtitlePreference.track(_sub('source:3', lang: 'eng', codec: 'srt'));
@@ -796,7 +761,7 @@ void main() {
           subs: [_plexSub(3, index: 3, languageCode: 'eng', codec: 'srt', key: '/Subtitles/3')],
         );
         final service = _svc(
-          metadata: _meta(backend: MediaBackend.jellyfin),
+          metadata: _meta(backend: MediaBackend.silo),
           info: info,
         );
 
@@ -808,28 +773,11 @@ void main() {
       });
     });
 
-    test('Jellyfin explicit DefaultSubtitleStreamIndex=-1 forces subtitles off', () {
-      final tracks = [_sub('1', lang: 'eng', isDefault: true), _sub('2', lang: 'fre')];
-      final info = _info(
-        defaultSubtitleStreamIndex: -1,
-        subs: [
-          _plexSub(10, language: 'eng'),
-          _plexSub(11, language: 'fre'),
-        ],
-      );
-      final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        info: info,
-      ).selectSubtitleTrack(tracks, null, null)!;
-      expect(result.priority, TrackSelectionPriority.serverSelected);
-      expect(result.track.id, 'no');
-    });
-
-    test('Jellyfin SubtitleMode.None forces subtitles off', () {
+    test('Silo SubtitleMode.None forces subtitles off', () {
       final tracks = [_sub('1', lang: 'eng', isDefault: true)];
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.none),
+        metadata: _meta(backend: MediaBackend.silo),
+        profile: _subtitleModeProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.none),
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, 'no');
@@ -859,77 +807,77 @@ void main() {
       expect(noDefault.priority, TrackSelectionPriority.off);
     });
 
-    test('Jellyfin SubtitleMode.OnlyForced selects matching forced subtitle', () {
+    test('Silo SubtitleMode.OnlyForced selects matching forced subtitle', () {
       final tracks = [
         _sub('1', lang: 'eng'),
         _sub('2', lang: 'eng', isForced: true),
         _sub('3', lang: 'jpn', isForced: true),
       ];
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
+        metadata: _meta(backend: MediaBackend.silo),
+        profile: _subtitleModeProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, '2');
     });
 
-    test('Jellyfin SubtitleMode.OnlyForced honors a title-only forced subtitle (#1716)', () {
+    test('Silo SubtitleMode.OnlyForced honors a title-only forced subtitle (#1716)', () {
       final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'eng', title: 'English Forced')];
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
+        metadata: _meta(backend: MediaBackend.silo),
+        profile: _subtitleModeProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, '2');
     });
 
-    test('Jellyfin SubtitleMode.OnlyForced turns off when no forced subtitle exists', () {
+    test('Silo SubtitleMode.OnlyForced turns off when no forced subtitle exists', () {
       final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'jpn')];
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
+        metadata: _meta(backend: MediaBackend.silo),
+        profile: _subtitleModeProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, 'no');
     });
 
-    test('Jellyfin SubtitleMode.Always selects preferred subtitle language', () {
+    test('Silo SubtitleMode.Always selects preferred subtitle language', () {
       final tracks = [_sub('1', lang: 'jpn'), _sub('2', lang: 'eng')];
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.always),
+        metadata: _meta(backend: MediaBackend.silo),
+        profile: _subtitleModeProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.always),
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, '2');
     });
 
-    test('Jellyfin SubtitleMode.Always: est subtitle does not prefix-match preference es', () {
+    test('Silo SubtitleMode.Always: est subtitle does not prefix-match preference es', () {
       // Regression: same startsWith matcher served subtitles, so an `est`
       // row ahead of `spa` hijacked a Spanish (`es`) subtitle preference.
       final tracks = [_sub('1', lang: 'est'), _sub('2', lang: 'spa')];
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        profile: _jellyfinProfile(defaultSubtitleLanguage: 'es', subtitleMode: SubtitlePlaybackMode.always),
+        metadata: _meta(backend: MediaBackend.silo),
+        profile: _subtitleModeProfile(defaultSubtitleLanguage: 'es', subtitleMode: SubtitlePlaybackMode.always),
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, '2');
     });
 
-    test('Jellyfin SubtitleMode.Always falls back to default then first subtitle', () {
+    test('Silo SubtitleMode.Always falls back to default then first subtitle', () {
       final tracks = [_sub('1', lang: 'jpn'), _sub('2', lang: 'fre', isDefault: true)];
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.always),
+        metadata: _meta(backend: MediaBackend.silo),
+        profile: _subtitleModeProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.always),
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, '2');
     });
 
-    test('Jellyfin SubtitleMode.Smart uses forced subtitle when audio matches preferred language', () {
+    test('Silo SubtitleMode.Smart uses forced subtitle when audio matches preferred language', () {
       final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'eng', isForced: true)];
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        profile: _jellyfinProfile(
+        metadata: _meta(backend: MediaBackend.silo),
+        profile: _subtitleModeProfile(
           defaultAudioLanguage: 'eng',
           defaultSubtitleLanguage: 'eng',
           subtitleMode: SubtitlePlaybackMode.smart,
@@ -939,11 +887,11 @@ void main() {
       expect(result.track.id, '2');
     });
 
-    test('Jellyfin SubtitleMode.Smart uses preferred subtitle when audio differs', () {
+    test('Silo SubtitleMode.Smart uses preferred subtitle when audio differs', () {
       final tracks = [_sub('1', lang: 'jpn'), _sub('2', lang: 'eng')];
       final result = _svc(
-        metadata: _meta(backend: MediaBackend.jellyfin),
-        profile: _jellyfinProfile(
+        metadata: _meta(backend: MediaBackend.silo),
+        profile: _subtitleModeProfile(
           defaultAudioLanguage: 'eng',
           defaultSubtitleLanguage: 'eng',
           subtitleMode: SubtitlePlaybackMode.smart,

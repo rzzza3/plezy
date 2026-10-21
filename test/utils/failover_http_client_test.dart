@@ -10,11 +10,9 @@ import 'package:plezy/utils/failover_http_client.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
 
-/// Pins the shared failover semantics both backends now ride on (see the
-/// class doc): single-step cascades for GETs (and opted-in replay-safe
-/// POSTs), generation stamping, two-phase persistence, and exhaustion
-/// behavior. Backend-level coverage lives in
-/// jellyfin_client_failures_test.dart's failover group.
+/// Pins the shared failover semantics (see the class doc): single-step
+/// cascades for GETs (and opted-in replay-safe POSTs), generation stamping,
+/// two-phase persistence, and exhaustion behavior.
 void main() {
   setUp(() {
     MemoryLogOutput.clearLogs();

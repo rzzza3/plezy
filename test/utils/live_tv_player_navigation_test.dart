@@ -137,7 +137,7 @@ class _TestClient implements MediaServerClient {
   String? get serverName => 'Test server';
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerCapabilities get capabilities => const ServerCapabilities(liveTv: true);

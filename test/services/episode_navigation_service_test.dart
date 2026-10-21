@@ -17,21 +17,21 @@ import '../test_helpers/multi_server_fixtures.dart';
 MediaItem _meta(String id, {String? title}) =>
     testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
 
-MediaItem _jfEpisode(String id, {required String seriesId, ServerId? serverId}) => testMediaItem(
+MediaItem _siloEpisode(String id, {required String seriesId, ServerId? serverId}) => testMediaItem(
   id: id,
-  backend: MediaBackend.jellyfin,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode $id',
-  serverId: serverId ?? ServerId('srv-jf'),
+  serverId: serverId ?? ServerId('srv-silo'),
   grandparentId: seriesId,
 );
 
-MediaItem _jfMovie(String id) => testMediaItem(
+MediaItem _siloMovie(String id) => testMediaItem(
   id: id,
-  backend: MediaBackend.jellyfin,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: 'Movie $id',
-  serverId: ServerId('srv-jf'),
+  serverId: ServerId('srv-silo'),
 );
 
 PlexMediaItem _plexMovie(String id, int playQueueItemId) =>
@@ -52,9 +52,9 @@ MediaItem _plexEpisode(String id, {required String seriesId, int? viewCount}) =>
 class _RecordingClient implements MediaServerClient {
   _RecordingClient({
     required this.seriesEpisodes,
-    this.clientBackend = MediaBackend.jellyfin,
+    this.clientBackend = MediaBackend.silo,
     this.fetchError,
-    String serverId = 'srv-jf',
+    String serverId = 'srv-silo',
   }) : serverId = ServerId(serverId);
 
   @override
@@ -125,7 +125,7 @@ void main() {
             ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
             ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
           ],
-          child: _ProbeWidget(metadata: _jfMovie('42'), onResult: (r) => result = r),
+          child: _ProbeWidget(metadata: _siloMovie('42'), onResult: (r) => result = r),
         ),
       );
       await tester.pump();
@@ -140,9 +140,9 @@ void main() {
     });
 
     testWidgets('preserves adjacency for a movie in an active local queue', (tester) async {
-      final previous = _jfMovie('movie-1');
-      final current = _jfMovie('movie-2');
-      final next = _jfMovie('movie-3');
+      final previous = _siloMovie('movie-1');
+      final current = _siloMovie('movie-2');
+      final next = _siloMovie('movie-3');
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
@@ -181,9 +181,9 @@ void main() {
     });
 
     testWidgets('preserves a local movie collection queue for a current-item clone', (tester) async {
-      final previous = _jfMovie('movie-1');
-      final storedCurrent = _jfMovie('movie-2');
-      final next = _jfMovie('movie-3');
+      final previous = _siloMovie('movie-1');
+      final storedCurrent = _siloMovie('movie-2');
+      final next = _siloMovie('movie-3');
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
@@ -282,9 +282,9 @@ void main() {
     });
 
     testWidgets('does not use an unrelated active queue for a standalone movie', (tester) async {
-      final queuedPrevious = _jfMovie('queued-1');
-      final queuedCurrent = _jfMovie('queued-2');
-      final unrelated = _jfMovie('unrelated');
+      final queuedPrevious = _siloMovie('queued-1');
+      final queuedCurrent = _siloMovie('queued-2');
+      final unrelated = _siloMovie('unrelated');
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
@@ -335,14 +335,14 @@ void main() {
     });
 
     testWidgets('preserves an active playlist/collection queue against series rebuild', (tester) async {
-      // Reproduces the bug where playing an episode from a Jellyfin playlist
+      // Reproduces the bug where playing an episode from a playlist
       // had next/prev walking the show's episodes instead of the playlist —
       // [_ensureLocalEpisodeQueue] used to overwrite the launcher-set queue
       // unconditionally. The guard now bails out when contextKey is set to
       // anything other than the seriesId.
-      final ep1 = _jfEpisode('ep1', seriesId: 'series-A');
-      final ep2 = _jfEpisode('ep2', seriesId: 'series-B');
-      final ep3 = _jfEpisode('ep3', seriesId: 'series-A');
+      final ep1 = _siloEpisode('ep1', seriesId: 'series-A');
+      final ep2 = _siloEpisode('ep2', seriesId: 'series-B');
+      final ep3 = _siloEpisode('ep3', seriesId: 'series-A');
 
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
@@ -356,9 +356,9 @@ void main() {
       // list and prev/next would point at sibling-X / sibling-Y.
       final client = _RecordingClient(
         seriesEpisodes: [
-          _jfEpisode('sibling-X', seriesId: 'series-B'),
+          _siloEpisode('sibling-X', seriesId: 'series-B'),
           ep2,
-          _jfEpisode('sibling-Y', seriesId: 'series-B'),
+          _siloEpisode('sibling-Y', seriesId: 'series-B'),
         ],
       );
       final serverProvider = testMultiServer(clients: [client]).provider;
@@ -481,16 +481,16 @@ void main() {
   });
 
   group('loadAdjacentEpisodes with a shuffled same-series queue', () {
-    // Mirrors JellyfinSequentialLauncher.launchShuffledShow: the full series
-    // episode list, locally shuffled, published with contextKey == seriesId.
+    // A shuffled show launch: the full series episode list, locally
+    // shuffled, published with contextKey == seriesId.
     // The regression under test: _ensureLocalEpisodeQueue used to rebuild a
     // sequential series queue whenever contextKey == seriesId, so shuffle
     // held for exactly one episode (#1466).
-    final ep1 = _jfEpisode('ep1', seriesId: 'series-A');
-    final ep2 = _jfEpisode('ep2', seriesId: 'series-A');
-    final ep3 = _jfEpisode('ep3', seriesId: 'series-A');
-    final ep4 = _jfEpisode('ep4', seriesId: 'series-A');
-    final ep5 = _jfEpisode('ep5', seriesId: 'series-A');
+    final ep1 = _siloEpisode('ep1', seriesId: 'series-A');
+    final ep2 = _siloEpisode('ep2', seriesId: 'series-A');
+    final ep3 = _siloEpisode('ep3', seriesId: 'series-A');
+    final ep4 = _siloEpisode('ep4', seriesId: 'series-A');
+    final ep5 = _siloEpisode('ep5', seriesId: 'series-A');
     final shuffledOrder = [ep3, ep1, ep5, ep2, ep4];
     const shuffledIds = ['ep3', 'ep1', 'ep5', 'ep2', 'ep4'];
 

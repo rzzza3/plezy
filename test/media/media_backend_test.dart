@@ -24,7 +24,7 @@ void main() {
       expect(MediaBackend.fromString('Plex'), isNull);
     });
 
-    test('a missing id is the pre-Jellyfin Plex shape', () {
+    test('a missing id is the legacy Plex shape', () {
       expect(MediaBackend.fromString(null), MediaBackend.plex);
     });
   });

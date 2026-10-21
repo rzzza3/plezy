@@ -70,7 +70,7 @@ void main() {
         player: player,
         trackControlsState: const TrackControlsState(
           ratingKey: '123',
-          serverId: 'jellyfin-server',
+          serverId: 'silo-server',
           subtitleSearchSupported: false,
         ),
       );
@@ -694,7 +694,7 @@ void main() {
       expect(state.hasSubtitleControls(const Tracks()), isTrue);
     });
 
-    test('does not misclassify a Jellyfin external-delivery embedded row as a sidecar', () {
+    test('does not misclassify an external-delivery embedded row as a sidecar', () {
       final sourceTrack = MediaSubtitleTrack(id: 1, usesExternalDelivery: true, selected: false, forced: false);
       final state = TrackControlsState(sourceSubtitleTracks: [sourceTrack], onSwitchSubtitle: (_) async {});
 

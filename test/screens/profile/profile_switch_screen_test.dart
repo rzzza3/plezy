@@ -75,35 +75,27 @@ void main() {
     expect(tester.getTopLeft(find.text('Kids')).dy, lessThan(tester.getTopLeft(find.text('Owner')).dy));
   });
 
-  testWidgets('passes derived Jellyfin avatar URLs only to linked profile tiles', (tester) async {
+  testWidgets('passes derived Plex Home avatar URLs only to linked profile tiles', (tester) async {
     final linkedProfile = Profile.local(id: 'local-linked', displayName: 'Linked', createdAt: DateTime(2026, 1, 1));
     final unlinkedProfile = Profile.local(
       id: 'local-unlinked',
       displayName: 'Unlinked',
       createdAt: DateTime(2026, 1, 2),
     );
-    final jellyfin = JellyfinConnection(
-      id: 'jf-machine/jf-user',
-      baseUrl: 'https://jellyfin.example',
-      serverName: 'Jellyfin',
-      serverMachineId: 'jf-machine',
-      userId: 'jf-user',
-      userName: 'Linked',
-      accessToken: 'secret-token',
-      deviceId: 'device-1',
-      primaryImageTag: 'primary-tag',
-      createdAt: DateTime(2025, 12, 1),
-    );
-    final link = ProfileConnection(
-      profileId: linkedProfile.id,
-      connectionId: jellyfin.id,
-      userIdentifier: jellyfin.userId,
-    );
+    const thumb = 'https://plex.tv/users/linked-uuid/avatar?c=1';
     await _pumpPicker(
       tester,
       profiles: [linkedProfile, unlinkedProfile],
-      connections: [jellyfin],
-      profileConnections: [link],
+      connections: [_plexAccount('Owner')],
+      profileConnections: [
+        ProfileConnection(
+          profileId: linkedProfile.id,
+          connectionId: 'plex-account',
+          userToken: 'borrowed-token',
+          userIdentifier: 'linked-uuid',
+        ),
+      ],
+      homeUsers: [_homeUser('linked-uuid', 'Linked', thumb: thumb)],
     );
 
     final linkedAvatar = tester.widget<ProfileAvatar>(
@@ -113,10 +105,7 @@ void main() {
       find.byWidgetPredicate((widget) => widget is ProfileAvatar && widget.profile?.id == unlinkedProfile.id),
     );
     expect(linkedAvatar.avatarUrl, isNotNull);
-    expect(
-      linkedAvatar.avatarUrl,
-      'https://jellyfin.example/Users/jf-user/Images/Primary?tag=primary-tag&maxWidth=240&maxHeight=240',
-    );
+    expect(linkedAvatar.avatarUrl, thumb);
     expect(unlinkedAvatar.avatarUrl, isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -565,12 +554,12 @@ PlexAccountConnection _plexAccount(String accountLabel) {
   );
 }
 
-PlexHomeUser _homeUser(String uuid, String title) {
+PlexHomeUser _homeUser(String uuid, String title, {String thumb = ''}) {
   return PlexHomeUser(
     id: 1,
     uuid: uuid,
     title: title,
-    thumb: '',
+    thumb: thumb,
     hasPassword: false,
     restricted: false,
     updatedAt: null,

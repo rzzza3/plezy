@@ -24,15 +24,11 @@ import 'package:shared_preferences_platform_interface/types.dart';
 
 import '../test_helpers/prefs.dart';
 
-JellyfinConnection _connection(String id) => JellyfinConnection(
+PlexAccountConnection _connection(String id) => PlexAccountConnection(
   id: id,
-  baseUrl: 'https://media.invalid/$id',
-  serverName: 'Server $id',
-  serverMachineId: id,
-  userId: 'user-$id',
-  userName: 'User $id',
-  accessToken: 'protected-connection-canary-$id',
-  deviceId: 'device-$id',
+  accountToken: 'protected-connection-canary-$id',
+  clientIdentifier: 'device-$id',
+  accountLabel: 'Account $id',
   createdAt: DateTime.fromMillisecondsSinceEpoch(1000),
 );
 
@@ -971,15 +967,11 @@ void main() {
     final store = TvosDatabaseRecoveryStore(prefs, isTvos: true, preferenceImageByteCeiling: 1200);
     final first = await open(store: store);
     final canary = List.filled(3000, 'PROTECTED-SIZE-CANARY').join();
-    final huge = JellyfinConnection(
+    final huge = PlexAccountConnection(
       id: 'huge',
-      baseUrl: 'https://media.invalid',
-      serverName: canary,
-      serverMachineId: 'huge',
-      userId: 'user',
-      userName: 'user',
-      accessToken: canary,
-      deviceId: 'device',
+      accountToken: canary,
+      clientIdentifier: 'device',
+      accountLabel: canary,
       createdAt: DateTime.fromMillisecondsSinceEpoch(1),
     );
 

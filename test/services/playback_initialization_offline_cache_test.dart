@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 import 'dart:io';
 
@@ -15,8 +14,6 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/services/cached_playback_metadata_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
-import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_initialization_service.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_mappers.dart';
@@ -48,7 +45,6 @@ void main() {
     PathProviderPlatform.instance = FakePathProvider(tmpRoot);
     db = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(db);
-    JellyfinApiCache.initialize(db);
   });
 
   tearDown(() async {
@@ -375,42 +371,6 @@ void main() {
     );
   });
 
-  test('pure-offline Jellyfin cache works without a connection row', () async {
-    await _insertDownloaded(
-      db,
-      serverId: ServerId('jf-machine'),
-      clientScopeId: 'jf-machine/user-a',
-      ratingKey: 'item-1',
-      videoFilePath: 'content://offline/jf-item-1',
-    );
-    await db
-        .into(db.apiCache)
-        .insert(
-          ApiCacheCompanion.insert(
-            cacheKey: 'jf-machine/user-a:/Users/user-a/Items/item-1',
-            data: jsonEncode(_jellyfinItemRaw()),
-            pinned: const Value(true),
-          ),
-        );
-
-    final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      PlaybackInitializationOptions(
-        metadata: testMediaItem(
-          id: 'item-1',
-          backend: MediaBackend.jellyfin,
-          kind: MediaKind.movie,
-          serverId: ServerId('jf-machine'),
-        ),
-        selectedMediaIndex: 0,
-      ),
-      preferOffline: true,
-    );
-
-    expect(result.videoUrl, 'content://offline/jf-item-1');
-    expect(result.mediaInfo?.audioTracks.single.languageCode, 'eng');
-    expect(result.mediaInfo?.chapters.single.title, 'Chapter 1');
-  });
-
   test('SAF offline playback discovers app-managed sidecar subtitles', () async {
     await _insertDownloaded(
       db,
@@ -495,64 +455,6 @@ void main() {
     expect(credits.startTimeOffset, 90000);
     expect(credits.endTimeOffset, 100000);
     expect(extras.markers.any((m) => m.id == 10 || m.id == 11), isFalse);
-  });
-
-  test('Jellyfin extras parser tolerates non-string chapter names', () {
-    final extras = jellyfinPlaybackExtrasFromRaw({
-      'Chapters': [
-        {'Name': 123, 'StartPositionTicks': 10000000},
-      ],
-    }, 'item-1');
-
-    expect(extras.chapters.single.title, '123');
-  });
-
-  test('cache-only Jellyfin playback extras uses chapter fallback patterns', () async {
-    await JellyfinApiCache.instance.put(ServerId('srv-1/user-1'), '/Users/user-1/Items/item-1', {
-      'Id': 'item-1',
-      'Type': 'Episode',
-      'Name': 'Episode',
-      'RunTimeTicks': 1200000000,
-      'Chapters': [
-        {'Name': 'OP', 'StartPositionTicks': 100000000},
-        {'Name': 'Episode', 'StartPositionTicks': 450000000},
-        {'Name': 'ED', 'StartPositionTicks': 900000000},
-      ],
-    });
-
-    final extras = await CachedPlaybackMetadataService.fetchPlaybackExtras(
-      backend: MediaBackend.jellyfin,
-      cacheServerId: 'srv-1/user-1',
-      itemId: 'item-1',
-    );
-
-    expect(extras?.markers.map((m) => m.type), ['intro', 'credits']);
-    expect(extras?.markers.last.endTimeOffset, 120000);
-  });
-
-  test('cache-only Jellyfin playback extras uses cached native media segments', () async {
-    await JellyfinApiCache.instance.put(ServerId('srv-1/user-1'), '/Users/user-1/Items/item-1', {
-      'Id': 'item-1',
-      'Type': 'Episode',
-      'Name': 'Episode',
-      'Chapters': [],
-    });
-    await JellyfinApiCache.instance.put(ServerId('srv-1/user-1'), '/MediaSegments/item-1', {
-      'Items': [
-        {'Type': 'Intro', 'StartTicks': 50000000, 'EndTicks': 450000000},
-        {'Type': 'Outro', 'StartTicks': 900000000, 'EndTicks': 1000000000},
-      ],
-    });
-
-    final extras = await CachedPlaybackMetadataService.fetchPlaybackExtras(
-      backend: MediaBackend.jellyfin,
-      cacheServerId: 'srv-1/user-1',
-      itemId: 'item-1',
-    );
-
-    expect(extras?.markers.map((m) => m.type), ['intro', 'credits']);
-    expect(extras?.markers.first.startTimeOffset, 5000);
-    expect(extras?.markers.last.endTimeOffset, 100000);
   });
 }
 
@@ -660,25 +562,6 @@ Map<String, dynamic> _plexMediaWithAudio(String language, String languageCode) {
       {
         'Stream': [
           {'id': 10, 'streamType': 2, 'index': 1, 'language': language, 'languageCode': languageCode},
-        ],
-      },
-    ],
-  };
-}
-
-Map<String, dynamic> _jellyfinItemRaw() {
-  return {
-    'Id': 'item-1',
-    'Type': 'Movie',
-    'Name': 'Jellyfin Movie',
-    'Chapters': [
-      {'Name': 'Chapter 1', 'StartPositionTicks': 0},
-    ],
-    'MediaSources': [
-      {
-        'Id': 'src-1',
-        'MediaStreams': [
-          {'Type': 'Audio', 'Index': 1, 'Language': 'eng', 'DisplayLanguage': 'English', 'IsDefault': true},
         ],
       },
     ],

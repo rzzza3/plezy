@@ -608,7 +608,7 @@ class _LiveMediaServerClient implements MediaServerClient {
   String? get serverName => 'Server 1';
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.plex;
 
   @override
   ServerCapabilities get capabilities => const ServerCapabilities(liveTv: true);
@@ -620,10 +620,10 @@ class _LiveMediaServerClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// Records which channel a zap tunes. Declining the tune (Jellyfin's
-/// session-less negotiation returns null) keeps the test on the routing
-/// decision instead of standing up a replacement stream. [firstStart] holds
-/// the first tune open for as long as a test needs it pending.
+/// Records which channel a zap tunes. Declining the tune (returning no
+/// session) keeps the test on the routing decision instead of standing up a
+/// replacement stream. [firstStart] holds the first tune open for as long as
+/// a test needs it pending.
 class _RecordingLiveTvSupport implements LiveTvSupport {
   _RecordingLiveTvSupport({this.firstStart});
 

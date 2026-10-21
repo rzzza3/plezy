@@ -14,7 +14,7 @@ void main() {
       expect(hub.usesContinueWatchingAction, isTrue);
     });
 
-    test('recognizes Jellyfin continue hubs as continue watching rows', () {
+    test('recognizes dotted continue hub ids as continue watching rows', () {
       final hub = _hub(id: 'library.lib-99.continue');
       final homeHub = _hub(id: 'home.continue');
 

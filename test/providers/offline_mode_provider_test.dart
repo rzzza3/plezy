@@ -1,12 +1,14 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/providers/offline_mode_provider.dart';
-import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
@@ -104,20 +106,23 @@ void main() {
       ('access-denied', (m, id) => m.debugMarkAccessDeniedForTesting(id)),
     ]) {
       test('$label-only visible servers do not collapse to generic offline', () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+        PlexApiCache.initialize(db);
         final manager = MultiServerManager();
-        final client = JellyfinClient.forTesting(
-          connection: _jellyfinConnection(),
+        final client = testPlexClient(
+          serverId: ServerId('refused-server'),
           httpClient: MockClient((_) async => http.Response('', 401)),
         );
-        manager.debugRegisterJellyfinClientForTesting(client, online: false);
+        manager.debugRegisterClientForTesting(client, online: false);
         final multi = testMultiServerProvider(manager);
         final p = OfflineModeProvider(manager, multiServerProvider: multi);
         await p.initialize();
 
-        mark(manager, ServerId('jf-machine'));
+        mark(manager, ServerId('refused-server'));
         await Future<void>.delayed(Duration.zero);
 
-        expect(multi.refusedServerIds, contains('jf-machine'));
+        expect(multi.refusedServerIds, contains('refused-server'));
         expect(p.isOffline, isFalse);
 
         p.dispose();
@@ -160,7 +165,7 @@ void main() {
       var notifications = 0;
       p.addListener(() => notifications++);
 
-      multi.setExpectedVisibleServerIds({'jf-machine'});
+      multi.setExpectedVisibleServerIds({'expected-server'});
       await Future<void>.delayed(Duration.zero);
 
       expect(p.isOffline, isFalse);
@@ -333,13 +338,3 @@ PlexAccountConnection _plexConnection() {
     createdAt: DateTime.fromMillisecondsSinceEpoch(0),
   );
 }
-
-JellyfinConnection _jellyfinConnection() => testJellyfinConnection(
-  machineId: 'jf-machine',
-  userId: 'user-a',
-  baseUrl: 'https://jellyfin.example',
-  serverName: 'Jellyfin',
-  userName: 'User A',
-  deviceId: 'device',
-  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-);

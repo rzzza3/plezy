@@ -5,7 +5,6 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_user_profile.dart';
 import 'package:plezy/media/media_source_info.dart';
-import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_track_preview.dart';
 import 'package:plezy/services/plex_mappers.dart';
 import 'package:plezy/services/plex_playback_mapper.dart';
@@ -82,21 +81,6 @@ void main() {
       },
     ],
   })!;
-
-  const jellyfinEpisode = MediaItem.jellyfin(id: 'episode_1', kind: MediaKind.episode, title: 'Pilot');
-
-  /// A Jellyfin `MediaSource` with one audio row and one full English
-  /// subtitle the container flags default; [defaultSubtitleStreamIndex] is
-  /// the server's answer for this user — absent when the key is omitted.
-  MediaSourceInfo jellyfinSource({Object? defaultSubtitleStreamIndex, bool withDefaultIndexKey = true}) =>
-      jellyfinMediaSourceToMediaSourceInfo({
-        'Id': 'src-1',
-        if (withDefaultIndexKey) 'DefaultSubtitleStreamIndex': defaultSubtitleStreamIndex,
-        'MediaStreams': [
-          {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'Channels': 2, 'IsDefault': true},
-          {'Index': 2, 'Type': 'Subtitle', 'Codec': 'ass', 'Language': 'eng', 'Title': 'Full', 'IsDefault': true},
-        ],
-      });
 
   test('follows the server-selected audio and keeps subtitles off when Plex selected none', () {
     final preview = previewPlaybackTracks(plexEpisode, plexSource([english, japanese, englishForced, englishFull]))!;
@@ -188,50 +172,8 @@ void main() {
     },
   );
 
-  test('MediaBrowser index and explicit selection outrank an independent tolerant container default', () {
-    final source = jellyfinMediaSourceToMediaSourceInfo({
-      'Id': 'source',
-      'DefaultAudioStreamIndex': '1',
-      'MediaStreams': [
-        {'Type': 'Audio', 'Index': 1, 'Language': 'eng', 'IsDefault': '0'},
-        {'Type': 'Audio', 'Index': 2, 'Language': 'jpn', 'IsDefault': '1'},
-      ],
-    });
-    expect(previewPlaybackTracks(jellyfinEpisode, source)!.audio?.id, 1);
-    final selected = source.copyWith(
-      audioTracks: [for (final track in source.audioTracks) track.withSelected(track.id == 2)],
-    );
-    expect(previewPlaybackTracks(jellyfinEpisode, selected)!.audio?.id, 2);
-    final cleared = selected.copyWith(
-      audioTracks: [for (final track in selected.audioTracks) track.withSelected(false)],
-    );
-    final descriptors = [
-      for (final track in cleared.audioTracks)
-        AudioTrack(id: '${track.id}', language: track.languageCode, isDefault: track.isDefault),
-    ];
-    // No source/server tier: the retained container flag still wins fallback.
-    expect(TrackSelectionService(metadata: jellyfinEpisode).selectAudioTrack(descriptors, null)!.track.language, 'jpn');
-  });
-
-  test('Jellyfin explicit off (DefaultSubtitleStreamIndex -1) beats a container-default subtitle', () {
-    final preview = previewPlaybackTracks(jellyfinEpisode, jellyfinSource(defaultSubtitleStreamIndex: -1))!;
-
-    expect(preview.audio?.id, 1);
-    expect(preview.subtitle, isNull);
-  });
-
-  test('Jellyfin with no default subtitle index starts off despite a container-default subtitle (#1779)', () {
-    expect(previewPlaybackTracks(jellyfinEpisode, jellyfinSource(withDefaultIndexKey: false))!.subtitle, isNull);
-    expect(previewPlaybackTracks(jellyfinEpisode, jellyfinSource(defaultSubtitleStreamIndex: null))!.subtitle, isNull);
-  });
-
-  test('the Jellyfin default subtitle index is the prediction', () {
-    expect(previewPlaybackTracks(jellyfinEpisode, jellyfinSource(defaultSubtitleStreamIndex: 2))!.subtitle?.id, 2);
-  });
-
   test('a source without track rows yields no preview', () {
     // What the cache holds for a file the server has not probed.
     expect(previewPlaybackTracks(plexEpisode, plexSource(const [])), isNull);
-    expect(previewPlaybackTracks(jellyfinEpisode, jellyfinMediaSourceToMediaSourceInfo({'Id': 'x'})), isNull);
   });
 }

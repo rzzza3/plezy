@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focusable_button.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -13,9 +15,9 @@ import 'package:plezy/media/media_library.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
-import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_filter_chip.dart';
@@ -28,7 +30,7 @@ import '../../test_helpers/prefs.dart';
 
 final _musicLibrary = MediaLibrary(
   id: 'music-library',
-  backend: MediaBackend.jellyfin,
+  backend: MediaBackend.plex,
   title: 'Music',
   kind: MediaKind.artist,
   serverId: ServerId('music-server'),
@@ -127,49 +129,51 @@ Future<void> _pumpBrowseTab(WidgetTester tester, _MusicBrowseHarness harness, {M
 
 class _MusicBrowseHarness {
   final bool failFirstBrowse;
+  final AppDatabase database;
   var browseRequestCount = 0;
   var requestCount = 0;
-  late final JellyfinClient client;
   late final MultiServerManager manager;
   late final MultiServerProvider provider;
 
-  _MusicBrowseHarness({this.failFirstBrowse = false}) {
-    client = JellyfinClient.forTesting(
-      connection: testJellyfinConnection(machineId: 'music-server'),
+  _MusicBrowseHarness({this.failFirstBrowse = false}) : database = AppDatabase.forTesting(NativeDatabase.memory()) {
+    PlexApiCache.initialize(database);
+    final client = testPlexClient(
+      serverId: ServerId('music-server'),
       httpClient: MockClient((request) async {
         requestCount++;
-        if (request.url.path == '/Items/Filters') {
-          return http.Response(
-            jsonEncode({'Genres': const [], 'OfficialRatings': const [], 'Tags': const [], 'Years': const []}),
-            200,
-            headers: {'content-type': 'application/json'},
-          );
-        }
-        if (request.url.path == '/Artists/AlbumArtists') {
+        // Filter discovery reads the section endpoint with `includeMeta=1`;
+        // only the item reads count as browse requests.
+        if (request.url.path == '/library/sections/music-library/all' &&
+            request.url.queryParameters['includeMeta'] != '1') {
           browseRequestCount++;
           if (failFirstBrowse && browseRequestCount == 1) {
             return http.Response('gateway timeout', 504);
           }
           return http.Response(
             jsonEncode({
-              'Items': const [
-                {'Id': 'artist-1', 'Name': 'Artist One', 'Type': 'MusicArtist'},
-              ],
-              'TotalRecordCount': 1,
+              'MediaContainer': {
+                'size': 1,
+                'totalSize': 1,
+                'offset': 0,
+                'Metadata': const [
+                  {'ratingKey': 'artist-1', 'type': 'artist', 'title': 'Artist One'},
+                ],
+              },
             }),
             200,
             headers: {'content-type': 'application/json'},
           );
         }
-        return http.Response('not found', 404);
+        return http.Response('{}', 200, headers: {'content-type': 'application/json'});
       }),
     );
     manager = MultiServerManager()..debugRegisterClientForTesting(client);
     provider = testMultiServerProvider(manager);
   }
 
-  void dispose() {
+  Future<void> dispose() async {
     provider.dispose();
     manager.dispose();
+    await database.close();
   }
 }

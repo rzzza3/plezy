@@ -390,18 +390,18 @@ void main() {
       await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, totalCount: 1, items: [_item('a', 1)]), null);
     });
 
-    test('playQueueItemIdFor returns synthetic ids for Jellyfin local queue items', () {
+    test('playQueueItemIdFor returns synthetic ids for Silo local queue items', () {
       // Anchor: VideoPlayerScreen.initState and `_ensurePlayQueue` both gate
       // on `isItemInActiveQueue(meta)` (which delegates to `playQueueItemIdFor`)
-      // so a Jellyfin playlist queue survives entry into the player. If this
+      // so a Silo playlist queue survives entry into the player. If this
       // returns null for queue members, the player wipes the launcher-set
       // queue and prev/next walks the show instead of the playlist.
       final p = PlaybackStateProvider();
       addTearDown(p.dispose);
 
-      final ep1 = testMediaItem(id: 'ep1', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
-      final ep2 = testMediaItem(id: 'ep2', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
-      final outsider = testMediaItem(id: 'ep-other', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
+      final ep1 = testMediaItem(id: 'ep1', backend: MediaBackend.silo, kind: MediaKind.episode);
+      final ep2 = testMediaItem(id: 'ep2', backend: MediaBackend.silo, kind: MediaKind.episode);
+      final outsider = testMediaItem(id: 'ep-other', backend: MediaBackend.silo, kind: MediaKind.episode);
 
       p.setPlaybackFromLocalQueue(LocalPlayQueue(items: [ep1, ep2], currentIndex: 0), contextKey: 'playlist-X');
 

@@ -72,7 +72,7 @@ void main() {
     });
 
     test('a failed retry does not discard the recover-returned current session', () async {
-      // Jellyfin's recover() returns the receiver: the recovered object IS the
+      // A backend's recover() may return the receiver: the recovered object IS the
       // session the screen still holds. Discarding it would stop-report (and
       // terminally latch) the session playback keeps using and re-adopts on
       // the next retry.

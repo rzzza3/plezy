@@ -5,23 +5,12 @@ import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_avatar_source.dart';
 import 'package:plezy/profiles/profile_connection.dart';
 
-JellyfinConnection _jellyfin(
-  String id, {
-  required DateTime createdAt,
-  String? primaryImageTag,
-  String userId = 'jf-user',
-  String baseUrl = 'https://jelly.example',
-}) {
-  return JellyfinConnection(
-    id: id,
-    baseUrl: baseUrl,
-    serverName: 'Jelly',
-    serverMachineId: 'machine-$id',
-    userId: userId,
-    userName: 'Agent',
-    accessToken: 'secret-token',
-    deviceId: 'device-1',
-    primaryImageTag: primaryImageTag,
+SiloConnection _silo(String serverId, {required DateTime createdAt}) {
+  return SiloConnection(
+    origin: 'https://silo.example',
+    serverId: serverId,
+    serverName: 'Silo',
+    username: 'Agent',
     createdAt: createdAt,
   );
 }
@@ -51,7 +40,10 @@ PlexHomeUser _homeUser(String uuid, {String thumb = ''}) {
   );
 }
 
-ProfileConnection _link(String connectionId, {String profileId = 'local-1', String userIdentifier = 'jf-user'}) {
+/// One home user, `home-a`, carrying [thumb]: what a link to [_plex] borrows.
+List<PlexHomeUser> _avatarHome(String thumb) => [_homeUser('home-a', thumb: thumb)];
+
+ProfileConnection _link(String connectionId, {String profileId = 'local-1', String userIdentifier = 'home-a'}) {
   return ProfileConnection(profileId: profileId, connectionId: connectionId, userIdentifier: userIdentifier);
 }
 
@@ -75,32 +67,34 @@ String? _resolve({
 void main() {
   group('resolveProfileAvatarUrls', () {
     test('uses the picture of the oldest linked connection', () {
-      final older = _jellyfin('jf-older', createdAt: DateTime(2026, 1, 1), primaryImageTag: 'older-tag');
-      final newer = _jellyfin('jf-newer', createdAt: DateTime(2026, 6, 1), primaryImageTag: 'newer-tag');
+      final older = _plex('plex-older', createdAt: DateTime(2026, 1, 1));
+      final newer = _plex('plex-newer', createdAt: DateTime(2026, 6, 1));
 
       final url = _resolve(
         profiles: [_local()],
         // Deliberately newest-first: the registry stream has no ordering
         // guarantee, so resolution must sort rather than take the head.
         links: {
-          'local-1': [_link('jf-newer'), _link('jf-older')],
+          'local-1': [_link('plex-newer'), _link('plex-older')],
         },
-        connections: {'jf-older': older, 'jf-newer': newer},
+        connections: {'plex-older': older, 'plex-newer': newer},
+        plexHome: {'plex-older': _avatarHome('older-avatar'), 'plex-newer': _avatarHome('newer-avatar')},
       );
 
-      expect(url, contains('tag=older-tag'));
+      expect(url, 'older-avatar');
     });
 
     test('falls back to initials when the first connection has no picture', () {
-      final first = _jellyfin('jf-first', createdAt: DateTime(2026, 1, 1));
-      final second = _jellyfin('jf-second', createdAt: DateTime(2026, 6, 1), primaryImageTag: 'second-tag');
+      final first = _silo('silo-first', createdAt: DateTime(2026, 1, 1));
+      final second = _plex('plex-second', createdAt: DateTime(2026, 6, 1));
 
       final url = _resolve(
         profiles: [_local()],
         links: {
-          'local-1': [_link('jf-first'), _link('jf-second')],
+          'local-1': [_link(first.id), _link('plex-second')],
         },
-        connections: {'jf-first': first, 'jf-second': second},
+        connections: {first.id: first, 'plex-second': second},
+        plexHome: {'plex-second': _avatarHome('second-avatar')},
       );
 
       // "First wins" is literal: we do not skip ahead to a later connection
@@ -110,32 +104,34 @@ void main() {
 
     test('breaks a createdAt tie on connection id so the choice is stable', () {
       final sameInstant = DateTime(2026, 1, 1);
-      final b = _jellyfin('jf-b', createdAt: sameInstant, primaryImageTag: 'b-tag');
-      final a = _jellyfin('jf-a', createdAt: sameInstant, primaryImageTag: 'a-tag');
+      final b = _plex('plex-b', createdAt: sameInstant);
+      final a = _plex('plex-a', createdAt: sameInstant);
 
       final url = _resolve(
         profiles: [_local()],
         links: {
-          'local-1': [_link('jf-b'), _link('jf-a')],
+          'local-1': [_link('plex-b'), _link('plex-a')],
         },
-        connections: {'jf-b': b, 'jf-a': a},
+        connections: {'plex-b': b, 'plex-a': a},
+        plexHome: {'plex-b': _avatarHome('b-avatar'), 'plex-a': _avatarHome('a-avatar')},
       );
 
-      expect(url, contains('tag=a-tag'));
+      expect(url, 'a-avatar');
     });
 
     test('ignores links whose connection is gone, including for ordering', () {
-      final survivor = _jellyfin('jf-survivor', createdAt: DateTime(2026, 6, 1), primaryImageTag: 'survivor-tag');
+      final survivor = _plex('plex-survivor', createdAt: DateTime(2026, 6, 1));
 
       final url = _resolve(
         profiles: [_local()],
         links: {
-          'local-1': [_link('jf-removed'), _link('jf-survivor')],
+          'local-1': [_link('plex-removed'), _link('plex-survivor')],
         },
-        connections: {'jf-survivor': survivor},
+        connections: {'plex-survivor': survivor},
+        plexHome: {'plex-survivor': _avatarHome('survivor-avatar')},
       );
 
-      expect(url, contains('tag=survivor-tag'));
+      expect(url, 'survivor-avatar');
     });
 
     test('resolves a Plex link through the home user the link points at', () {
@@ -192,16 +188,16 @@ void main() {
       expect(url, isNull);
     });
 
-    test('mixed Jellyfin and Plex links still resolve by creation order', () {
+    test('mixed Silo and Plex links still resolve by creation order', () {
       final plexFirst = _plex('plex-1', createdAt: DateTime(2026, 1, 1));
-      final jellyfinSecond = _jellyfin('jf-1', createdAt: DateTime(2026, 6, 1), primaryImageTag: 'jf-tag');
+      final siloSecond = _silo('silo-1', createdAt: DateTime(2026, 6, 1));
 
       final url = _resolve(
         profiles: [_local()],
         links: {
-          'local-1': [_link('jf-1'), _link('plex-1', userIdentifier: 'home-a')],
+          'local-1': [_link(siloSecond.id), _link('plex-1', userIdentifier: 'home-a')],
         },
-        connections: {'plex-1': plexFirst, 'jf-1': jellyfinSecond},
+        connections: {'plex-1': plexFirst, siloSecond.id: siloSecond},
         plexHome: {
           'plex-1': [_homeUser('home-a', thumb: 'https://plex.tv/users/home-a/avatar')],
         },
@@ -215,14 +211,15 @@ void main() {
         connectionId: 'plex-1',
         homeUser: _homeUser('home-a', thumb: 'https://plex.tv/users/home-a/avatar'),
       );
-      final borrowed = _jellyfin('jf-1', createdAt: DateTime(2026, 1, 1), primaryImageTag: 'jf-tag');
+      final borrowed = _plex('plex-2', createdAt: DateTime(2026, 1, 1));
 
       final url = _resolve(
         profiles: [plexHomeProfile],
         links: {
-          plexHomeProfile.id: [_link('jf-1', profileId: plexHomeProfile.id)],
+          plexHomeProfile.id: [_link('plex-2', profileId: plexHomeProfile.id)],
         },
-        connections: {'jf-1': borrowed},
+        connections: {'plex-2': borrowed},
+        plexHome: {'plex-2': _avatarHome('borrowed-avatar')},
         profileId: plexHomeProfile.id,
       );
 
@@ -231,14 +228,15 @@ void main() {
 
     test('a Plex Home profile with no avatar keeps its initials rather than borrowing one', () {
       final plexHomeProfile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser('home-a'));
-      final borrowed = _jellyfin('jf-1', createdAt: DateTime(2026, 1, 1), primaryImageTag: 'jf-tag');
+      final borrowed = _plex('plex-2', createdAt: DateTime(2026, 1, 1));
 
       final url = _resolve(
         profiles: [plexHomeProfile],
         links: {
-          plexHomeProfile.id: [_link('jf-1', profileId: plexHomeProfile.id)],
+          plexHomeProfile.id: [_link('plex-2', profileId: plexHomeProfile.id)],
         },
-        connections: {'jf-1': borrowed},
+        connections: {'plex-2': borrowed},
+        plexHome: {'plex-2': _avatarHome('borrowed-avatar')},
         profileId: plexHomeProfile.id,
       );
 

@@ -2,9 +2,6 @@ import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
-import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -12,16 +9,16 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/playback_report_metadata.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
-import 'package:plezy/services/jellyfin_client.dart';
+import 'package:plezy/services/api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_mode_source.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/silo_api_cache.dart';
+import 'package:plezy/services/silo_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
-import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/playback_report_fakes.dart';
 import '../test_helpers/prefs.dart';
@@ -68,11 +65,11 @@ class _RecordingMediaClient with PlaybackReportRecorder implements MediaServerCl
   @override
   double get watchedThreshold => 0.9;
 
-  // Mirror the real clients: Jellyfin marks played from the stopped report, so
+  // Mirror the real clients: Silo marks played from the stopped report, so
   // the auto-scrobble path emits only the local watch event (#1287); Plex needs
   // the explicit markWatched.
   @override
-  bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.jellyfin;
+  bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.silo;
 
   @override
   void close() {}
@@ -138,11 +135,55 @@ class _RecordingPlexClient extends _RecordingMediaClient implements PlexClient, 
   Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) async {}
 }
 
+/// Stands in for a [SiloClient] bound to one profile, so the manager's scoped
+/// lookups (`silo:<server>/<profile>`) resolve it. Item reads are recorded and
+/// answered from [viewCount]; the caller can hook them to act mid-request.
+class _RecordingSiloClient extends _RecordingMediaClient implements SiloClient {
+  _RecordingSiloClient({required this.profileId, this.viewCount, this.onFetchItem, this.onMarkWatched})
+    : super(serverId: _siloServer, backend: MediaBackend.silo);
+
+  @override
+  final String profileId;
+
+  final int? viewCount;
+  final void Function(String id)? onFetchItem;
+  final void Function()? onMarkWatched;
+  final fetchedItems = <String>[];
+  final fetchedChildren = <String>[];
+
+  @override
+  String get scopedServerId => _siloScope(profileId);
+
+  @override
+  ApiCache get cache => SiloApiCache.instance;
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async {
+    fetchedItems.add(id);
+    onFetchItem?.call(id);
+    return testMediaItem(id: id, backend: backend, kind: MediaKind.movie, serverId: serverId, viewCount: viewCount);
+  }
+
+  @override
+  Future<List<MediaItem>> fetchChildren(String parentId) async {
+    fetchedChildren.add(parentId);
+    return [
+      testMediaItem(id: 'ep-1', backend: backend, kind: MediaKind.episode, serverId: serverId, viewCount: viewCount),
+    ];
+  }
+
+  @override
+  Future<void> markWatched(MediaItem item) async {
+    await super.markWatched(item);
+    onMarkWatched?.call();
+  }
+}
+
 /// Build a service against an in-memory database and a bare-metal
 /// [MultiServerManager] (no servers added), disposed at test teardown.
 ({OfflineWatchSyncService svc, AppDatabase db, MultiServerManager mgr}) _makeService() {
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  JellyfinApiCache.initialize(db);
+  SiloApiCache.initialize(db);
   final mgr = MultiServerManager();
   final svc = OfflineWatchSyncService(database: db, serverManager: mgr);
   addTearDown(() async {
@@ -153,15 +194,9 @@ class _RecordingPlexClient extends _RecordingMediaClient implements PlexClient, 
   return (svc: svc, db: db, mgr: mgr);
 }
 
-JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
-  machineId: 'jf-machine',
-  userId: userId,
-  serverName: 'Shared JF',
-  userName: userId,
-  accessToken: 'token-$userId',
-  deviceId: 'device',
-  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-);
+final _siloServer = ServerId('silo-server');
+
+String _siloScope(String profileId) => SiloProfileScopeId(serverId: _siloServer, profileId: profileId);
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -372,11 +407,11 @@ void main() {
       expect(await svc.getPendingSyncCount(), 0);
     });
 
-    test('completed Jellyfin offline progress marks watched via the stop report, not markWatched (#1287)', () async {
+    test('completed Silo offline progress marks watched via the stop report, not markWatched (#1287)', () async {
       final (svc: svc, db: _, mgr: mgr) = _makeService();
       svc.setActiveProfileId('p1');
 
-      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.jellyfin);
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.silo);
       mgr.debugRegisterClientForTesting(client);
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 95000, duration: 100000);
 
@@ -386,7 +421,7 @@ void main() {
       expect(client.stopped, hasLength(1));
       expect(client.stopped.single.positionMs, 100000);
       // …so the offline replay must NOT also call markWatched — that would
-      // double-scrobble through the Jellyfin Trakt plugin.
+      // mark it twice.
       expect(client.watched, isEmpty);
       expect(await svc.getPendingSyncCount(), 0);
     });
@@ -414,33 +449,17 @@ void main() {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
       svc.setActiveProfileId('p1');
-      final posts = <String>[];
-      final client = JellyfinClient.forTesting(
-        connection: _jellyfinConnection('user-a'),
-        httpClient: MockClient((request) async {
-          if (request.method == 'GET' && request.url.path.startsWith('/Users/user-a/Items/')) {
-            final id = request.url.pathSegments.last;
-            return http.Response('{"Id":"$id","Type":"Movie","Name":"Movie $id"}', 200);
-          }
-          if (request.method == 'POST' && request.url.path.startsWith('/UserPlayedItems/')) {
-            posts.add(request.url.path);
-            // The switch lands while action 1 is mid-flight — the binder
-            // would now be rebinding this server id to another user.
-            svc.setActiveProfileId('p2');
-            return http.Response('', 204);
-          }
-          return http.Response('not found', 404);
-        }),
-      );
-      addTearDown(client.close);
-      mgr.debugRegisterJellyfinClientForTesting(client);
+      // The switch lands while action 1 is mid-flight — the binder would now
+      // be rebinding this server id to another user.
+      final client = _RecordingSiloClient(profileId: 'user-a', onMarkWatched: () => svc.setActiveProfileId('p2'));
+      mgr.debugRegisterClientForTesting(client);
 
-      await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
-      await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-2');
+      await svc.queueMarkWatched(serverId: _siloServer, itemId: 'item-1');
+      await svc.queueMarkWatched(serverId: _siloServer, itemId: 'item-2');
 
       await svc.syncPendingItems();
 
-      expect(posts, hasLength(1));
+      expect(client.watched, hasLength(1));
       expect(await db.getPendingSyncCount(), 1);
     });
   });
@@ -497,12 +516,12 @@ void main() {
 
   group('queued progress superseded by a watch-state write', () {
     MediaItem itemFor(String id) =>
-        testMediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv');
+        testMediaItem(id: id, backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv');
 
     // The online mark writes straight to the server and queues nothing, so
     // nothing purges the queue the way insertWatchAction does for the offline
     // mark. Replaying the stale row afterwards rewrites the resume position the
-    // mark cleared, which pins the item to Continue Watching on MediaBrowser.
+    // mark cleared, which pins the item to Continue Watching.
     test('a watched event drops the queued progress row for that item', () async {
       final (svc: svc, db: db, mgr: _) = _makeService();
 
@@ -556,7 +575,7 @@ void main() {
       final (svc: svc, db: _, mgr: mgr) = _makeService();
       svc.setActiveProfileId('p1');
 
-      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.jellyfin);
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.silo);
       mgr.debugRegisterClientForTesting(client);
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
 
@@ -687,40 +706,35 @@ void main() {
       expect(result.keys.toSet(), {'srv:1', 'srv:2', 'srv:3', 'srv:missing'});
     });
 
-    test('filters batched local statuses by active Jellyfin scope', () async {
+    test('filters batched local statuses by active Silo scope', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
-      final activeUserB = JellyfinClient.forTesting(
-        connection: _jellyfinConnection('user-b'),
-        httpClient: MockClient((_) async => http.Response('{}', 200)),
-      );
-      addTearDown(activeUserB.close);
-      mgr.debugRegisterJellyfinClientForTesting(activeUserB);
+      mgr.debugRegisterClientForTesting(_RecordingSiloClient(profileId: 'user-b'));
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
+        globalKey: 'silo-server:item-1',
         type: 'movie',
         status: 3,
       );
       await db.insertWatchAction(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
         actionType: OfflineActionType.unwatched.id,
       );
       await Future<void>.delayed(const Duration(milliseconds: 2));
       await db.insertWatchAction(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-b',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-b'),
         ratingKey: 'item-1',
         actionType: OfflineActionType.watched.id,
       );
 
-      final result = await svc.getLocalWatchStatusesBatched({'jf-machine:item-1'});
-      expect(result['jf-machine:item-1'], isTrue);
+      final result = await svc.getLocalWatchStatusesBatched({'silo-server:item-1'});
+      expect(result['silo-server:item-1'], isTrue);
     });
 
     test('local watch actions are isolated by active profile', () async {
@@ -782,72 +796,63 @@ void main() {
     });
   });
 
-  group('Jellyfin scoped sync', () {
+  group('Silo scoped sync', () {
     test('empty active scope falls back to the downloaded scope during client pre-bind', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
+        globalKey: 'silo-server:item-1',
         type: 'movie',
         status: 3,
       );
       mgr.debugRegisterClientForTesting(
-        _ScopedRecordingMediaClient(
-          serverId: ServerId('jf-machine'),
-          backend: MediaBackend.jellyfin,
-          scopedServerId: '',
-        ),
+        _ScopedRecordingMediaClient(serverId: _siloServer, backend: MediaBackend.silo, scopedServerId: ''),
       );
 
-      final returnedScope = await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
+      final returnedScope = await svc.queueMarkWatched(serverId: _siloServer, itemId: 'item-1');
 
       final queued = await db.getPendingWatchActions();
-      expect(returnedScope.clientScopeId, 'jf-machine/user-a');
-      expect(queued.single.clientScopeId, 'jf-machine/user-a');
+      expect(returnedScope.clientScopeId, _siloScope('user-a'));
+      expect(queued.single.clientScopeId, _siloScope('user-a'));
     });
 
-    test('queues with downloaded Jellyfin source scope when no active client is registered', () async {
+    test('queues with downloaded Silo source scope when no active client is registered', () async {
       final (svc: svc, db: db, mgr: _) = _makeService();
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
+        globalKey: 'silo-server:item-1',
         type: 'movie',
         status: 3,
       );
 
-      await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
+      await svc.queueMarkWatched(serverId: _siloServer, itemId: 'item-1');
 
       final queued = await db.getPendingWatchActions();
-      expect(queued.single.clientScopeId, 'jf-machine/user-a');
+      expect(queued.single.clientScopeId, _siloScope('user-a'));
     });
 
     test('local status and resume offset use active scope over downloaded source scope', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
-      final activeUserB = JellyfinClient.forTesting(
-        connection: _jellyfinConnection('user-b'),
-        httpClient: MockClient((_) async => http.Response('{}', 200)),
-      );
-      addTearDown(activeUserB.close);
-      mgr.debugRegisterJellyfinClientForTesting(activeUserB);
+      mgr.debugRegisterClientForTesting(_RecordingSiloClient(profileId: 'user-b'));
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
+        globalKey: 'silo-server:item-1',
         type: 'movie',
         status: 3,
       );
       await db.upsertProgressAction(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
         viewOffset: 5000,
         duration: 100000,
@@ -855,430 +860,169 @@ void main() {
       );
       await Future<void>.delayed(const Duration(milliseconds: 2));
       await db.upsertProgressAction(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-b',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-b'),
         ratingKey: 'item-1',
         viewOffset: 90000,
         duration: 100000,
         shouldMarkWatched: true,
       );
 
-      expect(await svc.getLocalWatchStatus('jf-machine:item-1'), isTrue);
-      expect(await svc.getLocalViewOffset('jf-machine:item-1'), isNull);
-      expect(await svc.getLocalWatchStatus('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), isNull);
-      expect(await svc.getLocalViewOffset('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), 5000);
+      expect(await svc.getLocalWatchStatus('silo-server:item-1'), isTrue);
+      expect(await svc.getLocalViewOffset('silo-server:item-1'), isNull);
+      expect(await svc.getLocalWatchStatus('silo-server:item-1', clientScopeId: _siloScope('user-a')), isNull);
+      expect(await svc.getLocalViewOffset('silo-server:item-1', clientScopeId: _siloScope('user-a')), 5000);
     });
 
-    test('queues with active Jellyfin user instead of downloaded source scope', () async {
+    test('queues with active Silo profile instead of downloaded source scope', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
+        globalKey: 'silo-server:item-1',
         type: 'movie',
         status: 3,
       );
 
-      final activeUserB = JellyfinClient.forTesting(
-        connection: _jellyfinConnection('user-b'),
-        httpClient: MockClient((_) async => http.Response('{}', 200)),
-      );
-      addTearDown(activeUserB.close);
-      mgr.debugRegisterJellyfinClientForTesting(activeUserB);
+      mgr.debugRegisterClientForTesting(_RecordingSiloClient(profileId: 'user-b'));
 
-      final returnedScope = await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
+      final returnedScope = await svc.queueMarkWatched(serverId: _siloServer, itemId: 'item-1');
 
       final queued = await db.getPendingWatchActions();
-      expect(returnedScope.clientScopeId, 'jf-machine/user-b');
-      expect(queued.single.clientScopeId, 'jf-machine/user-b');
-    });
-
-    test('replays through the queued Jellyfin user after active user changes', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      svc.setActiveProfileId('p1');
-
-      final pathsByUser = <String, List<String>>{'user-a': [], 'user-b': []};
-
-      JellyfinClient clientFor(String userId) {
-        return JellyfinClient.forTesting(
-          connection: _jellyfinConnection(userId),
-          httpClient: MockClient((request) async {
-            pathsByUser[userId]!.add('${request.method} ${request.url.path}?${request.url.query}');
-            if (request.method == 'GET' && request.url.path == '/Users/$userId/Items/item-1') {
-              return http.Response('{"Id":"item-1","Type":"Movie","Name":"Movie $userId"}', 200);
-            }
-            if (request.method == 'POST' && request.url.path == '/UserPlayedItems/item-1') {
-              return http.Response('', 204);
-            }
-            return http.Response('not found', 404);
-          }),
-        );
-      }
-
-      final userA = clientFor('user-a');
-      final userB = clientFor('user-b');
-      addTearDown(userA.close);
-      addTearDown(userB.close);
-
-      mgr.debugRegisterJellyfinClientForTesting(userA);
-      await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
-      final queued = await db.getPendingWatchActions();
-      expect(queued.single.clientScopeId, 'jf-machine/user-a');
-
-      // User B becomes the active machine client. The queued action must
-      // still resolve the specific user A client from clientScopeId.
-      mgr.debugRegisterJellyfinClientForTesting(userB, online: false);
-      await svc.syncPendingItems();
-
-      expect(await svc.getPendingSyncCount(), 0);
-      expect(pathsByUser['user-a'], contains('POST /UserPlayedItems/item-1?userId=user-a'));
-      expect(pathsByUser['user-b'], isEmpty);
-    });
-
-    test('legacy Jellyfin rows without clientScopeId are not synced through the active server client', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-
-      final paths = <String>[];
-      final client = JellyfinClient.forTesting(
-        connection: _jellyfinConnection('user-b'),
-        httpClient: MockClient((request) async {
-          paths.add('${request.method} ${request.url.path}?${request.url.query}');
-          if (request.method == 'GET' && request.url.path == '/Users/user-b/Items/item-1') {
-            return http.Response('{"Id":"item-1","Type":"Movie","Name":"Movie"}', 200);
-          }
-          if (request.method == 'POST' && request.url.path == '/UserPlayedItems/item-1') {
-            return http.Response('', 204);
-          }
-          return http.Response('not found', 404);
-        }),
-      );
-      addTearDown(client.close);
-
-      mgr.debugRegisterJellyfinClientForTesting(client);
-      await db.insertWatchAction(
-        serverId: ServerId('jf-machine'),
-        ratingKey: 'item-1',
-        actionType: OfflineActionType.watched.id,
-      );
-
-      await svc.syncPendingItems();
-
-      expect(await svc.getPendingSyncCount(), 1);
-      expect(paths, isEmpty);
-    });
-
-    test('legacy Jellyfin rows without clientScopeId do not borrow downloaded source scope during replay', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-
-      final pathsByUser = <String, List<String>>{'user-a': [], 'user-b': []};
-
-      JellyfinClient clientFor(String userId) {
-        return JellyfinClient.forTesting(
-          connection: _jellyfinConnection(userId),
-          httpClient: MockClient((request) async {
-            pathsByUser[userId]!.add('${request.method} ${request.url.path}?${request.url.query}');
-            if (request.method == 'GET' && request.url.path == '/Users/$userId/Items/item-1') {
-              return http.Response('{"Id":"item-1","Type":"Movie","Name":"Movie $userId"}', 200);
-            }
-            if (request.method == 'POST' && request.url.path == '/UserPlayedItems/item-1') {
-              return http.Response('', 204);
-            }
-            return http.Response('not found', 404);
-          }),
-        );
-      }
-
-      final userA = clientFor('user-a');
-      final userB = clientFor('user-b');
-      addTearDown(userA.close);
-      addTearDown(userB.close);
-
-      await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
-        ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
-        type: 'movie',
-        status: 3,
-      );
-      await db.insertWatchAction(
-        serverId: ServerId('jf-machine'),
-        ratingKey: 'item-1',
-        actionType: OfflineActionType.watched.id,
-      );
-
-      mgr.debugRegisterJellyfinClientForTesting(userA);
-      mgr.debugRegisterJellyfinClientForTesting(userB);
-      await svc.syncPendingItems();
-
-      expect(await svc.getPendingSyncCount(), 1);
-      expect(pathsByUser['user-a'], isEmpty);
-      expect(pathsByUser['user-b'], isEmpty);
+      expect(returnedScope.clientScopeId, _siloScope('user-b'));
+      expect(queued.single.clientScopeId, _siloScope('user-b'));
     });
 
     test('watch-state pull uses active scope for shared movie downloads', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
-      final pathsByUser = <String, List<String>>{'user-a': [], 'user-b': []};
-
-      JellyfinClient clientFor(String userId) {
-        return JellyfinClient.forTesting(
-          connection: _jellyfinConnection(userId),
-          httpClient: MockClient((request) async {
-            pathsByUser[userId]!.add('${request.method} ${request.url.path}?${request.url.query}');
-            if (request.method == 'GET' && request.url.path == '/Users/$userId/Items/item-1') {
-              return http.Response(
-                '{"Id":"item-1","Type":"Movie","Name":"Movie $userId","UserData":{"PlayCount":1,"Played":true}}',
-                200,
-                headers: {'content-type': 'application/json'},
-              );
-            }
-            return http.Response('not found', 404);
-          }),
-        );
-      }
-
-      final userA = clientFor('user-a');
-      final userB = clientFor('user-b');
-      addTearDown(userA.close);
-      addTearDown(userB.close);
+      final userB = _RecordingSiloClient(profileId: 'user-b', viewCount: 1);
       final events = <WatchStateEvent>[];
       final sub = WatchStateNotifier().stream.listen(events.add);
       addTearDown(sub.cancel);
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
+        globalKey: 'silo-server:item-1',
         type: 'movie',
         status: 3,
       );
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:item-1');
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'silo-server:item-1');
       svc.setActiveProfileId('profile-b');
 
-      mgr.debugRegisterJellyfinClientForTesting(userA);
-      mgr.debugRegisterJellyfinClientForTesting(userB);
+      mgr.debugRegisterClientForTesting(userB);
       await svc.syncWatchStatesFromServer();
       await Future<void>.delayed(Duration.zero);
 
-      expect(pathsByUser['user-a'], isEmpty);
-      expect(pathsByUser['user-b']!.where((p) => p.startsWith('GET /Users/user-b/Items/item-1?')), isNotEmpty);
-      expect(events.single.cacheServerId, 'jf-machine/user-b');
-    });
-
-    test('watch-state pull does not treat Jellyfin PlayCount alone as watched', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-
-      final paths = <String>[];
-      final userB = JellyfinClient.forTesting(
-        connection: _jellyfinConnection('user-b'),
-        httpClient: MockClient((request) async {
-          paths.add('${request.method} ${request.url.path}?${request.url.query}');
-          if (request.method == 'GET' && request.url.path == '/Users/user-b/Items/item-1') {
-            return http.Response(
-              '{"Id":"item-1","Type":"Movie","Name":"Started Movie","UserData":{"PlayCount":1,"Played":false}}',
-              200,
-              headers: {'content-type': 'application/json'},
-            );
-          }
-          return http.Response('not found', 404);
-        }),
-      );
-      addTearDown(userB.close);
-      final events = <WatchStateEvent>[];
-      final sub = WatchStateNotifier().stream.listen(events.add);
-      addTearDown(sub.cancel);
-
-      await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-b',
-        ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
-        type: 'movie',
-        status: 3,
-      );
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:item-1');
-      svc.setActiveProfileId('profile-b');
-
-      mgr.debugRegisterJellyfinClientForTesting(userB);
-      await svc.syncWatchStatesFromServer();
-      await Future<void>.delayed(Duration.zero);
-
-      expect(paths.where((p) => p.startsWith('GET /Users/user-b/Items/item-1?')), isNotEmpty);
-      expect(events, isEmpty);
+      expect(userB.fetchedItems, contains('item-1'));
+      expect(events.single.cacheServerId, _siloScope('user-b'));
     });
 
     test('watch-state pull uses active scope for shared episode season batches', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
-      final pathsByUser = <String, List<String>>{'user-a': [], 'user-b': []};
-
-      JellyfinClient clientFor(String userId) {
-        return JellyfinClient.forTesting(
-          connection: _jellyfinConnection(userId),
-          httpClient: MockClient((request) async {
-            pathsByUser[userId]!.add('${request.method} ${request.url.path}?${request.url.query}');
-            if (request.method == 'GET' && request.url.path == '/Shows/season-1/Seasons') {
-              return http.Response('not found', 404);
-            }
-            if (request.method == 'GET' && request.url.path == '/Items') {
-              return http.Response(
-                '{"Items":[{"Id":"ep-1","Type":"Episode","Name":"Episode $userId","UserData":{"PlayCount":1,"Played":true}}]}',
-                200,
-                headers: {'content-type': 'application/json'},
-              );
-            }
-            if (request.method == 'GET' && request.url.path == '/Users/$userId/Items/ep-1') {
-              return http.Response(
-                '{"Id":"ep-1","Type":"Episode","Name":"Episode $userId","UserData":{"PlayCount":1,"Played":true}}',
-                200,
-                headers: {'content-type': 'application/json'},
-              );
-            }
-            return http.Response('not found', 404);
-          }),
-        );
-      }
-
-      final userA = clientFor('user-a');
-      final userB = clientFor('user-b');
-      addTearDown(userA.close);
-      addTearDown(userB.close);
+      final userB = _RecordingSiloClient(profileId: 'user-b', viewCount: 1);
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'ep-1',
-        globalKey: 'jf-machine:ep-1',
+        globalKey: 'silo-server:ep-1',
         type: 'episode',
         parentRatingKey: 'season-1',
         status: 3,
       );
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:ep-1');
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'silo-server:ep-1');
       svc.setActiveProfileId('profile-b');
 
-      mgr.debugRegisterJellyfinClientForTesting(userA);
-      mgr.debugRegisterJellyfinClientForTesting(userB);
+      mgr.debugRegisterClientForTesting(userB);
       await svc.syncWatchStatesFromServer();
 
-      expect(pathsByUser['user-a'], isEmpty);
-      expect(pathsByUser['user-b']!.where((p) => p.startsWith('GET /Items?')), isNotEmpty);
+      expect(userB.fetchedChildren, ['season-1']);
     });
 
     test('watch-state pull ignores physical downloads not owned by active profile', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
-      final paths = <String>[];
-      final userB = JellyfinClient.forTesting(
-        connection: _jellyfinConnection('user-b'),
-        httpClient: MockClient((request) async {
-          paths.add('${request.method} ${request.url.path}?${request.url.query}');
-          return http.Response('not found', 404);
-        }),
-      );
-      addTearDown(userB.close);
+      final userB = _RecordingSiloClient(profileId: 'user-b');
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
+        globalKey: 'silo-server:item-1',
         type: 'movie',
         status: 3,
       );
-      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'jf-machine:item-1');
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'silo-server:item-1');
       svc.setActiveProfileId('profile-b');
 
-      mgr.debugRegisterJellyfinClientForTesting(userB);
+      mgr.debugRegisterClientForTesting(userB);
       await svc.syncWatchStatesFromServer();
 
-      expect(paths, isEmpty);
+      expect(userB.fetchedItems, isEmpty);
+      expect(userB.fetchedChildren, isEmpty);
     });
 
     test('watch-state pull stops when the active profile changes mid-pull', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
-      final requestedItems = <String>[];
-      final userB = JellyfinClient.forTesting(
-        connection: _jellyfinConnection('user-b'),
-        httpClient: MockClient((request) async {
-          final itemId = RegExp(r'^/Users/user-b/Items/(item-\d)$').firstMatch(request.url.path)?.group(1);
-          if (request.method != 'GET' || itemId == null) return http.Response('not found', 404);
-          requestedItems.add(itemId);
-          // The user switches profile while the first item is in flight; the
-          // same server id now belongs to another user's session.
-          svc.setActiveProfileId('profile-c');
-          return http.Response(
-            '{"Id":"$itemId","Type":"Movie","Name":"Movie","UserData":{"PlayCount":1,"Played":true}}',
-            200,
-            headers: {'content-type': 'application/json'},
-          );
-        }),
+      // The user switches profile while the first item is in flight; the
+      // same server id now belongs to another user's session.
+      final userB = _RecordingSiloClient(
+        profileId: 'user-b',
+        viewCount: 1,
+        onFetchItem: (_) => svc.setActiveProfileId('profile-c'),
       );
-      addTearDown(userB.close);
       final events = <WatchStateEvent>[];
       final sub = WatchStateNotifier().stream.listen(events.add);
       addTearDown(sub.cancel);
 
       for (final itemId in ['item-1', 'item-2']) {
         await db.insertDownload(
-          serverId: ServerId('jf-machine'),
-          clientScopeId: 'jf-machine/user-b',
+          serverId: _siloServer,
+          clientScopeId: _siloScope('user-b'),
           ratingKey: itemId,
-          globalKey: 'jf-machine:$itemId',
+          globalKey: 'silo-server:$itemId',
           type: 'movie',
           status: 3,
         );
-        await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:$itemId');
+        await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'silo-server:$itemId');
       }
       svc.setActiveProfileId('profile-b');
 
-      mgr.debugRegisterJellyfinClientForTesting(userB);
+      mgr.debugRegisterClientForTesting(userB);
       await svc.syncWatchStatesFromServer();
       await Future<void>.delayed(Duration.zero);
 
-      expect(requestedItems, hasLength(1));
+      expect(userB.fetchedItems, hasLength(1));
       expect(events, isEmpty, reason: 'the previous profile must not announce the new user\'s watch state');
     });
 
     test('servers connecting after a profile switch sync the new profile', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
-      var itemRequests = 0;
-      final userA = JellyfinClient.forTesting(
-        connection: _jellyfinConnection('user-a'),
-        httpClient: MockClient((request) async {
-          if (request.method == 'GET' && request.url.path == '/Users/user-a/Items/item-1') {
-            itemRequests++;
-            return http.Response(
-              '{"Id":"item-1","Type":"Movie","Name":"Movie","UserData":{"PlayCount":0,"Played":false}}',
-              200,
-              headers: {'content-type': 'application/json'},
-            );
-          }
-          return http.Response('not found', 404);
-        }),
-      );
-      addTearDown(userA.close);
+      final userA = _RecordingSiloClient(profileId: 'user-a', viewCount: 0);
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: _siloServer,
+        clientScopeId: _siloScope('user-a'),
         ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
+        globalKey: 'silo-server:item-1',
         type: 'movie',
         status: 3,
       );
       for (final profileId in ['profile-a', 'profile-b']) {
-        await db.addDownloadOwner(profileId: profileId, globalKey: 'jf-machine:item-1');
+        await db.addDownloadOwner(profileId: profileId, globalKey: 'silo-server:item-1');
       }
-      mgr.debugRegisterJellyfinClientForTesting(userA);
+      mgr.debugRegisterClientForTesting(userA);
 
       Future<void> waitForRequests(int count) async {
-        for (var i = 0; i < 200 && itemRequests < count; i++) {
+        for (var i = 0; i < 200 && userA.fetchedItems.length < count; i++) {
           await Future<void>.delayed(const Duration(milliseconds: 5));
         }
         // Let the rest of the pass settle before the next step.
@@ -1288,13 +1032,13 @@ void main() {
       svc.setActiveProfileId('profile-a');
       svc.onServersConnected();
       await waitForRequests(1);
-      expect(itemRequests, 1);
+      expect(userA.fetchedItems, hasLength(1));
 
       svc.setActiveProfileId('profile-b');
       svc.onServersConnected();
       await waitForRequests(2);
 
-      expect(itemRequests, 2);
+      expect(userA.fetchedItems, hasLength(2));
     });
   });
 
@@ -1318,7 +1062,7 @@ void main() {
   group('startConnectivityMonitoring + dispose', () {
     test('attaches a listener to the source', () {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      JellyfinApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       final mgr = MultiServerManager();
       final svc = OfflineWatchSyncService(database: db, serverManager: mgr);
       addTearDown(() async {
@@ -1377,7 +1121,7 @@ void main() {
 
     test('dispose() before startConnectivityMonitoring is safe', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      JellyfinApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       final mgr = MultiServerManager();
       final svc = OfflineWatchSyncService(database: db, serverManager: mgr);
       addTearDown(() async {
@@ -1391,7 +1135,7 @@ void main() {
 
     test('a queued write that lands after dispose completes without notifying', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      JellyfinApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       final mgr = MultiServerManager();
       final svc = OfflineWatchSyncService(database: db, serverManager: mgr);
       addTearDown(() async {
@@ -1403,7 +1147,7 @@ void main() {
 
       // A profile switch disposes the service while the database write is
       // still in flight; the completion must not trip the disposed assert.
-      final pending = svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
+      final pending = svc.queueMarkWatched(serverId: ServerId('srv'), itemId: 'item-1');
       svc.dispose();
       await pending;
 

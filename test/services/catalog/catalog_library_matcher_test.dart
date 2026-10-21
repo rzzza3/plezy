@@ -14,8 +14,8 @@ import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/external_ids.dart';
 
 import '../../test_helpers/backend_client_fixtures.dart';
@@ -105,6 +105,35 @@ class _LookupClient implements MediaServerClient {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
+
+bool _isGuidLookup(http.Request request) =>
+    request.url.path == '/library/all' && request.url.queryParameters.containsKey('guid');
+
+http.Response _plexJson(Map<String, Object?> body) =>
+    http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json; charset=utf-8'});
+
+/// A Plex `/library/all` page.
+http.Response _plexPage(List<Object> rows) => _plexJson({
+  'MediaContainer': {'Metadata': rows},
+});
+
+/// A Plex `/hubs/search` answer holding [rows] in the movie hub.
+http.Response _plexMovieHub(List<Object> rows) => _plexJson({
+  'MediaContainer': {
+    'Hub': [
+      {'type': 'movie', 'hubIdentifier': 'movie', 'Metadata': rows},
+    ],
+  },
+});
+
+Map<String, Object> _plexMovie(String ratingKey, {required int tmdb}) => {
+  'ratingKey': ratingKey,
+  'type': 'movie',
+  'title': 'Your Name.',
+  'Guid': [
+    {'id': 'tmdb://$tmdb'},
+  ],
+};
 
 /// A matcher over the real [DataAggregationService] and [MultiServerManager].
 /// Only they can tell a registered-but-offline server (never asked) from one
@@ -539,7 +568,7 @@ void main() {
   });
 
   test('a retry that lost the library stamp keeps the label from the previous wave', () async {
-    // The Jellyfin stamp is a best-effort ancestors call. Wave 1 labels the
+    // The library stamp is a best-effort extra call. Wave 1 labels the
     // copy; wave 2 — the first every server took part in, so it is memoized
     // for the session — returns the same copy unstamped. J still holds it,
     // and nothing says it moved, so the label survives the replacement.
@@ -641,7 +670,7 @@ void main() {
 
     setUp(() {
       db = AppDatabase.forTesting(NativeDatabase.memory());
-      JellyfinApiCache.initialize(db);
+      PlexApiCache.initialize(db);
     });
 
     tearDown(() async {
@@ -653,33 +682,22 @@ void main() {
       final harness = _LiveHarness(() => DateTime.utc(2026, 9, 6));
       addTearDown(harness.dispose);
       harness.register(
-        testJellyfinClient(
+        testPlexClient(
           handler: (request) async {
-            if (request.url.path.endsWith('/Ancestors')) return http.Response('[]', 200);
-            expect(request.url.path, '/Items');
-            final query = request.url.queryParameters['SearchTerm']!;
+            if (_isGuidLookup(request)) return _plexPage(const []);
+            expect(request.url.path, '/hubs/search');
+            final query = request.url.queryParameters['query']!;
             searches.add(query);
             final id = switch (query) {
               'Row Alias' => 'row-copy',
               '君の名は。' => 'native-copy',
               _ => null,
             };
-            return http.Response(
-              jsonEncode({
-                'Items': [
-                  if (id != null)
-                    for (final candidateId in [id, 'wrong-id'])
-                      {
-                        'Id': candidateId,
-                        'Type': 'Movie',
-                        'Name': 'Your Name.',
-                        'ProviderIds': {'Tmdb': candidateId == 'wrong-id' ? '999' : '372058'},
-                      },
-                ],
-              }),
-              200,
-              headers: {'content-type': 'application/json; charset=utf-8'},
-            );
+            return _plexMovieHub([
+              if (id != null)
+                for (final candidateId in [id, 'wrong-id'])
+                  _plexMovie(candidateId, tmdb: candidateId == 'wrong-id' ? 999 : 372058),
+            ]);
           },
         ),
       );
@@ -732,27 +750,13 @@ void main() {
       var hasCopy = true;
       final harness = _LiveHarness(() => now);
       addTearDown(harness.dispose);
-      final client = testJellyfinClient(
+      final client = testPlexClient(
         handler: (request) async {
-          if (request.url.path.endsWith('/Ancestors')) return http.Response('[]', 200);
-          expect(request.url.path, '/Items');
-          final isNative = request.url.queryParameters['SearchTerm'] == '君の名は。';
+          if (_isGuidLookup(request)) return _plexPage(const []);
+          expect(request.url.path, '/hubs/search');
+          final isNative = request.url.queryParameters['query'] == '君の名は。';
           if (isNative && failAlias) return http.Response('Unavailable', 403);
-          return http.Response(
-            jsonEncode({
-              'Items': [
-                if (isNative && hasCopy)
-                  {
-                    'Id': 'owned',
-                    'Type': 'Movie',
-                    'Name': 'Your Name.',
-                    'ProviderIds': {'Tmdb': '372058'},
-                  },
-              ],
-            }),
-            200,
-            headers: {'content-type': 'application/json; charset=utf-8'},
-          );
+          return _plexMovieHub([if (isNative && hasCopy) _plexMovie('owned', tmdb: 372058)]);
         },
       );
       final other = _LookupClient('offline', error: StateError('unavailable'));

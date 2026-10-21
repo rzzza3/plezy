@@ -198,7 +198,7 @@ void main() {
         expect(observer.snapshot(), containsPair('item', containsPair('itemId', 'observed')));
         screen.key.currentState!.debugCommitAdjacentEpisodesForTesting(
           AdjacentEpisodes(
-            next: testMediaItem(id: 'next', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+            next: testMediaItem(id: 'next', serverId: 'srv-1', backend: MediaBackend.silo),
             nextStatus: QueueNavigationStatus.found,
             previousStatus: QueueNavigationStatus.boundary,
           ),
@@ -280,7 +280,7 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
     VideoPlayerRoute(
       builder: (_) => VideoPlayerScreen(
         key: key,
-        metadata: testMediaItem(id: 'observed', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+        metadata: testMediaItem(id: 'observed', serverId: 'srv-1', backend: MediaBackend.silo),
         selectedQualityPreset: TranscodeQualityPreset.original,
         selectedAudioStreamId: 1,
         launchObserver: observer,
@@ -393,9 +393,9 @@ class _ObservedClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   String get serverName => 'Server';
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
   @override
   double get watchedThreshold => 0.9;
   @override

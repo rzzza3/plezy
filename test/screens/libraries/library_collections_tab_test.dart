@@ -13,20 +13,21 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/library_change_event.dart';
+import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/screens/collection_detail_screen.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/tabs/library_collections_tab.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
-import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/library_content_notifier.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/widgets/card_inflation_budget.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
@@ -37,12 +38,14 @@ import 'package:provider/provider.dart';
 import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/download_fixtures.dart';
 import '../../test_helpers/library_tab_scaffold.dart';
+import '../../test_helpers/media_items.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
+import '../../test_helpers/paged_fakes.dart';
 import '../../test_helpers/prefs.dart';
 import '../../test_helpers/profile_stack.dart';
 
 final _serverId = ServerId('collection-server');
-final _jellyfinServerId = ServerId('jellyfin-collection-server');
+final _siloServerId = ServerId('silo-collection-server');
 final _musicLibrary = MediaLibrary(
   id: 'music',
   backend: MediaBackend.plex,
@@ -50,12 +53,12 @@ final _musicLibrary = MediaLibrary(
   kind: MediaKind.artist,
   serverId: _serverId,
 );
-final _jellyfinMusicLibrary = MediaLibrary(
+final _siloMusicLibrary = MediaLibrary(
   id: 'music-library',
-  backend: MediaBackend.jellyfin,
+  backend: MediaBackend.silo,
   title: 'Music',
   kind: MediaKind.artist,
-  serverId: _jellyfinServerId,
+  serverId: _siloServerId,
 );
 final _movieLibrary = MediaLibrary(
   id: 'movies',
@@ -92,13 +95,13 @@ void main() {
     expect(tester.widget<FocusableMediaCard>(find.byType(FocusableMediaCard)).cardShapeOverride, CardShape.square);
   });
 
-  testWidgets('Jellyfin video collections keep poster geometry when opened from a music library', (tester) async {
-    final harness = _CollectionHarness.jellyfin();
+  testWidgets('Silo video collections keep poster geometry when opened from a music library', (tester) async {
+    final harness = _CollectionHarness.silo();
     addTearDown(harness.dispose);
     TvDetectionService.debugSetAppleTVOverride(true);
     await SettingsService.instance.write(SettingsService.tvFullCardLayout, true);
 
-    await _pumpTab(tester, harness: harness, library: _jellyfinMusicLibrary);
+    await _pumpTab(tester, harness: harness, library: _siloMusicLibrary);
 
     final layout = tester.widget<MediaCardSliverLayout>(find.byType(MediaCardSliverLayout));
     expect(layout.shape, isNull);
@@ -477,33 +480,17 @@ class _CollectionHarness {
     return _CollectionHarness._(database: database, client: client);
   }
 
-  factory _CollectionHarness.jellyfin() {
+  factory _CollectionHarness.silo() {
     final database = AppDatabase.forTesting(NativeDatabase.memory());
-    JellyfinApiCache.initialize(database);
-    final client = JellyfinClient.forTesting(
-      connection: testJellyfinConnection(machineId: _jellyfinServerId),
-      httpClient: MockClient((request) async {
-        if (request.url.path == '/Items') {
-          return http.Response(
-            jsonEncode({
-              'TotalRecordCount': 1,
-              'Items': [
-                {
-                  'Id': 'video-collection-1',
-                  'Name': 'Movie Collection',
-                  'Type': 'BoxSet',
-                  'MediaType': 'Video',
-                  'ParentId': 'boxsets-root',
-                },
-              ],
-            }),
-            200,
-            headers: {'content-type': 'application/json'},
-          );
-        }
-        return http.Response('not found', 404);
-      }),
-    );
+    final client = _SiloCollectionsClient([
+      testMediaItem(
+        id: 'video-collection-1',
+        backend: MediaBackend.silo,
+        kind: MediaKind.collection,
+        title: 'Movie Collection',
+        serverId: _siloServerId,
+      ),
+    ]);
     return _CollectionHarness._(database: database, client: client);
   }
 
@@ -512,4 +499,40 @@ class _CollectionHarness {
     manager.dispose();
     await database.close();
   }
+}
+
+/// A Silo client whose only collection rows are the given [collections].
+class _SiloCollectionsClient implements MediaServerClient {
+  _SiloCollectionsClient(this.collections);
+
+  final List<MediaItem> collections;
+
+  @override
+  ServerId get serverId => _siloServerId;
+
+  @override
+  String? get serverName => 'Silo';
+
+  @override
+  MediaBackend get backend => MediaBackend.silo;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchCollectionsPage(
+    String libraryId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async => fakeLibraryPage(collections, start: start, size: size);
+
+  @override
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) => '';
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

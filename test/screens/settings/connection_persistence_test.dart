@@ -113,16 +113,12 @@ class _NoTimerPlexHomeService extends PlexHomeService {
   Future<void> reloadFromStorage() async {}
 }
 
-JellyfinConnection _connection({String token = 'opaque-token-current', String userName = 'Fixture User'}) {
-  return JellyfinConnection(
-    id: 'fixture-machine/fixture-user',
-    baseUrl: 'https://media.invalid',
-    serverName: 'Fixture Server',
-    serverMachineId: 'fixture-machine',
-    userId: 'fixture-user',
-    userName: userName,
-    accessToken: token,
-    deviceId: 'fixture-device',
+SiloConnection _connection({String serverName = 'Fixture Server', String userName = 'Fixture User'}) {
+  return SiloConnection(
+    origin: 'https://media.invalid',
+    serverId: 'fixture-server',
+    serverName: serverName,
+    username: userName,
     createdAt: DateTime.utc(2026, 1, 2),
   );
 }
@@ -142,12 +138,11 @@ Future<Object?> _runProvisioning(WidgetTester tester, Future<void> Function() co
   });
 }
 
-ProfileConnection _join(Profile profile, JellyfinConnection connection) {
+ProfileConnection _join(Profile profile, SiloConnection connection) {
   return ProfileConnection(
     profileId: profile.id,
     connectionId: connection.id,
-    userToken: connection.accessToken,
-    userIdentifier: connection.userId,
+    userIdentifier: 'fixture-silo-profile',
     tokenAcquiredAt: DateTime.utc(2026, 1, 2),
   );
 }
@@ -217,7 +212,7 @@ void main() {
     );
   }
 
-  Future<void> expectEmptyAttempt(Profile profile, JellyfinConnection connection) async {
+  Future<void> expectEmptyAttempt(Profile profile, SiloConnection connection) async {
     expect(await _hasProfile(db, profile.id), isFalse);
     expect(await ConnectionRegistry(db).get(connection.id), isNull);
     expect(await ProfileConnectionRegistry(db).get(profile.id, connection.id), isNull);
@@ -307,8 +302,8 @@ void main() {
 
   testWidgets('existing connection update is restored when join statement fails', (tester) async {
     final target = _profile('fixture-existing-profile');
-    final priorConnection = _connection(token: 'opaque-token-prior', userName: 'Prior User');
-    final updatedConnection = _connection(token: 'opaque-token-updated', userName: 'Updated User');
+    final priorConnection = _connection(serverName: 'Prior Server', userName: 'Prior User');
+    final updatedConnection = _connection(serverName: 'Updated Server', userName: 'Updated User');
     await ProfileRegistry(db).upsert(target);
     await tester.runAsync(() => ConnectionRegistry(db).upsert(priorConnection));
     await storage.setActiveProfileId(target.id);
@@ -324,9 +319,9 @@ void main() {
     );
     expect(error, isA<_AfterStatementFailure>());
 
-    final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as JellyfinConnection;
-    expect(restored.accessToken, priorConnection.accessToken);
-    expect(restored.userName, priorConnection.userName);
+    final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as SiloConnection;
+    expect(restored.serverName, priorConnection.serverName);
+    expect(restored.username, priorConnection.username);
     expect(await _hasProfile(db, target.id), isTrue);
     expect(await ProfileConnectionRegistry(db).get(target.id, priorConnection.id), isNull);
     expect(storage.getActiveProfileId(), target.id);
@@ -376,8 +371,8 @@ void main() {
   testWidgets('activation throw restores a prior same-id connection and original active state', (tester) async {
     final priorProfile = _profile('fixture-prior-profile', name: 'Prior Profile');
     final newProfile = _profile('fixture-new-profile');
-    final priorConnection = _connection(token: 'opaque-token-prior', userName: 'Prior User');
-    final updatedConnection = _connection(token: 'opaque-token-updated', userName: 'Updated User');
+    final priorConnection = _connection(serverName: 'Prior Server', userName: 'Prior User');
+    final updatedConnection = _connection(serverName: 'Updated Server', userName: 'Updated User');
     await ProfileRegistry(db).upsert(priorProfile);
     await tester.runAsync(() => ConnectionRegistry(db).upsert(priorConnection));
     await storage.setActiveProfileId(priorProfile.id);
@@ -404,9 +399,9 @@ void main() {
     );
     expect(error, isA<_AfterStatementFailure>());
 
-    final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as JellyfinConnection;
-    expect(restored.accessToken, priorConnection.accessToken);
-    expect(restored.userName, priorConnection.userName);
+    final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as SiloConnection;
+    expect(restored.serverName, priorConnection.serverName);
+    expect(restored.username, priorConnection.username);
     expect(await _hasProfile(db, newProfile.id), isFalse);
     expect(await ProfileConnectionRegistry(db).get(newProfile.id, priorConnection.id), isNull);
     expect(storage.getProfileLastUsed(newProfile.id), isNull);
@@ -418,7 +413,7 @@ void main() {
 
   testWidgets('durable command completes after route unmount', (tester) async {
     final profile = _profile('fixture-new-profile');
-    final connection = _connection(token: '');
+    final connection = _connection();
     final gated = _GatedProfileConnectionRegistry(db, fail: false);
     await mountHost(tester, joinRegistry: gated);
 
@@ -443,7 +438,7 @@ void main() {
 
   testWidgets('failed durable command rolls back after route unmount', (tester) async {
     final profile = _profile('fixture-new-profile');
-    final connection = _connection(token: '');
+    final connection = _connection();
     final gated = _GatedProfileConnectionRegistry(db, fail: true);
     await mountHost(tester, joinRegistry: gated);
 

@@ -222,7 +222,7 @@ Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
         metadata: testMediaItem(
           id: 'stacked',
           serverId: 'srv-1',
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
           durationMs: const Duration(minutes: 90).inMilliseconds,
         ),
         selectedQualityPreset: TranscodeQualityPreset.original,
@@ -333,9 +333,9 @@ class _StackedClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   String get serverName => 'Server';
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
   @override
   double get watchedThreshold => 0.9;
   @override

@@ -17,16 +17,16 @@ void main() {
     test('lowercases a mixed-case scheme (#1465)', () {
       // FFmpeg's protocol lookup is case-sensitive; "Https://" reaching the
       // player as a raw string fails with "Protocol not found".
-      expect(canonicalizeBaseUrl('Https://jellyfin.example.com'), 'https://jellyfin.example.com');
-      expect(canonicalizeBaseUrl('HTTPS://jellyfin.example.com'), 'https://jellyfin.example.com');
+      expect(canonicalizeBaseUrl('Https://silo.example.com'), 'https://silo.example.com');
+      expect(canonicalizeBaseUrl('HTTPS://silo.example.com'), 'https://silo.example.com');
     });
 
     test('only touches the scheme, not host/path/query', () {
-      expect(canonicalizeBaseUrl('HTTP://Host.Example.com:8096/JellyFin'), 'http://Host.Example.com:8096/JellyFin');
+      expect(canonicalizeBaseUrl('HTTP://Host.Example.com:8096/Media'), 'http://Host.Example.com:8096/Media');
     });
 
     test('strips trailing slash and trims whitespace', () {
-      expect(canonicalizeBaseUrl(' Https://host:8096/jellyfin/ '), 'https://host:8096/jellyfin');
+      expect(canonicalizeBaseUrl(' Https://host:8096/media/ '), 'https://host:8096/media');
     });
 
     test('leaves schemeless input unchanged', () {
@@ -81,7 +81,7 @@ void main() {
   group('hasUrlScheme', () {
     test('recognizes only a real leading scheme', () {
       expect(hasUrlScheme('https://host'), isTrue);
-      expect(hasUrlScheme('jellyfin+tls://host'), isTrue);
+      expect(hasUrlScheme('media+tls://host'), isTrue);
       expect(hasUrlScheme('host:8096'), isFalse);
       expect(hasUrlScheme('host/https://nested'), isFalse);
     });

@@ -21,8 +21,8 @@ import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/download_storage_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/offline_mode_source.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
@@ -115,7 +115,7 @@ class _ScopedTestClient implements MediaServerClient, ScopedMediaServerClient {
     required this.serverId,
     required this.scopedServerId,
     this.fetchItemHandler,
-    this.clientBackend = MediaBackend.jellyfin,
+    this.clientBackend = MediaBackend.silo,
   });
 
   @override
@@ -323,7 +323,7 @@ void main() {
     // PlexApiCache is a singleton accessed eagerly inside DownloadManagerService's
     // constructor; reinitialize per test so each test sees the fresh in-memory DB.
     PlexApiCache.initialize(db);
-    JellyfinApiCache.initialize(db);
+    SiloApiCache.initialize(db);
     testClientResolver = null;
     // Local-path tests store SAF content:// URIs; resolution confirms such a
     // copy is still reachable before returning it (issue #2101).
@@ -905,8 +905,8 @@ void main() {
       final keys = p.syncRuleKeysForWatchEvent(
         WatchStateEvent(
           itemId: 'episode-1',
-          serverId: ServerId('jf-machine'),
-          cacheServerId: 'jf-machine/user-a',
+          serverId: ServerId('silo-srv'),
+          cacheServerId: 'silo:silo-srv/user-a',
           changeType: WatchStateChangeType.watched,
           parentChain: const ['season-1', 'show-1'],
           isNowWatched: true,
@@ -916,9 +916,9 @@ void main() {
       expect(
         keys,
         containsAll(<String>{
-          'test-profile|jf-machine:episode-1',
-          'test-profile|jf-machine:season-1',
-          'test-profile|jf-machine:show-1',
+          'test-profile|silo-srv:episode-1',
+          'test-profile|silo-srv:season-1',
+          'test-profile|silo-srv:show-1',
         }),
       );
       expect(keys, hasLength(3));
@@ -2002,135 +2002,140 @@ void main() {
     });
   });
 
-  group('DownloadProvider — scoped Jellyfin metadata', () {
-    Future<void> insertJellyfinConnection(String userId) {
+  group('DownloadProvider — scoped Silo metadata', () {
+    const siloServer = 'silo-srv';
+    String scopeOf(String siloProfileId) => 'silo:$siloServer/$siloProfileId';
+
+    Future<void> insertSiloConnection() {
       return db
           .into(db.connections)
           .insert(
             ConnectionsCompanion.insert(
-              id: 'jf-machine/$userId',
-              kind: 'jellyfin',
-              displayName: 'Shared JF',
-              configJson: jsonEncode({
-                'baseUrl': 'https://jf.example.com',
-                'serverName': 'Shared JF',
-                'serverMachineId': 'jf-machine',
-                'userId': userId,
-                'userName': userId,
-                'accessToken': 'token-$userId',
-                'deviceId': 'device',
-              }),
+              id: 'silo:$siloServer',
+              kind: 'silo',
+              displayName: 'Shared Silo',
+              configJson: '{}',
               createdAt: 0,
             ),
           );
     }
 
-    Future<void> putPinnedItem(String scopeId, String userId, String itemId, Map<String, Object?> data) async {
-      await JellyfinApiCache.instance.put(ServerId(scopeId), '/Users/$userId/Items/$itemId', data);
-      await JellyfinApiCache.instance.pinForOffline(ServerId(scopeId), itemId);
+    Future<void> bindSiloProfile(String profileId, String siloProfileId) {
+      return db
+          .into(db.profileConnections)
+          .insert(
+            ProfileConnectionsCompanion.insert(
+              profileId: profileId,
+              connectionId: 'silo:$siloServer',
+              userIdentifier: siloProfileId,
+            ),
+          );
     }
 
-    test('loads parent metadata from the exact active Jellyfin user scope', () async {
-      await insertJellyfinConnection('user-a');
-      await insertJellyfinConnection('user-b');
+    Future<void> putPinnedItem(String scopeId, MediaItem item) async {
+      await SiloApiCache.instance.putItem(ServerId(scopeId), item);
+      await SiloApiCache.instance.pinForOffline(ServerId(scopeId), item.id);
+    }
 
-      await putPinnedItem('jf-machine/user-a', 'user-a', 'show-1', {
-        'Id': 'show-1',
-        'Type': 'Series',
-        'Name': 'Scoped Show A',
-        'RecursiveItemCount': 1,
-        'UserData': {'UnplayedItemCount': 1},
-      });
-      await putPinnedItem('jf-machine/user-a', 'user-a', 'season-1', {
-        'Id': 'season-1',
-        'Type': 'Season',
-        'Name': 'Season A',
-        'SeriesId': 'show-1',
-        'SeriesName': 'Scoped Show A',
-        'UserData': {'UnplayedItemCount': 1},
-      });
-      await putPinnedItem('jf-machine/user-a', 'user-a', 'ep-1', {
-        'Id': 'ep-1',
-        'Type': 'Episode',
-        'Name': 'Episode A',
-        'SeriesId': 'show-1',
-        'SeriesName': 'Scoped Show A',
-        'SeasonId': 'season-1',
-        'SeasonName': 'Season A',
-        'UserData': {'PlayCount': 0},
-      });
-      await putPinnedItem('jf-machine/user-b', 'user-b', 'show-1', {
-        'Id': 'show-1',
-        'Type': 'Series',
-        'Name': 'Wrong User Show',
-        'RecursiveItemCount': 1,
-        'UserData': {'UnplayedItemCount': 0},
-      });
+    MediaItem siloEpisode(String id, String title, {int viewCount = 0}) => MediaItem.silo(
+      id: id,
+      kind: MediaKind.episode,
+      title: title,
+      parentId: 'season-1',
+      grandparentId: 'show-1',
+      viewCount: viewCount,
+      serverId: siloServer,
+    );
+
+    test('loads parent metadata from the exact active Silo profile scope', () async {
+      await insertSiloConnection();
+
+      await putPinnedItem(
+        scopeOf('user-a'),
+        const MediaItem.silo(
+          id: 'show-1',
+          kind: MediaKind.show,
+          title: 'Scoped Show A',
+          leafCount: 1,
+          viewedLeafCount: 0,
+          serverId: siloServer,
+        ),
+      );
+      await putPinnedItem(
+        scopeOf('user-a'),
+        const MediaItem.silo(
+          id: 'season-1',
+          kind: MediaKind.season,
+          title: 'Season A',
+          parentId: 'show-1',
+          parentTitle: 'Scoped Show A',
+          leafCount: 1,
+          viewedLeafCount: 0,
+          serverId: siloServer,
+        ),
+      );
+      await putPinnedItem(scopeOf('user-a'), siloEpisode('ep-1', 'Episode A'));
+      await putPinnedItem(
+        scopeOf('user-b'),
+        const MediaItem.silo(
+          id: 'show-1',
+          kind: MediaKind.show,
+          title: 'Wrong User Show',
+          leafCount: 1,
+          viewedLeafCount: 1,
+          serverId: siloServer,
+        ),
+      );
 
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: ServerId(siloServer),
+        clientScopeId: scopeOf('user-a'),
         ratingKey: 'ep-1',
-        globalKey: 'jf-machine:ep-1',
+        globalKey: '$siloServer:ep-1',
         type: 'episode',
         parentRatingKey: 'season-1',
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-1');
-      testClientResolver = (serverId, {clientScopeId}) => serverId == 'jf-machine'
-          ? _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: 'jf-machine/user-a')
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-1');
+      testClientResolver = (serverId, {clientScopeId}) => serverId == siloServer
+          ? _ScopedTestClient(serverId: ServerId(siloServer), scopedServerId: scopeOf('user-a'))
           : null;
 
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
       p.debugSeedState(
         downloads: {
-          'jf-machine:ep-1': const DownloadProgress(globalKey: 'jf-machine:ep-1', status: DownloadStatus.completed),
+          '$siloServer:ep-1': const DownloadProgress(globalKey: '$siloServer:ep-1', status: DownloadStatus.completed),
         },
       );
       await p.refreshMetadataFromCache();
 
-      expect(p.getMetadata('jf-machine:ep-1')?.title, 'Episode A');
-      expect(p.getMetadata('jf-machine:show-1')?.title, 'Scoped Show A');
-      expect(p.getMetadata('jf-machine:season-1')?.title, 'Season A');
+      expect(p.getMetadata('$siloServer:ep-1')?.title, 'Episode A');
+      expect(p.getMetadata('$siloServer:show-1')?.title, 'Scoped Show A');
+      expect(p.getMetadata('$siloServer:season-1')?.title, 'Season A');
 
       p.dispose();
     });
 
-    test('refreshMetadataFromCache prefers the active Jellyfin user scope', () async {
-      await insertJellyfinConnection('user-a');
-      await insertJellyfinConnection('user-b');
-      await putPinnedItem('jf-machine/user-a', 'user-a', 'ep-1', {
-        'Id': 'ep-1',
-        'Type': 'Episode',
-        'Name': 'Wrong User Episode',
-        'SeriesId': 'show-1',
-        'SeasonId': 'season-1',
-        'UserData': {'PlayCount': 0},
-      });
-      await putPinnedItem('jf-machine/user-b', 'user-b', 'ep-1', {
-        'Id': 'ep-1',
-        'Type': 'Episode',
-        'Name': 'Active User Episode',
-        'SeriesId': 'show-1',
-        'SeasonId': 'season-1',
-        'UserData': {'PlayCount': 1, 'Played': true},
-      });
+    test('refreshMetadataFromCache prefers the active Silo profile scope', () async {
+      await insertSiloConnection();
+      await putPinnedItem(scopeOf('user-a'), siloEpisode('ep-1', 'Wrong User Episode'));
+      await putPinnedItem(scopeOf('user-b'), siloEpisode('ep-1', 'Active User Episode', viewCount: 1));
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: ServerId(siloServer),
+        clientScopeId: scopeOf('user-a'),
         ratingKey: 'ep-1',
-        globalKey: 'jf-machine:ep-1',
+        globalKey: '$siloServer:ep-1',
         type: 'episode',
         parentRatingKey: 'season-1',
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-1');
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-1');
       testClientResolver = (serverId, {clientScopeId}) {
-        if (serverId == 'jf-machine') {
-          return _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: 'jf-machine/user-b');
+        if (serverId == siloServer) {
+          return _ScopedTestClient(serverId: ServerId(siloServer), scopedServerId: scopeOf('user-b'));
         }
         return null;
       };
@@ -2139,49 +2144,41 @@ void main() {
       await p.ensureInitialized();
       p.debugSeedState(
         downloads: {
-          'jf-machine:ep-1': const DownloadProgress(globalKey: 'jf-machine:ep-1', status: DownloadStatus.completed),
+          '$siloServer:ep-1': const DownloadProgress(globalKey: '$siloServer:ep-1', status: DownloadStatus.completed),
         },
       );
       await p.refreshMetadataFromCache();
 
-      expect(p.getMetadata('jf-machine:ep-1')?.title, 'Active User Episode');
-      expect(p.getMetadata('jf-machine:ep-1')?.isWatched, isTrue);
+      expect(p.getMetadata('$siloServer:ep-1')?.title, 'Active User Episode');
+      expect(p.getMetadata('$siloServer:ep-1')?.isWatched, isTrue);
 
       p.dispose();
     });
 
-    test('refreshMetadataFromCache applies scoped Jellyfin offline watch overlay', () async {
-      await insertJellyfinConnection('user-a');
-      await insertJellyfinConnection('user-b');
-      await putPinnedItem('jf-machine/user-b', 'user-b', 'ep-1', {
-        'Id': 'ep-1',
-        'Type': 'Episode',
-        'Name': 'Active User Episode',
-        'SeriesId': 'show-1',
-        'SeasonId': 'season-1',
-        'UserData': {'PlayCount': 0},
-      });
+    test('refreshMetadataFromCache applies scoped Silo offline watch overlay', () async {
+      await insertSiloConnection();
+      await putPinnedItem(scopeOf('user-b'), siloEpisode('ep-1', 'Active User Episode'));
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: ServerId(siloServer),
+        clientScopeId: scopeOf('user-a'),
         ratingKey: 'ep-1',
-        globalKey: 'jf-machine:ep-1',
+        globalKey: '$siloServer:ep-1',
         type: 'episode',
         parentRatingKey: 'season-1',
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-1');
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-1');
       await db.insertWatchAction(
         profileId: 'test-profile',
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-b',
+        serverId: ServerId(siloServer),
+        clientScopeId: scopeOf('user-b'),
         ratingKey: 'ep-1',
         actionType: 'watched',
       );
       testClientResolver = (serverId, {clientScopeId}) {
-        if (serverId == 'jf-machine') {
-          return _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: 'jf-machine/user-b');
+        if (serverId == siloServer) {
+          return _ScopedTestClient(serverId: ServerId(siloServer), scopedServerId: scopeOf('user-b'));
         }
         return null;
       };
@@ -2190,52 +2187,36 @@ void main() {
       await p.ensureInitialized();
       p.debugSeedState(
         downloads: {
-          'jf-machine:ep-1': const DownloadProgress(globalKey: 'jf-machine:ep-1', status: DownloadStatus.completed),
+          '$siloServer:ep-1': const DownloadProgress(globalKey: '$siloServer:ep-1', status: DownloadStatus.completed),
         },
       );
 
       await p.refreshMetadataFromCache();
 
-      expect(p.getMetadata('jf-machine:ep-1')?.isWatched, isTrue);
+      expect(p.getMetadata('$siloServer:ep-1')?.isWatched, isTrue);
 
       p.dispose();
     });
 
-    test('cold Jellyfin profile restores its persisted scoped queued watch action', () async {
-      await insertJellyfinConnection('user-a');
-      await insertJellyfinConnection('user-b');
-      await db
-          .into(db.profileConnections)
-          .insert(
-            ProfileConnectionsCompanion.insert(
-              profileId: 'test-profile',
-              connectionId: 'jf-machine/user-b',
-              userIdentifier: 'user-b',
-            ),
-          );
-      await putPinnedItem('jf-machine/user-b', 'user-b', 'ep-1', {
-        'Id': 'ep-1',
-        'Type': 'Episode',
-        'Name': 'Offline User B Episode',
-        'SeriesId': 'show-1',
-        'SeasonId': 'season-1',
-        'UserData': {'PlayCount': 0},
-      });
+    test('cold Silo profile restores its persisted scoped queued watch action', () async {
+      await insertSiloConnection();
+      await bindSiloProfile('test-profile', 'user-b');
+      await putPinnedItem(scopeOf('user-b'), siloEpisode('ep-1', 'Offline User B Episode'));
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: ServerId(siloServer),
+        clientScopeId: scopeOf('user-a'),
         ratingKey: 'ep-1',
-        globalKey: 'jf-machine:ep-1',
+        globalKey: '$siloServer:ep-1',
         type: 'episode',
         parentRatingKey: 'season-1',
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-1');
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-1');
       await db.insertWatchAction(
         profileId: 'test-profile',
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-b',
+        serverId: ServerId(siloServer),
+        clientScopeId: scopeOf('user-b'),
         ratingKey: 'ep-1',
         actionType: 'watched',
       );
@@ -2244,62 +2225,56 @@ void main() {
       await provider.ensureInitialized();
       provider.debugSeedState(
         downloads: {
-          'jf-machine:ep-1': const DownloadProgress(globalKey: 'jf-machine:ep-1', status: DownloadStatus.completed),
+          '$siloServer:ep-1': const DownloadProgress(globalKey: '$siloServer:ep-1', status: DownloadStatus.completed),
         },
       );
       await provider.refreshMetadataFromCache();
 
-      expect(provider.getMetadata('jf-machine:ep-1')?.title, 'Offline User B Episode');
-      expect(provider.getMetadata('jf-machine:ep-1')?.isWatched, isTrue);
+      expect(provider.getMetadata('$siloServer:ep-1')?.title, 'Offline User B Episode');
+      expect(provider.getMetadata('$siloServer:ep-1')?.isWatched, isTrue);
       provider.dispose();
     });
 
-    test('cold Jellyfin hydration issues a constant number of selects as downloads grow', () async {
-      await insertJellyfinConnection('user-a');
-      await insertJellyfinConnection('user-b');
-      await db
-          .into(db.profileConnections)
-          .insert(
-            ProfileConnectionsCompanion.insert(
-              profileId: 'test-profile',
-              connectionId: 'jf-machine/user-b',
-              userIdentifier: 'user-b',
-            ),
-          );
-      await putPinnedItem('jf-machine/user-b', 'user-b', 'show-1', {
-        'Id': 'show-1',
-        'Type': 'Series',
-        'Name': 'Show B',
-        'UserData': {'UnplayedItemCount': 1},
-      });
-      await putPinnedItem('jf-machine/user-b', 'user-b', 'season-1', {
-        'Id': 'season-1',
-        'Type': 'Season',
-        'Name': 'Season B',
-        'SeriesId': 'show-1',
-        'UserData': {'UnplayedItemCount': 1},
-      });
+    test('cold Silo hydration issues a constant number of selects as downloads grow', () async {
+      await insertSiloConnection();
+      await bindSiloProfile('test-profile', 'user-b');
+      await putPinnedItem(
+        scopeOf('user-b'),
+        const MediaItem.silo(
+          id: 'show-1',
+          kind: MediaKind.show,
+          title: 'Show B',
+          leafCount: 1,
+          viewedLeafCount: 0,
+          serverId: siloServer,
+        ),
+      );
+      await putPinnedItem(
+        scopeOf('user-b'),
+        const MediaItem.silo(
+          id: 'season-1',
+          kind: MediaKind.season,
+          title: 'Season B',
+          parentId: 'show-1',
+          leafCount: 1,
+          viewedLeafCount: 0,
+          serverId: siloServer,
+        ),
+      );
 
       Future<void> addEpisode(int index) async {
-        await putPinnedItem('jf-machine/user-b', 'user-b', 'ep-$index', {
-          'Id': 'ep-$index',
-          'Type': 'Episode',
-          'Name': 'Episode $index',
-          'SeriesId': 'show-1',
-          'SeasonId': 'season-1',
-          'UserData': {'PlayCount': 0},
-        });
+        await putPinnedItem(scopeOf('user-b'), siloEpisode('ep-$index', 'Episode $index'));
         await db.insertDownload(
-          serverId: ServerId('jf-machine'),
-          clientScopeId: 'jf-machine/user-a',
+          serverId: ServerId(siloServer),
+          clientScopeId: scopeOf('user-a'),
           ratingKey: 'ep-$index',
-          globalKey: 'jf-machine:ep-$index',
+          globalKey: '$siloServer:ep-$index',
           type: 'episode',
           parentRatingKey: 'season-1',
           grandparentRatingKey: 'show-1',
           status: DownloadStatus.completed.index,
         );
-        await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-$index');
+        await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-$index');
       }
 
       Future<int> selectsToHydrate(int episodeCount) async {
@@ -2308,17 +2283,17 @@ void main() {
         provider.debugSeedState(
           downloads: {
             for (var i = 1; i <= episodeCount; i++)
-              'jf-machine:ep-$i': DownloadProgress(globalKey: 'jf-machine:ep-$i', status: DownloadStatus.completed),
+              '$siloServer:ep-$i': DownloadProgress(globalKey: '$siloServer:ep-$i', status: DownloadStatus.completed),
           },
         );
         downloadOwnerSelectGate.selectCount = 0;
         await provider.refreshMetadataFromCache();
         final selects = downloadOwnerSelectGate.selectCount;
         for (var i = 1; i <= episodeCount; i++) {
-          expect(provider.getMetadata('jf-machine:ep-$i')?.title, 'Episode $i');
+          expect(provider.getMetadata('$siloServer:ep-$i')?.title, 'Episode $i');
         }
-        expect(provider.getMetadata('jf-machine:show-1')?.title, 'Show B');
-        expect(provider.getMetadata('jf-machine:season-1')?.title, 'Season B');
+        expect(provider.getMetadata('$siloServer:show-1')?.title, 'Show B');
+        expect(provider.getMetadata('$siloServer:season-1')?.title, 'Season B');
         provider.dispose();
         return selects;
       }
@@ -2332,6 +2307,7 @@ void main() {
 
       expect(await selectsToHydrate(40), oneEpisodeSelects);
     });
+
     test('offline watch hydration snapshots downloads before database awaits', () async {
       final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await provider.ensureInitialized();
@@ -2369,36 +2345,36 @@ void main() {
     });
 
     test('profile switch discards an in-flight metadata refresh from the old scope', () async {
-      await insertJellyfinConnection('user-a');
+      await insertSiloConnection();
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: ServerId(siloServer),
+        clientScopeId: scopeOf('user-a'),
         ratingKey: 'movie-1',
-        globalKey: 'jf-machine:movie-1',
+        globalKey: '$siloServer:movie-1',
         type: 'movie',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'jf-machine:movie-1');
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:movie-1');
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: '$siloServer:movie-1');
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: '$siloServer:movie-1');
 
       final fetchStarted = Completer<void>();
       final releaseFetch = Completer<void>();
       var activeClient = _ScopedTestClient(
-        serverId: ServerId('jf-machine'),
-        scopedServerId: 'jf-machine/user-a',
+        serverId: ServerId(siloServer),
+        scopedServerId: scopeOf('user-a'),
         fetchItemHandler: (id) async {
           fetchStarted.complete();
           await releaseFetch.future;
           return testMediaItem(
             id: id,
-            backend: MediaBackend.jellyfin,
+            backend: MediaBackend.silo,
             kind: MediaKind.movie,
             title: 'Profile A',
-            serverId: ServerId('jf-machine'),
+            serverId: ServerId(siloServer),
           );
         },
       );
-      testClientResolver = (serverId, {clientScopeId}) => serverId == 'jf-machine' ? activeClient : null;
+      testClientResolver = (serverId, {clientScopeId}) => serverId == siloServer ? activeClient : null;
 
       final p = DownloadProvider.forTesting(
         downloadManager: downloadManager,
@@ -2408,8 +2384,8 @@ void main() {
       await p.ensureInitialized();
       p.debugSeedState(
         downloads: {
-          'jf-machine:movie-1': const DownloadProgress(
-            globalKey: 'jf-machine:movie-1',
+          '$siloServer:movie-1': const DownloadProgress(
+            globalKey: '$siloServer:movie-1',
             status: DownloadStatus.completed,
           ),
         },
@@ -2419,25 +2395,25 @@ void main() {
       await fetchStarted.future;
       p.setActiveProfileId('profile-b');
       activeClient = _ScopedTestClient(
-        serverId: ServerId('jf-machine'),
-        scopedServerId: 'jf-machine/user-b',
+        serverId: ServerId(siloServer),
+        scopedServerId: scopeOf('user-b'),
         fetchItemHandler: (id) async => testMediaItem(
           id: id,
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           title: 'Profile B',
-          serverId: ServerId('jf-machine'),
+          serverId: ServerId(siloServer),
         ),
       );
       releaseFetch.complete();
       await staleRefresh;
 
-      expect(p.getMetadata('jf-machine:movie-1'), isNull);
+      expect(p.getMetadata('$siloServer:movie-1'), isNull);
 
-      if (p.getMetadata('jf-machine:movie-1')?.title != 'Profile B') {
+      if (p.getMetadata('$siloServer:movie-1')?.title != 'Profile B') {
         final reloaded = Completer<void>();
         void onReload() {
-          if (p.getMetadata('jf-machine:movie-1')?.title == 'Profile B' && !reloaded.isCompleted) {
+          if (p.getMetadata('$siloServer:movie-1')?.title == 'Profile B' && !reloaded.isCompleted) {
             reloaded.complete();
           }
         }
@@ -2446,19 +2422,19 @@ void main() {
         await reloaded.future.timeout(const Duration(seconds: 2));
         p.removeListener(onReload);
       }
-      expect(p.getMetadata('jf-machine:movie-1')?.title, 'Profile B');
+      expect(p.getMetadata('$siloServer:movie-1')?.title, 'Profile B');
 
       p.dispose();
     });
 
-    test('shared Jellyfin cache scope survives until its final download owner is released', () async {
-      const globalKey = 'jf-machine:movie-1';
-      const scopeId = 'jf-machine/user-a';
-      await insertJellyfinConnection('user-a');
+    test('shared Silo cache scope survives until its final download owner is released', () async {
+      const globalKey = '$siloServer:movie-1';
+      final scopeId = scopeOf('user-a');
+      await insertSiloConnection();
       await _insertProfile(db, 'profile-a');
       await _insertProfile(db, 'profile-b');
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
+        serverId: ServerId(siloServer),
         clientScopeId: scopeId,
         ratingKey: 'movie-1',
         globalKey: globalKey,
@@ -2469,18 +2445,14 @@ void main() {
         await db.addDownloadOwner(
           profileId: profileId,
           globalKey: globalKey,
-          backendId: MediaBackend.jellyfin.id,
+          backendId: MediaBackend.silo.id,
           clientScopeId: scopeId,
         );
       }
-      await putPinnedItem(scopeId, 'user-a', 'movie-1', {
-        'Id': 'movie-1',
-        'Type': 'Movie',
-        'Name': 'Shared offline movie',
-      });
-      final segmentsEndpoint = JellyfinApiCache.mediaSegmentsEndpoint('movie-1');
-      await JellyfinApiCache.instance.put(ServerId(scopeId), segmentsEndpoint, {'Items': <Object?>[]});
-      await JellyfinApiCache.instance.pinForOffline(ServerId(scopeId), 'movie-1');
+      await putPinnedItem(
+        scopeId,
+        const MediaItem.silo(id: 'movie-1', kind: MediaKind.movie, title: 'Shared offline movie', serverId: siloServer),
+      );
 
       final provider = DownloadProvider.forTesting(
         downloadManager: downloadManager,
@@ -2493,57 +2465,41 @@ void main() {
       await provider.deleteDownloadsForProfile('profile-a');
 
       expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {globalKey});
-      expect(
-        (await JellyfinApiCache.instance.getMetadata(ServerId(scopeId), 'movie-1'))?.title,
-        'Shared offline movie',
-      );
-      expect(await JellyfinApiCache.instance.get(ServerId(scopeId), segmentsEndpoint), isNotNull);
+      expect((await SiloApiCache.instance.getMetadata(ServerId(scopeId), 'movie-1'))?.title, 'Shared offline movie');
 
       await provider.deleteDownloadsForProfile('profile-b');
 
-      expect(await JellyfinApiCache.instance.getMetadata(ServerId(scopeId), 'movie-1'), isNull);
-      expect(await JellyfinApiCache.instance.get(ServerId(scopeId), segmentsEndpoint), isNull);
+      expect(await SiloApiCache.instance.getMetadata(ServerId(scopeId), 'movie-1'), isNull);
     });
 
     test('lookupOfflineMetadata resolves the active profile scope, not the download creator scope', () async {
-      await insertJellyfinConnection('user-a');
-      await insertJellyfinConnection('user-b');
+      await insertSiloConnection();
       await _insertProfile(db, 'profile-a');
       await _insertProfile(db, 'profile-b');
-      for (final (profileId, userId) in [('profile-a', 'user-a'), ('profile-b', 'user-b')]) {
-        await db
-            .into(db.profileConnections)
-            .insert(
-              ProfileConnectionsCompanion.insert(
-                profileId: profileId,
-                connectionId: 'jf-machine/$userId',
-                userIdentifier: userId,
-              ),
-            );
-      }
+      await bindSiloProfile('profile-a', 'user-a');
+      await bindSiloProfile('profile-b', 'user-b');
       // Shared download physically created under user A's compound scope;
       // metadata cached only in A's namespace.
       await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: ServerId(siloServer),
+        clientScopeId: scopeOf('user-a'),
         ratingKey: 'movie-1',
-        globalKey: 'jf-machine:movie-1',
+        globalKey: '$siloServer:movie-1',
         type: 'movie',
         status: DownloadStatus.completed.index,
       );
       for (final profileId in ['profile-a', 'profile-b']) {
         await db.addDownloadOwner(
           profileId: profileId,
-          globalKey: 'jf-machine:movie-1',
-          backendId: MediaBackend.jellyfin.id,
-          clientScopeId: 'jf-machine/user-a',
+          globalKey: '$siloServer:movie-1',
+          backendId: MediaBackend.silo.id,
+          clientScopeId: scopeOf('user-a'),
         );
       }
-      await putPinnedItem('jf-machine/user-a', 'user-a', 'movie-1', {
-        'Id': 'movie-1',
-        'Type': 'Movie',
-        'Name': 'User A Movie',
-      });
+      await putPinnedItem(
+        scopeOf('user-a'),
+        const MediaItem.silo(id: 'movie-1', kind: MediaKind.movie, title: 'User A Movie', serverId: siloServer),
+      );
 
       final providerB = DownloadProvider.forTesting(
         downloadManager: downloadManager,
@@ -2555,7 +2511,7 @@ void main() {
       // Profile B must never inherit the creator's clientScopeId: its own
       // namespace has no cached row, so the lookup yields null and the
       // caller falls back to its lightweight seed metadata.
-      expect(await providerB.lookupOfflineMetadata(ServerId('jf-machine'), 'movie-1'), isNull);
+      expect(await providerB.lookupOfflineMetadata(ServerId(siloServer), 'movie-1'), isNull);
 
       final providerA = DownloadProvider.forTesting(
         downloadManager: downloadManager,
@@ -2564,7 +2520,7 @@ void main() {
       );
       addTearDown(providerA.dispose);
       await providerA.ensureInitialized();
-      expect((await providerA.lookupOfflineMetadata(ServerId('jf-machine'), 'movie-1'))?.title, 'User A Movie');
+      expect((await providerA.lookupOfflineMetadata(ServerId(siloServer), 'movie-1'))?.title, 'User A Movie');
     });
   });
 
@@ -3341,33 +3297,33 @@ void main() {
       p.dispose();
     });
 
-    test('queued overlays are isolated to the active Jellyfin client scope', () async {
+    test('queued overlays are isolated to the active Silo client scope', () async {
       await db.insertWatchAction(
         profileId: 'test-profile',
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
+        serverId: ServerId('silo-srv'),
+        clientScopeId: 'silo:silo-srv/user-a',
         ratingKey: 'show-1',
         actionType: 'watched',
       );
       await db.insertWatchAction(
         profileId: 'test-profile',
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-b',
+        serverId: ServerId('silo-srv'),
+        clientScopeId: 'silo:silo-srv/user-b',
         ratingKey: 'show-1',
         actionType: 'unwatched',
       );
       final episode = testMediaItem(
         id: 'episode-1',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         parentId: 'season-1',
         grandparentId: 'show-1',
-        serverId: ServerId('jf-machine'),
+        serverId: ServerId('silo-srv'),
         viewCount: 0,
       );
-      var activeScope = 'jf-machine/user-a';
-      testClientResolver = (serverId, {clientScopeId}) => serverId == 'jf-machine'
-          ? _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: activeScope)
+      var activeScope = 'silo:silo-srv/user-a';
+      testClientResolver = (serverId, {clientScopeId}) => serverId == 'silo-srv'
+          ? _ScopedTestClient(serverId: ServerId('silo-srv'), scopedServerId: activeScope)
           : null;
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
@@ -3376,7 +3332,7 @@ void main() {
       await p.refreshMetadataFromCache();
       expect(p.getMetadata(episode.globalKey)?.isWatched, isTrue);
 
-      activeScope = 'jf-machine/user-b';
+      activeScope = 'silo:silo-srv/user-b';
       await p.refreshMetadataFromCache();
       expect(p.getMetadata(episode.globalKey)?.isWatched, isFalse);
 
@@ -3476,7 +3432,7 @@ void main() {
         metadata: {
           'srv:t1': testMediaItem(
             id: 't1',
-            backend: MediaBackend.jellyfin,
+            backend: MediaBackend.silo,
             kind: MediaKind.track,
             title: 'Track',
             parentId: 'album-1',
@@ -3484,7 +3440,7 @@ void main() {
           ),
           'srv:album-1': testMediaItem(
             id: 'album-1',
-            backend: MediaBackend.jellyfin,
+            backend: MediaBackend.silo,
             kind: MediaKind.album,
             title: 'Album',
             libraryId: 'lib-m',
@@ -3577,7 +3533,7 @@ void main() {
     test('downloadedAlbums derives library identity from stamped tracks', () async {
       MediaItem track(String id, {String? libraryId, String? libraryTitle}) => testMediaItem(
         id: id,
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: id,
         parentId: 'album-1',
@@ -3597,10 +3553,10 @@ void main() {
           'srv:t2': const DownloadProgress(globalKey: 'srv:t2', status: DownloadStatus.completed),
         },
         metadata: {
-          // MediaBrowser album parents fetched via fetchItem carry no library.
+          // An album parent fetched via fetchItem can carry no library.
           'srv:album-1': testMediaItem(
             id: 'album-1',
-            backend: MediaBackend.jellyfin,
+            backend: MediaBackend.silo,
             kind: MediaKind.album,
             title: 'Album',
             serverId: ServerId('srv'),

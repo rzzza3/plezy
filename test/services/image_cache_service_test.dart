@@ -184,15 +184,15 @@ void main() {
         'https://srv.example:32400/photo/:/transcode?width=200&minSize=1'
         '&url=%2Flibrary%2Fmetadata%2F1%2Fthumb%2F99%3FX-Plex-Token%3D$token&X-Plex-Token=$token';
 
-    test('redaction blanks outer and nested Plex tokens and Jellyfin api keys', () {
+    test('redaction blanks outer and nested Plex tokens and api_key params', () {
       expect(
         redactArtworkUrl(plexUrl),
         'https://srv.example:32400/photo/:/transcode?width=200&minSize=1'
         '&url=%2Flibrary%2Fmetadata%2F1%2Fthumb%2F99%3FX-Plex-Token%3D&X-Plex-Token=',
       );
       expect(
-        redactArtworkUrl('https://jf.example/Items/1/Images/Primary?maxWidth=300&api_key=$token'),
-        'https://jf.example/Items/1/Images/Primary?maxWidth=300&api_key=',
+        redactArtworkUrl('https://media.example/Items/1/Images/Primary?maxWidth=300&api_key=$token'),
+        'https://media.example/Items/1/Images/Primary?maxWidth=300&api_key=',
       );
       expect(redactArtworkUrl('https://cdn.example/poster.jpg'), 'https://cdn.example/poster.jpg');
     });

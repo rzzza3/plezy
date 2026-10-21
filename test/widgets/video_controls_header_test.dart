@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_item.dart';
-import 'package:plezy/services/jellyfin_mappers.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:plezy/widgets/video_controls/widgets/video_controls_header.dart';
 import 'package:provider/provider.dart';
+
+import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -17,8 +18,8 @@ void main() {
     await initializeDateFormatting('en');
   });
 
-  testWidgets('title-less mapped movie builds with localized fallback in both layouts', (tester) async {
-    final item = _mappedItem({'Id': 'movie-without-name', 'Type': 'Movie'});
+  testWidgets('title-less movie builds with localized fallback in both layouts', (tester) async {
+    final item = testMediaItem(id: 'movie-without-name');
 
     for (final style in VideoHeaderStyle.values) {
       await _pumpHeader(tester, metadata: item, style: style);
@@ -28,14 +29,14 @@ void main() {
     }
   });
 
-  testWidgets('title-less mapped episode keeps series identity and uses fallback in both layouts', (tester) async {
-    final item = _mappedItem({
-      'Id': 'episode-without-name',
-      'Type': 'Episode',
-      'SeriesName': 'Mapped Series',
-      'ParentIndexNumber': 2,
-      'IndexNumber': 3,
-    });
+  testWidgets('title-less episode keeps series identity and uses fallback in both layouts', (tester) async {
+    final item = testMediaItem(
+      id: 'episode-without-name',
+      kind: MediaKind.episode,
+      grandparentTitle: 'Mapped Series',
+      parentIndex: 2,
+      index: 3,
+    );
 
     for (final style in VideoHeaderStyle.values) {
       await _pumpHeader(tester, metadata: item, style: style);
@@ -49,15 +50,15 @@ void main() {
     }
   });
 
-  testWidgets('ordinary mapped episode wording remains unchanged in both layouts', (tester) async {
-    final item = _mappedItem({
-      'Id': 'titled-episode',
-      'Type': 'Episode',
-      'Name': 'The Arrival',
-      'SeriesName': 'Mapped Series',
-      'ParentIndexNumber': 1,
-      'IndexNumber': 4,
-    });
+  testWidgets('ordinary episode wording remains unchanged in both layouts', (tester) async {
+    final item = testMediaItem(
+      id: 'titled-episode',
+      kind: MediaKind.episode,
+      title: 'The Arrival',
+      grandparentTitle: 'Mapped Series',
+      parentIndex: 1,
+      index: 4,
+    );
 
     for (final style in VideoHeaderStyle.values) {
       await _pumpHeader(tester, metadata: item, style: style);
@@ -70,15 +71,6 @@ void main() {
       expect(find.text(t.common.unknown), findsNothing, reason: style.name);
     }
   });
-}
-
-MediaItem _mappedItem(Map<String, dynamic> json) {
-  return JellyfinMappers.mediaItem(
-    json,
-    serverId: ServerId('header-test-server'),
-    serverName: 'Test Server',
-    absolutizer: null,
-  )!;
 }
 
 Future<void> _pumpHeader(WidgetTester tester, {required MediaItem metadata, required VideoHeaderStyle style}) async {

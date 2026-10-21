@@ -21,7 +21,6 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/collection_detail_screen.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -334,7 +333,6 @@ Future<_CollectionHarness> _createHarness(List<MediaItem> items, {int? pageSize}
 
   final database = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(database);
-  JellyfinApiCache.initialize(database);
 
   final downloadManager = DownloadManagerService(
     database: database,

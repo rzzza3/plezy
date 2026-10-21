@@ -9,7 +9,6 @@ import 'package:plezy/media/media_part_timeline.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/services/external_player_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/utils/active_client_scope.dart';
@@ -23,7 +22,7 @@ class _RecordingClient with PlaybackReportRecorder implements MediaServerClient,
           scopedServerId ??
           (backend == MediaBackend.plex
               ? buildPlexProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a')
-              : 'srv/user-a');
+              : SiloProfileScopeId(serverId: ServerId('srv'), profileId: 'user-a'));
 
   bool failStart = false;
   bool failStop = false;
@@ -42,11 +41,11 @@ class _RecordingClient with PlaybackReportRecorder implements MediaServerClient,
   @override
   double get watchedThreshold => 0.9;
 
-  // Mirror the real clients: Jellyfin marks played from the stopped report, so
+  // Mirror the real clients: Silo marks played from the stopped report, so
   // the external-player completion path emits only the local watch event
   // (#1287); Plex needs the explicit markWatched.
   @override
-  bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.jellyfin;
+  bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.silo;
 
   @override
   Future<void> onPlaybackReport(PlaybackReportCall call) async {
@@ -99,7 +98,6 @@ void main() {
 
   test('Android external progress queues unknown-duration resume when no client is available', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
-    JellyfinApiCache.initialize(db);
     final manager = MultiServerManager();
     final service = OfflineWatchSyncService(database: db, serverManager: manager);
     addTearDown(() async {
@@ -176,8 +174,8 @@ void main() {
     expect(client.watched, ['item-1']);
   });
 
-  test('Android external completion on Jellyfin marks watched via the stop report, not markWatched (#1287)', () async {
-    final client = _RecordingClient(backend: MediaBackend.jellyfin);
+  test('Android external completion on Silo marks watched via the stop report, not markWatched (#1287)', () async {
+    final client = _RecordingClient(backend: MediaBackend.silo);
 
     await ExternalPlayerService.reportAndroidExternalProgressForTesting(
       positionMs: null,
@@ -189,8 +187,7 @@ void main() {
 
     // The stopped report at full duration marks it played server-side…
     expect(client.stopped, [(positionMs: 100000, durationMs: 100000)]);
-    // …so the explicit markWatched is skipped — issuing it would double-scrobble
-    // through the Jellyfin Trakt plugin.
+    // …so the explicit markWatched is skipped — issuing it would mark it twice.
     expect(client.watched, isEmpty);
   });
 

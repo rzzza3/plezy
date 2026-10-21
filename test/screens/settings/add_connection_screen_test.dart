@@ -27,8 +27,6 @@ void main() {
 
     expect(find.text('Connect to Silo'), findsOneWidget);
     expect(find.text('Sign in with Plex'), findsNothing);
-    expect(find.text('Connect to Jellyfin'), findsNothing);
-    expect(find.text('Connect to Emby'), findsNothing);
     expect(find.byType(FocusableWrapper), findsOneWidget);
 
     final badges = tester.widgetList<BackendBadge>(find.byType(BackendBadge)).map((b) => b.backend).toList();
@@ -42,8 +40,6 @@ void main() {
     expect(find.text('Connect to Silo'), findsOneWidget);
     expect(find.text('Borrow from another profile'), findsOneWidget);
     expect(find.text('Sign in with Plex'), findsNothing);
-    expect(find.text('Connect to Jellyfin'), findsNothing);
-    expect(find.text('Connect to Emby'), findsNothing);
     final badges = tester.widgetList<BackendBadge>(find.byType(BackendBadge)).map((b) => b.backend).toList();
     expect(badges, [MediaBackend.silo]);
   });

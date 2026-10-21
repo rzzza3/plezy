@@ -126,46 +126,4 @@ void main() {
       await expectLater(client.fetchCollectionMemberships({'x'}), throwsA(anything));
     });
   });
-
-  group('Jellyfin fetchCollectionMemberships', () {
-    test('keeps the BoxSets holding asked-about titles, in each BoxSet\'s order', () async {
-      final childrenRequests = <String>[];
-      final client = testJellyfinClient(
-        handler: (request) async {
-          final query = request.url.queryParameters;
-          if (request.url.path != '/Items') return http.Response('not found', 404);
-          if (query['IncludeItemTypes'] == 'BoxSet') {
-            return jsonResponse({
-              'Items': [
-                {'Id': 'box-dune', 'Name': 'Dune Collection', 'Type': 'BoxSet'},
-                {'Id': 'box-other', 'Name': 'Other', 'Type': 'BoxSet'},
-              ],
-              'TotalRecordCount': 2,
-            });
-          }
-          final parentId = query['ParentId']!;
-          childrenRequests.add(parentId);
-          return jsonResponse({
-            'Items': switch (parentId) {
-              'box-dune' => [
-                {'Id': 'dune-1'},
-                {'Id': 'not-downloaded'},
-                {'Id': 'dune-2'},
-              ],
-              _ => [
-                {'Id': 'unrelated'},
-              ],
-            },
-          });
-        },
-      );
-      addTearDown(client.close);
-
-      final memberships = await client.fetchCollectionMemberships({'dune-2', 'dune-1', 'show-1'});
-
-      expect(_ids(memberships), ['box-dune:dune-1,dune-2']);
-      expect(memberships.single.collection.title, 'Dune Collection');
-      expect(childrenRequests, ['box-dune', 'box-other']);
-    });
-  });
 }

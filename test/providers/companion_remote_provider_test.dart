@@ -14,9 +14,7 @@ import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/services/companion_remote/companion_remote_peer_service.dart';
 import 'package:plezy/services/companion_remote/lan_discovery_service.dart';
 import 'package:plezy/services/companion_remote/remote_auth_context.dart';
-import 'package:plezy/services/companion_remote/remote_auth_service.dart';
 
-import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_stack.dart';
 
@@ -68,17 +66,21 @@ void main() {
 
   group('CompanionRemoteProvider — live host identity refresh', () {
     test('a refresh still rebuilding when the provider is disposed does not restart the host', () async {
-      final stack = await ProfileStack.create();
+      final stack = await ProfileStack.create(homeUsers: [_homeUser('admin', admin: true)]);
       addTearDown(stack.dispose);
       final first = _localProfile('profile-a');
       final second = _localProfile('profile-b');
-      for (final (profile, connection) in [(first, _jellyfinConnection('a')), (second, _jellyfinConnection('b'))]) {
-        await stack.connections.upsert(connection);
+      for (final (profile, account) in [
+        (first, _plexAccount('plex-a', 'client-a')),
+        (second, _plexAccount('plex-b', 'client-b')),
+      ]) {
+        await stack.connections.upsert(account);
         await stack.profiles.upsert(profile);
         await stack.profileConnections.upsert(
-          ProfileConnection(profileId: profile.id, connectionId: connection.id, userIdentifier: connection.userId),
+          ProfileConnection(profileId: profile.id, connectionId: account.id, userIdentifier: 'admin'),
           makeDefault: true,
         );
+        await stack.plexHome.refresh(account);
       }
       await stack.storage.setActiveProfileId(first.id);
       await stack.active.initialize();
@@ -100,6 +102,7 @@ void main() {
           connections: stack.connections,
           activeProfile: stack.active,
           profileConnections: stack.profileConnections,
+          plexHomeForConnection: stack.plexHome.materializePlexHomeForConnection,
         ),
         isTrue,
       );
@@ -661,20 +664,6 @@ void main() {
   });
 
   group('CompanionRemoteProvider — crypto identity', () {
-    test('Jellyfin remote secret is stable across tokens for the same server user', () async {
-      final auth = RemoteAuthService.instance;
-      auth.clearCache();
-
-      final tokenA = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-a');
-      final tokenAAgain = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-a');
-      final tokenB = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-a');
-      final otherUser = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-b');
-
-      expect(tokenAAgain, tokenA);
-      expect(tokenB, tokenA);
-      expect(otherUser, isNot(tokenA));
-    });
-
     test('ensureCryptoReady rebuilds when the active profile/account changes', () async {
       final stack = await ProfileStack.create();
       addTearDown(stack.dispose);
@@ -758,53 +747,24 @@ void main() {
       expect(provider.debugCryptoUserUuid, 'child-b');
     });
 
-    test('ensureCryptoReady uses the active local profile Jellyfin row', () async {
-      final stack = await ProfileStack.create();
-      addTearDown(stack.dispose);
-
-      final jellyfin = _jellyfinConnection('jf-a');
-      final profile = _localProfile('profile-jf');
-      await stack.connections.upsert(jellyfin);
-      await stack.profiles.upsert(profile);
-      await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
-        makeDefault: true,
-      );
-      await stack.storage.setActiveProfileId(profile.id);
-      await stack.active.initialize();
-
-      final provider = CompanionRemoteProvider();
-      addTearDown(provider.dispose);
-      final ok = await provider.ensureCryptoReady(
-        null,
-        connections: stack.connections,
-        activeProfile: stack.active,
-        profileConnections: stack.profileConnections,
-      );
-
-      expect(ok, isTrue);
-      expect(provider.debugCryptoConnectionId, jellyfin.id);
-      expect(provider.debugCryptoProfileId, profile.id);
-      expect(provider.debugCryptoUserUuid, jellyfin.userId);
-    });
-
     test('ensureCryptoReady includes every active local profile remote identity', () async {
       final stack = await ProfileStack.create();
       addTearDown(stack.dispose);
 
-      final account = _plexAccount('plex-a', 'client-a');
-      final jellyfin = _jellyfinConnection('jf-a');
+      final accountA = _plexAccount('plex-a', 'client-a');
+      final accountB = _plexAccount('plex-b', 'client-b');
       final profile = _localProfile('profile-mixed');
-      final home = _homeWithUsers('admin-a', ['child-a']);
-      await stack.connections.upsert(account);
-      await stack.connections.upsert(jellyfin);
+      final homeA = _homeWithUsers('admin-a', ['child-a']);
+      final homeB = _homeWithUsers('admin-b', ['child-b']);
+      await stack.connections.upsert(accountA);
+      await stack.connections.upsert(accountB);
       await stack.profiles.upsert(profile);
       await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
+        ProfileConnection(profileId: profile.id, connectionId: accountA.id, userIdentifier: 'child-a'),
         makeDefault: true,
       );
       await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: account.id, userIdentifier: 'child-a'),
+        ProfileConnection(profileId: profile.id, connectionId: accountB.id, userIdentifier: 'child-b'),
       );
       await stack.storage.setActiveProfileId(profile.id);
       await stack.active.initialize();
@@ -812,16 +772,16 @@ void main() {
       final provider = CompanionRemoteProvider();
       addTearDown(provider.dispose);
       final ok = await provider.ensureCryptoReady(
-        home,
+        homeA,
         connections: stack.connections,
         activeProfile: stack.active,
         profileConnections: stack.profileConnections,
-        plexHomeForConnection: (_) async => home,
+        plexHomeForConnection: (id) async => id == accountA.id ? homeA : homeB,
       );
 
       expect(ok, isTrue);
-      expect(provider.debugCryptoConnectionId, jellyfin.id);
-      expect(provider.debugCryptoConnectionIds, [jellyfin.id, account.id]);
+      expect(provider.debugCryptoConnectionId, accountA.id);
+      expect(provider.debugCryptoConnectionIds, [accountA.id, accountB.id]);
     });
 
     test('ensureCryptoReady does not fall back to an account without an active profile', () async {
@@ -889,18 +849,6 @@ PlexAccountConnection _plexAccount(String id, String clientIdentifier) {
     createdAt: DateTime(2026, 1, 1),
   );
 }
-
-JellyfinConnection _jellyfinConnection(String id) => testJellyfinConnection(
-  id: id,
-  machineId: 'machine-$id',
-  userId: 'user-$id',
-  baseUrl: 'https://jellyfin.example.test',
-  serverName: 'Jellyfin',
-  userName: 'User $id',
-  accessToken: 'token-$id',
-  deviceId: 'device-$id',
-  createdAt: DateTime(2026, 1, 1),
-);
 
 Profile _localProfile(String id) {
   return Profile.local(id: id, displayName: id, createdAt: DateTime(2026, 1, 1));

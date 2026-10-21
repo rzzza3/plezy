@@ -27,7 +27,6 @@ import 'package:plezy/services/download_artwork_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/downloaded_video_source.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -47,7 +46,7 @@ void main() {
       expect(downloadExtensionFromUrl('https://example.com/movie.mkv?Container=mp4'), 'mkv');
     });
 
-    test('uses Jellyfin Container query parameter when path has no extension', () {
+    test('uses the Container query parameter when path has no extension', () {
       expect(downloadExtensionFromUrl('https://example.com/Videos/item/stream?Static=true&Container=mkv'), 'mkv');
     });
 
@@ -364,155 +363,18 @@ void main() {
   });
 
   group('artworkStorageKey', () {
-    test('removes Jellyfin api_key from persisted artwork keys', () {
-      final url = 'https://jf.example/Items/item-1/Images/Primary?tag=abc&api_key=secret-token';
+    test('removes an api_key credential from persisted artwork keys', () {
+      final url = 'https://media.example/Items/item-1/Images/Primary?tag=abc&api_key=secret-token';
 
-      expect(artworkStorageKey(url), 'https://jf.example/Items/item-1/Images/Primary?tag=abc');
+      expect(artworkStorageKey(url), 'https://media.example/Items/item-1/Images/Primary?tag=abc');
       expect(buildArtworkSpecs(_movie(thumbPath: url), (path) => path).single.localKey, isNot(contains('api_key')));
     });
   });
 
   group('lookupMetadata', () {
-    test('active Jellyfin lookup does not fall back to the downloaded foreign user scope', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
-      addTearDown(db.close);
-
-      await db
-          .into(db.connections)
-          .insert(
-            ConnectionsCompanion.insert(
-              id: 'jf-machine/user-a',
-              kind: 'jellyfin',
-              displayName: 'User A · Jellyfin',
-              configJson: jsonEncode({
-                'baseUrl': 'https://jf.example',
-                'serverName': 'Jellyfin',
-                'serverMachineId': 'jf-machine',
-                'userId': 'user-a',
-                'userName': 'User A',
-                'accessToken': 'token-a',
-                'deviceId': 'device-a',
-              }),
-              createdAt: DateTime.now().millisecondsSinceEpoch,
-            ),
-          );
-      await db
-          .into(db.downloadedMedia)
-          .insert(
-            DownloadedMediaCompanion.insert(
-              serverId: ServerId('jf-machine'),
-              clientScopeId: const Value('jf-machine/user-a'),
-              ratingKey: 'item-1',
-              globalKey: 'jf-machine:item-1',
-              type: 'movie',
-              status: DownloadStatus.completed.index,
-            ),
-          );
-      await db
-          .into(db.apiCache)
-          .insert(
-            ApiCacheCompanion.insert(
-              cacheKey: 'jf-machine/user-a:/Users/user-a/Items/item-1',
-              data: jsonEncode({'Id': 'item-1', 'Type': 'Movie', 'Name': 'Cached for User A'}),
-              pinned: const Value(true),
-            ),
-          );
-
-      final manager = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (serverId, {clientScopeId}) {
-          return _ScopedJellyfinClient(
-            serverId: ServerId(serverId),
-            scopedServerId: clientScopeId ?? 'jf-machine/user-b',
-          );
-        },
-      );
-
-      final item = await manager.lookupMetadata(ServerId('jf-machine'), 'item-1', preferActiveScope: true);
-
-      expect(item, isNull);
-    });
-
-    test('cold Jellyfin hydration resolves the active profile binding instead of the shared download scope', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
-      addTearDown(db.close);
-
-      for (final userId in ['user-a', 'user-b']) {
-        final profileId = 'profile-${userId.substring(userId.length - 1)}';
-        await db
-            .into(db.connections)
-            .insert(
-              ConnectionsCompanion.insert(
-                id: 'jf-machine/$userId',
-                kind: 'jellyfin',
-                displayName: userId,
-                configJson: jsonEncode({
-                  'baseUrl': 'https://jf.example',
-                  'serverName': 'Jellyfin',
-                  'serverMachineId': 'jf-machine',
-                  'userId': userId,
-                  'userName': userId,
-                  'accessToken': 'token-$userId',
-                  'deviceId': 'device',
-                }),
-                createdAt: 0,
-              ),
-            );
-        await db
-            .into(db.profileConnections)
-            .insert(
-              ProfileConnectionsCompanion.insert(
-                profileId: profileId,
-                connectionId: 'jf-machine/$userId',
-                userIdentifier: userId,
-              ),
-            );
-        await JellyfinApiCache.instance.put(ServerId('jf-machine/$userId'), '/Users/$userId/Items/item-1', {
-          'Id': 'item-1',
-          'Type': 'Movie',
-          'Name': 'Cached for $userId',
-        });
-        await JellyfinApiCache.instance.pinForOffline(ServerId('jf-machine/$userId'), 'item-1');
-      }
-      await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
-        ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
-        type: 'movie',
-        status: DownloadStatus.completed.index,
-      );
-      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'jf-machine:item-1');
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:item-1');
-      final manager = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (_, {clientScopeId}) => null,
-      );
-
-      final all = await manager.getAllPinnedMetadata(activeProfileId: 'profile-b');
-      final item = await manager.lookupMetadata(
-        ServerId('jf-machine'),
-        'item-1',
-        preferActiveScope: true,
-        activeProfileId: 'profile-b',
-      );
-
-      expect(all.items.keys, ['jf-machine/user-b:item-1']);
-      expect(all.items.values.single.title, 'Cached for user-b');
-      expect(all.scopesByServer, {'jf-machine': 'jf-machine/user-b'});
-      expect(item?.title, 'Cached for user-b');
-    });
-
     test('cold Plex hydration finds a server inside its persisted account configuration', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       addTearDown(db.close);
       final serverId = ServerId('plex-machine');
       final scope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
@@ -570,7 +432,6 @@ void main() {
     test('cold Silo hydration reads the Silo profile each Plezy profile is bound to', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       SiloApiCache.initialize(db);
       addTearDown(db.close);
       final serverId = ServerId('silo-srv');
@@ -638,7 +499,6 @@ void main() {
     test('active Plex lookup selects the exact profile namespace without bare fallback', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       addTearDown(db.close);
       final serverId = ServerId('plex-machine');
       final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
@@ -680,7 +540,6 @@ void main() {
     test('SAF recovery resolves show year from cached show metadata', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       addTearDown(db.close);
 
       await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/show-1', {
@@ -717,7 +576,6 @@ void main() {
     test('interrupted Plex logout transfer recovers from the physical row transfer scope', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       addTearDown(db.close);
       final serverId = ServerId('plex-machine');
       final profileScope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
@@ -778,7 +636,6 @@ void main() {
     test('missing Plex leaf survives full logout and rehydrates after replacement adoption', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       addTearDown(db.close);
       final serverId = ServerId('plex-machine');
       const globalKey = 'plex-machine:item-1';
@@ -899,114 +756,6 @@ void main() {
       expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'), isNull);
     });
 
-    test('Jellyfin offline pinning keeps media segment cache rows with metadata', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
-      addTearDown(db.close);
-
-      await JellyfinApiCache.instance.put(ServerId('jf-machine/user-a'), '/Users/user-a/Items/item-1', {
-        'Id': 'item-1',
-        'Type': 'Episode',
-        'Name': 'Episode',
-      });
-      await JellyfinApiCache.instance.put(ServerId('jf-machine/user-a'), '/MediaSegments/item-1', {
-        'Items': [
-          {'Type': 'Intro', 'StartTicks': 10000000, 'EndTicks': 20000000},
-        ],
-      });
-
-      await JellyfinApiCache.instance.pinForOffline(ServerId('jf-machine/user-a'), 'item-1');
-
-      expect(await JellyfinApiCache.instance.isPinned(ServerId('jf-machine/user-a'), '/MediaSegments/item-1'), isTrue);
-
-      await JellyfinApiCache.instance.deleteForItem(ServerId('jf-machine/user-a'), 'item-1');
-
-      expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/Users/user-a/Items/item-1'), isNull);
-      expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/MediaSegments/item-1'), isNull);
-    });
-
-    test('adopted Jellyfin ownership cleans only the adopting user cache scope', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
-      addTearDown(db.close);
-      final now = DateTime.now().millisecondsSinceEpoch;
-      await db
-          .into(db.profiles)
-          .insert(
-            ProfilesCompanion.insert(
-              id: 'profile-b',
-              kind: 'local',
-              displayName: 'Profile B',
-              configJson: '{}',
-              createdAt: now,
-            ),
-          );
-      await db
-          .into(db.connections)
-          .insert(
-            ConnectionsCompanion.insert(
-              id: 'jf-machine/user-b',
-              kind: 'jellyfin',
-              displayName: 'User B',
-              configJson: jsonEncode({'serverMachineId': 'jf-machine', 'userId': 'user-b'}),
-              createdAt: now,
-            ),
-          );
-      await db
-          .into(db.profileConnections)
-          .insert(
-            ProfileConnectionsCompanion.insert(
-              profileId: 'profile-b',
-              connectionId: 'jf-machine/user-b',
-              userIdentifier: 'user-b',
-            ),
-          );
-      await db.insertDownload(
-        serverId: ServerId('jf-machine'),
-        clientScopeId: 'jf-machine/user-a',
-        ratingKey: 'item-1',
-        globalKey: 'jf-machine:item-1',
-        type: 'movie',
-        status: DownloadStatus.completed.index,
-      );
-      for (final userId in const ['user-a', 'user-b']) {
-        await JellyfinApiCache.instance.put(ServerId('jf-machine/$userId'), '/Users/$userId/Items/item-1', {
-          'Id': 'item-1',
-          'Type': 'Movie',
-          'Name': userId,
-        });
-      }
-      final manager = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (_, {clientScopeId}) => null,
-      );
-
-      await db.adoptLegacyDownloadsForProfile('profile-b');
-      final owner = await db.getDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:item-1');
-      expect((await db.getDownloadedMedia('jf-machine:item-1'))?.clientScopeId, 'jf-machine/user-b');
-      expect(owner?.backend, MediaBackend.jellyfin.id);
-      expect(owner?.clientScopeId, 'jf-machine/user-b');
-
-      await db.removeDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:item-1');
-      await manager.deleteMetadataForOwner(
-        globalKey: 'jf-machine:item-1',
-        serverId: ServerId('jf-machine'),
-        itemId: 'item-1',
-        profileId: 'profile-b',
-        backendId: owner?.backend,
-        clientScopeId: owner?.clientScopeId,
-      );
-
-      expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-b'), '/Users/user-b/Items/item-1'), isNull);
-      expect(
-        await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/Users/user-a/Items/item-1'),
-        isNotNull,
-      );
-    });
-
     test('artwork repair fetches full parent metadata and backfills thumb path', () async {
       resetSharedPreferencesForTest();
       SettingsService.resetForTesting();
@@ -1026,7 +775,6 @@ void main() {
       await storage.initialize(settings);
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       addTearDown(db.close);
 
       await db
@@ -1756,18 +1504,18 @@ void main() {
       final globalKey = fixture.metadata.globalKey;
       await fixture.db.insertDownload(
         serverId: ServerId('srv'),
-        clientScopeId: 'srv/user-a',
+        clientScopeId: 'silo:srv/user-a',
         ratingKey: fixture.metadata.id,
         globalKey: globalKey,
         type: 'movie',
         status: DownloadStatus.queued.index,
       );
       await fixture.db.addToQueue(mediaGlobalKey: globalKey);
-      for (final (profileId, scopeId) in [('profile-a', 'srv/user-a'), ('profile-b', 'srv/user-b')]) {
+      for (final (profileId, scopeId) in [('profile-a', 'silo:srv/user-a'), ('profile-b', 'silo:srv/user-b')]) {
         await fixture.db.addDownloadOwner(
           profileId: profileId,
           globalKey: globalKey,
-          backendId: MediaBackend.jellyfin.id,
+          backendId: MediaBackend.silo.id,
           clientScopeId: scopeId,
         );
       }
@@ -1785,7 +1533,7 @@ void main() {
         database: fixture.db,
         storageService: fixture.storage,
         // Only profile B's user scope is bound; the row carries profile A's.
-        clientResolver: (serverId, {clientScopeId}) => clientScopeId == 'srv/user-b' ? client : null,
+        clientResolver: (serverId, {clientScopeId}) => clientScopeId == 'silo:srv/user-b' ? client : null,
         downloadsSupportedOverride: true,
         fileDownloaderInitializerOverride: () async {},
       );
@@ -1959,7 +1707,6 @@ void main() {
       await storage.initialize(settings);
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       addTearDown(db.close);
 
       final videoPath = p.join(tmpRoot.path, 'support', 'downloads', 'srv', 'item-1', 'video.mkv');
@@ -2011,7 +1758,6 @@ void main() {
       await storage.initialize(settings);
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       addTearDown(db.close);
 
       final serverId = ServerId('srv');
@@ -3443,7 +3189,6 @@ void main() {
       final storage = DownloadStorageService.forTestingSaf('content://downloads');
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
       addTearDown(() async {
         await db.close();
         DownloadStorageService.resetForTesting();
@@ -3609,7 +3354,6 @@ class _SupplementaryFixture {
 
   void initializeCaches() {
     PlexApiCache.initialize(db);
-    JellyfinApiCache.initialize(db);
   }
 
   Future<void> reopenDatabase() async {
@@ -3713,7 +3457,6 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(db);
-  JellyfinApiCache.initialize(db);
   final serverId = ServerId('srv');
   const globalKey = 'srv:episode-1';
   final episode = testMediaItem(
@@ -3834,7 +3577,6 @@ Future<_ContainerDeletionResult> _runContainerDeletion({
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(db);
-  JellyfinApiCache.initialize(db);
   final serverId = ServerId('srv');
   final id = '${kind.id}-1';
   final globalKey = 'srv:$id';
@@ -3945,7 +3687,6 @@ Future<bool> _runSameTitleMovieDeletion({required bool saf, required bool legacy
   if (!saf) await storage.initialize(await SettingsService.getInstance());
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(db);
-  JellyfinApiCache.initialize(db);
 
   MediaItem movie(String serverId) => testMediaItem(
     id: 'movie-1',
@@ -4034,7 +3775,6 @@ Future<({bool thumbRetained, int networkFetches})> _runChapterThumbnailDeletion(
   await storage.initialize(await SettingsService.getInstance());
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(db);
-  JellyfinApiCache.initialize(db);
 
   final serverId = ServerId('srv');
   const globalKey = 'srv:item-1';
@@ -4122,7 +3862,6 @@ Future<({bool thumbRetained, int networkFetches})> _runSeasonBatchChapterThumbna
   await storage.initialize(await SettingsService.getInstance());
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(db);
-  JellyfinApiCache.initialize(db);
 
   final serverId = ServerId('srv');
   const thumb = '/library/parts/1/indexes/sd/1000';
@@ -4504,27 +4243,11 @@ DownloadTask _rootTask(String taskId, String globalKey, String directory) {
 MediaItem _movie({String? thumbPath}) {
   return testMediaItem(
     id: 'item-1',
-    backend: MediaBackend.jellyfin,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
-    serverId: ServerId('jf-machine'),
+    serverId: ServerId('silo-machine'),
     thumbPath: thumbPath,
   );
-}
-
-class _ScopedJellyfinClient implements MediaServerClient, ScopedMediaServerClient {
-  _ScopedJellyfinClient({required this.serverId, required this.scopedServerId});
-
-  @override
-  final ServerId serverId;
-
-  @override
-  final String scopedServerId;
-
-  @override
-  MediaBackend get backend => MediaBackend.jellyfin;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _ArtworkRepairClient implements MediaServerClient {

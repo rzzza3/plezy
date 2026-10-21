@@ -194,13 +194,13 @@ Future<void> _seedBackend(AppDatabase db, _Seed seed) async {
       .insert(ApiCacheCompanion.insert(cacheKey: seed.cacheKey, data: '{}', pinned: const Value(true)));
 }
 
-Future<void> _seedMusicSession(AppDatabase db, String profileId, MediaItem item) async {
+Future<void> _seedMusicSession(AppDatabase db, String profileId, Map<String, dynamic> itemJson) async {
   await db
       .into(db.musicSessions)
       .insert(
         MusicSessionsCompanion.insert(
           profileId: profileId,
-          queueJson: jsonEncode([item.toJson()]),
+          queueJson: jsonEncode([itemJson]),
           orderJson: '[0]',
           cursor: 0,
           updatedAt: 0,
@@ -242,17 +242,18 @@ Future<void> _seedSchema25(File file) async {
     await _seedMusicSession(
       db,
       'local-a',
-      const MediaItem.silo(id: 'track-1', kind: MediaKind.track, serverId: 'silo-srv'),
+      const MediaItem.silo(id: 'track-1', kind: MediaKind.track, serverId: 'silo-srv').toJson(),
     );
     await _seedMusicSession(
       db,
       'local-b',
-      const MediaItem.plex(id: 'track-2', kind: MediaKind.track, serverId: 'plex-machine'),
+      const MediaItem.plex(id: 'track-2', kind: MediaKind.track, serverId: 'plex-machine').toJson(),
     );
     await _seedMusicSession(
       db,
       'local-c',
-      const MediaItem.jellyfin(id: 'track-3', kind: MediaKind.track, serverId: 'jf-machine'),
+      // A legacy Jellyfin queue entry, as schema 25 stored it.
+      {'backend': 'jellyfin', 'id': 'track-3', 'kind': 'track', 'serverId': 'jf-machine'},
     );
     expect(
       (await db.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'),

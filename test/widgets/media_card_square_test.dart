@@ -263,7 +263,7 @@ void main() {
     const albumArtwork = 'https://media.example/album.jpg';
     final item = testMediaItem(
       id: 'track-with-fallback',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.track,
       title: 'Track',
       thumbPath: trackArtwork,
@@ -292,7 +292,7 @@ void main() {
     const albumArtwork = 'https://poster-memo.example/unresolved-album.jpg';
     final item = testMediaItem(
       id: 'track-with-unresolved-artwork',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.track,
       title: 'Track',
       thumbPath: trackArtwork,

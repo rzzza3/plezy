@@ -190,7 +190,7 @@ void main() {
                 id: 'ambient-start',
                 serverId: 'srv-1',
                 title: 'Ambient start',
-                backend: MediaBackend.jellyfin,
+                backend: MediaBackend.silo,
               ),
               selectedQualityPreset: TranscodeQualityPreset.original,
             ),
@@ -251,9 +251,9 @@ class _StreamClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   String get serverName => 'Server';
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
   @override
   double get watchedThreshold => 0.9;
   @override

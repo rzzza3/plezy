@@ -29,10 +29,7 @@ import '../../test_helpers/prefs.dart';
 const _pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
 // Offline, the play-next card paints the next episode's still from the file
-// the download side wrote. That writer keys artwork by the thumb path with
-// `api_key` stripped, so the reader has to strip it too or a Jellyfin/Emby
-// still (whose thumb URL carries the token) never resolves and the card
-// silently degrades to text-only.
+// the download side wrote, or the card silently degrades to text-only.
 void main() {
   late Directory tmpRoot;
   late PathProviderPlatform previousPathProvider;
@@ -102,20 +99,6 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
     await tester.pump();
   }
-
-  testWidgets('offline play-next paints the downloaded still for a token-carrying Jellyfin thumb', (tester) async {
-    final episode = _episode(
-      backend: MediaBackend.jellyfin,
-      thumbPath: 'https://jf.example/Items/episode-2/Images/Primary?tag=abc&api_key=secret',
-    );
-    final written = (await tester.runAsync(() => downloadThumb(episode)))!;
-
-    await pumpOfflinePrompt(tester, episode);
-
-    expect(_renderedStill(tester), _decodesFrom(written));
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
 
   testWidgets('offline play-next paints the downloaded still for a token-free Plex thumb', (tester) async {
     final episode = _episode(backend: MediaBackend.plex, thumbPath: '/library/metadata/episode-2/thumb/1');

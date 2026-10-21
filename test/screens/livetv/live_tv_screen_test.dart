@@ -364,7 +364,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   String? get serverName => 'Server ${serverId.value}';
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerCapabilities get capabilities => ServerCapabilities(liveTv: true, liveTvDvr: liveTv.dvr != null);
