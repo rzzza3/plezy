@@ -78,11 +78,6 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
     if (client is PlexClient && client.serverPrefs.isNotEmpty) {
       return client.watchedThreshold;
     }
-    if (client != null && client.backend.usesMediaBrowserApi) {
-      // MediaBrowser clients expose the fixed threshold that mirrors their
-      // wire-protocol behaviour.
-      return client.watchedThreshold;
-    }
     // No client bound (offline) or Plex prefs not loaded yet — use the
     // mirror written on the last successful prefs fetch.
     final cached = SettingsService.instanceOrNull?.read(SettingsService.watchedThresholdPref(serverId)) ?? 90;
@@ -571,13 +566,6 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
     }
     final client = _serverManager.getClient(ServerId(action.serverId));
     if (client == null) return null;
-    if (client.backend.usesMediaBrowserApi && client.cacheServerId != action.serverId) {
-      appLogger.w(
-        'Refusing to sync unscoped MediaBrowser action ${action.id} for ${action.serverId}:${action.ratingKey}; '
-        'no queued client scope is available',
-      );
-      return null;
-    }
     return (client: client, clientScopeId: action.clientScopeId);
   }
 
@@ -694,26 +682,18 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
       case 'progress':
         // Push resumable progress, or a completed offline playback.
-        // `/Sessions/Playing/Stopped` ignores events without an open session
-        // row, so MediaBrowser backends still get a lightweight Started call.
         if (action.viewOffset != null) {
           final duration = action.duration == null ? null : Duration(milliseconds: action.duration!);
           final position = action.shouldMarkWatched && duration != null
               ? duration
               : Duration(milliseconds: action.viewOffset!);
-          // MediaBrowser ignores a stop for a session it never opened, so its
-          // Started call is a precondition for persistence, not best effort.
-          final requiresOpenSession = client.backend.usesMediaBrowserApi;
-          var startedSucceeded = !requiresOpenSession;
-          if (!action.shouldMarkWatched || requiresOpenSession) {
+          if (!action.shouldMarkWatched) {
             try {
               await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
-              startedSucceeded = true;
             } catch (e) {
-              // Plex sometimes 5xxs the start when nothing follows; there the
-              // stop call is the one that persists the resume position, so
-              // continue. On MediaBrowser the stop will be dropped, so the
-              // action must stay queued for a later attempt.
+              // Plex sometimes 5xxs the start when nothing follows; the stop
+              // call is the one that persists the resume position, so
+              // continue.
               appLogger.d('Offline progress: started call failed (continuing)', error: e);
             }
           }
@@ -725,12 +705,12 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
               recordedAt: DateTime.fromMillisecondsSinceEpoch(action.updatedAt),
             ),
           );
-          persisted = startedSucceeded;
+          persisted = true;
         }
 
         if (action.shouldMarkWatched) {
-          // MediaBrowser persists the played state from the stopped report.
-          // Plex still needs the explicit transport call, but replay must not
+          // A backend that persists the played state from the stopped report
+          // needs nothing more. Plex still needs the explicit transport call, but replay must not
           // emit another semantic event for an action already emitted offline.
           if (!client.marksWatchedOnPlaybackStopped) {
             await client.markWatched(item);

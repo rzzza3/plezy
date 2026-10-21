@@ -9,7 +9,6 @@ import '../../connection/connection_registry.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/plex/plex_home_user.dart';
-import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
@@ -28,7 +27,6 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
 import '../../utils/dialogs.dart';
 import '../settings/add_connection_screen.dart';
-import '../settings/edit_jellyfin_connection_screen.dart';
 import 'pin_entry_dialog.dart';
 import 'pin_status_row.dart';
 import 'profile_teardown.dart';
@@ -166,7 +164,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     await withEndedProfileSession(scope, endedOwner, () async {
       // Release downloads only for servers the profile actually loses — the
       // same server can stay reachable through another connection (a second
-      // Plex account sharing the server, another Jellyfin user).
+      // Plex account sharing the server).
       final retainedServerIds = await _retainedServerIds(
         excludingConnectionId: conn.id,
         profileConnections: scope.profileConnections,
@@ -216,23 +214,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     return retained;
   }
 
-  Future<void> _editConnection(Connection conn) async {
-    if (conn is! JellyfinConnection) return;
-    final changed = await Navigator.of(
-      context,
-    ).push<bool>(MaterialPageRoute(builder: (_) => EditJellyfinConnectionScreen(connection: conn)));
-    if (changed != true || !mounted) return;
-    setState(() {});
-    unawaited(context.read<ActiveProfileBinder>().rebindIfActive(_profile.id));
-  }
-
   // Raw machine ids rather than the ServerId-typed twin in
   // profile_connection_cleanup.dart: these are differenced against retained
   // ids and matched to download global keys, which carry the unparsed id.
   Set<String> _serverIdsForConnection(Connection conn) {
     return switch (conn) {
       PlexAccountConnection(:final servers) => servers.map((s) => s.clientIdentifier).toSet(),
-      JellyfinConnection(:final serverMachineId) => {serverMachineId},
       SiloConnection(:final serverId) => {serverId},
     };
   }
@@ -346,7 +333,6 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
               _ConnectionsList(
                 profile: _profile,
                 onRemove: _removeConnection,
-                onEdit: _editConnection,
                 onSignOutParent: _signOutParentAccount,
               ),
               const SizedBox(height: 24),
@@ -372,13 +358,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
 class _ConnectionsList extends StatefulWidget {
   final Profile profile;
   final Future<void> Function(ProfileConnection pc, Connection conn) onRemove;
-  final Future<void> Function(Connection conn) onEdit;
   final Future<void> Function(Connection conn) onSignOutParent;
 
   const _ConnectionsList({
     required this.profile,
     required this.onRemove,
-    required this.onEdit,
     required this.onSignOutParent,
   });
 
@@ -480,15 +464,12 @@ class _ConnectionsListState extends State<_ConnectionsList> {
                             onSelected: (value) {
                               if (value == 'default') {
                                 unawaited(pcRegistry.setDefault(profile.id, pc.connectionId));
-                              } else if (value == 'edit') {
-                                unawaited(widget.onEdit(conn));
                               } else if (value == 'remove') {
                                 unawaited(widget.onRemove(pc, conn));
                               }
                             },
                             itemBuilder: (_) => [
                               if (!pc.isDefault) AppMenuItem(value: 'default', label: t.profiles.makeDefault),
-                              if (conn is JellyfinConnection) AppMenuItem(value: 'edit', label: t.common.edit),
                               AppMenuItem(value: 'remove', label: t.profiles.removeConnection),
                             ],
                           ),

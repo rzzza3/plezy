@@ -17,6 +17,7 @@ import '../focus/key_event_utils.dart';
 import '../focus/locked_hub_controller.dart';
 import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
+import '../media/media_backend.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
@@ -657,7 +658,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     return FocusableListTile(
       focusNode: _libraryMatchFocusNodes[index],
       leading: BackendBadge(backend: match.backend, size: 24),
-      title: Text(match.libraryTitle ?? match.serverName ?? match.backend.dialect?.productName ?? 'Plex'),
+      title: Text(match.libraryTitle ?? match.serverName ?? (match.backend == MediaBackend.silo ? 'Silo' : 'Plex')),
       subtitle: details.isEmpty ? null : Text(details.join(' • ')),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: () => unawaited(navigateToMediaItemDetails(context, match)),

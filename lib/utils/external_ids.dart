@@ -207,42 +207,4 @@ class ExternalIds {
     return allowBareDigits && _decimalId.hasMatch(normalized) ? 'tt$normalized' : null;
   }
 
-  /// Every raw Jellyfin item whose inline `ProviderIds` intersect [ids], in
-  /// response order. Pure helper so the reverse-lookup verification stays
-  /// unit-testable (its call site lives in a part file).
-  ///
-  /// Plural because one title can own several library items — a 4K library
-  /// and an HD library hold separate items for the same movie (#1754) — and
-  /// the caller shows the user every copy.
-  static List<Map<String, dynamic>> jellyfinCandidatesMatching(List<Map<String, dynamic>> candidates, ExternalIds ids) {
-    return [
-      for (final item in candidates)
-        if (item['ProviderIds'] case final Map<dynamic, dynamic> providerIds)
-          if (ids.intersects(ExternalIds.fromJellyfinProviderIds(providerIds.cast<String, Object?>()))) item,
-    ];
-  }
-
-  /// Build from a Jellyfin `ProviderIds` map. Jellyfin stores external IDs
-  /// directly on every `BaseItemDto` so no extra fetch is needed.
-  /// Keys are case-insensitive in practice (`Tmdb`, `Imdb`, `Tvdb`).
-  factory ExternalIds.fromJellyfinProviderIds(Map<String, Object?> providerIds) {
-    String? imdb;
-    int? tmdb;
-    int? tvdb;
-    providerIds.forEach((key, value) {
-      if (value is! String || value.isEmpty) return;
-      switch (key.toLowerCase()) {
-        case 'imdb':
-          imdb = value;
-          break;
-        case 'tmdb':
-          tmdb = int.tryParse(value);
-          break;
-        case 'tvdb':
-          tvdb = int.tryParse(value);
-          break;
-      }
-    });
-    return ExternalIds(imdb: imdb, tmdb: tmdb, tvdb: tvdb);
-  }
 }

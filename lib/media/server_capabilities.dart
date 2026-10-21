@@ -4,7 +4,7 @@
 ///
 /// These describe what the *backend kind* supports in this app's current
 /// implementation — not necessarily what the wire protocol can do. As more
-/// Jellyfin features are wired in over time, the corresponding flags flip
+/// Silo features are wired in over time, the corresponding flags flip
 /// without changing call sites.
 class ServerCapabilities {
   /// This backend kind has a Live TV / DVR API the app can talk to. Whether
@@ -15,31 +15,30 @@ class ServerCapabilities {
 
   /// Backend has a recording/DVR API wired in this app. Channel listing is
   /// gated by [liveTv]; this flag enables the additional recordings/scheduling
-  /// UI. Plex serves `/media/subscriptions`; Jellyfin and Emby adapt
-  /// `/LiveTv/Timers` + `/LiveTv/SeriesTimers`.
+  /// UI. Plex serves `/media/subscriptions`.
   final bool liveTvDvr;
 
   /// Server can transcode video.
   final bool videoTranscoding;
 
-  /// Server provides curated recommendation hubs (Plex Discover). Jellyfin
-  /// returns synthesized hubs but with sparser categorisation.
+  /// Server provides curated recommendation hubs (Plex Discover, Silo home
+  /// sections).
   final bool richHubs;
 
-  /// Numeric ratings (Plex 0–10 via [Item.userRating]). Jellyfin has no
-  /// numeric user rating, so star sliders should be hidden.
+  /// Numeric ratings (Plex 0–10 via [Item.userRating]). Backends without a
+  /// numeric user rating hide the star sliders.
   final bool numericUserRating;
 
   /// The server stores whole stars only, so the rating sheet steps by one
   /// star instead of a half. Silo keeps 1 to 5 (`PersonalWrite.kt:23-30`).
   final bool wholeStarRating;
 
-  /// Per-user favorite flag ("heart") on media items. Jellyfin exposes it via
-  /// `/UserFavoriteItems/{itemId}?userId=...`; Plex has no equivalent.
+  /// Per-user favorite flag ("heart") on media items. Silo stores it per
+  /// profile; Plex has no equivalent.
   final bool userFavorites;
 
   /// Hide an item from Continue Watching without changing watch state or
-  /// playback progress. Plex exposes this directly; Jellyfin does not.
+  /// playback progress. Plex and Silo expose this directly.
   final bool continueWatchingRemoval;
 
   /// External subtitle search/marketplace (Plex `/library/metadata/{id}/subtitles`).
@@ -50,24 +49,23 @@ class ServerCapabilities {
   final bool richMetadataEdit;
 
   /// Server can supply thumbnails for the player's seek-bar scrub preview.
-  /// Plex serves them as a `.bif` asset; Jellyfin uses `/Trickplay` sprite
-  /// sheets. Both backends are wired through [ScrubPreviewSource]; the flag
-  /// gates whether the player attempts the load at all.
+  /// Plex serves them as a `.bif` asset, wired through
+  /// [ScrubPreviewSource]; the flag gates whether the player attempts the
+  /// load at all.
   final bool scrubThumbnails;
 
   /// Library section exposes a folder hierarchy. Plex uses
-  /// `/library/sections/{id}/folders`; Jellyfin uses direct-child
-  /// `/Items?ParentId=...&Recursive=false` queries.
+  /// `/library/sections/{id}/folders`.
   final bool folderGrouping;
 
   /// Server can build an "instant mix" / radio track list from a seed item.
-  /// Jellyfin: `/Items/{id}/InstantMix`; Plex: station play queues
+  /// Plex: station play queues
   /// (`POST /playQueues?type=audio&uri=...station...`).
   final bool instantMix;
 
   /// Server pushes library-content change notifications over a websocket the
   /// app can subscribe to (#1646). Plex: `/:/websockets/notifications`
-  /// timeline entries; Jellyfin/Emby: `LibraryChanged` on the session socket.
+  /// timeline entries; Silo: its realtime event stream.
   /// Whether a *specific* server's socket is reachable (reverse proxies may
   /// not upgrade) is a runtime concern handled by [LibraryEventService]'s
   /// silent degradation.
@@ -100,60 +98,6 @@ class ServerCapabilities {
     userFavorites: false,
     continueWatchingRemoval: true,
     externalSubtitleSearch: true,
-    richMetadataEdit: true,
-    scrubThumbnails: true,
-    folderGrouping: true,
-    instantMix: true,
-    libraryChangeEvents: true,
-  );
-
-  /// Defaults for a Jellyfin server.
-  ///
-  /// `videoTranscoding` is `true` — `JellyfinClient.getPlaybackInitialization`
-  /// negotiates via `POST /Items/{id}/PlaybackInfo` and uses the server's
-  /// `TranscodingUrl` when a non-original quality preset is selected.
-  ///
-  /// `liveTv` is `true` because Jellyfin exposes `/LiveTv/Channels` and
-  /// `/LiveTv/Programs`; `liveTvDvr` rides the timer APIs
-  /// (`/LiveTv/Timers`, `/LiveTv/SeriesTimers`).
-  static const ServerCapabilities jellyfin = ServerCapabilities(
-    liveTv: true,
-    liveTvDvr: true,
-    videoTranscoding: true,
-    richHubs: false,
-    numericUserRating: false,
-    userFavorites: true,
-    externalSubtitleSearch: false,
-    richMetadataEdit: true,
-    scrubThumbnails: true,
-    folderGrouping: true,
-    instantMix: true,
-    libraryChangeEvents: true,
-  );
-
-  /// Defaults for an Emby server.
-  ///
-  /// `continueWatchingRemoval` is the one flag where Emby is ahead of Jellyfin:
-  /// `POST /Users/{uid}/Items/{id}/HideFromResume` drops an item from Continue
-  /// Watching while keeping its resume position, and Jellyfin 10.11 has no
-  /// equivalent route.
-  ///
-  /// Scrub thumbnails take a different transport than Jellyfin's: Emby has no
-  /// `Trickplay` item field or sprite-sheet route, so the player loads a
-  /// Roku-format BIF from `/Videos/{id}/index.bif` instead — the same wire
-  /// format Plex serves, parsed by the same `BifThumbnailService`. Emby only
-  /// fills the endpoint once its own preview-extraction task has run; a server
-  /// that has not generated frames answers with a header-only BIF, which
-  /// parses to zero frames and keeps the seek-bar tooltip suppressed.
-  static const ServerCapabilities emby = ServerCapabilities(
-    liveTv: true,
-    liveTvDvr: true,
-    videoTranscoding: true,
-    richHubs: false,
-    numericUserRating: false,
-    userFavorites: true,
-    continueWatchingRemoval: true,
-    externalSubtitleSearch: false,
     richMetadataEdit: true,
     scrubThumbnails: true,
     folderGrouping: true,

@@ -38,8 +38,8 @@ import 'pin_entry_dialog.dart';
 ///    account token with the source's `userIdentifier` and (if the target
 ///    Home user is `protected`) the Home PIN. The borrower gets its own
 ///    fresh user-token.
-/// 3. For Jellyfin sources: copy the existing `userToken` (one user per
-///    Jellyfin connection).
+/// 3. For Silo sources: enter the same Silo profile; the tokens stay in the
+///    server's session slot.
 class BorrowConnectionScreen extends StatefulWidget {
   final Profile targetProfile;
   final bool popOnSuccess;
@@ -252,8 +252,6 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
       switch (cand.connection) {
         case PlexAccountConnection():
           await _borrowPlex(cand);
-        case JellyfinConnection():
-          await _borrowJellyfin(cand);
         case SiloConnection():
           await _borrowSilo(cand);
       }
@@ -298,7 +296,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
     }
     // Plex Home source: defer to _borrowPlex's PIN prompt for Plex borrows.
     if (cand.connection is PlexAccountConnection) return true;
-    // Other backends (Jellyfin) — validate via /switch and discard the token.
+    // Other backends (Silo) — validate via /switch and discard the token.
     final parentId = cand.source.parentConnectionId;
     final homeUuid = cand.source.plexHomeUserUuid;
     if (parentId == null || homeUuid == null) return false;
@@ -343,21 +341,6 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
       }
       return;
     }
-    _finishBorrow();
-  }
-
-  Future<void> _borrowJellyfin(_BorrowCandidate cand) async {
-    final jelly = cand.connection as JellyfinConnection;
-    final pcRegistry = context.read<ProfileConnectionRegistry>();
-    await pcRegistry.upsert(
-      ProfileConnection(
-        profileId: widget.targetProfile.id,
-        connectionId: jelly.id,
-        userToken: cand.pc.hasToken ? cand.pc.userToken : jelly.accessToken,
-        userIdentifier: cand.pc.userIdentifier.isNotEmpty ? cand.pc.userIdentifier : jelly.userId,
-        tokenAcquiredAt: DateTime.now(),
-      ),
-    );
     _finishBorrow();
   }
 

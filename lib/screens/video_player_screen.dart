@@ -29,10 +29,7 @@ import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
 import '../services/plex_client.dart';
-import '../services/jellyfin_client.dart';
 import '../services/silo_client.dart';
-import '../media/account_preferences.dart';
-import '../media/account_ref.dart';
 import '../utils/session_identifier.dart';
 import '../database/app_database.dart';
 import '../media/media_version.dart';
@@ -452,23 +449,6 @@ TrackPreferencePersister _plexTrackPersister(PlexClient client) {
   return ({required int partId, required String trackType, required int streamID}) => trackType == 'audio'
       ? client.selectStreams(partId, audioStreamID: streamID)
       : client.selectStreams(partId, subtitleStreamID: streamID);
-}
-
-/// Builds a [TrackSelectionMemoryEnabler] for the MediaBrowser account
-/// [client] plays as. The pick itself reaches the server in the progress
-/// reports; this turns on the account flag the server needs to keep it
-/// ([AccountPreferencesController.ensureRemembersTrackSelections]).
-TrackSelectionMemoryEnabler _mediaBrowserTrackMemoryEnabler(
-  JellyfinClient client,
-  AccountPreferencesController accountPreferences,
-) {
-  final ref = AccountRef.mediaBrowser(backend: client.dialect.backend, connectionId: client.connection.id);
-  return (trackType) => accountPreferences.ensureRemembersTrackSelections(
-    ref,
-    trackType == 'audio'
-        ? AccountPreferenceKey.rememberAudioSelections
-        : AccountPreferenceKey.rememberSubtitleSelections,
-  );
 }
 
 class VideoPlayerScreen extends StatefulWidget {

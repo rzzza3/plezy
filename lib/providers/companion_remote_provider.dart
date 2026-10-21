@@ -328,8 +328,6 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
               userUuid: userUuid,
             ),
           );
-        case JellyfinConnection():
-          addContext(await _createMediaBrowserAuthContext(connection: connection));
         case SiloConnection():
           break;
       }
@@ -387,29 +385,6 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       clientIdentifier: account.clientIdentifier.isNotEmpty ? account.clientIdentifier : account.id,
       userUuid: resolvedUserUuid,
       allowedUserUuids: allowedUserUuids,
-    );
-  }
-
-  Future<RemoteAuthContext?> _createMediaBrowserAuthContext({required JellyfinConnection connection}) async {
-    if (connection.accessToken.isEmpty || connection.userId.isEmpty || connection.serverMachineId.isEmpty) {
-      appLogger.w('CompanionRemote: Skipping MediaBrowser remote identity — incomplete connection ${connection.id}');
-      return null;
-    }
-
-    final auth = RemoteAuthService.instance;
-    final homeSecret = await auth.deriveJellyfinSecret(
-      serverMachineId: connection.serverMachineId,
-      userId: connection.userId,
-    );
-    return RemoteAuthContext(
-      id: auth.computeAuthContextId(homeSecret),
-      backend: connection.kind.id,
-      connectionId: connection.id,
-      homeSecret: homeSecret,
-      discoveryKey: await auth.deriveDiscoveryKey(homeSecret),
-      clientIdentifier: connection.deviceId.isNotEmpty ? connection.deviceId : connection.id,
-      userUuid: connection.userId,
-      allowedUserUuids: [connection.userId],
     );
   }
 

@@ -187,28 +187,14 @@ bool isAdminActionAllowedForMediaItem({
 
 /// Whether "Delete from server" may be offered for an item.
 ///
-/// Deliberately not folded into [isAdminActionAllowedForMediaItem]: on MediaBrowser servers
-/// the admin bit says nothing about deletion. `BaseItem.IsAuthorizedToDelete`
-/// consults `EnableContentDeletion` and the per-library grant only, and only
-/// the auto-created first user gets the former for free — so an administrator
-/// can lack the right (issue #1749) and a plain user can hold it. The server's
-/// per-item answer ([resolvedItemPermission], from
-/// [MediaDeletionPermissionClient]) is therefore the sole MediaBrowser condition,
-/// and anything unknown — offline, request failed, timed out, item invisible —
-/// stays hidden rather than offering a button that 401s.
-///
-/// Plex has no per-item permission on the wire, so it keeps the account-level
-/// owner/admin gate.
-bool isMediaDeletionAllowed({
-  required MediaBackend? itemBackend,
-  required bool? resolvedItemPermission,
-  required bool isAdminActionAllowed,
-}) => switch (itemBackend) {
-  null => false,
-  MediaBackend.jellyfin || MediaBackend.emby => resolvedItemPermission == true,
-  MediaBackend.plex => isAdminActionAllowed,
-  MediaBackend.silo => false,
-};
+/// Whether the server lets this user delete an item of [itemBackend]. Plex
+/// has no per-item permission on the wire, so it keeps the account-level
+/// owner/admin gate; Silo offers no deletion.
+bool isMediaDeletionAllowed({required MediaBackend? itemBackend, required bool isAdminActionAllowed}) =>
+    switch (itemBackend) {
+      MediaBackend.plex => isAdminActionAllowed,
+      MediaBackend.silo || null => false,
+    };
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
@@ -360,35 +346,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         : context.tryGetMediaClientWithFallback(null);
   }
 
-  /// Ask the server whether the signed-in user may delete [item] right now.
-  ///
-  /// Returns `null` when the backend exposes no per-item permission (Plex),
-  /// which leaves the account-level gate in charge, and `false` for every
-  /// unknown on a backend that does expose one — offline, server down, request
-  /// failed or timed out. The probe blocks the menu opening, so it is bounded
-  /// by `MediaServerTimeouts.jellyfinDeletePermission` and does not chase
-  /// failover endpoints: a stalled endpoint hunt would be felt as a frozen
-  /// long-press, and hiding one entry is the cheaper failure.
-  ///
-  /// Backend detection comes first so a menu on a backend without the
-  /// capability neither probes nor touches offline state — the read would
-  /// otherwise be a new dependency for every screen that shows a movie row.
-  Future<bool?> _resolveDeletePermission({
-    required MediaServerClient? client,
-    required MediaItem? item,
-    required bool serverOnline,
-  }) async {
-    final permissionClient = client is MediaDeletionPermissionClient ? client as MediaDeletionPermissionClient : null;
-    if (item == null || permissionClient == null) return null;
-    if (!serverOnline || context.read<OfflineModeProvider>().isOffline) return false;
-    try {
-      return await permissionClient.fetchDeletePermission(item);
-    } catch (e, st) {
-      appLogger.w('Delete permission probe failed', error: e, stackTrace: st);
-      return false;
-    }
-  }
-
   void _showContextMenu(BuildContext context) async {
     if (_isContextMenuOpen) return;
     _isContextMenuOpen = true;
@@ -533,9 +490,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     }
 
-    // Deletion is the one gate that asks the server per item; see
-    // [isMediaDeletionAllowed]. Only kinds that can actually be deleted pay
-    // for the round trip, and only on a backend that answers it.
     final isDeletableKind =
         mediaKind == MediaKind.episode ||
         mediaKind == MediaKind.movie ||
@@ -543,15 +497,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         mediaKind == MediaKind.season;
     final canDeleteFromServer =
         isDeletableKind &&
-        isMediaDeletionAllowed(
-          itemBackend: itemBackend,
-          resolvedItemPermission: await _resolveDeletePermission(
-            client: mediaClient,
-            item: mediaItem,
-            serverOnline: itemServerOnline,
-          ),
-          isAdminActionAllowed: isAdmin,
-        );
+        isMediaDeletionAllowed(itemBackend: itemBackend, isAdminActionAllowed: isAdmin);
     return _MenuContext(
       mediaItem: mediaItem,
       playlist: playlist,

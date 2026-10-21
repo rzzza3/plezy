@@ -23,8 +23,6 @@ class BackendBadge extends StatelessWidget {
         Theme.of(context).colorScheme.onSurface;
     final asset = switch (backend) {
       MediaBackend.plex => 'assets/plex_chevron.svg',
-      MediaBackend.jellyfin => 'assets/jellyfin_icon.svg',
-      MediaBackend.emby => 'assets/emby_icon.svg',
       MediaBackend.silo => 'assets/silo_mark.svg',
     };
     return SvgPicture.asset(

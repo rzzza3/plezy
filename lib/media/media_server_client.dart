@@ -974,40 +974,6 @@ extension MediaServerClientLiveTv on MediaServerClient {
   LiveTvDvrSupport? get liveTvDvr => capabilities.liveTvDvr ? liveTv.dvr : null;
 }
 
-/// Optional capability for clients that can fetch a season's episodes without
-/// listing generic children. Jellyfin uses this to avoid mixing local extras or
-/// missing/virtual placeholders into normal season episode rails.
-abstract interface class SeasonEpisodePagingClient {
-  Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
-    String seriesId,
-    String seasonId, {
-    int? start,
-    int? size,
-    AbortController? abort,
-  });
-}
-
-/// Optional capability for clients whose server can answer "may the signed-in
-/// user delete *this* item?" per item.
-///
-/// Jellyfin-only by nature: `BaseItemDto.CanDelete` folds the global
-/// `EnableContentDeletion` grant, the per-library
-/// `EnableContentDeletionFromFolders` grant, and item state (virtual/missing
-/// files, in-progress recordings) into one server-computed boolean — none of
-/// which a client can reproduce. Plex exposes no per-item delete permission,
-/// so it deliberately does not implement this and callers keep using their
-/// account-level owner/admin gate for it.
-abstract interface class MediaDeletionPermissionClient {
-  /// `true`/`false` as reported by the server for [item], or `null` when the
-  /// server did not answer (item not visible to this user, unexpected shape).
-  ///
-  /// Never served from cache: the answer changes server-side with no
-  /// client-visible event, and a stale `true` puts a destructive action back in
-  /// front of a user who lost the grant. Callers must fail closed on `null`
-  /// and on throw.
-  Future<bool?> fetchDeletePermission(MediaItem item);
-}
-
 /// Bounds how old a cached metadata row may be to be served without a network
 /// round trip on playback start. Sized to cover the detail-screen-visit →
 /// play-tap gap while keeping stale-file risk (replaced/deleted media parts)

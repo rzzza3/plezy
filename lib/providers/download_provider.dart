@@ -779,12 +779,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     synthesize: (meta, showRatingKey) {
       // Fallback: synthesize from episode metadata (missing year, summary)
       // Only Plex consumers read `raw['key']` (library-section + folder
-      // navigation), so we synthesize the Plex URI for Plex shows and
-      // emit a MediaBrowser-shaped item for Jellyfin or Emby
-      // (`Id` + `Type=Series`). Silo items carry no raw payload.
+      // navigation), so we synthesize the Plex URI for Plex shows. Silo
+      // items carry no raw payload.
       final synthesizedRaw = switch (meta.backend) {
         MediaBackend.plex => <String, dynamic>{'key': '/library/metadata/$showRatingKey'},
-        MediaBackend.jellyfin || MediaBackend.emby => <String, dynamic>{'Id': showRatingKey, 'Type': 'Series'},
         MediaBackend.silo => null,
       };
       return MediaItem(

@@ -116,7 +116,7 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
   @override
   Future<List<String>> fetchTagSuggestions(MetadataEditDraft draft, MetadataEditField field) async {
     // Plex advertises per-library tag facets under /library/sections/{id}/filters;
-    // 'label' is the Plex name for what Jellyfin calls Tags. Older PMS versions
+    // 'label' is the Plex name for what other servers call Tags. Older PMS versions
     // may not advertise it — return empty and let recents fill in.
     final filterName = switch (field.id) {
       'label' => 'label',

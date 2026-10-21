@@ -72,12 +72,8 @@ Future<void> collectListLeaves(
 
 /// Fetch just the first episode of a season without walking the entire season.
 /// Use this for representative lookups and immediate "play first" actions.
-Future<MediaItem?> fetchFirstEpisodeForSeason(
-  MediaServerClient client,
-  String seasonRatingKey, {
-  String? seriesId,
-}) async {
-  final page = await _fetchSeasonPage(client, seasonId: seasonRatingKey, seriesId: seriesId, start: 0, size: 1);
+Future<MediaItem?> fetchFirstEpisodeForSeason(MediaServerClient client, String seasonRatingKey) async {
+  final page = await client.fetchChildrenPage(seasonRatingKey, start: 0, size: 1);
   for (final item in page.items) {
     if (item.kind == MediaKind.episode) return item;
   }
@@ -301,26 +297,12 @@ Future<LibraryPage<MediaItem>> fetchSeasonEpisodePage(
   required int start,
   required int size,
 }) async {
-  final page = await _fetchSeasonPage(client, seriesId: show.id, seasonId: season.id, start: start, size: size);
+  final page = await client.fetchChildrenPage(season.id, start: start, size: size);
   return LibraryPage<MediaItem>(
     items: normalizeSeasonEpisodes(page.items, show: show, season: season),
     totalCount: page.totalCount,
     offset: page.offset,
   );
-}
-
-Future<LibraryPage<MediaItem>> _fetchSeasonPage(
-  MediaServerClient client, {
-  required String seasonId,
-  required int start,
-  required int size,
-  String? seriesId,
-}) {
-  final pagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
-  if (seriesId != null && pagingClient != null) {
-    return pagingClient.fetchSeasonEpisodesPage(seriesId, seasonId, start: start, size: size);
-  }
-  return client.fetchChildrenPage(seasonId, start: start, size: size);
 }
 
 List<MediaItem> normalizeSeasonEpisodes(

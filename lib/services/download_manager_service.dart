@@ -22,7 +22,6 @@ import 'api_cache.dart';
 import 'connectivity_probe.dart';
 import 'download_artwork_helpers.dart';
 import 'download_artwork_service.dart';
-import 'jellyfin_cache_resolver.dart';
 import 'plex_api_cache.dart';
 import 'settings_service.dart';
 import '../connection/connection.dart' show SiloConnection;
@@ -568,10 +567,9 @@ class DownloadManagerService {
 
   /// Returns the cache namespace visible to [activeProfileId] for [serverId].
   ///
-  /// MediaBrowser backends prefer the persisted profile-to-user binding so a
-  /// cold launch and a profile switch cannot inherit the physical download
-  /// row's creator scope. A live scope is used only when no persisted binding
-  /// exists.
+  /// Silo prefers the persisted profile-to-user binding so a cold launch and
+  /// a profile switch cannot inherit the physical download row's creator
+  /// scope. A live scope is used only when no persisted binding exists.
   Future<String?> profileClientScopeIdForServer(ServerId serverId, String? activeProfileId) async {
     if (activeProfileId == null || activeProfileId.isEmpty) return null;
     final backend = await _backendForServer(serverId);
@@ -586,10 +584,6 @@ class DownloadManagerService {
     // is no live client to ask.
     if (backend == MediaBackend.silo) {
       return await _boundSiloScopeId(serverId, activeProfileId) ?? activeClientScopeIdForServer(serverId);
-    }
-    if (backend.usesMediaBrowserApi) {
-      final persisted = await JellyfinCacheResolver(_database).findProfileScopeId(serverId, activeProfileId);
-      return persisted ?? activeClientScopeIdForServer(serverId);
     }
     return buildPlexProfileScopeId(serverId: serverId, profileId: activeProfileId);
   }
@@ -725,25 +719,15 @@ class DownloadManagerService {
   /// Resolve which backend the cache row for [serverId] uses. Reads the
   /// `Connections` table directly so the lookup works even when the server
   /// is currently offline (the connection persists across launches).
-  ///
-  /// [JellyfinCacheResolver] reconciles bare machine ids with compound
-  /// `${serverMachineId}/$userId` MediaBrowser connection ids without treating
-  /// `_` or `%` as wildcards.
   Future<MediaBackend?> _backendForServer(ServerId serverId) async {
     // Prefer a live client — `MediaServerClient.backend` is in memory.
     final live = _getClient(serverId);
     if (live != null) return live.backend;
-    final row =
-        await JellyfinCacheResolver(_database).findConnection(serverId) ??
-        await (_database.select(
-          _database.connections,
-        )..where((t) => t.id.equals(SiloConnection.idFor(serverId)))).getSingleOrNull();
+    final row = await (_database.select(
+      _database.connections,
+    )..where((t) => t.id.equals(SiloConnection.idFor(serverId)))).getSingleOrNull();
     if (row == null) return null;
-    // Keep the persisted discriminator intact even though both MediaBrowser
-    // values dispatch to the same cache implementation.
     return switch (row.kind) {
-      'jellyfin' => MediaBackend.jellyfin,
-      'emby' => MediaBackend.emby,
       'plex' => MediaBackend.plex,
       'silo' => MediaBackend.silo,
       _ => null,
@@ -757,7 +741,7 @@ class DownloadManagerService {
   /// When [_backendForServer] can't resolve the backend (no live client and
   /// no `connections` row — happens when a server has been removed but old
   /// download rows still reference it), fan out to every registered backend
-  /// cache instead of silently defaulting to Plex. Otherwise MediaBrowser
+  /// cache instead of silently defaulting to Plex. Otherwise Silo
   /// items would render with blank metadata after a connection is severed.
   Future<MediaItem?> _lookupMetadata(ServerId serverId, String itemId, {String? clientScopeId}) async {
     final backend = await _backendForServer(serverId);
@@ -879,28 +863,18 @@ class DownloadManagerService {
     }
   }
 
-  /// Backend-aware "ensure cached & pin". MediaBrowser backends load playback
-  /// extras; Jellyfin can additionally cache native media segments. Other
-  /// backends only need the item metadata row. Then pin cached rows so they
-  /// survive general cache eviction.
+  /// "Ensure cached & pin": load the item metadata row, then pin cached rows
+  /// so they survive general cache eviction.
   Future<void> _pinMetadataForOffline(MediaServerClient client, MediaItem metadata) async {
     final serverId = metadata.serverId;
     if (serverId == null) {
       appLogger.w('Cannot pin metadata without serverId');
       return;
     }
-    if (client.backend.usesMediaBrowserApi) {
-      try {
-        await client.fetchPlaybackExtras(metadata.id);
-      } catch (e) {
-        appLogger.w('fetchPlaybackExtras failed during offline-pin for ${metadata.globalKey}', error: e);
-      }
-    } else {
-      try {
-        await client.fetchItem(metadata.id);
-      } catch (e) {
-        appLogger.w('fetchItem failed during offline-pin for ${metadata.globalKey}', error: e);
-      }
+    try {
+      await client.fetchItem(metadata.id);
+    } catch (e) {
+      appLogger.w('fetchItem failed during offline-pin for ${metadata.globalKey}', error: e);
     }
     await ApiCache.forBackend(client.backend).pinForOffline(ServerId(client.cacheServerId), metadata.id);
   }
@@ -3858,9 +3832,8 @@ class DownloadManagerService {
 
   /// Get chapter thumb paths from cached metadata, or null when the cache
   /// cannot answer. Backend-aware: routes through the resolved
-  /// [MediaServerClient] so Jellyfin items return their
-  /// `/Items/.../Images/Chapter/...?tag=...` paths and Plex items return
-  /// their `/library/parts/.../indexes/sd/...` paths. Both shapes hash
+  /// [MediaServerClient] so Plex items return their
+  /// `/library/parts/.../indexes/sd/...` paths. Every shape hashes
   /// through [DownloadStorageService] the same way.
   ///
   /// Deliberately cache-only ([MediaServerClient.fetchPlaybackExtrasFromCacheOnly]):
@@ -4539,7 +4512,7 @@ class DownloadManagerService {
       await _deleteAdditionalPartFiles(record);
 
       // thumbPath is a server-side API path (Plex /library/metadata/.../thumb,
-      // Jellyfin /Items/.../Images/Primary), not a local file path —
+      // a Silo artwork URL), not a local file path —
       // resolve it via getArtworkPathFromThumb
       if (deleteThumb && record.thumbPath != null) {
         final parsed = parseGlobalKey(record.globalKey);
@@ -4556,7 +4529,7 @@ class DownloadManagerService {
   /// Whether [storedPath], a file [record] recorded, is also another
   /// download's file. Paths used to be built from titles alone, so two items
   /// with the same title (two libraries, or the same movie on Plex and
-  /// Jellyfin) could end up on one file; it stays while another row plays it.
+  /// Silo) could end up on one file; it stays while another row plays it.
   Future<bool> _isVideoPathSharedWithOtherDownload(DownloadedMediaItem record, String storedPath) async {
     final shared = await _database.isVideoFilePathRecordedByOtherDownload(
       storedPath,

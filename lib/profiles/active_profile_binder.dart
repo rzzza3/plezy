@@ -339,7 +339,7 @@ class ActiveProfileBinder {
 
       // Bind the implicit Plex Home parent and borrowed/extra join rows in
       // parallel. A slow/offline Plex parent should not add its timeout budget
-      // on top of an otherwise reachable MediaBrowser or borrowed-server bind.
+      // on top of an otherwise reachable Silo or borrowed-server bind.
       final results = await Future.wait([
         if (profile.isPlexHome)
           _bindPlexHome(
@@ -350,7 +350,7 @@ class ActiveProfileBinder {
             generation: generation,
           ),
         // Both kinds also bind borrowed/extra connections via the join table.
-        // For plex_home this handles a MediaBrowser server (or extra Plex
+        // For plex_home this handles a Silo server (or extra Plex
         // account) that was attached to the profile via the borrow flow — the
         // account is bound by `_bindPlexHome` above and isn't represented in
         // the join table.
@@ -399,18 +399,9 @@ class ActiveProfileBinder {
       // profile. Always set the filter to the bound set (even when empty) so
       // a profile with no connections shows nothing — falling back to "all
       // visible" on empty would leak servers attached to other profiles.
-      final jellyfinConnectionIds = <String>{
-        for (final pc in joinRows)
-          if (connectionsById[pc.connectionId] case JellyfinConnection(:final id)) id,
-      };
       for (final serverId in serverManager.registeredServerIds) {
         final belongs = visibleServerIds.contains(serverId) || expectedServerIds.contains(serverId);
-        if (belongs &&
-            !serverManager.isRegisteredForOtherProfile(
-              ServerId(serverId),
-              profileId: profile.id,
-              jellyfinConnectionIds: jellyfinConnectionIds,
-            )) {
+        if (belongs && !serverManager.isRegisteredForOtherProfile(ServerId(serverId), profileId: profile.id)) {
           continue;
         }
         serverManager.removeServer(ServerId(serverId));
@@ -481,8 +472,6 @@ class ActiveProfileBinder {
       switch (connectionsById[pc.connectionId]) {
         case final PlexAccountConnection account:
           expected.addAll(plexMembership(account));
-        case JellyfinConnection(:final serverMachineId):
-          expected.add(serverMachineId);
         case SiloConnection(:final serverId):
           expected.add(serverId);
         case null:
@@ -635,9 +624,6 @@ class ActiveProfileBinder {
               generation: generation,
             ),
           );
-        case JellyfinConnection():
-          expected.add(conn.serverMachineId);
-          futures.add(_bindMediaBrowser(conn, profileId: profile.id, generation: generation));
         case SiloConnection():
           expected.add(conn.serverId);
           futures.add(_bindSilo(conn, pc: pc, profileId: profile.id, generation: generation));
@@ -1105,25 +1091,6 @@ class ActiveProfileBinder {
         );
       }),
     );
-  }
-
-  Future<_ProfileBindResult> _bindMediaBrowser(
-    JellyfinConnection conn, {
-    required String profileId,
-    required int generation,
-  }) async {
-    final ok = await serverManager.addJellyfinConnection(conn);
-    if (!_isCurrentBind(profileId, generation)) {
-      return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
-    }
-    // `addJellyfinConnection` registers the client even when the health probe
-    // returns a refusal. Keep that server in the active profile's visibility
-    // filter so the refusal banner can surface it instead of hiding it as if
-    // the profile had no server.
-    if (ok || serverManager.refusedServerIds.contains(conn.serverMachineId)) {
-      return _ProfileBindResult.visible({conn.serverMachineId});
-    }
-    return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
   }
 
   /// The join row's `userIdentifier` is the Silo profile this Plezy profile

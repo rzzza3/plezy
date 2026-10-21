@@ -31,8 +31,7 @@ class AccountPreferencesUnavailableException implements Exception {
 /// values read-only or an error state.
 ///
 /// Sources are resolved per call rather than held: a Plex Home token is minted
-/// lazily by the binder and a MediaBrowser client appears only once the server
-/// is online, so a snapshot taken at construction would strand the first read
+/// lazily by the binder, so a snapshot taken at construction would strand the first read
 /// after launch.
 class AccountPreferencesRepository {
   AccountPreferencesRepository({required this._sourceFor});
@@ -61,8 +60,6 @@ class AccountPreferencesRepository {
   /// What [ref]'s backend can store. A pure function of the backend, so UI can
   /// build its rows before the first request resolves.
   AccountPreferencesCapabilities capabilitiesFor(AccountRef ref) => switch (ref.backend) {
-    MediaBackend.jellyfin => AccountPreferencesCapabilities.jellyfin,
-    MediaBackend.emby => AccountPreferencesCapabilities.emby,
     MediaBackend.plex => AccountPreferencesCapabilities.plex,
     MediaBackend.silo => AccountPreferencesCapabilities.unsupported,
   };
@@ -105,9 +102,8 @@ class AccountPreferencesRepository {
   ///
   /// Unsupported keys and values fail before any backend writes. Callers may
   /// additionally fence the request to a captured profile/account identity.
-  /// Writes serialize per account before resolving a source: MediaBrowser
-  /// replaces its full Configuration, so concurrent read/merge/write cycles
-  /// would otherwise lose unrelated changes.
+  /// Writes serialize per account before resolving a source, so concurrent
+  /// read/merge/write cycles cannot lose unrelated changes.
   Future<AccountPreferences> update(
     AccountRef ref,
     AccountPreferencesPatch patch, {

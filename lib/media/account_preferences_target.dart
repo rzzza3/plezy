@@ -18,10 +18,10 @@ class AccountPreferenceTarget {
 
   final AccountRef ref;
 
-  /// Primary row label: server name (MediaBrowser) or account label (Plex).
+  /// Primary row label: the account label (Plex).
   final String label;
 
-  /// Secondary row label: user · URL (MediaBrowser) or Home user (Plex).
+  /// Secondary row label: the Home user (Plex).
   final String? subtitle;
 
   /// Whether the profile designated this connection as its picker default.

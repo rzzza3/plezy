@@ -73,7 +73,6 @@ import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
 import 'services/connectivity_probe.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'services/jellyfin_api_cache.dart';
 import 'services/plex_api_cache.dart';
 import 'services/silo_api_cache.dart';
 import 'database/app_database.dart';
@@ -943,7 +942,7 @@ Future<_StartupDependencies> _initializeStartup(SettingsService settings) async 
     }
 
     // MainApp reads the first two synchronous facades during its first build
-    // and the Jellyfin device profile the third at playback negotiation. All
+    // and playback negotiation the third. All
     // three have a working sync fallback, so a detection failure is not fatal.
     await _optionalGatePhase(StartupPhase.deviceCapabilities, () async {
       await (
@@ -1320,7 +1319,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _appDatabase = widget.appDatabase;
 
     PlexApiCache.initialize(_appDatabase);
-    JellyfinApiCache.initialize(_appDatabase);
     SiloApiCache.initialize(_appDatabase);
 
     _downloadManager = DownloadManagerService(
@@ -1634,7 +1632,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     return MultiProvider(
       providers: [
         // Expose AppDatabase + ConnectionRegistry so screens (Settings, Setup)
-        // can manage stored Jellyfin/Plex connections without re-creating
+        // can manage stored Plex/Silo connections without re-creating
         // the registry per-call site.
         Provider<SettingsService>.value(value: widget.settings),
         Provider<StorageService>.value(value: widget.storage),
@@ -1671,10 +1669,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
         ),
         ChangeNotifierProvider(
-          create: (context) {
-            _serverManager.onJellyfinConnectionUpdated = context.read<ConnectionRegistry>().upsert;
-            return MultiServerProvider(_serverManager, _aggregationService);
-          },
+          create: (context) => MultiServerProvider(_serverManager, _aggregationService),
         ),
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
           create: (context) {
@@ -1693,7 +1688,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
         ),
         // Profile binder owns the cold-start client connect: Plex token
-        // refresh + Jellyfin client creation. Hoisted out of MainScreen so
+        // refresh + Silo client creation. Hoisted out of MainScreen so
         // the splash can await its first settle — without this, MainScreen
         // mounts (and discover/libraries query) before any client exists.
         // It is intentionally not auto-started here: SetupScreen starts it
@@ -1791,8 +1786,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           ),
           update: (_, syncService, downloadProvider, previous) => previous!,
         ),
-        // Account preferences (server-stored: Jellyfin UserConfiguration,
-        // plex.tv user profile) live above the profile session so a write
+        // Account preferences (server-stored: plex.tv user profile) live above the profile session so a write
         // survives navigation, and so a profile switch clears the cache in one
         // place. The repository is exposed separately because UI reads it
         // directly; the controller owns and disposes it.
@@ -1804,7 +1798,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               connections: connections,
               profileConnections: context.read<ProfileConnectionRegistry>(),
               activeProfile: activeProfile,
-              serverManager: context.read<MultiServerProvider>().serverManager,
             );
             return controller;
           },
@@ -2083,9 +2076,9 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           connections: connRegistry,
           storage: storage,
           serverManager: serverManager,
-        ).pruneUnreferencedJellyfinConnections();
+        ).pruneUnreferencedConnections();
         if (pruned > 0) {
-          appLogger.i('Setup: pruned $pruned unreferenced MediaBrowser connection${pruned == 1 ? '' : 's'}');
+          appLogger.i('Setup: pruned $pruned unreferenced connection${pruned == 1 ? '' : 's'}');
         }
         // Provider initialization starts before this screen runs the legacy
         // migration. Reload after bootstrap so copied Plex Home users and the
@@ -2149,19 +2142,17 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
             for (final s in conn.servers) {
               _serverStatus[s.clientIdentifier] = (s.name, null);
             }
-          } else if (conn is JellyfinConnection) {
-            _serverStatus[conn.serverMachineId] = (conn.serverName, null);
           }
         }
       });
     }
 
     final plexCount = allConnections.whereType<PlexAccountConnection>().fold<int>(0, (n, c) => n + c.servers.length);
-    final mediaBrowserCount = allConnections.whereType<JellyfinConnection>().length;
+    final siloCount = allConnections.whereType<SiloConnection>().length;
     unawaited(
       Sentry.addBreadcrumb(
         Breadcrumb(
-          message: 'Handing off to MainScreen with $plexCount Plex + $mediaBrowserCount MediaBrowser server(s)',
+          message: 'Handing off to MainScreen with $plexCount Plex + $siloCount Silo server(s)',
           category: 'setup',
         ),
       ),
@@ -2238,7 +2229,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     }
 
     // Repopulate metadata for downloaded items now that per-backend caches
-    // are resolvable (the Connections row + live MediaBrowser client are in
+    // are resolvable (the Connections row + live Silo client are in
     // place). Without this the downloads list and sync-rule titles render
     // empty until something forces a later refresh.
     await downloadProvider.refreshMetadataFromCache();

@@ -21,8 +21,8 @@ import 'settings_utils.dart';
 
 /// "No preference" in a language row.
 ///
-/// The empty string, not `null`: it is what Jellyfin returns for a language it
-/// has no preference for, what [AccountPreferences] narrows an empty value to,
+/// The empty string, not `null`: it is what [AccountPreferences] narrows an
+/// empty value to,
 /// and — being non-null — it lets the row tell "the user chose no preference"
 /// apart from "the picker was dismissed". Patches carry `null` instead, because
 /// that is what the transports read as "clear this".
@@ -40,8 +40,7 @@ final _languageOptions = <DialogOption<String>>[
 /// One account's server-stored preferences.
 ///
 /// Nothing on this screen is a device setting. Every row reads and writes the
-/// account's own record — Jellyfin/Emby `UserConfiguration`, plex.tv
-/// `/api/v2/user/profile` — so a change here follows the account into every
+/// account's own record — plex.tv `/api/v2/user/profile` — so a change here follows the account into every
 /// Plezy install and into the server's own apps.
 ///
 /// The audio and subtitle rows in particular are *applied by the server* when
@@ -196,7 +195,6 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
     // account can never store are absent rather than disabled.
     final capabilities = _repository.capabilitiesFor(widget.target.ref);
     final audio = _audioRows(capabilities, preferences);
-    final library = _libraryRows(capabilities, preferences);
     final personal = _personalMediaRows(capabilities, preferences);
     final theme = Theme.of(context);
 
@@ -212,7 +210,6 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
           ),
         ),
         if (audio.isNotEmpty) SettingsGroup(title: t.accountPreferences.groups.audioAndSubtitles, children: audio),
-        if (library.isNotEmpty) SettingsGroup(title: t.accountPreferences.groups.libraryDisplay, children: library),
         if (personal.isNotEmpty) SettingsGroup(title: t.accountPreferences.groups.personalMedia, children: personal),
         const SizedBox(height: 24),
       ]),
@@ -291,41 +288,6 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
         ),
     ];
   }
-
-  List<Widget> _libraryRows(AccountPreferencesCapabilities capabilities, AccountPreferences preferences) => [
-    if (capabilities.supports(AccountPreferenceKey.displayMissingEpisodes))
-      AccountSettingSwitchTile(
-        value: preferences.displayMissingEpisodes,
-        icon: Symbols.dvr_rounded,
-        title: t.accountPreferences.displayMissingEpisodes,
-        subtitle: t.accountPreferences.displayMissingEpisodesDescription,
-        onChanged: (value) => _write(AccountPreferenceKey.displayMissingEpisodes, value),
-      ),
-    if (capabilities.supports(AccountPreferenceKey.hidePlayedInLatest))
-      AccountSettingSwitchTile(
-        value: preferences.hidePlayedInLatest,
-        icon: Symbols.visibility_off_rounded,
-        title: t.accountPreferences.hidePlayedInLatest,
-        subtitle: t.accountPreferences.hidePlayedInLatestDescription,
-        onChanged: (value) => _write(AccountPreferenceKey.hidePlayedInLatest, value),
-      ),
-    if (capabilities.supports(AccountPreferenceKey.displayCollectionsView))
-      AccountSettingSwitchTile(
-        value: preferences.displayCollectionsView,
-        icon: Symbols.collections_rounded,
-        title: t.accountPreferences.displayCollectionsView,
-        subtitle: t.accountPreferences.displayCollectionsViewDescription,
-        onChanged: (value) => _write(AccountPreferenceKey.displayCollectionsView, value),
-      ),
-    if (capabilities.supports(AccountPreferenceKey.rewatchingInNextUp))
-      AccountSettingSwitchTile(
-        value: preferences.rewatchingInNextUp ?? false,
-        icon: Symbols.replay_rounded,
-        title: t.accountPreferences.rewatchingInNextUp,
-        subtitle: t.accountPreferences.rewatchingInNextUpDescription,
-        onChanged: (value) => _write(AccountPreferenceKey.rewatchingInNextUp, value),
-      ),
-  ];
 
   List<Widget> _personalMediaRows(AccountPreferencesCapabilities capabilities, AccountPreferences preferences) => [
     if (capabilities.supports(AccountPreferenceKey.watchedIndicator))

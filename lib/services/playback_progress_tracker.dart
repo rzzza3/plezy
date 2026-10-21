@@ -161,18 +161,14 @@ class PlaybackProgressTracker {
   /// because startup heartbeats may be dropped while still completing true.
   final Map<PlaybackReportSnapshot, bool> _deliveredProgressAcknowledgements = Map.identity();
 
-  /// Whether this backend reporting session has successfully opened.
-  bool _hasDeliveredStart = false;
-
   /// Whether a delivered stopped report reached a backend session able to act
-  /// on it. MediaBrowser drops a stop for a session it never opened, so both
-  /// the position it would persist and the watch it would record are lost.
+  /// on it.
   bool _stoppedReportActedOn = false;
 
   /// Whether the delivered stopped report persisted its position.
   bool _stoppedProgressServerAcknowledged = false;
 
-  /// Allows the first persisted Progress after a MediaBrowser Started to
+  /// Allows the first persisted Progress after a Started to
   /// upgrade local provenance even when the position delta is throttled.
   bool _lastProgressNotificationServerAcknowledged = false;
 
@@ -366,7 +362,6 @@ class PlaybackProgressTracker {
     _deliveredBelow = false;
     _serverObservedCrossing = false;
     _sessionEnded = false;
-    _hasDeliveredStart = false;
     _stoppedReportActedOn = false;
     _stoppedProgressServerAcknowledged = false;
   }
@@ -608,27 +603,17 @@ class PlaybackProgressTracker {
   /// never marked server-side.
   void _onReportDelivered(PlaybackReportSnapshot snapshot) {
     final c = client;
-    // The same backend as the client's, but read from the item so the
-    // classification matches the pattern already used for track selection
-    // below and does not depend on a client method.
-    final persistsPositionOnEveryReport = !metadata.backend.usesMediaBrowserApi;
     if (snapshot.isStopped) {
-      // MediaBrowser needs a successfully opened session before Stopped can
-      // persist position or record the watch; Plex timeline reports are
-      // independent.
-      _stoppedReportActedOn = persistsPositionOnEveryReport || _hasDeliveredStart;
-      _stoppedProgressServerAcknowledged = _stoppedReportActedOn;
+      // Every report persists independently of the session's start.
+      _stoppedReportActedOn = true;
+      _stoppedProgressServerAcknowledged = true;
       // A backend that marks played from the stop has now done so, so a
       // crossing latched earlier this session is no longer a write owed to
       // it. Ordering runs both ways -- the crossing can latch before this
       // stop or from it -- so _settleServerMark promotes on the other path.
       if (_stoppedReportActedOn && (c?.marksWatchedOnPlaybackStopped ?? false)) _promoteWatchedPatch();
     } else {
-      final isStarted = !_hasDeliveredStart;
-      _hasDeliveredStart = true;
-      // A MediaBrowser `Started` saves play count and last-played date but
-      // deliberately not the position, so it cannot acknowledge an offset.
-      _deliveredProgressAcknowledgements[snapshot] = !isStarted || persistsPositionOnEveryReport;
+      _deliveredProgressAcknowledgements[snapshot] = true;
     }
 
     final threshold = c?.watchedThreshold;
@@ -804,30 +789,11 @@ class PlaybackProgressTracker {
   }
 
   int? _currentAudioStreamIndex(MediaSourceInfo info) {
-    final playerAudioTracks = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
-    if (metadata.backend.usesMediaBrowserApi &&
-        (info.audioTracks.any((track) => track.isExternal) || playerAudioTracks.length <= 1)) {
-      final selectedSourceTrack = _selectedSourceAudioTrack(info);
-      if (selectedSourceTrack != null) return selectedSourceTrack.id;
-    }
-
     return playingSourceAudioTrack(
       selectedMpvTrack: player.state.track.audio,
       mpvTracks: player.state.tracks.audio,
       sourceTracks: info.audioTracks,
     )?.id;
-  }
-
-  MediaAudioTrack? _selectedSourceAudioTrack(MediaSourceInfo info) {
-    for (final track in info.audioTracks) {
-      if (track.selected) return track;
-    }
-    final defaultIndex = info.defaultAudioStreamIndex;
-    if (defaultIndex == null) return null;
-    for (final track in info.audioTracks) {
-      if (track.id == defaultIndex) return track;
-    }
-    return null;
   }
 
   int? _currentSubtitleStreamIndex(MediaSourceInfo info) {

@@ -644,7 +644,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// id wins when the backend exposes one.
   String _itemKeyId(MediaItem item) => switch (item) {
     PlexMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
-    JellyfinMediaItem(:final playlistItemId?) => 'j:$playlistItemId',
     _ => item.id,
   };
 

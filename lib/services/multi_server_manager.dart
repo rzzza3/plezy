@@ -11,8 +11,6 @@ import '../media/media_server_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
 import 'connectivity_probe.dart';
-import 'jellyfin_client.dart';
-import 'jellyfin_endpoint_discovery.dart';
 import 'plex_client.dart';
 import 'silo_client.dart';
 import '../models/plex/plex_config.dart';
@@ -55,7 +53,7 @@ HealthStatus? _refusalFor(Object error) => switch (error) {
 /// The internal map and public accessors are typed against the
 /// [MediaServerClient] interface so consumers don't depend on the concrete
 /// backend. Onboarding helpers branch on backend (Plex `PlexServer`,
-/// MediaBrowser `JellyfinConnection`) and instantiate the matching client.
+/// `SiloConnection`) and instantiate the matching client.
 class MultiServerManager {
   MultiServerManager({
     PlexClientFactory plexClientFactory = PlexClient.create,
@@ -70,7 +68,6 @@ class MultiServerManager {
   final PlexClientFactory _plexClientFactory;
   final Stream<List<ConnectivityResult>> Function() _connectivityChanges;
   final Duration _connectivityDebounceDuration;
-  FutureOr<void> Function(JellyfinConnection connection)? onJellyfinConnectionUpdated;
 
   final Map<String, MediaServerClient> _clients = {};
 
@@ -114,7 +111,7 @@ class MultiServerManager {
   Set<String> get authErrorServerIds => _refusedServerIdsOf(HealthStatus.authError);
 
   /// Servers that know this account and refuse it (HTTP 403), such as a
-  /// Jellyfin user denied remote access or outside their parental schedule. A
+  /// user denied remote access or outside their parental schedule. A
   /// new sign-in cannot help; the server owner or the network the device is on
   /// can. Cleared once a probe succeeds.
   Set<String> get accessDeniedServerIds => _refusedServerIdsOf(HealthStatus.accessDenied);
@@ -168,23 +165,6 @@ class MultiServerManager {
     if (client is PlexClient) client.plexAccountId = accountId;
   }
 
-  /// Whether [compoundId] is still the client bound as the active user for
-  /// [machineId]. Async MediaBrowser work must re-check this before publishing
-  /// a result — a profile switch can rebind the machine mid-probe.
-  bool _isActiveJellyfin(String machineId, String compoundId) => _activeJellyfinMachine[machineId] == compoundId;
-
-  /// All MediaBrowser clients ever added, keyed by the compound connection id
-  /// (`{serverMachineId}/{userId}`). This lets users and dialects coexist
-  /// without tearing down another connection's in-flight operations. [_clients]
-  /// holds the currently "active" entry per machineId for consumers that pass
-  /// the public machine id as the server id.
-  ///
-  /// These private members retain their Jellyfin-era names because one
-  /// [JellyfinClient] implements both the Jellyfin and Emby dialects.
-  final Map<String, JellyfinClient> _jellyfinByCompoundId = {};
-  final Map<String, String> _activeJellyfinMachine = {};
-  final Map<String, HealthStatus> _jellyfinHealthByCompoundId = {};
-
   /// Debounce timers for endpoint-exhaustion-triggered reconnection (per server)
   final Map<String, Timer> _reconnectDebounce = {};
 
@@ -210,15 +190,15 @@ class MultiServerManager {
   final Map<String, int> _relayEscapeAttempts = {};
   static const _relayEscapeBaseDelay = Duration(seconds: 30);
 
-  /// Get all registered server IDs (Plex + MediaBrowser).
+  /// Get all registered server IDs (Plex + Silo).
   ///
   /// Sourced from [_clients] rather than [_plexServers] because
   /// [_plexServers] only holds the Plex-specific [PlexServer] structs
-  /// (host/port metadata used for connection-racing). MediaBrowser connections
+  /// (host/port metadata used for connection-racing). Silo connections
   /// are registered as clients only — falling back to [_plexServers] would
   /// silently exclude them and callers (the active-profile binder, library
   /// refresh gates) would behave as if the manager were empty for
-  /// MediaBrowser-only profiles.
+  /// Silo-only profiles.
   List<String> get serverIds => _clients.keys.toList();
 
   /// Every server id the manager holds state for: live clients plus
@@ -230,18 +210,12 @@ class MultiServerManager {
 
   /// Whether anything registered under [serverId] was made for a profile
   /// other than [profileId]: a live Plex client, or the Plex identity a
-  /// reconnect would rebuild one with, scoped to another profile, or a live
-  /// MediaBrowser client that is not one of [jellyfinConnectionIds]. Such a
+  /// reconnect would rebuild one with, scoped to another profile. Such a
   /// registration still carries the other profile's token. A registration
   /// with no identity (an auth-error marker for a server that never had a
   /// client, which a reconnect refuses to rebuild) belongs to no profile.
-  bool isRegisteredForOtherProfile(
-    ServerId serverId, {
-    required String profileId,
-    Set<String> jellyfinConnectionIds = const {},
-  }) {
+  bool isRegisteredForOtherProfile(ServerId serverId, {required String profileId}) {
     final client = _clients[serverId];
-    if (client is JellyfinClient && !jellyfinConnectionIds.contains(client.connection.id)) return true;
     if (client is PlexClient && client.profileScopeId.profileId != profileId) return true;
     final scope = _plexScopeByServer[serverId];
     return scope != null && scope.profileId != profileId;
@@ -256,8 +230,6 @@ class MultiServerManager {
   /// Resolve an exact private client namespace without falling back to a
   /// different active user on the same public server.
   MediaServerClient? getClientByScope(String clientScopeId) {
-    final jellyfin = getJellyfinClientByCompoundId(clientScopeId);
-    if (jellyfin != null) return jellyfin;
     final siloScope = SiloProfileScopeId.tryParse(clientScopeId);
     if (siloScope != null) {
       final client = _clients[siloScope.publicServerId];
@@ -304,8 +276,8 @@ class MultiServerManager {
     return getClient(serverId);
   }
 
-  /// Get the [PlexClient] for a server, or `null` if the server uses the
-  /// MediaBrowser API (or is not registered). Use for Plex-only flows that
+  /// Get the [PlexClient] for a server, or `null` if the server is not Plex
+  /// (or is not registered). Use for Plex-only flows that
   /// don't yet have a backend-neutral equivalent on [MediaServerClient].
   PlexClient? getPlexClient(ServerId serverId) {
     final client = _clients[serverId];
@@ -322,18 +294,6 @@ class MultiServerManager {
 
   String? get _currentPlexLanguageCode =>
       SettingsService.instanceOrNull?.read(SettingsService.appLocale).plexLanguageCode;
-
-  @visibleForTesting
-  void debugRegisterJellyfinClientForTesting(JellyfinClient client, {bool online = true}) {
-    _wireJellyfinConnectionUpdates(client);
-    final compoundId = client.connection.id;
-    final machineId = client.connection.serverMachineId;
-    _jellyfinByCompoundId[compoundId] = client;
-    _jellyfinHealthByCompoundId[compoundId] = online ? HealthStatus.online : HealthStatus.offline;
-    _clients[machineId] = client;
-    _activeJellyfinMachine[machineId] = compoundId;
-    _serverStatus[machineId] = online;
-  }
 
   @visibleForTesting
   void debugRegisterClientForTesting(MediaServerClient client, {bool online = true}) {
@@ -392,15 +352,11 @@ class MultiServerManager {
   ///   - Plex: `PlexServer.owned` for the server (the matching profile-level
   ///     `plexAdmin` check stays at the call site so it can fold in
   ///     `ActiveProfileProvider`).
-  ///   - Jellyfin: `JellyfinConnection.isAdministrator` captured at sign-in.
   ///   - Unknown server: `false`.
   bool isOwnerOrAdmin(ServerId serverId) {
     final client = _clients[serverId];
     if (client is PlexClient) {
       return _plexServers[serverId]?.owned == true;
-    }
-    if (client is JellyfinClient) {
-      return client.connection.isAdministrator;
     }
     return false;
   }
@@ -431,9 +387,6 @@ class MultiServerManager {
     if (clientScopeId != null && clientScopeId.isNotEmpty) {
       final client = getClientByScope(clientScopeId);
       if (client == null || client.serverId != serverId) return false;
-      if (client is JellyfinClient) {
-        return _jellyfinHealthByCompoundId[clientScopeId] == HealthStatus.online;
-      }
     }
     return isServerOnline(serverId);
   }
@@ -610,24 +563,8 @@ class MultiServerManager {
   }
 
   void removeServer(ServerId serverId) {
-    final jellyfinCompoundIds = _jellyfinByCompoundId.entries
-        .where((entry) => entry.value.connection.serverMachineId == serverId)
-        .map((entry) => entry.key)
-        .toList();
     final activeClient = _forgetServer(serverId);
-    if (jellyfinCompoundIds.isNotEmpty) {
-      final closed = <JellyfinClient>{};
-      for (final compoundId in jellyfinCompoundIds) {
-        final client = _jellyfinByCompoundId.remove(compoundId);
-        _jellyfinHealthByCompoundId.remove(compoundId);
-        if (client != null && closed.add(client)) {
-          unawaited(_closeClientGracefully(client));
-        }
-      }
-    } else if (activeClient != null) {
-      // Jellyfin's clients were all closed above.
-      unawaited(_closeClientGracefully(activeClient));
-    }
+    if (activeClient != null) unawaited(_closeClientGracefully(activeClient));
     _emitStatus();
     appLogger.i('Removed server: $serverId');
   }
@@ -641,7 +578,6 @@ class MultiServerManager {
     _reconnectDebounce.remove(serverId)?.cancel();
     _stopRelayEscape(serverId);
     final client = _clients.remove(serverId);
-    _activeJellyfinMachine.remove(serverId);
     _plexServers.remove(serverId);
     _clientIdByServer.remove(serverId);
     _plexAccountByServer.remove(serverId);
@@ -785,123 +721,6 @@ class MultiServerManager {
     return bound;
   }
 
-  /// Add a MediaBrowser server backed by an authenticated
-  /// [JellyfinConnection]. Returns true on success.
-  ///
-  /// When a live client already exists for the same compound id and the
-  /// connection is equivalent (see [canReuseJellyfinClient]), that client is
-  /// reused instead of recreated — profile rebinds re-add unchanged
-  /// connections routinely, and tearing the client down would abort its
-  /// in-flight requests. A material change (dialect, token, deviceId, URL set)
-  /// still replaces the client. This mirrors the Plex rebind path, where
-  /// [refreshTokensForProfile] reuses the online client via an in-place
-  /// token update.
-  ///
-  /// MediaBrowser clients use the shared endpoint-racing flow when multiple
-  /// URLs are configured, then instantiate the client against the
-  /// lowest-latency reachable URL.
-  ///
-  /// Two users on the same MediaBrowser server are tracked separately in
-  /// [_jellyfinByCompoundId]; only one is "active" per machineId at a time.
-  /// Adding the second user's connection doesn't close the first user's
-  /// client (preserves any in-flight operations on the prior profile).
-  Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
-    try {
-      // Every close path detaches the client from [_jellyfinByCompoundId]
-      // before closing it, so a client found here is never mid-close.
-      final existing = _jellyfinByCompoundId[connection.id];
-      if (existing != null && canReuseJellyfinClient(live: existing.connection, incoming: connection)) {
-        return await _reuseJellyfinClient(existing);
-      }
-
-      var resolvedConnection = connection;
-      var endpointSelectionValidated = false;
-      if (connection.baseUrls.length > 1) {
-        try {
-          final endpoint = await JellyfinEndpointDiscovery(dialect: connection.dialect).raceEndpoints(
-            connection.baseUrls,
-            preferredUrl: connection.baseUrl,
-            expectedMachineId: connection.serverMachineId,
-            // Historic alternates are independent retry candidates, not one
-            // atomic user-entered group. Reconcile each probe outcome below
-            // instead of rejecting the whole stored connection.
-            baseUrlsToValidate: const [],
-          );
-          resolvedConnection = connection.copyWith(
-            baseUrl: endpoint.activeBaseUrl,
-            baseUrls: endpoint.reconcilePreviouslyStoredBaseUrls(connection.baseUrls),
-            serverName: endpoint.serverInfo.serverName,
-          );
-          endpointSelectionValidated = true;
-        } catch (e, st) {
-          appLogger.w(
-            '${connection.dialect.productName} endpoint race failed; using only the stored active endpoint',
-            error: e.runtimeType,
-            stackTrace: st,
-          );
-          resolvedConnection = connection.copyWith(baseUrl: connection.baseUrl, baseUrls: [connection.baseUrl]);
-        }
-      }
-
-      final exhaustedMachineId = resolvedConnection.serverMachineId;
-      final exhaustedCompoundId = resolvedConnection.id;
-      final client = await JellyfinClient.create(
-        resolvedConnection,
-        onAllEndpointsExhausted: () => _onJellyfinEndpointsExhausted(exhaustedMachineId, exhaustedCompoundId),
-      );
-      // Admin status can change server-side; re-broadcast and persist so
-      // admin-gated UI survives app restarts without requiring re-auth.
-      _wireJellyfinConnectionUpdates(
-        client,
-        baseUrlsForPersistence: endpointSelectionValidated ? null : connection.baseUrls,
-      );
-      if (endpointSelectionValidated &&
-          (resolvedConnection.baseUrl != connection.baseUrl ||
-              !listEquals(resolvedConnection.baseUrls, connection.baseUrls))) {
-        try {
-          await onJellyfinConnectionUpdated?.call(resolvedConnection);
-        } catch (e, st) {
-          // Persistence failure does not alter the already-reconciled
-          // in-memory client.
-          appLogger.w('Failed to persist reconciled Jellyfin endpoints', error: e.runtimeType, stackTrace: st);
-        }
-      }
-      final compoundId = resolvedConnection.id;
-      final machineId = resolvedConnection.serverMachineId;
-
-      // Replace the prior client for this compound id — reaching here means
-      // the connection materially changed (token refresh, URL-set edit); an
-      // unchanged re-add was already handled by the reuse branch above.
-      final oldClient = _jellyfinByCompoundId[compoundId];
-      if (oldClient != null) unawaited(_closeClientGracefully(oldClient));
-      _jellyfinByCompoundId[compoundId] = client;
-
-      // Bind this user as the active client for its machine. A previously
-      // active client for a *different* compound id stays alive in
-      // [_jellyfinByCompoundId] so a future profile switch can re-bind it.
-      _clients[machineId] = client;
-      _activeJellyfinMachine[machineId] = compoundId;
-
-      final health = await client.checkHealth();
-      final healthy = health == HealthStatus.online;
-      _jellyfinHealthByCompoundId[compoundId] = health;
-      _applyHealth(ServerId(machineId), health);
-
-      appLogger.i(
-        'Added ${resolvedConnection.dialect.productName} server: '
-        '${resolvedConnection.serverName}${healthy ? '' : ' (unhealthy)'}',
-      );
-      return healthy;
-    } catch (e, stackTrace) {
-      appLogger.e(
-        'Failed to add ${connection.dialect.productName} server ${connection.serverName}',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      return false;
-    }
-  }
-
   /// Registers a [SiloClient] for [connection] bound to the Silo profile
   /// [profileId]. One account per server per device, so a re-add replaces the
   /// server's client.
@@ -921,107 +740,6 @@ class MultiServerManager {
     } catch (e, stackTrace) {
       appLogger.e('Failed to add Silo server ${connection.serverName}', error: e, stackTrace: stackTrace);
       return false;
-    }
-  }
-
-  /// Whether the live client bound to [live] can serve [incoming] without
-  /// being recreated. Recreation is required when a field baked into the
-  /// client at construction time changes:
-  /// - `dialect` controls route and capability behavior;
-  /// - `accessToken` / `deviceId` are embedded in the auth headers when the
-  ///   HTTP client is built;
-  /// - `baseUrls` fixes the failover candidate set. Compared as a set: both
-  ///   the client and the add-path endpoint race reorder the list as
-  ///   endpoints are promoted, so ordering drifts on an unchanged server.
-  ///
-  /// Everything else is deliberately ignored: the active `baseUrl` drifts as
-  /// the client rotates endpoints, `isAdministrator` self-refreshes on health
-  /// checks, and the remaining fields are display metadata. `userId` and
-  /// `serverMachineId` equality is implied by the compound-id lookup that
-  /// precedes this check.
-  @visibleForTesting
-  static bool canReuseJellyfinClient({required JellyfinConnection live, required JellyfinConnection incoming}) {
-    return live.dialect == incoming.dialect &&
-        live.accessToken == incoming.accessToken &&
-        live.deviceId == incoming.deviceId &&
-        setEquals(live.baseUrls.toSet(), incoming.baseUrls.toSet());
-  }
-
-  /// Re-add of an unchanged connection: keep the live client (preserving its
-  /// in-flight requests and settled endpoint choice), re-bind it as the
-  /// machine's active user, and run a fresh health probe so callers still
-  /// get a current result. Skips the endpoint race ([JellyfinClient] has
-  /// per-request failover plus exhaustion-triggered reconnect), the
-  /// connection-update wiring (already attached when the client was first
-  /// added), and the connection persist (the client persists its own
-  /// endpoint rotations).
-  Future<bool> _reuseJellyfinClient(JellyfinClient client) async {
-    final compoundId = client.connection.id;
-    final machineId = client.connection.serverMachineId;
-    final rebound = !_isActiveJellyfin(machineId, compoundId);
-    _clients[machineId] = client;
-    _activeJellyfinMachine[machineId] = compoundId;
-
-    final health = await client.checkHealth();
-    _jellyfinHealthByCompoundId[compoundId] = health;
-    if (!_isActiveJellyfin(machineId, compoundId)) {
-      // A concurrent remove/re-add won while the probe was in flight.
-      appLogger.d('Ignoring stale Jellyfin reuse result for ${client.connection.serverName}');
-      return health == HealthStatus.online;
-    }
-    _applyHealth(ServerId(machineId), health);
-    if (rebound) {
-      // The machine's active user changed even if its online status didn't;
-      // client-map consumers need to observe the swap.
-      _emitStatus();
-    }
-    final healthy = health == HealthStatus.online;
-    appLogger.i(
-      'Reusing existing Jellyfin client for ${client.connection.serverName}'
-      '${healthy ? '' : ' (unhealthy)'} (connection unchanged)',
-    );
-    return healthy;
-  }
-
-  void _wireJellyfinConnectionUpdates(JellyfinClient client, {List<String>? baseUrlsForPersistence}) {
-    client.onConnectionUpdated = (updated) async {
-      if (_jellyfinByCompoundId[updated.id] != client) {
-        appLogger.d('Ignoring stale Jellyfin connection update for ${updated.serverName}');
-        return;
-      }
-      final persist = onJellyfinConnectionUpdated;
-      if (persist != null) {
-        try {
-          final connectionToPersist = baseUrlsForPersistence == null
-              ? updated
-              : updated.copyWith(baseUrls: baseUrlsForPersistence);
-          await Future.sync(() => persist(connectionToPersist));
-        } catch (e, st) {
-          appLogger.w('Failed to persist Jellyfin connection update', error: e, stackTrace: st);
-        }
-      }
-      _emitStatus();
-    };
-  }
-
-  /// Look up a tracked Jellyfin client by its compound id
-  /// (`{serverMachineId}/{userId}`). Returns `null` if no Jellyfin
-  /// connection with that id has been added. Useful for callers that need
-  /// the *specific* user's client, not whichever is currently active for
-  /// the machine.
-  JellyfinClient? getJellyfinClientByCompoundId(String compoundId) => _jellyfinByCompoundId[compoundId];
-
-  /// Tear down a specific Jellyfin user's client. If it was the active one
-  /// for its machine, the machine slot is cleared.
-  void removeJellyfinConnection(JellyfinConnection connection) {
-    final compoundId = connection.id;
-    final machineId = connection.serverMachineId;
-    final client = _jellyfinByCompoundId.remove(compoundId);
-    _jellyfinHealthByCompoundId.remove(compoundId);
-    if (client != null) unawaited(_closeClientGracefully(client));
-    if (_isActiveJellyfin(machineId, compoundId)) {
-      _forgetServer(machineId);
-      _emitStatus();
     }
   }
 
@@ -1078,7 +796,7 @@ class MultiServerManager {
   }
 
   /// Test connection health for all servers. The probe is backend-defined:
-  /// Plex hits `/identity`; MediaBrowser uses the dialect's current-user route.
+  /// Plex hits `/identity`; Silo reads its signed-in session.
   /// Both are auth-required so a revoked token is reported as offline.
   Future<void> checkServerHealth() async {
     // Coalesce concurrent calls — return the in-flight future if one exists
@@ -1098,17 +816,8 @@ class MultiServerManager {
     final healthChecks = _clients.entries.map((entry) async {
       final serverId = entry.key;
       final client = entry.value;
-      final expectedJellyfinCompoundId = client is JellyfinClient ? client.connection.id : null;
 
       final status = await client.checkHealth();
-      if (client is JellyfinClient) {
-        final compoundId = expectedJellyfinCompoundId ?? client.connection.id;
-        _jellyfinHealthByCompoundId[compoundId] = status;
-        if (!_isActiveJellyfin(serverId, compoundId)) {
-          appLogger.d('Ignoring stale Jellyfin health result for ${client.connection.serverName}');
-          return;
-        }
-      }
       // A profile switch or reconnect can replace (or remove) the client
       // while its probe is in flight; the old client's verdict says nothing
       // about the new one, which may run under a different token.
@@ -1228,18 +937,6 @@ class MultiServerManager {
               : _reconnectServer(ServerId(serverId), server),
         ),
       );
-    }
-
-    // Jellyfin re-probes offline servers here. Online clients keep their current
-    // endpoint and can still fail over per request through JellyfinClient.
-    for (final entry in _activeJellyfinMachine.entries) {
-      final serverId = entry.key;
-      if (isServerOnline(ServerId(serverId))) continue;
-
-      final client = _jellyfinByCompoundId[entry.value];
-      if (client == null) continue;
-
-      unawaited(_runServerTask(serverId, () => _reconnectJellyfinServer(serverId, client)));
     }
   }
 
@@ -1440,37 +1137,6 @@ class MultiServerManager {
     }
   }
 
-  /// Attempt reconnection for a single offline MediaBrowser server.
-  ///
-  /// Reuse the existing [JellyfinClient], whose request-level failover owns its
-  /// endpoint set, and perform an authenticated health round-trip. On success,
-  /// flip the machine slot back to online so MediaServer-aware UI un-greys the
-  /// entry.
-  Future<void> _reconnectJellyfinServer(String machineId, JellyfinClient client) async {
-    final expectedCompoundId = client.connection.id;
-    try {
-      appLogger.d(
-        'Attempting reconnection for ${client.connection.dialect.productName} server '
-        '${client.connection.serverName}',
-      );
-      final status = await client.checkHealth();
-      _jellyfinHealthByCompoundId[expectedCompoundId] = status;
-      if (!_isActiveJellyfin(machineId, expectedCompoundId)) {
-        appLogger.d('Ignoring stale Jellyfin reconnection result for ${client.connection.serverName}');
-        return;
-      }
-      _applyHealth(ServerId(machineId), status);
-      if (status == HealthStatus.online) {
-        appLogger.i('Successfully reconnected to ${client.connection.serverName}');
-      } else {
-        appLogger.d('Reconnection probe for ${client.connection.serverName} returned ${status.name}');
-      }
-    } catch (e) {
-      appLogger.d('Reconnection failed for ${client.connection.serverName}: $e');
-      // Leave status as offline — will retry on next trigger
-    }
-  }
-
   /// Attempt reconnection for all offline servers.
   ///
   /// When [forceRediscovery] is true, the cached endpoint is cleared before
@@ -1507,27 +1173,12 @@ class MultiServerManager {
 
     final futures = offline.map((serverId) {
       final server = _plexServers[serverId];
-      if (server != null) {
-        return _runServerTask(
-          serverId,
-          () => _reconnectServer(ServerId(serverId), server),
-          timeout: const Duration(seconds: 15),
-          timeoutLabel: 'Reconnection',
-        );
-      }
-
-      // Jellyfin offline path — no `_plexServers` entry, but the active
-      // [JellyfinClient] is keyed by machineId in `_clients` and tracked in
-      // `_activeJellyfinMachine`. Run the same auth probe used at add time.
-      final activeCompoundId = _activeJellyfinMachine[serverId];
-      final jellyfinClient = activeCompoundId != null ? _jellyfinByCompoundId[activeCompoundId] : null;
-      if (jellyfinClient == null) return Future<void>.value();
-
+      if (server == null) return Future<void>.value();
       return _runServerTask(
         serverId,
-        () => _reconnectJellyfinServer(serverId, jellyfinClient),
+        () => _reconnectServer(ServerId(serverId), server),
         timeout: const Duration(seconds: 15),
-        timeoutLabel: 'Jellyfin reconnection',
+        timeoutLabel: 'Reconnection',
       );
     });
 
@@ -1560,10 +1211,6 @@ class MultiServerManager {
       final health = await client.checkHealth();
       if (!identical(_clients[serverId], client)) return;
 
-      if (client is JellyfinClient) {
-        _jellyfinHealthByCompoundId[client.connection.id] = health;
-      }
-
       if (health == HealthStatus.online) {
         _applyHealth(serverId, health);
         appLogger.d('Endpoint exhaustion not confirmed for $serverId; health probe succeeded');
@@ -1575,33 +1222,14 @@ class MultiServerManager {
       if (health == HealthStatus.authError || health == HealthStatus.accessDenied) return;
 
       final plexServer = _plexServers[serverId];
-      final jellyfinClient = client is JellyfinClient ? client : null;
-      if (plexServer == null && jellyfinClient == null) return;
+      if (plexServer == null) return;
 
       appLogger.i('Health probe confirmed $serverId offline, triggering reconnection');
 
-      unawaited(
-        _runServerTask(
-          serverId,
-          () => plexServer != null
-              ? _reconnectServer(serverId, plexServer)
-              : _reconnectJellyfinServer(serverId, jellyfinClient!),
-        ),
-      );
+      unawaited(_runServerTask(serverId, () => _reconnectServer(serverId, plexServer)));
     } finally {
       _endpointHealthChecks.remove(serverId);
     }
-  }
-
-  /// Jellyfin clients outlive their active binding (a previous profile's
-  /// client stays in [_jellyfinByCompoundId]); only the currently bound
-  /// client's exhaustion may verify and flip the machine's status.
-  void _onJellyfinEndpointsExhausted(String machineId, String compoundId) {
-    if (!_isActiveJellyfin(machineId, compoundId)) {
-      appLogger.d('Ignoring endpoint exhaustion from inactive Jellyfin client', error: compoundId);
-      return;
-    }
-    _onServerEndpointsExhausted(ServerId(machineId));
   }
 
   @visibleForTesting
@@ -1645,11 +1273,8 @@ class MultiServerManager {
     _relayEscapeAttempts.clear();
     _activeHealthCheck = null;
     _activeReconnect = null;
-    final clients = <MediaServerClient>{..._clients.values, ..._jellyfinByCompoundId.values};
+    final clients = <MediaServerClient>{..._clients.values};
     _clients.clear();
-    _jellyfinByCompoundId.clear();
-    _activeJellyfinMachine.clear();
-    _jellyfinHealthByCompoundId.clear();
     _plexServers.clear();
     _serverStatus.clear();
     _refusedServers.clear();

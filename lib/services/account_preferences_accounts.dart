@@ -5,9 +5,7 @@ import '../profiles/profile.dart';
 import '../profiles/profile_connection.dart';
 
 /// One editable account: what the picker shows, plus the credential the
-/// plex.tv source needs. MediaBrowser accounts carry no token here — their
-/// requests go through the live [JellyfinClient] owned by
-/// [MultiServerManager].
+/// plex.tv source needs.
 class AccountPreferenceAccount {
   const AccountPreferenceAccount({required this.target, required this.connection, this.plexToken});
 
@@ -57,15 +55,6 @@ AccountPreferenceResolution resolveAccountPreferenceAccounts({
     if (row.profileId != profile.id) continue;
     final connection = byId[row.connectionId];
     final account = switch (connection) {
-      JellyfinConnection() => AccountPreferenceAccount(
-        target: AccountPreferenceTarget(
-          ref: AccountRef.mediaBrowser(backend: connection.kind, connectionId: connection.id),
-          label: connection.displayLabel,
-          subtitle: connection.displaySubtitle,
-          isDefaultConnection: row.isDefault,
-        ),
-        connection: connection,
-      ),
       PlexAccountConnection() => _resolvePlexAccount(
         profile: profile,
         isPlexHomeProfile: isPlexHomeProfile,

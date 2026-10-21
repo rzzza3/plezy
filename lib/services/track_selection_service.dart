@@ -422,7 +422,7 @@ AudioTrack? findNativeAudioTrackForIntent(AudioTrack carried, List<AudioTrack> t
 }
 
 /// Sentinel id for a cross-item audio carry. Native player ids ('1', '2', …)
-/// and Jellyfin `source:<Index>` ids are reused per item, so a carried track
+/// and backend `source:<Index>` ids are reused per item, so a carried track
 /// with its original id can identity-match a DIFFERENT track that happens to
 /// sit at the same position on the next episode — bypassing the evidence
 /// bands and their ambiguity decline.
@@ -661,8 +661,6 @@ int _titleScore(String? mpvTitle, String? plexTitle, String? plexDisplayTitle) {
 bool _titlesMatch(String? mpvTitle, String? plexTitle, String? plexDisplayTitle) {
   return _titleScore(mpvTitle, plexTitle, plexDisplayTitle) > 0;
 }
-
-int _mediaTrackStreamIndex(int id, int? index) => index ?? id;
 
 /// Priority levels for track selection. Per-item language overrides are not a
 /// level: every backend folds them into the source's selected/default stream,
@@ -989,25 +987,6 @@ class TrackSelectionService {
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
         }
-      } else if (metadata.backend.usesMediaBrowserApi) {
-        final defaultStreamIndex = info.defaultAudioStreamIndex;
-        final defaultTrack = defaultStreamIndex != null
-            ? info.audioTracks
-                  .where((track) => _mediaTrackStreamIndex(track.id, track.index) == defaultStreamIndex)
-                  .firstOrNull
-            : null;
-
-        if (defaultTrack != null) {
-          final matchedMpvTrack = findMpvTrackForPlexAudio(
-            defaultTrack,
-            availableTracks,
-            allPlexTracks: info.audioTracks,
-          );
-
-          if (matchedMpvTrack != null) {
-            return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
-          }
-        }
       }
     }
 
@@ -1096,7 +1075,7 @@ class TrackSelectionService {
     }
 
     // Priority 2: Trust the server's selected track. Plex computes this from
-    // account/show/per-item prefs; MediaBrowser exposes DefaultSubtitleStreamIndex.
+    // account/show/per-item prefs.
     final info = plexMediaInfo;
     if (info != null) {
       final serverSelectedTrack = info.subtitleTracks.where((track) => track.selected).firstOrNull;
@@ -1118,29 +1097,6 @@ class TrackSelectionService {
         if (waitForPendingSource && !_hasCompleteDirectSourceCatalogFor(serverSelectedTrack, availableTracks)) {
           return null;
         }
-      } else if (metadata.backend.usesMediaBrowserApi) {
-        final defaultStreamIndex = info.defaultSubtitleStreamIndex;
-        if (defaultStreamIndex == -1) {
-          return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
-        }
-
-        final defaultTrack = defaultStreamIndex != null && availableTracks.isNotEmpty
-            ? info.subtitleTracks
-                  .where((track) => _mediaTrackStreamIndex(track.id, track.index) == defaultStreamIndex)
-                  .firstOrNull
-            : null;
-
-        if (defaultTrack != null) {
-          final matchedMpvTrack = findMpvTrackForPlexSubtitle(
-            defaultTrack,
-            availableTracks,
-            allPlexTracks: info.subtitleTracks,
-          );
-
-          if (matchedMpvTrack != null) {
-            return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
-          }
-        }
       } else if (metadata.backend == MediaBackend.plex && info.subtitleTracks.isNotEmpty) {
         if (availableTracks.isEmpty && waitForPendingSource) return null;
         // Native tracks exist and none maps to a server-selected stream.
@@ -1150,7 +1106,7 @@ class TrackSelectionService {
     }
 
     // Priority 3: Apply the server profile's subtitle mode where the server
-    // does not pre-select for us (MediaBrowser). Plex never reaches this with
+    // does not pre-select for us. Plex never reaches this with
     // a mode: PMS already folded it into `selected` above.
     final profileSelectedTrack = _selectSubtitleTrackByProfile(availableTracks, selectedAudioTrack);
     if (profileSelectedTrack != null) return profileSelectedTrack;
