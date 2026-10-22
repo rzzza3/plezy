@@ -625,6 +625,14 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 ## Delete Plex and collapse the seams (S9)
 **Depends on.** S8.
 
+**Operator decisions (2026-10-22).** These amend the boxes below.
+- The grep rule allowlists the files that must keep the old names to read or scrub old data: the schema migrations in `lib/database/app_database.dart`, the legacy key names in `lib/services/credential_vault.dart` and `lib/services/storage_service.dart`, the persisted backend ids in `lib/media/media_backend.dart`, the header and host patterns in `lib/utils/log_redaction_manager.dart`, their tests, and `test/database/schema_*`. Every other hit fails the rule.
+- The v17 migration's call into `lib/database/plex_metadata_recovery.dart` is inlined into the migration, and the file is deleted.
+- Schema 27 drops the rows keyed by Plezy profile ids: `download_owners`, `sync_rules`, `sync_rule_downloads`, `download_collections`, `download_collection_syncs`, and the profile-scoped Seerr and tracker preferences. They are not re-keyed to Silo profile ids. Silo downloads and their `silo:<server_id>/<profile_id>` scope rows stay, and so does the Silo connection.
+- The companion remote secret is derived from the Silo server id and the Silo account id. The account id is persisted at sign-in from `GET /api/v2/account/me`.
+- These Plex features go with no Silo replacement: account preferences, metadata edit, server activities, play queues, Plex Discover, and Quick Connect, once Seerr is checked for its use of the Quick Connect panel.
+- Online subtitle search stays, rebuilt on Silo: `POST /api/v2/subtitles/search`, then `POST /api/v2/subtitles/download`, then the `subtitle_ready` row or a `subtitle_inventory_changed` replan (`research/silo-playback.md` lines 34 to 36 and 120). Silo sets the `externalSubtitleSearch` capability. The rebuild lands before `PlexClient` is deleted, and lane 11 checks it live.
+
 **Files.**
 - [ ] Delete `lib/services/plex_client.dart`, `lib/services/plex_client/`, every `lib/services/plex_*.dart`, `lib/models/plex/`, `lib/screens/plex_match_screen.dart`, `lib/screens/auth/plex_pin_auth_flow.dart`, `lib/screens/settings/add_plex_account_screen.dart`.
 - [ ] Delete `lib/profiles/plex_home_*.dart`, `lib/profiles/active_plex_token.dart`, `lib/profiles/active_plex_identity.dart`, `lib/connection/connection_bootstrap.dart`, `lib/services/server_registry.dart`, `lib/services/play_queue_launcher.dart`, `lib/database/plex_metadata_recovery.dart`, `lib/utils/plex_cache_parser.dart`.
@@ -650,7 +658,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] The avatar opens the Silo profile picker. Picking a profile switches the home to its rows. No screen offers to add or edit a Plezy profile.
 
 **Verify, unit.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
-- [ ] `grep -rliw "plex\|jellyfin\|emby" lib test` returns nothing except the app name. Run `flutter analyze && flutter test`.
+- [ ] `grep -rliw "plex\|jellyfin\|emby" lib test` returns nothing outside the allowlist in the operator decisions above. Run `flutter analyze && flutter test`.
 - [ ] `schema_27_migration_test.dart` migrates a seeded schema 26 database with two local profiles bound to one Silo connection, and asserts no profile rows remain and the connection survives.
 - [ ] `silo_profile_switch_test.dart` asserts a switch to a PIN profile calls `verify-pin` and enters only on `valid: true`, and that a home read in flight across the switch is dropped.
 
@@ -665,6 +673,7 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 - [ ] Lane 8. Start Watch Together. Save `watch-together.png`. Pass when the room shows the profile name.
 - [ ] Lane 9. Open the sidebar and every library. Save `sidebar.png`. Pass when no live TV entry shows and every library opens.
 - [ ] Lane 10. Repeat S7 lane 1 from a trunk install. Save `upgrade.png`. Pass as there.
+- [ ] Lane 11. Search online subtitles during playback, download one and select it. Save `subtitle-search.png`. Pass when the downloaded subtitle renders without restarting playback from the start.
 
 **Verify, perf.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
 - [ ] Metric. Release APK size and cold start to first home row.
