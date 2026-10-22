@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/account_preferences.dart';
+import '../test_helpers/user_profile.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -17,24 +17,20 @@ import '../test_helpers/media_items.dart';
 MediaItem _meta({MediaBackend backend = MediaBackend.plex}) =>
     testMediaItem(id: 'rk1', backend: backend, kind: MediaKind.movie);
 
-AccountPreferences _profile({
-  bool autoSelectAudio = true,
-  String? defaultAudioLanguage,
-  String? defaultSubtitleLanguage,
-}) {
-  return AccountPreferences(
+TestUserProfile _profile({bool autoSelectAudio = true, String? defaultAudioLanguage, String? defaultSubtitleLanguage}) {
+  return TestUserProfile(
     playDefaultAudioTrack: autoSelectAudio,
     preferredAudioLanguage: defaultAudioLanguage,
     preferredSubtitleLanguage: defaultSubtitleLanguage,
   );
 }
 
-AccountPreferences _subtitleModeProfile({
+TestUserProfile _subtitleModeProfile({
   String? defaultAudioLanguage,
   String? defaultSubtitleLanguage,
   SubtitlePlaybackMode? subtitleMode,
 }) {
-  return AccountPreferences(
+  return TestUserProfile(
     playDefaultAudioTrack: true,
     preferredAudioLanguage: defaultAudioLanguage,
     preferredSubtitleLanguage: defaultSubtitleLanguage,
@@ -788,7 +784,7 @@ void main() {
       // Plex item reaches the profile pass. `none` would force off, `always`
       // would force on — both would override a decision the server made.
       final tracks = [_sub('1', lang: 'eng', isDefault: true)];
-      final plexProfile = AccountPreferences(
+      final plexProfile = TestUserProfile(
         preferredSubtitleLanguage: 'eng',
         subtitlePlaybackMode: SubtitlePlaybackMode.none,
       );
@@ -796,7 +792,7 @@ void main() {
       expect(result.priority, TrackSelectionPriority.defaultTrack);
       expect(result.track.id, '1');
 
-      final always = AccountPreferences(
+      final always = TestUserProfile(
         preferredSubtitleLanguage: 'eng',
         subtitlePlaybackMode: SubtitlePlaybackMode.always,
       );

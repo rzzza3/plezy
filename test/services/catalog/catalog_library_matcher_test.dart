@@ -284,13 +284,13 @@ void main() {
       libraryLookupResult([bareCopy, nativeCopy], succeeded: {'a'}),
     ]);
     const bare = CatalogItem(
-      source: CatalogSourceId.plex,
+      source: CatalogSourceId.trakt,
       kind: MediaKind.movie,
       title: 'Night on the Galactic Railroad',
       ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8'),
     );
     const enriched = CatalogItem(
-      source: CatalogSourceId.plex,
+      source: CatalogSourceId.trakt,
       kind: MediaKind.movie,
       title: 'Night on the Galactic Railroad',
       originalTitle: '銀河鉄道の夜',
@@ -800,13 +800,13 @@ void main() {
       libraryLookupResult([romajiCopy]),
     ]);
     const bare = CatalogItem(
-      source: CatalogSourceId.plex,
+      source: CatalogSourceId.trakt,
       kind: MediaKind.show,
       title: "Frieren: Beyond Journey's End",
       ids: CatalogItemIds(plex: '631cc', tvdb: 424536),
     );
     const enriched = CatalogItem(
-      source: CatalogSourceId.plex,
+      source: CatalogSourceId.trakt,
       kind: MediaKind.show,
       title: "Frieren: Beyond Journey's End",
       originalTitle: '葬送のフリーレン',
@@ -838,24 +838,6 @@ void main() {
     expect(harness.aggregation.calls.single.year, isNull);
   });
 
-  test('constructs a Plex guid for Discover items without external ids', () async {
-    final harness = _Harness();
-    addTearDown(harness.dispose);
-    harness.aggregation.responses.add(libraryLookupResult(const []));
-    const item = CatalogItem(
-      source: CatalogSourceId.plex,
-      kind: MediaKind.movie,
-      title: 'Plex-only Movie',
-      ids: CatalogItemIds(plex: '5d776828880197001ec90e13'),
-    );
-
-    await harness.matcher.match(item);
-
-    final call = harness.aggregation.calls.single;
-    expect(call.ids.hasAny, isFalse);
-    expect(call.plexGuid, 'plex://movie/5d776828880197001ec90e13');
-  });
-
   test('an id-poor negative does not suppress the detail-enriched retry', () async {
     // #1715: a Plex Discover row item carries only its rating key, and the
     // exact-guid lookup can miss even for owned titles (Discover dupes).
@@ -870,13 +852,13 @@ void main() {
       libraryLookupResult([hit]),
     ]);
     const bare = CatalogItem(
-      source: CatalogSourceId.plex,
+      source: CatalogSourceId.trakt,
       kind: MediaKind.movie,
       title: 'Night on the Galactic Railroad',
       ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8'),
     );
     const enriched = CatalogItem(
-      source: CatalogSourceId.plex,
+      source: CatalogSourceId.trakt,
       kind: MediaKind.movie,
       title: 'Night on the Galactic Railroad',
       ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8', imdb: 'tt0089445', tmdb: 34523),
@@ -891,31 +873,5 @@ void main() {
     // Both forms stay memoized independently.
     expect((await harness.matcher.match(enriched)).items.single, same(hit));
     expect(harness.aggregation.calls, hasLength(2));
-  });
-
-  test('only a Plex Discover item contributes a guid, and it costs no request', () async {
-    final harness = _Harness();
-    addTearDown(harness.dispose);
-    harness.aggregation.responses.addAll([libraryLookupResult(const []), libraryLookupResult(const [])]);
-    // A MAL entry can carry a Plex rating key through cross-source membership,
-    // but that key is not a Discover guid and must never be synthesised into
-    // one — the fast path is only sound for items that came from Discover.
-    const foreign = CatalogItem(
-      source: CatalogSourceId.mal,
-      kind: MediaKind.show,
-      title: 'Not A Discover Item',
-      ids: CatalogItemIds(mal: 7, plex: '1234'),
-    );
-    const discover = CatalogItem(
-      source: CatalogSourceId.plex,
-      kind: MediaKind.show,
-      title: 'Discover Show',
-      ids: CatalogItemIds(plex: 'abc123'),
-    );
-
-    await harness.matcher.match(foreign);
-    await harness.matcher.match(discover);
-
-    expect(harness.aggregation.calls.map((call) => call.plexGuid), [null, 'plex://show/abc123']);
   });
 }

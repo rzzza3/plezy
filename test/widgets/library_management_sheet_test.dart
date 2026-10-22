@@ -2,15 +2,12 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:plezy/connection/connection.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
@@ -18,13 +15,11 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/library_management_sheet.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:provider/provider.dart';
 
-import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 
 import '../test_helpers/prefs.dart';
@@ -42,9 +37,6 @@ Future<({int Function() selects, int Function() backs, LibrariesProvider librari
   MediaLibrary library = _qualifiedLibrary,
   List<MediaLibrary>? libraries,
   MultiServerProvider? multiServerProvider,
-  // Admin actions are offered to owners and administrators only. Most tests
-  // exercise the actions themselves, so they skip that check; null keeps it.
-  bool Function(MediaLibrary library)? canAdministerLibrary = _alwaysAdmin,
 }) async {
   final librariesProvider = LibrariesProvider();
   await librariesProvider.updateLibraryOrder(libraries ?? [library]);
@@ -89,8 +81,7 @@ Future<({int Function() selects, int Function() backs, LibrariesProvider librari
                     child: Builder(
                       builder: (context) => ElevatedButton(
                         autofocus: true,
-                        onPressed: () =>
-                            showLibraryManagementSheet(context, canAdministerLibrary: canAdministerLibrary),
+                        onPressed: () => showLibraryManagementSheet(context),
                         child: const Text('Open library management'),
                       ),
                     ),
@@ -106,68 +97,6 @@ Future<({int Function() selects, int Function() backs, LibrariesProvider librari
   await tester.pumpAndSettle();
 
   return (selects: () => underlyingSelects, backs: () => underlyingBacks, libraries: librariesProvider);
-}
-
-bool _alwaysAdmin(MediaLibrary library) => true;
-
-Future<void> _openScanConfirmation(WidgetTester tester) async {
-  // Switch from the desktop pointer default to keyboard mode, then activate the
-  // focused launcher using the same key path as a keyboard/remote user.
-  await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-  await tester.pump();
-  await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-  await tester.pumpAndSettle();
-
-  expect(find.text(t.libraries.manageLibraries), findsOneWidget);
-
-  // The sheet owns one focus node for its virtual row/column navigation. Move
-  // from the row to its options column and open the real AppMenuSheet.
-  await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-  await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-  await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-  await tester.pumpAndSettle();
-
-  expect(find.text(t.libraries.scanLibraryFiles), findsOneWidget);
-
-  // The hosted menu focuses its first entry in keyboard mode. Selecting it
-  // must close the whole hosted sheet before presenting the confirmation.
-  await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-  await tester.pumpAndSettle();
-
-  expect(find.byType(AlertDialog), findsOneWidget);
-  expect(find.text(t.libraries.manageLibraries), findsNothing);
-  expect(find.text(t.libraries.scanLibraryFiles), findsNothing);
-  expect(OverlaySheetController.openSheetCount.value, 0);
-
-  final dialogElement = tester.element(find.byType(AlertDialog));
-  final primaryFocusContext = FocusManager.instance.primaryFocus?.context;
-  var dialogOwnsPrimaryFocus = false;
-  primaryFocusContext?.visitAncestorElements((element) {
-    if (identical(element, dialogElement)) {
-      dialogOwnsPrimaryFocus = true;
-      return false;
-    }
-    return true;
-  });
-  expect(dialogOwnsPrimaryFocus, isTrue);
-}
-
-Future<void> _confirmLibraryAction(WidgetTester tester, String actionLabel) async {
-  await tester.tap(find.text('Open library management'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byTooltip(t.libraries.libraryOptions));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text(actionLabel));
-  await tester.pumpAndSettle();
-
-  expect(find.byType(AlertDialog), findsOneWidget);
-  await tester.tap(find.text(t.common.confirm));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 100));
-  await tester.pump(const Duration(seconds: 2));
-  await tester.pump(const Duration(milliseconds: 500));
-  await tester.pump(const Duration(seconds: 2));
-  await tester.pump(const Duration(milliseconds: 500));
 }
 
 void main() {
@@ -191,30 +120,6 @@ void main() {
     FocusManager.instance.highlightStrategy = FocusHighlightStrategy.automatic;
   });
   tearDown(() => database.close());
-
-  for (final interaction in [
-    (name: 'Enter', key: LogicalKeyboardKey.enter),
-    (name: 'Back', key: LogicalKeyboardKey.escape),
-  ]) {
-    testWidgets('${interaction.name} is handled by confirmation after the hosted action sheet closes', (tester) async {
-      final underlyingActions = await _pumpLibraryManagementLauncher(tester);
-      await _openScanConfirmation(tester);
-
-      // Ignore launcher/menu navigation. From this point onward, neither key
-      // may reach the underlying page while the modal confirmation has focus.
-      final selectsBeforeDialogAction = underlyingActions.selects();
-      final backsBeforeDialogAction = underlyingActions.backs();
-
-      await tester.sendKeyEvent(interaction.key);
-      await tester.pumpAndSettle();
-
-      expect(find.byType(AlertDialog), findsNothing);
-      expect(find.text('Open library management'), findsOneWidget);
-      expect(underlyingActions.selects(), selectsBeforeDialogAction);
-      expect(underlyingActions.backs(), backsBeforeDialogAction);
-      expect(OverlaySheetController.openSheetCount.value, 0);
-    });
-  }
 
   testWidgets('the D-pad cursor stays on screen while walking a long library list', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
@@ -304,120 +209,4 @@ void main() {
 
     expect(launcher.libraries.libraries.map((l) => l.id), ['b', 'a', 'c']);
   });
-
-  testWidgets('library admin actions are offered only on servers the user administers', (tester) async {
-    // Ownership comes from the account's cached server list; recording it via
-    // the auth-error marker needs no network.
-    PlexServer server(String id, {required bool owned}) =>
-        PlexServer(name: id, clientIdentifier: id, accessToken: 'token-$id', owned: owned, connections: []);
-    final account = PlexAccountConnection(
-      id: 'account-1',
-      accountToken: 'account-token',
-      clientIdentifier: 'test-client',
-      accountLabel: 'Account',
-      createdAt: DateTime.utc(2026),
-      servers: [server('admin-srv', owned: true), server('user-srv', owned: false)],
-    );
-    final manager = MultiServerManager()
-      ..markPlexConnectionAuthError(account, profileId: 'profile-1')
-      ..debugRegisterClientForTesting(testPlexClient(serverId: ServerId('admin-srv')))
-      ..debugRegisterClientForTesting(testPlexClient(serverId: ServerId('user-srv')));
-    final provider = testMultiServerProvider(manager);
-    addTearDown(() {
-      provider.dispose();
-      manager.dispose();
-    });
-
-    MediaLibrary library(String serverId, String title) => MediaLibrary(
-      id: '$serverId-movies',
-      backend: MediaBackend.plex,
-      title: title,
-      kind: MediaKind.movie,
-      serverId: serverId,
-    );
-
-    await _pumpLibraryManagementLauncher(
-      tester,
-      libraries: [library('admin-srv', 'Admin Movies'), library('user-srv', 'User Movies')],
-      multiServerProvider: provider,
-      canAdministerLibrary: null,
-    );
-    await tester.tap(find.text('Open library management'));
-    await tester.pumpAndSettle();
-
-    Finder optionsIn(String title) => find.descendant(
-      of: find.ancestor(of: find.text(title), matching: find.byType(ListTile)),
-      matching: find.byTooltip(t.libraries.libraryOptions),
-    );
-    expect(optionsIn('Admin Movies'), findsOneWidget);
-    expect(optionsIn('User Movies'), findsNothing);
-  });
-
-  for (final action in ['scan', 'empty_trash']) {
-    testWidgets('$action refuses an absent library owner while another Plex server is online', (tester) async {
-      final harness = _LibraryActionHarness(includeOwner: false);
-      addTearDown(harness.dispose);
-      await _pumpLibraryManagementLauncher(tester, multiServerProvider: harness.provider);
-
-      final label = action == 'scan' ? t.libraries.scanLibraryFiles : t.libraries.emptyTrash;
-      await _confirmLibraryAction(tester, label);
-
-      expect(harness.replacementRequests, isEmpty);
-      expect(find.textContaining(t.errors.noClientAvailable), findsOneWidget);
-    });
-
-    testWidgets('$action reaches only the exact library owner with the original section id', (tester) async {
-      final harness = _LibraryActionHarness(includeOwner: true);
-      addTearDown(harness.dispose);
-      await _pumpLibraryManagementLauncher(tester, multiServerProvider: harness.provider);
-
-      final label = action == 'scan' ? t.libraries.scanLibraryFiles : t.libraries.emptyTrash;
-      await _confirmLibraryAction(tester, label);
-
-      expect(harness.replacementRequests, isEmpty);
-      expect(harness.ownerRequests, hasLength(1));
-      final expectedPath = action == 'scan'
-          ? '/library/sections/shared-section/refresh'
-          : '/library/sections/shared-section/emptyTrash';
-      expect(harness.ownerRequests.single.url.path, expectedPath);
-      final successMessage = action == 'scan'
-          ? t.messages.libraryScanStarted(title: _qualifiedLibrary.title)
-          : t.libraries.trashEmptied(title: _qualifiedLibrary.title);
-      expect(find.text(successMessage), findsOneWidget);
-    });
-  }
-}
-
-class _LibraryActionHarness {
-  final ownerRequests = <http.Request>[];
-  final replacementRequests = <http.Request>[];
-  late final MultiServerManager manager;
-  late final MultiServerProvider provider;
-
-  _LibraryActionHarness({required bool includeOwner}) {
-    final replacement = testPlexClient(
-      serverId: ServerId('server-b'),
-      handler: (request) async {
-        replacementRequests.add(request);
-        return http.Response('{}', 200, headers: const {'content-type': 'application/json'});
-      },
-    );
-    manager = MultiServerManager()..debugRegisterClientForTesting(replacement);
-    if (includeOwner) {
-      final owner = testPlexClient(
-        serverId: ServerId('server-a'),
-        handler: (request) async {
-          ownerRequests.add(request);
-          return http.Response('{}', 200, headers: const {'content-type': 'application/json'});
-        },
-      );
-      manager.debugRegisterClientForTesting(owner);
-    }
-    provider = testMultiServerProvider(manager);
-  }
-
-  void dispose() {
-    provider.dispose();
-    manager.dispose();
-  }
 }

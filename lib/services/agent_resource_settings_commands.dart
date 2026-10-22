@@ -2,14 +2,9 @@ import 'package:provider/provider.dart';
 
 import '../database/app_database.dart';
 import '../exceptions/media_server_exceptions.dart';
-import '../media/account_preferences.dart';
-import '../media/media_server_user_profile.dart';
 import '../profiles/active_profile_provider.dart';
-import '../providers/account_preferences_controller.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
-import 'account_preferences_accounts.dart';
-import 'account_preferences_repository.dart';
 import 'agent_control_protocol.dart';
 
 /// Configuration of existing, explicitly identified resources. Discovery only
@@ -25,7 +20,6 @@ class AgentResourceSettingsCommands {
     final profileId = _profile(context, scope, requireIdentity: command == 'settings.get');
     final discovery = command == 'settings.list';
     return switch (scope['type']) {
-      'account' => _readAccount(arguments, scope, profileId, context, discovery),
       'syncRule' => _readSync(arguments, scope, profileId, context, discovery),
       _ => throw const AgentControlException('unsupportedScope', 'Unsupported resource scope.'),
     };
@@ -44,7 +38,6 @@ class AgentResourceSettingsCommands {
           throw const AgentControlException('invalidArguments', 'value is required.');
         }
         return switch (scope['type']) {
-          'account' => _prepareAccount(key, scope, arguments['value'], reset, context),
           'syncRule' => _prepareSync(key, scope, arguments['value'], reset, context),
           _ => throw const AgentControlException('unsupportedScope', 'Unsupported resource scope.'),
         };
@@ -66,158 +59,6 @@ class AgentResourceSettingsCommands {
       throw const AgentControlException('invalidArguments', 'Unexpected resource scope field.');
     }
   }
-
-  Future<Object?> _readAccount(
-    Map<String, dynamic> arguments,
-    Map<String, dynamic> scope,
-    String profileId,
-    AgentCommandContext context,
-    bool list,
-  ) async {
-    _scopeFields(scope, {'accountId'});
-    final controller = context.context.read<AccountPreferencesController>();
-    if (list && !scope.containsKey('accountId')) {
-      return {
-        'scope': {'type': 'account', 'profileId': profileId},
-        'settings': <Object?>[],
-        'targets': [
-          for (final account in controller.accounts)
-            {
-              'scope': {'type': 'account', 'profileId': profileId, 'accountId': account.ref.key},
-              'label': account.target.label,
-              'backend': account.ref.backend.id,
-            },
-        ],
-      };
-    }
-    final target = _account(scope, context);
-    final capabilities = target.controller.repository.capabilitiesFor(target.account.ref);
-    if (list) {
-      return {
-        'scope': scope,
-        'settings': [for (final key in AccountPreferenceKey.values) _accountDescriptor(key, capabilities)],
-      };
-    }
-    final key = _accountKey(agentString(arguments, 'key'));
-    _requireAccountSupport(key, capabilities);
-    final snapshot = await target.controller.repository.load(target.account.ref, forceRefresh: true);
-    target.guard();
-    return _result(key.name, scope, _jsonValue(snapshot[key]), _accountTiming(key));
-  }
-
-  ({AccountPreferencesController controller, AccountPreferenceAccount account, void Function() guard}) _account(
-    Map<String, dynamic> scope,
-    AgentCommandContext context,
-  ) {
-    _scopeFields(scope, {'accountId'});
-    _profile(context, scope, requireIdentity: true);
-    final id = agentString(scope, 'accountId');
-    final controller = context.context.read<AccountPreferencesController>();
-    final account = controller.accounts.where((account) => account.ref.key == id).firstOrNull;
-    if (account == null) {
-      throw const AgentControlException('resourceNotFound', 'Account is not editable by this profile.');
-    }
-    final current = controller.captureAccountIdentity(account);
-    void guard() {
-      _profile(context, scope, requireIdentity: true);
-      if (!current()) throw const AgentControlException('sessionChanged', 'Account identity changed.');
-    }
-
-    return (controller: controller, account: account, guard: guard);
-  }
-
-  Future<AgentSettingMutation> _prepareAccount(
-    String name,
-    Map<String, dynamic> scope,
-    Object? raw,
-    bool reset,
-    AgentCommandContext context,
-  ) async {
-    final target = _account(scope, context);
-    final key = _accountKey(name);
-    final capabilities = target.controller.repository.capabilitiesFor(target.account.ref);
-    _requireAccountSupport(key, capabilities);
-    if (reset && key.valueKind != AccountPreferenceValueKind.languageCode) {
-      throw const AgentControlException('unsupportedOperation', 'This account preference has no inherited reset.');
-    }
-    final value = _decodeAccount(key, reset ? null : raw);
-    final patch = AccountPreferencesPatch.of(key, value);
-    capabilities.validate(patch);
-    return _mutation(name, scope, () async {
-      target.guard();
-      final updated = await target.controller.repository.update(target.account.ref, patch, checkCurrent: target.guard);
-      target.guard();
-      return _result(name, scope, _jsonValue(updated[key]), _accountTiming(key), persisted: true);
-    });
-  }
-
-  AccountPreferenceKey _accountKey(String name) =>
-      AccountPreferenceKey.values.where((key) => key.name == name).firstOrNull ??
-      (throw const AgentControlException('unknownSetting', 'Unknown account preference.'));
-
-  void _requireAccountSupport(AccountPreferenceKey key, AccountPreferencesCapabilities capabilities) {
-    if (!capabilities.supports(key)) {
-      throw const AgentControlException('unsupportedSetting', 'This backend does not support the account preference.');
-    }
-  }
-
-  String _accountTiming(AccountPreferenceKey key) => switch (key) {
-    AccountPreferenceKey.preferredAudioLanguage ||
-    AccountPreferenceKey.autoSelectAudio ||
-    AccountPreferenceKey.preferredSubtitleLanguage ||
-    AccountPreferenceKey.subtitleMode => 'nextPlayback',
-    _ => 'nextCatalogRefresh',
-  };
-
-  Map<String, dynamic> _accountDescriptor(AccountPreferenceKey key, AccountPreferencesCapabilities capabilities) => {
-    'key': key.name,
-    'type': switch (key.valueKind) {
-      AccountPreferenceValueKind.boolean => 'boolean',
-      AccountPreferenceValueKind.languageCode => 'string',
-      _ => 'enum',
-    },
-    'nullable': key.valueKind == AccountPreferenceValueKind.languageCode,
-    'default': null,
-    'defaultMeaning': key.valueKind == AccountPreferenceValueKind.languageCode ? 'noPreference' : 'serverOwned',
-    'resetSupported': capabilities.supports(key) && key.valueKind == AccountPreferenceValueKind.languageCode,
-    if (key.valueKind == AccountPreferenceValueKind.languageCode)
-      'constraints': {'format': 'ISO-639-1-or-backend-language-code'},
-    'choices': ?_accountChoices(key, capabilities),
-    'applicability': {
-      'supported': capabilities.supports(key),
-      if (!capabilities.supports(key)) 'reason': 'Not supported by this account backend.',
-    },
-    'application': _accountTiming(key),
-    'storage': 'serverAccount',
-  };
-
-  List<String>? _accountChoices(AccountPreferenceKey key, AccountPreferencesCapabilities capabilities) =>
-      switch (key.valueKind) {
-        AccountPreferenceValueKind.subtitleMode => capabilities.subtitleModes.map((value) => value.name).toList(),
-        AccountPreferenceValueKind.watchedIndicator => WatchedIndicatorScope.values.map((value) => value.name).toList(),
-        AccountPreferenceValueKind.mediaReviewsVisibility =>
-          MediaReviewsVisibility.values.map((value) => value.name).toList(),
-        AccountPreferenceValueKind.subtitleAccessibility =>
-          SubtitleAccessibilityPreference.values.map((value) => value.name).toList(),
-        AccountPreferenceValueKind.forcedSubtitles =>
-          ForcedSubtitlePreference.values.map((value) => value.name).toList(),
-        _ => null,
-      };
-
-  Object? _decodeAccount(AccountPreferenceKey key, Object? value) => switch (key.valueKind) {
-    AccountPreferenceValueKind.boolean || AccountPreferenceValueKind.languageCode => value,
-    AccountPreferenceValueKind.subtitleMode => _enumValue(SubtitlePlaybackMode.values, value),
-    AccountPreferenceValueKind.watchedIndicator => _enumValue(WatchedIndicatorScope.values, value),
-    AccountPreferenceValueKind.mediaReviewsVisibility => _enumValue(MediaReviewsVisibility.values, value),
-    AccountPreferenceValueKind.subtitleAccessibility => _enumValue(SubtitleAccessibilityPreference.values, value),
-    AccountPreferenceValueKind.forcedSubtitles => _enumValue(ForcedSubtitlePreference.values, value),
-  };
-
-  T _enumValue<T extends Enum>(List<T> values, Object? value) =>
-      values.where((entry) => entry.name == value).firstOrNull ??
-      (throw const AgentControlException('invalidArguments', 'Unknown account preference choice.'));
-
-  Object? _jsonValue(Object? value) => value is Enum ? value.name : value;
 
   Future<Object?> _readSync(
     Map<String, dynamic> arguments,
@@ -470,12 +311,6 @@ class AgentResourceSettingsCommands {
     } on AgentControlException catch (error) {
       if (!mutation) rethrow;
       throw AgentControlException(error.code, error.message, details: {...?error.details, 'stateMayHaveChanged': true});
-    } on AccountPreferencesUnavailableException {
-      throw AgentControlException(
-        'serverUnavailable',
-        'Account preferences are currently unavailable.',
-        details: {if (mutation) 'stateMayHaveChanged': true},
-      );
     } on SyncRuleCleanupBusyException {
       throw const AgentControlException('resourceBusy', 'Sync rules are currently executing or being removed.');
     } on UnsupportedError {

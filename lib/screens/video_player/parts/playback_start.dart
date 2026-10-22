@@ -161,7 +161,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         resolveShouldAutoStart: (wtOwnsStart) => !wtOwnsStart,
         resumePosition: () => resumePosition,
         mediaClient: () => mediaClientForTracks,
-        getProfileSettings: () => context.read<AccountPreferencesController>().activePreferences,
         preferredAudioTrack: _preferredAudioTrack,
         primarySubtitleTranscoding: () => _isTranscoding,
         ensureAudioFocus: ensureAudioFocus,

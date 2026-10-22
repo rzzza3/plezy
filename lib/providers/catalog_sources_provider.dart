@@ -5,12 +5,8 @@ import 'package:flutter/foundation.dart';
 
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
-import '../connection/connection_registry.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/catalog/catalog_item.dart';
-import '../profiles/active_plex_token.dart';
-import '../profiles/active_profile_provider.dart';
-import '../profiles/profile_connection_registry.dart';
 import '../profiles/profile.dart';
 import '../services/base_shared_preferences_service.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
@@ -18,12 +14,10 @@ import '../services/catalog/catalog_source.dart';
 import '../services/catalog/anilist_catalog_source.dart';
 import '../services/catalog/mdblist_catalog_source.dart';
 import '../services/catalog/mal_catalog_source.dart';
-import '../services/catalog/plex_catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/catalog/simkl_catalog_source.dart';
 import '../services/catalog/trakt_catalog_source.dart';
 import '../services/trackers/future_coalescer.dart';
-import '../services/plex_discover_client.dart';
 import '../services/seerr/seerr_client.dart';
 import '../services/trackers/anilist/anilist_client.dart';
 import '../services/trackers/mal/mal_client.dart';
@@ -32,33 +26,6 @@ import '../services/trackers/simkl/simkl_client.dart';
 import '../services/trackers/trakt/trakt_client.dart';
 import 'seerr_account_provider.dart';
 import 'trackers_provider.dart';
-import '../utils/platform_detector.dart';
-import '../utils/app_logger.dart';
-
-typedef PlexDiscoverSessionSupplier = Future<PlexDiscoverSession?> Function();
-
-/// Resolve the active Plex/Home profile credentials used by the cloud
-/// Discover provider. Home-user tokens take precedence over the account token
-/// so each profile sees and mutates its own universal watchlist.
-Future<PlexDiscoverSession?> resolvePlexDiscoverSession({
-  required ActiveProfileProvider activeProfile,
-  required ConnectionRegistry connections,
-  required ProfileConnectionRegistry profileConnections,
-}) async {
-  final resolved = await resolveActivePlexToken(
-    activeProfile: activeProfile,
-    connections: connections,
-    profileConnections: profileConnections,
-    allowAccountTokenForHomeUser: true,
-  );
-  if (resolved == null) return null;
-
-  final session = PlexDiscoverSession(
-    accessToken: resolved.token,
-    clientIdentifier: resolved.identity.account.clientIdentifier,
-  );
-  return session.isUsable ? session : null;
-}
 
 /// Owns one client/source pair and applies the shared rebind/dispose contract.
 class _CatalogSourceBinding<Client extends Object, Source extends CatalogSource> {
@@ -89,22 +56,10 @@ class _CatalogSourceBinding<Client extends Object, Source extends CatalogSource>
 /// Enumerates the connected [CatalogSource]s for the active profile and owns
 /// which one the Explore tab shows.
 ///
-/// Profile-scoped. Plex Discover credentials hydrate with the active profile;
-/// tracker/Seerr sources are rebuilt through the proxy-provider update hook so
+/// Profile-scoped. Tracker/Seerr sources are rebuilt through the proxy-provider update hook so
 /// every source appears and disappears with its owning account connection
 /// (which also drives the Explore tab's visibility).
 class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  CatalogSourcesProvider({this.plexSessionSupplier});
-
-  final PlexDiscoverSessionSupplier? plexSessionSupplier;
-  final _CatalogSourceBinding<PlexDiscoverSession, PlexCatalogSource> _plex = _CatalogSourceBinding(
-    // Widened hub artwork (`excludeElements=Media` instead of `Media,Image`)
-    // costs +104.95% — 27,287 to 55,925 bytes for 26 items, uncached, with up
-    // to six hubs hydrated concurrently. Its only consumer is the TV
-    // spotlight's logo/banner treatment, so only TV pays for it.
-    (session) => PlexCatalogSource(PlexDiscoverClient(session), includeImageVariants: PlatformDetector.isTV()),
-    equals: (previous, next) => previous == next,
-  );
   final _CatalogSourceBinding<TraktClient, TraktCatalogSource> _trakt = _CatalogSourceBinding(TraktCatalogSource.new);
   final _CatalogSourceBinding<MalClient, MalCatalogSource> _mal = _CatalogSourceBinding(MalCatalogSource.new);
   final _CatalogSourceBinding<AnilistClient, AnilistCatalogSource> _anilist = _CatalogSourceBinding(
@@ -116,8 +71,6 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   );
   final _CatalogSourceBinding<SeerrClient, SeerrCatalogSource> _seerr = _CatalogSourceBinding(SeerrCatalogSource.new);
   int _profileBindingGeneration = 0;
-  int _plexSessionGeneration = 0;
-  bool? _lastProfileBindingState;
   static const String _activeSourceBaseKey = 'catalog_active_source';
   CatalogSourceId? _preferredSourceId;
   String _activeUserUuid = '';
@@ -136,7 +89,6 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     ?_anilist.source,
     ?_simkl.source,
     ?_mdblist.source,
-    ?_plex.source,
     ?_seerr.source,
   ];
 
@@ -219,7 +171,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     _watchlistCandidateResults.clear();
   }
 
-  /// Hydrate the per-profile active-source preference and Plex session.
+  /// Hydrate the per-profile active-source preference.
   Future<void> onActiveProfileChanged(String? userUuid) async {
     final generation = ++_profileBindingGeneration;
     _activeUserUuid = userUuid ?? '';
@@ -229,46 +181,6 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
 
     _preferredSourceId = CatalogSourceId.values.asNameMap()[raw];
     safeNotifyListeners();
-    await _refreshPlexSession(profileGeneration: generation, clearOnFailure: true);
-  }
-
-  /// Refresh Plex Discover credentials after a same-profile server rebind.
-  /// The active-profile binder announces start/finish even when the profile id
-  /// stays unchanged, which is the connection-add/remove seam.
-  Future<void> onProfileBindingStateChanged(bool isBinding) async {
-    final previous = _lastProfileBindingState;
-    _lastProfileBindingState = isBinding;
-    if (isBinding && previous != true) _plexSessionGeneration++;
-    if (previous == true && !isBinding) await _refreshPlexSession();
-  }
-
-  Future<void> _refreshPlexSession({int? profileGeneration, bool clearOnFailure = false}) async {
-    final expectedProfileGeneration = profileGeneration ?? _profileBindingGeneration;
-    final sessionGeneration = ++_plexSessionGeneration;
-    PlexDiscoverSession? session;
-    try {
-      session = await plexSessionSupplier?.call();
-    } catch (error, stackTrace) {
-      appLogger.w('Plex Discover session hydrate failed', error: error, stackTrace: stackTrace);
-      if (clearOnFailure &&
-          !isDisposed &&
-          expectedProfileGeneration == _profileBindingGeneration &&
-          sessionGeneration == _plexSessionGeneration &&
-          _plex.update(null)) {
-        _invalidateWatchlistCandidates();
-        safeNotifyListeners();
-      }
-      return;
-    }
-    if (isDisposed ||
-        expectedProfileGeneration != _profileBindingGeneration ||
-        sessionGeneration != _plexSessionGeneration) {
-      return;
-    }
-    if (_plex.update(session)) {
-      _invalidateWatchlistCandidates();
-      safeNotifyListeners();
-    }
   }
 
   CatalogSourceId? get preferredSourceId => _preferredSourceId;
@@ -311,7 +223,6 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
 
   @override
   void dispose() {
-    _plex.dispose();
     _trakt.dispose();
     _mal.dispose();
     _anilist.dispose();

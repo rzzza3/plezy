@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/media/account_preferences.dart';
+import '../test_helpers/user_profile.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_user_profile.dart';
@@ -151,7 +151,7 @@ void main() {
         previewPlaybackTracks(
           plexEpisode,
           cached,
-          profile: const AccountPreferences(playDefaultAudioTrack: true, preferredAudioLanguage: 'eng'),
+          profile: const TestUserProfile(playDefaultAudioTrack: true, preferredAudioLanguage: 'eng'),
         )!.audio?.languageCode,
         'eng',
       );

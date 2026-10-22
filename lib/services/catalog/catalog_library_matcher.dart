@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import '../../media/media_item.dart';
 import '../../media/media_item_merge.dart';
-import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/title_match_candidates.dart';
@@ -89,7 +88,6 @@ class CatalogLibraryMatcher {
       serverIds: _serverIds,
       titles: titles,
       year: isSequel ? null : item.year,
-      plexGuid: _plexGuidFor(item),
       season: item.season,
     );
     // A membership update while HTTP was in flight invalidates that wave too.
@@ -180,15 +178,6 @@ class CatalogLibraryMatcher {
       result.failedServerIds.isEmpty &&
       result.cancelledServerIds.isEmpty &&
       result.unqueriedServerIds.isEmpty;
-
-  /// The exact `plex://` guid for a Plex Discover item, which its own rating
-  /// key already is. Free — no request, no cloud lookup; other sources get
-  /// null and fall back to the title candidates.
-  String? _plexGuidFor(CatalogItem item) {
-    final plexId = item.ids.plex;
-    if (item.source != CatalogSourceId.plex || plexId == null || plexId.isEmpty) return null;
-    return 'plex://${item.kind == MediaKind.movie ? 'movie' : 'show'}/$plexId';
-  }
 }
 
 /// Last-known copies keyed by [MediaItem.serverId] alongside the wave they

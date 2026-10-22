@@ -16,7 +16,6 @@ import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
-import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
@@ -323,8 +322,6 @@ Future<_Harness> _pumpHarness(
   await active.initialize();
   final manager = MultiServerManager();
   final multiServer = testMultiServerProvider(manager);
-  final accountPreferences = AccountPreferencesController();
-  addTearDown(accountPreferences.dispose);
   final shelf = SystemShelfService.forTesting(channel: channel, isSupported: () async => true);
   shelf.beginProfileSession(profile.id);
   SystemShelfService.debugOverrideInstance(shelf);
@@ -350,7 +347,6 @@ Future<_Harness> _pumpHarness(
         ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
         ChangeNotifierProvider<DownloadProvider>.value(value: _Downloads(events)),
         ChangeNotifierProvider<CompanionRemoteProvider>.value(value: _Companion(events)),
-        ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ChangeNotifierProvider<PlaybackStateProvider>.value(value: _Playback()),
       ],
       child: MaterialApp(

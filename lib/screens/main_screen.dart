@@ -42,7 +42,6 @@ import '../profiles/profile_activation.dart';
 import '../profiles/profile_menu.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
-import '../providers/account_preferences_controller.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
@@ -587,11 +586,6 @@ class _MainScreenState extends State<MainScreen>
       _runStartupOnFirstOnlineServer(manager);
 
       if (!_isOffline) {
-        // The active user's playback preferences; profile identity is managed
-        // by ActiveProfileProvider + ActiveProfileBinder.
-        await context.read<AccountPreferencesController>().ensureActiveLoaded();
-        if (!mounted) return;
-
         // Ensure first login (or any unset profile state) requires explicit selection.
         await _promptForInitialProfileSelection();
         if (!mounted) return;
@@ -1394,8 +1388,6 @@ class _MainScreenState extends State<MainScreen>
           await binder.rebindActive();
           if (!mounted) return;
         }
-        await context.read<AccountPreferencesController>().ensureActiveLoaded();
-        if (!mounted) return;
         await _primeOnlineServices(mp.serverManager);
       }());
     }

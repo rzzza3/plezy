@@ -453,7 +453,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // backend; [TrackManager] narrows it per backend for its server-side
       // track persistence.
       late final OfflineWatchSyncService offlineWatchService;
-      late final AccountPreferencesController accountPreferences;
       late final PlaybackStateProvider playbackState;
       late final AppDatabase database;
       late final MultiServerManager serverManager;
@@ -462,7 +461,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       late final bool wtOwnsStart;
       try {
         offlineWatchService = context.read<OfflineWatchSyncService>();
-        accountPreferences = context.read<AccountPreferencesController>();
         playbackState = context.read<PlaybackStateProvider>();
         database = context.read<AppDatabase>();
         serverManager = context.read<MultiServerProvider>().serverManager;
@@ -661,7 +659,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           resolveShouldAutoStart: (_) => shouldAutoStart,
           resumePosition: () => openResumePosition,
           mediaClient: () => mediaClient,
-          getProfileSettings: () => accountPreferences.activePreferences,
           preferredAudioTrack: initializationAudioTrack,
           wtStartupHold: () => reloadStartupHold,
           primarySubtitleTranscoding: () => result.isTranscoding,

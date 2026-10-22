@@ -40,11 +40,13 @@ class TrackManager {
   /// no server-side stream selection and for playback with no server.
   final TrackPreferencePersister? persistTrackPreference;
 
-  /// Resolves the user's profile settings (may be null during loading).
-  final MediaServerUserProfile? Function() getProfileSettings;
+  /// Resolves the user's server-side track preferences, when the server
+  /// has any.
+  final MediaServerUserProfile? Function()? getProfileSettings;
 
-  /// Waits until profile settings are available (offline path).
-  final Future<void> Function() waitForProfileSettings;
+  /// Awaited before each selection. A test seam for the generation guard:
+  /// nothing in the app waits here since account preferences went away.
+  final Future<void> Function()? waitForProfileSettings;
 
   /// Shows a transient message to the user (e.g., snackbar).
   final void Function(String message, {Duration? duration})? showMessage;
@@ -110,8 +112,8 @@ class TrackManager {
     required this.player,
     required this.isActive,
     this.persistTrackPreference,
-    required this.getProfileSettings,
-    required this.waitForProfileSettings,
+    this.getProfileSettings,
+    this.waitForProfileSettings,
     required this.metadata,
     this.mediaInfo,
     this.preferredAudioTrack,
@@ -303,10 +305,10 @@ class TrackManager {
     final idleCompleter = Completer<void>();
     _selectionIdleCompleter = idleCompleter;
     try {
-      await waitForProfileSettings();
+      await waitForProfileSettings?.call();
       if (!selectionIsActive()) return false;
 
-      final profileSettings = getProfileSettings();
+      final profileSettings = getProfileSettings?.call();
       // Keeps the settings singleton live before the synchronous scoped read.
       await SettingsService.getInstance();
       if (!selectionIsActive()) return false;

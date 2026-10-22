@@ -99,7 +99,6 @@ import '../widgets/hub_section.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/rasterized_gradient.dart';
 import '../widgets/tv_browse_rail.dart';
-import '../providers/account_preferences_controller.dart';
 import '../services/playback_track_preview.dart';
 import '../utils/error_message_utils.dart';
 
@@ -3041,7 +3040,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
     return null;
   }
-
 
   Future<LibraryPage<MediaItem>> _fetchFlattenedEpisodePage(
     MediaServerClient client,

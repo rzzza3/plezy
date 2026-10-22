@@ -15,7 +15,6 @@ import '../../profiles/profile.dart';
 import '../../profiles/profile_connection_cleanup.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_registry.dart';
-import '../../providers/account_preferences_controller.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/discover_provider.dart';
@@ -356,7 +355,6 @@ Future<bool> _plexAccountRemovalOwnsDownloads(
 /// confirms first.
 Future<void> logoutAllProfiles(BuildContext context) async {
   final scope = SessionTeardownScope.of(context);
-  final accountPreferences = context.read<AccountPreferencesController>();
   final companionRemote = context.read<CompanionRemoteProvider>();
   final playbackState = context.read<PlaybackStateProvider>();
 
@@ -367,10 +365,9 @@ Future<void> logoutAllProfiles(BuildContext context) async {
 
   await companionRemote.resetForLogout();
   await scope.cleanup.signOutAllSiloConnections();
-  // Credentials and the signed-out users' server-side preferences go first so
-  // nothing below can read them back as the next sign-in's defaults.
+  // Credentials go first so nothing below can read them back as the next
+  // sign-in's defaults.
   await scope.storage.clearUserData();
-  accountPreferences.repository.clear();
   // Downloads are device-local data, not credentials. Keep their physical
   // files and pinned metadata, but detach profile ownership before deleting
   // the profiles so the next selected profile can adopt them.

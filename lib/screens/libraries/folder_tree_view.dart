@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
-import '../../services/media_list_playback_launcher.dart';
-import '../../services/play_queue_launcher.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/media_navigation_helper.dart';
@@ -261,24 +258,8 @@ class FolderTreeViewState extends State<FolderTreeView> {
     }
   }
 
-  /// Play (or shuffle) a folder row through the backend's launcher. Built
-  /// here rather than via [MediaListPlaybackLauncher.forItem] because this
-  /// tree is pinned to one server: the Plex client must be the one backing
-  /// [widget.serverId], not `forItem`'s fall-back-to-any-online resolution.
-  Future<void> _launchFolder(MediaItem folder, {required bool shuffle}) async {
-    final client = context.getPlexClientForServer(ServerId(widget.serverId!));
-    final MediaListPlaybackLauncher launcher = PlexPlayQueueLauncher(
-      context: context,
-      client: client,
-      serverId: widget.serverId,
-    );
-    await launcher.launchFromFolder(folder: folder, shuffle: shuffle);
-  }
-
   /// Expandable rows: directory rows.
   bool _isExpandable(MediaItem item) => item.kind == MediaKind.folder;
-
-  bool _canPlayFolder(MediaItem item) => item.backend == MediaBackend.plex;
 
   Future<List<MediaItem>> _fetchRootFolders(
     MediaServerClient client, {
@@ -365,7 +346,6 @@ class FolderTreeViewState extends State<FolderTreeView> {
           final isExpanded = folderKey != null && _expandedFolders.contains(folderKey);
           final isLoading = folderKey != null && _loadingFolders.contains(folderKey);
           final isFirstRootItem = index == 0;
-          final canPlayFolder = isPlainFolder && _canPlayFolder(item);
 
           return FolderTreeItem(
             // Path alone isn't unique enough as identity (the same Plex item
@@ -380,8 +360,6 @@ class FolderTreeViewState extends State<FolderTreeView> {
             serverId: widget.serverId,
             onExpand: isExpandable ? () => _toggleFolder(item) : null,
             onTap: !isExpandable ? () => _handleItemTap(item, entry.parent) : null,
-            onPlayAll: canPlayFolder ? () => _launchFolder(item, shuffle: false) : null,
-            onShuffle: canPlayFolder ? () => _launchFolder(item, shuffle: true) : null,
             focusNode: isFirstRootItem ? widget.firstItemFocusNode : null,
             onNavigateUp: isFirstRootItem ? widget.onNavigateUp : null,
             onNavigateLeft: widget.onNavigateLeft,

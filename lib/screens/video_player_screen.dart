@@ -19,7 +19,6 @@ import '../mpv/player/player_native.dart';
 import '../services/scrub_preview_source.dart';
 import '../media/media_backend.dart';
 import '../media/media_display_criteria.dart';
-import '../media/media_server_user_profile.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
@@ -76,7 +75,6 @@ import '../services/video_volume_controller.dart';
 import '../services/pip_service.dart';
 import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
-import '../providers/account_preferences_controller.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/log_redaction_manager.dart';
@@ -2659,31 +2657,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   void _setPlayerState(VoidCallback fn) => setStateIfMounted(fn);
-
-  /// Wait briefly for the active user's preferences to load in offline mode.
-  /// This prevents default-track fallback when playback starts before
-  /// [AccountPreferencesController] finishes its first load.
-  Future<void> _waitForProfileSettingsIfNeeded() async {
-    if (!_isOfflinePlayback || !mounted) return;
-
-    final provider = context.read<AccountPreferencesController>();
-    if (provider.activePreferences != null) return;
-
-    final completer = Completer<void>();
-    late VoidCallback listener;
-    listener = () {
-      if (provider.activePreferences != null && !completer.isCompleted) {
-        completer.complete();
-      }
-    };
-
-    provider.addListener(listener);
-    try {
-      await Future.any<void>([completer.future, Future.delayed(const Duration(seconds: 2))]);
-    } finally {
-      provider.removeListener(listener);
-    }
-  }
 
   Future<void> _onAudioTrackChanged(AudioTrack track) async {
     if (track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id) {

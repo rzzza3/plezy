@@ -53,8 +53,6 @@ import 'services/image_cache_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
 import 'services/playback_coordinator.dart';
-import 'providers/account_preferences_controller.dart';
-import 'services/account_preferences_repository.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/download_provider.dart';
@@ -1668,9 +1666,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
         ),
-        ChangeNotifierProvider(
-          create: (context) => MultiServerProvider(_serverManager, _aggregationService),
-        ),
+        ChangeNotifierProvider(create: (context) => MultiServerProvider(_serverManager, _aggregationService)),
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
           create: (context) {
             final provider = OfflineModeProvider(
@@ -1785,25 +1781,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             downloadProvider: context.read<DownloadProvider>(),
           ),
           update: (_, syncService, downloadProvider, previous) => previous!,
-        ),
-        // Account preferences (server-stored: plex.tv user profile) live above the profile session so a write
-        // survives navigation, and so a profile switch clears the cache in one
-        // place. The repository is exposed separately because UI reads it
-        // directly; the controller owns and disposes it.
-        ChangeNotifierProxyProvider2<ActiveProfileProvider, ConnectionRegistry, AccountPreferencesController>(
-          create: (_) => AccountPreferencesController(),
-          update: (context, activeProfile, connections, previous) {
-            final controller = previous!;
-            controller.attach(
-              connections: connections,
-              profileConnections: context.read<ProfileConnectionRegistry>(),
-              activeProfile: activeProfile,
-            );
-            return controller;
-          },
-        ),
-        ProxyProvider<AccountPreferencesController, AccountPreferencesRepository>(
-          update: (_, controller, _) => controller.repository,
         ),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         // Shader presets are app-global — deliberately outside the

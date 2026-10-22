@@ -16,7 +16,6 @@ import 'package:plezy/media/play_queue.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -120,10 +119,8 @@ void main() {
         final client = _ReloadClient();
         final multi = testMultiServer(clients: [client]);
         final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
-        final accountPreferences = AccountPreferencesController();
         addTearDown(() {
           offlineWatch.dispose();
-          accountPreferences.dispose();
         });
 
         final initializationHold = Completer<void>();
@@ -146,7 +143,6 @@ void main() {
                   ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
                   ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
                   ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-                  ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
                   ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
                   Provider<AppDatabase>.value(value: db),
                 ],
@@ -640,7 +636,6 @@ void main() {
     final client = _ReloadClient();
     final multi = testMultiServer(clients: [client]);
     final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
-    final accountPreferences = AccountPreferencesController();
     final initializationHold = Completer<void>();
     Future<void> holdInitialization() => initializationHold.future;
     PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
@@ -650,7 +645,6 @@ void main() {
       if (!initializationHold.isCompleted) initializationHold.complete();
       await tester.pump();
       offlineWatch.dispose();
-      accountPreferences.dispose();
     });
     final key = GlobalKey<VideoPlayerScreenState>();
     final item = testMediaItem(id: 'movie-prior', serverId: 'srv-1', backend: MediaBackend.silo);
@@ -660,7 +654,6 @@ void main() {
           ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
           ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-          ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
           ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether ?? WatchTogetherProvider()),
           Provider<AppDatabase>.value(value: db),
           ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
@@ -945,10 +938,8 @@ void main() {
       final client = _PlexStreamSelectClient();
       final multi = testMultiServer(clients: [client]);
       final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
-      final accountPreferences = AccountPreferencesController();
       addTearDown(() {
         offlineWatch.dispose();
-        accountPreferences.dispose();
       });
 
       final initializationHold = Completer<void>();
@@ -972,7 +963,6 @@ void main() {
                 ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
                 ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
                 ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-                ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
                 Provider<AppDatabase>.value(value: db),
                 ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
               ],
@@ -1212,7 +1202,6 @@ _pushExitScreen(
 }) async {
   final multi = testMultiServer(clients: [client]);
   final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
-  final accountPreferences = AccountPreferencesController();
   final initializationHold = Completer<void>();
   Future<void> holdInitialization() => initializationHold.future;
   PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
@@ -1222,7 +1211,6 @@ _pushExitScreen(
     initializationHold.complete();
     await tester.pump();
     offlineWatch.dispose();
-    accountPreferences.dispose();
   });
   final navigator = GlobalKey<NavigatorState>();
   final key = GlobalKey<VideoPlayerScreenState>();
@@ -1233,7 +1221,6 @@ _pushExitScreen(
         ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
         ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
         ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-        ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         if (watchTogether != null) ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
         Provider<AppDatabase>.value(value: db),
       ],

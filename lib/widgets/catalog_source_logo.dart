@@ -18,7 +18,6 @@ class CatalogSourceLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final asset = switch (id) {
-      CatalogSourceId.plex => 'assets/plex_chevron.svg',
       CatalogSourceId.trakt => 'assets/trakt_circlemark.svg',
       CatalogSourceId.mal => 'assets/mal_mark.svg',
       CatalogSourceId.anilist => 'assets/anilist_mark.svg',

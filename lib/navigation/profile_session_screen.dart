@@ -42,16 +42,6 @@ import '../widgets/agent_control_scope.dart';
 import 'profile_navigation_scope.dart';
 import 'settings_shortcut.dart';
 
-CatalogSourcesProvider _createCatalogSourcesProvider(BuildContext context) {
-  return CatalogSourcesProvider(
-    plexSessionSupplier: () => resolvePlexDiscoverSession(
-      activeProfile: context.read<ActiveProfileProvider>(),
-      connections: context.read<ConnectionRegistry>(),
-      profileConnections: context.read<ProfileConnectionRegistry>(),
-    ),
-  );
-}
-
 /// Root route for an active profile session.
 ///
 /// The root app navigator owns setup/auth/profile-picking. This route owns the
@@ -192,7 +182,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 CatalogSourcesProvider
               >(
                 create: (context) {
-                  final provider = _createCatalogSourcesProvider(context);
+                  final provider = CatalogSourcesProvider();
                   unawaited(
                     provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
                       appLogger.w('Catalog sources profile hydrate failed', error: e, stackTrace: s);
@@ -201,9 +191,8 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   return provider;
                 },
                 update: (context, trackers, seerr, activeProfile, previous) {
-                  final provider = previous ?? _createCatalogSourcesProvider(context);
+                  final provider = previous ?? CatalogSourcesProvider();
                   provider.update(trackers, seerr);
-                  unawaited(provider.onProfileBindingStateChanged(activeProfile.isBinding));
                   return provider;
                 },
               ),
