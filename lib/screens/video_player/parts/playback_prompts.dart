@@ -3,14 +3,8 @@ part of '../../video_player_screen.dart';
 extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   void _onVideoCompleted(bool completed, {bool skipAutoPlayCountdown = false}) async {
     if (!completed) return;
-    // Live TV streams are continuous — ignore transient EOF events while an
-    // HLS playlist refreshes or crosses a discontinuity.
-    if (widget.isLive) {
-      _logVideoCompleted('live');
-      return;
-    }
     // Ignore spurious EOF from the old file during an in-place media-source
-    // transition (episode swap, transcode restart, channel switch).
+    // transition (episode swap, transcode restart).
     if (_transitionGate.transition != PlaybackTransition.idle) {
       _logVideoCompleted('transition=${_transitionGate.transition.name}');
       return;

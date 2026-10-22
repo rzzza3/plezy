@@ -11,7 +11,6 @@ import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
 import '../media/library_first_character.dart';
 import '../media/library_query.dart';
-import '../media/live_tv_support.dart';
 import '../media/lyrics.dart';
 import '../media/media_backend.dart';
 import '../media/media_hub.dart';
@@ -28,21 +27,12 @@ import '../media/library_change_event.dart';
 import 'library_events/plex_library_event_socket.dart';
 import '../utils/external_ids.dart';
 import 'bif_thumbnail_service.dart';
-import 'file_info_parser.dart';
 import 'download_artwork_helpers.dart';
 import 'settings_service.dart';
 import 'library_query_translator.dart';
 import 'scrub_preview_source.dart';
 import '../utils/media_server_http_client.dart';
-import '../utils/url_utils.dart';
 import '../exceptions/media_server_exceptions.dart';
-import '../models/livetv_capture_buffer.dart';
-import '../models/livetv_channel.dart';
-import '../models/livetv_dvr.dart';
-import '../models/livetv_hub_result.dart';
-import '../models/livetv_program.dart';
-import '../models/media_grab_operation.dart';
-import '../models/media_subscription.dart';
 import '../models/plex/plex_activity.dart';
 import '../models/plex/plex_config.dart';
 import '../models/plex/plex_metadata_preferences.dart';
@@ -63,7 +53,6 @@ import '../utils/device_identity.dart';
 import '../utils/failover_http_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_retry.dart';
-import '../utils/future_extensions.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/active_client_scope.dart';
 import '../utils/log_redaction_manager.dart';
@@ -84,7 +73,6 @@ import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
 import 'video_decode_capabilities.dart';
 
-part 'plex_client/parts/live_tv.dart';
 part 'plex_client/parts/playlists.dart';
 part 'plex_client/parts/collections.dart';
 part 'plex_client/parts/play_queues.dart';
@@ -390,7 +378,6 @@ class PlexClient
     with
         MediaServerCacheMixin,
         _PlexClientInternals,
-        _PlexLiveTvClientMethods,
         _PlexPlaylistMethods,
         _PlexCollectionMethods,
         _PlexPlayQueueMethods,
@@ -474,9 +461,6 @@ class PlexClient
   /// Dedicated Continue Watching hub endpoint advertised by /media/providers.
   String? _providerContinueWatchingHubKey;
 
-  /// EPG providers parsed from /media/providers
-  @override
-  List<PlexEpgProvider> _providerEpg = const [];
   int _profileUpdateGeneration = 0;
 
   /// Server-level preferences fetched from /:/prefs
@@ -597,7 +581,6 @@ class PlexClient
       onAllEndpointsExhausted: onAllEndpointsExhausted,
     );
     client._providerLibraries = const [];
-    client._providerEpg = epgProviders;
     client._providerHomeHubKey = homeHubKey;
     client._providerPromotedHubKey = promotedHubKey;
     client._providerContinueWatchingHubKey = continueWatchingHubKey;
@@ -755,7 +738,6 @@ class PlexClient
 
   void _commitMediaProviders(_PlexMediaProviderState providers) {
     _providerLibraries = providers.libraries;
-    _providerEpg = providers.epg;
     _providerHomeHubKey = providers.homeHubKey;
     _providerPromotedHubKey = providers.promotedHubKey;
     _providerContinueWatchingHubKey = providers.continueWatchingHubKey;

@@ -54,20 +54,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
   }) async {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return PlaybackSourceChangeOutcome.unavailable;
-    // Live streams have no version/quality/audio catalog to switch; the only
-    // source change a live session supports is its server-side subtitle
-    // delivery (Plex burn-on-request, issue #1983).
-    final isLiveSubtitleSwitch =
-        widget.isLive &&
-        newSubtitleChoice != null &&
-        newMediaIndex == null &&
-        newPreset == null &&
-        newAudioStreamId == null;
-    if (widget.isLive && !isLiveSubtitleSwitch) return PlaybackSourceChangeOutcome.unavailable;
     final transitionLease = _transitionGate.tryAcquire(PlaybackTransition.switchingSource);
     if (transitionLease == null) return PlaybackSourceChangeOutcome.busy;
     try {
-      if (isLiveSubtitleSwitch) return await _switchLiveSubtitle(newSubtitleChoice);
       return await _performPlaybackSourceSwitch(
         currentPlayer: currentPlayer,
         transitionLease: transitionLease,
@@ -387,10 +376,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     String reason = 'media reload',
   }) async {
     if (_shuttingDown) return MediaReloadOutcome.superseded;
-    if (widget.isLive) {
-      _clearEpisodeLoadingFlags();
-      return MediaReloadOutcome.rejected;
-    }
     final existingPlayer = player;
     if (!mounted || existingPlayer == null) {
       if (mounted) _clearEpisodeLoadingFlags();

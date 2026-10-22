@@ -8,12 +8,10 @@ import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
-import '../models/livetv_channel.dart';
 import '../providers/download_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/global_key_utils.dart';
-import '../utils/live_tv_player_navigation.dart';
 import '../utils/video_player_navigation.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import 'agent_control_protocol.dart';
@@ -110,7 +108,7 @@ class AgentPlaybackCommands {
     // Validate the complete public shape before accepting an operation.
     final serverId = agentString(arguments, 'serverId');
     final itemId = agentString(arguments, 'itemId');
-    _targetKind(arguments);
+    _checkTargetKind(arguments);
     _boolean(arguments, 'offline');
     _initialPosition(arguments);
     if (arguments.containsKey('mediaIndex')) _integer(arguments, 'mediaIndex', max: 10000);
@@ -125,7 +123,7 @@ class AgentPlaybackCommands {
     _stopped = false;
     _musicLaunch = false;
     _operationId = '${context.requestId}:${++_serial}';
-    _item = {'serverId': serverId, 'itemId': itemId, 'targetKind': _targetKind(arguments)};
+    _item = {'serverId': serverId, 'itemId': itemId, 'targetKind': 'item'};
     // A scheduled task, not the route-close Future. The caller receives the
     // accepted identity before metadata/permission/native work can complete.
     _pending = Future<void>(() async {
@@ -189,8 +187,7 @@ class AgentPlaybackCommands {
     }
 
     final watchTogether = context.context.read<WatchTogetherProvider?>();
-    if (watchTogether?.isInSession == true &&
-        (!watchTogether!.isHost || offline || _targetKind(arguments) == 'channel')) {
+    if (watchTogether?.isInSession == true && (!watchTogether!.isHost || offline)) {
       // Host VOD selection uses the normal navigation lease. Guests and
       // non-synchronized target kinds must stay on the group's own flow.
       observer.mark('blocked', blocker: 'watchTogetherActive');
@@ -198,36 +195,6 @@ class AgentPlaybackCommands {
     }
     if (!automotivePlaybackAllowedNow()) {
       observer.mark('blocked', blocker: 'automotiveRestricted');
-      return;
-    }
-    if (_targetKind(arguments) == 'channel') {
-      if (offline ||
-          arguments.containsKey('start') ||
-          arguments.containsKey('positionMs') ||
-          arguments.containsKey('mediaIndex') ||
-          arguments.containsKey('mediaSourceId')) {
-        throw const AgentControlException(
-          'unsupportedOptions',
-          'Channels do not support offline, offsets or version selection.',
-        );
-      }
-      final channels = await _channels(servers, serverId, client!, checkIdentity);
-      checkIdentity();
-      final matches = channels.where((channel) => channel.key == itemId).toList(growable: false);
-      if (matches.isEmpty) throw const AgentControlException('itemNotFound', 'The channel was not found.');
-      if (matches.length != 1) {
-        throw const AgentControlException('selectionRequired', 'The channel is ambiguous across DVR sources.');
-      }
-      _ensureIdle(context, ignorePending: true);
-      if (!context.context.mounted) return;
-      await navigateToLiveTv(
-        context.context,
-        multiServer: servers,
-        channel: matches.single,
-        channels: channels,
-        launchObserver: observer,
-        isLaunchCurrent: current,
-      );
       return;
     }
     final downloads = context.context.read<DownloadProvider>();
@@ -472,30 +439,6 @@ class AgentPlaybackCommands {
       }
     }
 
-    if (_targetKind(arguments) == 'channel') {
-      if (offline) throw const AgentControlException('unsupportedOptions', 'Channels are not available offline.');
-      final channels = await _channels(servers, serverId, client!, check);
-      check();
-      if (command == 'media.get') {
-        final itemId = agentString(arguments, 'itemId');
-        final matching = channels.where((channel) => channel.key == itemId).toList();
-        if (matching.isEmpty) throw const AgentControlException('itemNotFound', 'The channel was not found.');
-        if (matching.length != 1) {
-          throw const AgentControlException('selectionRequired', 'The channel is ambiguous across DVR sources.');
-        }
-        return _channelJson(matching.single);
-      }
-      if (command == 'media.children') {
-        throw const AgentControlException('unsupportedTarget', 'A channel has no playable children.');
-      }
-      final query = agentString(arguments, 'query').toLowerCase();
-      final matching = channels.where((channel) => channel.displayName.toLowerCase().contains(query)).toList();
-      return {
-        'items': matching.skip(offset).take(limit).map(_channelJson).toList(),
-        'offset': offset,
-        'totalCount': matching.length,
-      };
-    }
     if (command == 'media.get') {
       final item = await _resolveItem(serverId, agentString(arguments, 'itemId'), offline, downloads, client);
       check();
@@ -637,38 +580,6 @@ class AgentPlaybackCommands {
     };
   }
 
-  Future<List<LiveTvChannel>> _channels(
-    MultiServerProvider servers,
-    ServerId serverId,
-    MediaServerClient client,
-    void Function() check,
-  ) async {
-    if (!servers.liveTvServers.any((server) => server.serverId == serverId)) {
-      await servers.checkLiveTvAvailability();
-      check();
-    }
-    final sources = servers.liveTvServers.where((server) => server.serverId == serverId).toList();
-    if (sources.isEmpty) {
-      throw const AgentControlException('unsupportedTarget', 'Live TV is not available for this server.');
-    }
-    final channels = <LiveTvChannel>[];
-    for (final source in sources) {
-      final rows = await client.liveTv.fetchChannels(lineup: source.lineup);
-      check();
-      channels.addAll(rows.map((channel) => channel.copyWith(serverId: serverId, liveDvrKey: source.dvrKey)));
-    }
-    return channels;
-  }
-
-  Map<String, dynamic> _channelJson(LiveTvChannel channel) => {
-    'serverId': channel.serverId,
-    'itemId': channel.key,
-    'targetKind': 'channel',
-    'title': channel.displayName,
-    'number': channel.number,
-    'playable': channel.drm != true,
-  };
-
   MediaServerClient _authorizedClient(MultiServerProvider servers, ServerId serverId) {
     if (!servers.expectedServerIds.contains(serverId) || !servers.serverIds.contains(serverId)) {
       throw const AgentControlException('serverUnavailable', 'The server is not visible and bound to this profile.');
@@ -698,12 +609,13 @@ class AgentPlaybackCommands {
       identical(servers.getClientForServer(serverId), client) &&
       identical(client.authenticationSessionId, authentication);
 
-  String _targetKind(Map<String, dynamic> arguments) {
+  /// Only library items are targets; live TV channels went with Plex.
+  void _checkTargetKind(Map<String, dynamic> arguments) {
     final kind = arguments['targetKind'] ?? 'item';
-    if (kind != 'item' && kind != 'channel') {
-      throw const AgentControlException('invalidArguments', 'targetKind must be item or channel.');
+    if (kind == 'channel') {
+      throw const AgentControlException('unsupportedTarget', 'Live TV channels are not available.');
     }
-    return kind as String;
+    if (kind != 'item') throw const AgentControlException('invalidArguments', 'targetKind must be item.');
   }
 
   bool _boolean(Map<String, dynamic> arguments, String key) {

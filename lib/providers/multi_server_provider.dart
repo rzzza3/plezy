@@ -1,55 +1,21 @@
 import 'dart:async';
-import '../exceptions/media_server_exceptions.dart';
 import '../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
 
 import '../media/media_server_client.dart';
-import '../models/livetv_dvr.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/plex_client.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/multi_server_manager.dart';
 import '../utils/app_logger.dart';
 
-/// Cached info about a DVR-enabled server
-class LiveTvServerInfo {
-  final String serverId;
-  final String dvrKey;
-  final String? lineup;
-
-  /// Full DVR objects including channel mappings (avoids re-fetching in LiveTvScreen)
-  final List<LiveTvDvr> dvrs;
-
-  LiveTvServerInfo({required this.serverId, required this.dvrKey, this.lineup, this.dvrs = const []});
-}
-
-/// Provider for multi-server Plex connections
-/// Manages multiple PlexClient instances and provides data aggregation
+/// Provider for the connected media servers. Wraps [MultiServerManager] and
+/// provides data aggregation
 class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final MultiServerManager _serverManager;
   final DataAggregationService _aggregationService;
   StreamSubscription? _statusSubscription;
-
-  /// Whether any connected server has Live TV / DVR
-  bool _hasLiveTv = false;
-  bool get hasLiveTv => _hasLiveTv;
-
-  /// Info about servers with DVR capability
-  final List<LiveTvServerInfo> _liveTvServers = [];
-  List<LiveTvServerInfo> get liveTvServers => List.unmodifiable(_liveTvServers);
-
-  /// The client, and its authentication session at probe time, whose probe
-  /// produced each server's [_liveTvServers] entries. A failed re-probe may
-  /// carry entries over only on this same client and session: a replaced
-  /// client (reconnect) or an in-place profile switch
-  /// (`PlexClient.applyProfileUpdate` rotates the session) must earn them
-  /// again.
-  Map<String, ({MediaServerClient client, Object authentication})> _liveTvProbes = {};
-
-  /// Previously-seen set of online server IDs, used to detect new servers
-  Set<String> _previousOnlineServerIds = {};
-  int _liveTvCheckGeneration = 0;
 
   /// Invoked with the current visibility-filtered online server ids whenever
   /// the manager's status stream fires (a server connects, reconnects, drops,
@@ -95,9 +61,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   void setVisibleServerIds(Set<String>? ids) {
     if (setEquals(_visibleServerIds, ids)) return;
     _serverManager.setVisibleServerIds(ids);
-    _pruneLiveTvServersForVisibility();
     safeNotifyListeners();
-    _refreshLiveTvAvailabilitySoon();
   }
 
   /// Replace the expected active-profile server ids. Pass `null` to fall back
@@ -121,39 +85,16 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _serverManager.setVisibleServerIds({...?current, serverId});
     _expectedVisibleServerIds = {...?_expectedVisibleServerIds, serverId};
     safeNotifyListeners();
-    _refreshLiveTvAvailabilitySoon();
   }
 
   /// Keep only ids the manager considers visible under the active filter.
   List<String> _visible(List<String> ids) => ids.where((id) => _serverManager.isServerVisible(ServerId(id))).toList();
-
-  void _pruneLiveTvServersForVisibility() {
-    if (_visibleServerIds == null) return;
-    _liveTvServers.removeWhere((s) => !_serverManager.isServerVisible(ServerId(s.serverId)));
-    _hasLiveTv = _liveTvServers.isNotEmpty;
-  }
-
-  void _refreshLiveTvAvailabilitySoon() {
-    scheduleMicrotask(() {
-      if (!isDisposed) unawaited(checkLiveTvAvailability());
-    });
-  }
-
-  @visibleForTesting
-  void debugSetLiveTvServersForTesting(List<LiveTvServerInfo> servers) {
-    _liveTvServers
-      ..clear()
-      ..addAll(servers);
-    _hasLiveTv = servers.isNotEmpty;
-  }
 
   MultiServerProvider(this._serverManager, this._aggregationService) {
     // Listen to server status changes
     _statusSubscription = _serverManager.statusStream.listen((_) {
       _promoteOnlineExpectedServers();
       final currentOnline = Set<String>.from(onlineServerIds);
-      final hasNewServer = currentOnline.any((id) => !_previousOnlineServerIds.contains(id));
-      _previousOnlineServerIds = currentOnline;
 
       safeNotifyListeners();
 
@@ -164,11 +105,6 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
       final immutableOnline = Set<String>.unmodifiable(currentOnline);
       for (final listener in List.of(_onlineServersListeners)) {
         listener(immutableOnline);
-      }
-
-      // Only re-check live TV when a new server came online
-      if (hasNewServer) {
-        checkLiveTvAvailability();
       }
     });
   }
@@ -275,91 +211,8 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     // notifyListeners() will be called automatically via status stream
   }
 
-  /// Check all online servers for DVR/Live TV availability. Plex servers
-  /// expose `/livetv/dvrs` (one entry per configured DVR with its own
-  /// lineup); MediaBrowser servers expose `/LiveTv/Channels` with a single
-  /// flat channel list per server (synthesized into one [LiveTvServerInfo]
-  /// whose backend-derived `dvrKey` keeps the UI's per-DVR identity stable).
-  Future<void> checkLiveTvAvailability() async {
-    if (isDisposed) return;
-    final generation = ++_liveTvCheckGeneration;
-    final newLiveTvServers = <LiveTvServerInfo>[];
-    final newProbes = <String, ({MediaServerClient client, Object authentication})>{};
-    for (final serverId in onlineServerIds) {
-      final genericClient = _serverManager.getClient(ServerId(serverId));
-      if (genericClient == null) continue;
-      final probe = (client: genericClient, authentication: genericClient.authenticationSessionId);
-      // An answer obtained under a session the client has since left belongs
-      // to the previous profile; drop it rather than show or carry it over.
-      bool sessionChanged() => !identical(genericClient.authenticationSessionId, probe.authentication);
-
-      try {
-        final liveTv = genericClient.liveTv;
-        final dvr = genericClient.liveTvDvr;
-        final dvrs = dvr == null ? const <LiveTvDvr>[] : await dvr.fetchDvrs();
-        if (sessionChanged()) continue;
-        if (dvrs.isNotEmpty) {
-          // Plex: one entry per DVR with its own lineup.
-          for (final dvr in dvrs) {
-            newLiveTvServers.add(LiveTvServerInfo(serverId: serverId, dvrKey: dvr.key, lineup: dvr.lineup, dvrs: dvrs));
-          }
-        } else if (await liveTv.isAvailable() && !sessionChanged()) {
-          // MediaBrowser: no per-DVR partitioning; synthesize a single entry
-          // so the rest of the UI's per-DVR loop works uniformly.
-          newLiveTvServers.add(
-            LiveTvServerInfo(serverId: serverId, dvrKey: genericClient.backend.id, lineup: null, dvrs: const []),
-          );
-        }
-        if (sessionChanged()) continue;
-        newProbes[serverId] = probe;
-      } catch (e) {
-        appLogger.d('LiveTV check failed for server $serverId', error: e);
-        // A transient failure (timeout, connection error, 5xx) is no evidence
-        // the DVR went away; keep what the last successful check on this same
-        // client and session found instead of dropping Live TV on a blip. A
-        // definitive answer (401/403, other 4xx, bad data) drops the entry.
-        final previous = _liveTvProbes[serverId];
-        if (_isTransientLiveTvProbeFailure(e) &&
-            !sessionChanged() &&
-            previous != null &&
-            identical(previous.client, genericClient) &&
-            identical(previous.authentication, probe.authentication)) {
-          newLiveTvServers.addAll(_liveTvServers.where((s) => s.serverId == serverId));
-          newProbes[serverId] = probe;
-        }
-      }
-    }
-
-    final visibleLiveTvServers = newLiveTvServers
-        .where((s) => _serverManager.isServerVisible(ServerId(s.serverId)))
-        .toList();
-
-    final hadLiveTv = _hasLiveTv;
-    final oldServerIds = _liveTvServers.map((s) => '${s.serverId}\u0000${s.dvrKey}').toSet();
-    final newServerIds = visibleLiveTvServers.map((s) => '${s.serverId}\u0000${s.dvrKey}').toSet();
-    if (isDisposed || generation != _liveTvCheckGeneration) return;
-    _liveTvServers
-      ..clear()
-      ..addAll(visibleLiveTvServers);
-    _liveTvProbes = newProbes;
-    _hasLiveTv = visibleLiveTvServers.isNotEmpty;
-
-    // Notify when availability changes OR when the server set changes
-    if (hadLiveTv != _hasLiveTv || !oldServerIds.containsAll(newServerIds) || !newServerIds.containsAll(oldServerIds)) {
-      safeNotifyListeners();
-    }
-  }
-
-  static bool _isTransientLiveTvProbeFailure(Object error) {
-    if (error is! MediaServerHttpException || error.isCancellation) return false;
-    final status = error.statusCode;
-    if (status == 401 || status == 403) return false;
-    return error.isTransient || status != null && status >= 500;
-  }
-
   @override
   void dispose() {
-    ++_liveTvCheckGeneration;
     _statusSubscription?.cancel();
     super.dispose();
   }

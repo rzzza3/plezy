@@ -34,7 +34,6 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
   /// switching is unavailable, while this hint is about what is on screen.
   bool _hasBurnedSourceSubtitle() => PlaybackSubtitleResolver.burnsCurrentSelection(
     isTranscoding: widget.isTranscoding,
-    isLive: widget.isLive,
     choice: widget.selectedSubtitleChoice,
     sidecars: widget.sourceSubtitleSidecars,
   );
@@ -205,7 +204,6 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
       onToggleAmbientLighting: widget.player.playerType != 'exoplayer' ? widget.onToggleAmbientLighting : null,
       canControl: widget.canControl,
-      isLive: widget.isLive,
       subtitlesVisible: _subtitlesVisible,
       showQueueButton: playbackState.isQueueActive && widget.canNavigateMediaItems,
       onQueueItemSelected: playbackState.isQueueActive && widget.canNavigateMediaItems ? _onQueueItemSelected : null,

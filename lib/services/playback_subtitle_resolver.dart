@@ -315,21 +315,16 @@ class PlaybackSubtitleResolver {
   /// server's hand and a selection delivered as a file stays an ordinary
   /// native track the player can hide itself.
   ///
-  /// A live source selection is always delivered by rebuilding the stream with
-  /// the track burned in (`isLive` never has sidecars), so it counts as a
-  /// transcode here even though no transcoding session is tracked for live.
-  ///
   /// When this is true the engine exposes no subtitle track for the selection
   /// and can never confirm it, so an engine cross-check must not be applied.
   static bool burnsCurrentSelection({
     required bool isTranscoding,
-    required bool isLive,
     required PlaybackSourceSubtitleChoice? choice,
     required List<PlaybackSubtitleSidecar> sidecars,
   }) {
     final sourceStreamId = choice != null && !choice.isOff ? choice.sourceStreamId : null;
     return burnRequiresRenegotiation(
-      isTranscoding: isTranscoding || isLive,
+      isTranscoding: isTranscoding,
       currentSourceStreamId: sourceStreamId,
       currentSelectionHasSidecar:
           sourceStreamId != null && sidecars.any((sidecar) => sidecar.sourceStreamId == sourceStreamId),

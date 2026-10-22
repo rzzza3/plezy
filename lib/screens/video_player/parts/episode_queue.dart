@@ -8,9 +8,6 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     // Download/offline library mode uses the local downloaded queue instead.
     if (_offlineLibraryMode) return;
 
-    // Skip play queue for live TV (would interfere with tuner session)
-    if (widget.isLive) return;
-
     if (!_currentMetadata.isEpisode) {
       return;
     }
@@ -79,7 +76,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
   }
 
   Future<void> _loadAdjacentEpisodes({MediaItem? metadata, _PlaybackAttempt? attempt}) async {
-    if (!mounted || widget.isLive) return;
+    if (!mounted) return;
 
     final targetMetadata = metadata ?? _currentMetadata;
     try {

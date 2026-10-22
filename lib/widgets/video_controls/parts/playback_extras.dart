@@ -2,8 +2,6 @@ part of '../video_controls.dart';
 
 extension _PlexVideoControlsPlaybackExtrasMethods on _PlexVideoControlsState {
   Future<void> _loadPlaybackExtras({bool forceRefresh = false}) async {
-    // Live TV metadata uses EPG rating keys, not library items
-    if (widget.isLive) return;
     final loadKey = widget.metadata.globalKey;
     // Re-entrancy guard is per item: an in-place episode swap may start the
     // new item's load while the old item's is still in flight.

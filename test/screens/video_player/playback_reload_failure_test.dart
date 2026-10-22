@@ -15,14 +15,12 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/play_queue.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
-import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
-import 'package:plezy/screens/video_player/live_tv_session_args.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/episode_navigation_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
@@ -413,7 +411,7 @@ void main() {
     });
   }
 
-  for (final target in ['same room', 'offline', 'live', 'superseded before build']) {
+  for (final target in ['same room', 'offline', 'superseded before build']) {
     testWidgets('replacement by $target only retains continuing room media', (tester) async {
       final peer = _ScreenPeerService();
       final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
@@ -468,13 +466,8 @@ void main() {
                 key: successorKey,
                 metadata: testMediaItem(id: 'successor', serverId: 'srv-1'),
                 watchTogetherLease: continuesRoom ? lease : null,
-                isOffline: !continuesRoom && target != 'live',
+                isOffline: !continuesRoom,
                 selectedQualityPreset: TranscodeQualityPreset.original,
-                live: target == 'live'
-                    ? LiveTvSessionArgs(
-                        channel: LiveTvChannel(key: 'channel', serverId: 'srv-1'),
-                      )
-                    : null,
               ),
             ).push(screen.navigator.currentState!),
           );

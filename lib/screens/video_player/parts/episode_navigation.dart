@@ -25,24 +25,19 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   ///
   /// One answer for every entry point — the on-screen buttons, the OS media
   /// session and the companion remote — so no surface can advertise a step
-  /// another refuses. Live TV steps through the channel list, and each
-  /// direction is answered by its own list adjacency. Off live, `next` needs
-  /// a loaded next item, while `previous` always has a target for an episode:
-  /// [_restartOrPlayPrevious] restarts when nothing earlier is loaded.
-  bool get _hasNextItem => widget.isLive ? _hasNextChannel : _episode.next != null;
+  /// another refuses. `next` needs a loaded next item, while `previous`
+  /// always has a target for an episode: [_restartOrPlayPrevious] restarts
+  /// when nothing earlier is loaded.
+  bool get _hasNextItem => _episode.next != null;
 
-  bool get _hasPreviousItem =>
-      widget.isLive ? _hasPreviousChannel : _currentMetadata.isEpisode || _episode.previous != null;
+  bool get _hasPreviousItem => _currentMetadata.isEpisode || _episode.previous != null;
 
-  /// The transport's next command: a channel zap on live TV, the next
-  /// episode/queue item otherwise. Both targets no-op without one.
-  Future<void> _navigateToNextItem() => widget.isLive ? _switchLiveChannel(1) : _playNext();
+  /// The transport's next command: the next episode/queue item. No-ops
+  /// without one.
+  Future<void> _navigateToNextItem() => _playNext();
 
-  /// The transport's previous command: a channel zap on live TV; otherwise a
-  /// restart or the previous item. A live stream has no "restart" — an
-  /// absolute seek to zero would drag the playhead off the live edge — so
-  /// the VOD fallback is unreachable here by construction.
-  Future<void> _navigateToPreviousItem() => widget.isLive ? _switchLiveChannel(-1) : _restartOrPlayPrevious();
+  /// The transport's previous command: a restart or the previous item.
+  Future<void> _navigateToPreviousItem() => _restartOrPlayPrevious();
 
   Future<void> _playNext() async {
     if (!_canNavigateMediaItems()) return;

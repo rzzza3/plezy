@@ -456,12 +456,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           }
           // The switch's decoder refresh seeks back to the window start; with
           // no switch, playback would otherwise begin the stepped frames in.
-          // Live rewinds only within its cache: nothing here needs the flush.
           if (!switched && measurement.windowStart != null && isCurrent()) {
             await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
               reason: 'measurement window rewind',
               targetPosition: measurement.windowStart,
-              dropIfUncached: false,
             );
           }
         }
@@ -868,7 +866,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }) async {
     await _applyNetworkStreamTuning(
       player: player,
-      isNetworkVod: !isLocalMedia && !widget.isLive,
+      isNetworkVod: !isLocalMedia,
       isTranscoding: isTranscoding,
       selectedVersion: selectedVersion,
     );

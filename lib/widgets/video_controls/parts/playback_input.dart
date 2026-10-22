@@ -52,18 +52,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     if (!widget.canControl || delta == Duration.zero) return;
     final forward = !delta.isNegative;
 
-    // Live TV: relative epoch-based skips go through the parent accumulator —
-    // an absolute target is meaningless against a moving live edge (#1253).
-    if (widget.isLive && widget.onLiveSeekBy != null) {
-      final stepSeconds = (delta.inMilliseconds.abs() / 1000).round().clamp(1, 300);
-      final applied = widget.onLiveSeekBy!(forward ? stepSeconds : -stepSeconds);
-      _registerSkipFeedback(
-        isForward: forward,
-        travelled: Duration(seconds: applied),
-      );
-      return;
-    }
-
     if (widget.player.state.duration.inMilliseconds <= 0) return;
 
     _registerSkipFeedback(isForward: forward, travelled: _hiddenSeek.seekBy(delta));
@@ -179,13 +167,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   }
 
   Future<void> _seekByOffset(Duration delta, {bool notifyCompletion = true}) async {
-    // Route relative live-TV skips through the parent accumulator, which
-    // coalesces a rapid burst into a single transcode re-open and computes the
-    // target from a stable base rather than the laggy live epoch (#1253).
-    if (widget.isLive && widget.onLiveSeekBy != null) {
-      widget.onLiveSeekBy!(delta.inSeconds);
-      return;
-    }
     final target = widget.player.state.position + delta;
     final clamped = clampSeekPosition(widget.player, target);
     await (widget.onSeekRequested ?? widget.player.seek)(clamped);
@@ -723,23 +704,8 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _accumulatedSkipSeconds.value = _wholeSeconds(total);
   }
 
-  /// Wrap an absolute live action so it takes down the badge a pending live
-  /// skip raised.
-  ///
-  /// Live relative skips bypass [_hiddenSeek] for the parent's epoch
-  /// accumulator (#1253), so the jump the reopen announces finds no pending
-  /// target here and nothing retires the readout. The absolute action cancels
-  /// that queued skip, so its promised total is no longer going anywhere.
-  ValueChanged<int>? _liveSeekAbandoningBurst(ValueChanged<int>? onLiveSeek) {
-    if (onLiveSeek == null) return null;
-    return (offset) {
-      _dismissSkipFeedback();
-      onLiveSeek(offset);
-    };
-  }
-
-  /// Wrap an action that replaces what is playing — a live channel switch, the
-  /// next or previous item — so the badge goes with the timeline it described.
+  /// Wrap an action that replaces what is playing — the next or previous
+  /// item — so the badge goes with the timeline it described.
   ///
   /// The pending skip is cancelled by the switch itself (live keeps its offset
   /// in the parent accumulator, video re-keys on the new item), but neither
@@ -782,19 +748,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _hiddenSeek.cancel();
 
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
-    if (widget.isLive) {
-      // Without a capture buffer there is no window to move within: the
-      // stream is pinned to the live edge, and a raw player seek would only
-      // disturb it. Same rule as [_seekByWithFeedback].
-      if (widget.onLiveSeekBy == null) return;
-      final applied = widget.onLiveSeekBy!(delta.inSeconds);
-      _registerSkipFeedback(
-        isForward: isForward,
-        travelled: Duration(seconds: applied),
-      );
-      return;
-    }
-
     final origin = clampSeekPosition(widget.player, widget.player.state.position);
     final target = clampSeekPosition(widget.player, origin + delta);
     final travelled = target - origin;
@@ -894,7 +847,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   /// Handle long-press start - activate 2x speed
   void _handleLongPressStart() {
-    if (!widget.canControl || widget.isLive) return;
+    if (!widget.canControl) return;
 
     _setControlsState(() {
       _isLongPressing = true;

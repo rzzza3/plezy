@@ -13,7 +13,6 @@ import 'ids.dart';
 import 'library_filter_result.dart';
 import 'library_change_event.dart';
 import 'library_query.dart';
-import 'live_tv_support.dart';
 import 'lyrics.dart';
 import 'media_backend.dart';
 import 'media_file_info.dart';
@@ -798,12 +797,6 @@ abstract class MediaServerClient {
   /// metadata, even when the caller intends to play a downloaded copy.
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options);
 
-  /// Backend-neutral live-TV operations. Always returns a wrapper; consult
-  /// [LiveTvSupport.isAvailable] to find out whether the server actually
-  /// has live TV configured before calling other methods. Recording and DVR
-  /// administration are available through [MediaServerClientLiveTv.liveTvDvr].
-  LiveTvSupport get liveTv;
-
   /// Resolve the download URL for [item]'s primary video file along with
   /// any external subtitle tracks that should be saved alongside it.
   ///
@@ -926,13 +919,6 @@ extension MediaServerClientScope on MediaServerClient {
       serverAcknowledged: false,
     );
   }
-}
-
-extension MediaServerClientLiveTv on MediaServerClient {
-  /// Optional recording/admin adapter, gated by the backend capability flag.
-  /// Call sites use this rather than assuming every Live TV backend supports
-  /// Plex's DVR surface.
-  LiveTvDvrSupport? get liveTvDvr => capabilities.liveTvDvr ? liveTv.dvr : null;
 }
 
 /// Bounds how old a cached metadata row may be to be served without a network

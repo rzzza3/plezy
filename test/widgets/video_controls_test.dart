@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:drift/native.dart';
 import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
@@ -1891,9 +1893,13 @@ void main() {
       addTearDown(chrome.dispose);
       addTearDown(toast.dispose);
 
+      final database = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(database.close);
+
       await tester.pumpWidget(
         MultiProvider(
           providers: [
+            Provider<AppDatabase>.value(value: database),
             ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
             ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
           ],
@@ -1910,7 +1916,6 @@ void main() {
                   toastController: toast,
                   canNavigateMediaItems: false,
                   chromeController: chrome,
-                  isLive: true,
                 ),
               ),
             ),
