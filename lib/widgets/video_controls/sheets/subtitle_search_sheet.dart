@@ -3,17 +3,19 @@ import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../../../focus/focusable_button.dart';
 import '../../../focus/focusable_text_field.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
-import '../../../models/plex/plex_subtitle_search_result.dart';
+import '../../../providers/multi_server_provider.dart';
 import '../../../services/settings_service.dart';
+import '../../../services/silo_client.dart';
+import '../../../silo/silo_subtitles.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/language_codes.dart';
-import '../../../utils/provider_extensions.dart';
 import '../../../utils/snackbar_helper.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
@@ -33,16 +35,17 @@ String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Lo
 class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
-  final String? mediaTitle;
-  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
-  onSubtitleDownloaded;
+  final SubtitleDownloadedCallback? onSubtitleDownloaded;
+
+  /// Where the player is, for the replan that mounts a stored subtitle.
+  final Duration Function()? playerPosition;
 
   const SubtitleSearchSheet({
     super.key,
     required this.ratingKey,
     required this.serverId,
-    this.mediaTitle,
     this.onSubtitleDownloaded,
+    this.playerPosition,
   });
 
   @override
@@ -52,13 +55,9 @@ class SubtitleSearchSheet extends StatefulWidget {
 class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with ControllerDisposerMixin {
   String _languageCode = 'en';
   String _languageName = 'English';
-  late final _titleController = createTextEditingController();
   final _languageFocusNode = FocusNode(debugLabel: 'SubtitleSearch_language');
-  final _titleFocusNode = FocusNode(debugLabel: 'SubtitleSearch_title');
   final _firstResultFocusNode = FocusNode(debugLabel: 'SubtitleSearch_firstResult');
-  Timer? _debounceTimer;
-
-  List<PlexSubtitleSearchResult>? _results;
+  List<SiloSubtitleCandidate>? _results;
   bool _isSearching = false;
   String? _error;
   String? _downloadingKey;
@@ -87,11 +86,19 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   @override
   void dispose() {
     ++_searchGeneration;
-    _debounceTimer?.cancel();
     _languageFocusNode.dispose();
-    _titleFocusNode.dispose();
     _firstResultFocusNode.dispose();
     super.dispose();
+  }
+
+  /// The Silo client of [SubtitleSearchSheet.serverId], or null.
+  SiloClient? _client() {
+    try {
+      final client = context.read<MultiServerProvider>().serverManager.getClient(ServerId(widget.serverId));
+      return client is SiloClient ? client : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _search() async {
@@ -103,22 +110,11 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     });
 
     try {
-      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
-      if (client == null) {
-        if (!mounted || generation != _searchGeneration) return;
-        setState(() => _isSearching = false);
-        return;
-      }
-      final title = _titleController.text.trim();
-      final language = _languageCode;
-      final results = await client.searchSubtitles(
-        widget.ratingKey,
-        language: language,
-        title: title.isEmpty ? null : title,
-      );
+      final client = _client();
+      final found = await client?.searchSubtitles(widget.ratingKey, language: _languageCode);
       if (!mounted || generation != _searchGeneration) return;
       setState(() {
-        _results = results;
+        _results = found?.results;
         _isSearching = false;
       });
     } catch (e) {
@@ -128,11 +124,6 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
         _isSearching = false;
       });
     }
-  }
-
-  void _onTitleChanged(String _) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 500), _search);
   }
 
   void _showLanguagePickerView() {
@@ -153,19 +144,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     }
   }
 
-  Future<void> _submitSearchAndFocusFirstResult() async {
-    _debounceTimer?.cancel();
-    await _search();
-    if (!mounted || !InputModeTracker.isKeyboardMode(context, listen: false)) return;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _focusFirstResult();
-    });
-  }
-
   void _onLanguageSelected(String code, String name) {
-    _debounceTimer?.cancel();
     setState(() {
       _languageCode = code;
       _languageName = name;
@@ -179,43 +158,32 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     _search();
   }
 
-  Future<void> _downloadSubtitle(PlexSubtitleSearchResult result) async {
+  Future<void> _downloadSubtitle(SiloSubtitleCandidate result) async {
     if (_downloadingKey != null) return;
-    setState(() => _downloadingKey = result.key);
+    final client = _client();
+    if (client == null) return;
+    setState(() => _downloadingKey = result.id);
 
     try {
-      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
-      if (client == null) {
-        if (!mounted) return;
-        setState(() => _downloadingKey = null);
-        return;
-      }
-      final success = await client.downloadSubtitle(
+      final track = await client.storeSubtitle(
         widget.ratingKey,
-        key: result.key,
-        codec: result.codec ?? 'srt',
-        language: result.languageCode ?? _languageCode,
-        hearingImpaired: result.hearingImpaired,
-        forced: result.forced,
-        providerTitle: result.providerTitle ?? '',
+        result,
+        position: widget.playerPosition?.call() ?? Duration.zero,
       );
-
       if (!mounted) return;
-
-      if (success) {
-        final outcome =
-            await widget.onSubtitleDownloaded?.call(serverId: widget.serverId, ratingKey: widget.ratingKey) ??
-            SubtitleDownloadApplyOutcome.unavailable;
-        if (!mounted) return;
-        if (outcome == SubtitleDownloadApplyOutcome.applied) {
-          showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
-          OverlaySheetController.of(context).close();
-        } else {
-          showErrorSnackBar(context, t.videoControls.subtitleDownloadedNotApplied);
-          setState(() => _downloadingKey = null);
-        }
+      final outcome =
+          await widget.onSubtitleDownloaded?.call(
+            serverId: widget.serverId,
+            ratingKey: widget.ratingKey,
+            track: track,
+          ) ??
+          SubtitleDownloadApplyOutcome.unavailable;
+      if (!mounted) return;
+      if (outcome == SubtitleDownloadApplyOutcome.applied) {
+        showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
+        OverlaySheetController.of(context).close();
       } else {
-        showErrorSnackBar(context, t.videoControls.subtitleDownloadFailed);
+        showErrorSnackBar(context, t.videoControls.subtitleDownloadedNotApplied);
         setState(() => _downloadingKey = null);
       }
     } catch (e) {
@@ -244,9 +212,9 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       onBack: () => OverlaySheetController.of(context).pop(),
       // Deliberately fills the sheet's height cap instead of hugging content.
       // Overlay sheets are bottom-anchored, so a content-driven height would
-      // move the search field on every state transition — spinner, results,
-      // error, empty — while the user is still typing in it. A search surface
-      // needs a stable frame; the results list normally fills it anyway.
+      // move the language button on every state transition — spinner,
+      // results, error, empty — while it has focus. A search surface needs a
+      // stable frame; the results list normally fills it anyway.
       child: Column(
         children: [
           Padding(
@@ -255,8 +223,8 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
               children: [
                 FocusableButton(
                   focusNode: _languageFocusNode,
+                  autofocus: true,
                   onPressed: _showLanguagePickerView,
-                  onNavigateRight: _titleFocusNode.requestFocus,
                   onNavigateDown: hasResults ? _focusFirstResult : null,
                   autoScroll: false,
                   child: Material(
@@ -278,25 +246,6 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                         ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: FocusableTextField(
-                    controller: _titleController,
-                    focusNode: _titleFocusNode,
-                    tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
-                    decoration: pillInputDecoration(
-                      context,
-                      hintText: widget.mediaTitle ?? t.metadataEdit.title,
-                      prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
-                    ),
-                    onChanged: _onTitleChanged,
-                    textInputAction: TextInputAction.search,
-                    onSubmitted: (_) => unawaited(_submitSearchAndFocusFirstResult()),
-                    onSelect: () => unawaited(_submitSearchAndFocusFirstResult()),
-                    onNavigateLeft: _languageFocusNode.requestFocus,
-                    onNavigateDown: hasResults ? _focusFirstResult : null,
                   ),
                 ),
               ],
@@ -339,35 +288,21 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       itemCount: _results!.length,
       itemBuilder: (context, index) {
         final result = _results![index];
-        final isDownloading = _downloadingKey == result.key;
+        final isDownloading = _downloadingKey == result.id;
         final colorScheme = Theme.of(context).colorScheme;
 
-        Widget? trailing;
-        if (isDownloading) {
-          trailing = const LoadingIndicatorBox(size: 20);
-        } else {
-          final trailingChildren = <Widget>[];
-          if (result.perfectMatch) {
-            trailingChildren.add(const AppIcon(Symbols.star_rounded, fill: 1, color: Color(0xFFCC7B19), size: 16));
-          }
-          if (result.score != null) {
-            trailingChildren.add(
-              Text(
-                result.score!.toInt().toString(),
+        final trailing = isDownloading
+            ? const LoadingIndicatorBox(size: 20)
+            : Text(
+                result.score.toStringAsFixed(result.score == result.score.roundToDouble() ? 0 : 1),
                 style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
-              ),
-            );
-          }
-          if (trailingChildren.isNotEmpty) {
-            trailing = Row(mainAxisSize: .min, spacing: 4, children: trailingChildren);
-          }
-        }
+              );
 
         return FocusableListTile(
           focusNode: index == 0 ? _firstResultFocusNode : null,
-          title: Text(result.title ?? result.displayTitle ?? t.common.unknown, maxLines: 1, overflow: .ellipsis),
+          title: Text(result.releaseName, maxLines: 1, overflow: .ellipsis),
           subtitle: Text(
-            result.displayTitle ?? '',
+            [result.provider, result.format.toUpperCase(), if (result.hearingImpaired) 'SDH'].join(' · '),
             maxLines: 1,
             overflow: .ellipsis,
             style: TextStyle(color: colorScheme.onSurfaceVariant),

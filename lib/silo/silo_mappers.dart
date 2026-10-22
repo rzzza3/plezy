@@ -470,6 +470,18 @@ MediaSourceInfo siloMediaSourceInfo(
                 selected: false,
                 forced: version.subtitleTracks[i].forced,
               ),
+            for (final row in _downloadedSidecars(plan))
+              MediaSubtitleTrack(
+                id: siloSubtitleStreamId(plan, row),
+                index: row.combinedIndex,
+                codec: row.codec,
+                language: row.language,
+                languageCode: row.language,
+                title: row.label,
+                selected: false,
+                forced: row.forced,
+                usesExternalDelivery: true,
+              ),
           ],
     chapters: const [],
     mediaSourceId: '${version.fileId}',
@@ -478,22 +490,35 @@ MediaSourceInfo siloMediaSourceInfo(
   );
 }
 
+/// Direct-play ids for downloaded sidecars start here, clear of the
+/// container's tracks, which are numbered from 1.
+const int siloDownloadedSubtitleIdBase = 10000;
+
+/// Downloaded rows a direct play mounts beside the container's own tracks.
+Iterable<SiloSubtitleRow> _downloadedSidecars(SiloPlan plan) => plan.subtitleInventory.where(
+  (row) => row.isDownloaded && row.delivery == 'sidecar' && row.url != null && row.combinedIndex >= 0,
+);
+
+/// The Plezy source stream id of an inventory [row] in [plan].
+int siloSubtitleStreamId(SiloPlan plan, SiloSubtitleRow row) =>
+    plan.isTranscode ? row.combinedIndex + 1 : siloDownloadedSubtitleIdBase + row.combinedIndex;
+
 /// Sidecars for a transcode, which carries no subtitle track of its own.
-/// Direct play reads embedded tracks from the container. [playerUrl] maps a plan URL to what mpv opens, or to
-/// null when mpv cannot open it.
+/// Direct play reads embedded tracks from the container and mounts only the
+/// subtitles the server downloaded. [playerUrl] maps a plan URL to what mpv
+/// opens, or to null when mpv cannot open it.
 List<PlaybackSubtitleSidecar> siloSubtitleSidecars(SiloPlan plan, Uri? Function(String planUrl) playerUrl) => [
-  if (plan.isTranscode)
-    for (final row in plan.subtitleInventory)
-      if (row.delivery == 'sidecar' && row.url != null)
-        if (playerUrl(row.url!) case final uri?)
-          PlaybackSubtitleSidecar(
-            sourceStreamId: row.combinedIndex + 1,
-            track: SubtitleTrack.uri(
-              '$uri',
-              title: row.label ?? row.language,
-              language: row.language,
-              codec: row.codec,
-              isForced: row.forced,
-            ),
+  for (final row in plan.isTranscode ? plan.subtitleInventory : _downloadedSidecars(plan))
+    if (row.delivery == 'sidecar' && row.url != null)
+      if (playerUrl(row.url!) case final uri?)
+        PlaybackSubtitleSidecar(
+          sourceStreamId: siloSubtitleStreamId(plan, row),
+          track: SubtitleTrack.uri(
+            '$uri',
+            title: row.label ?? row.language,
+            language: row.language,
+            codec: row.codec,
+            isForced: row.forced,
           ),
+        ),
 ];

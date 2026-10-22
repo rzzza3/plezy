@@ -235,14 +235,6 @@ void main() {
     });
   });
 
-  test('findNewExternalSubtitleTrack ignores embedded and existing source rows', () {
-    final embedded = MediaSubtitleTrack(id: 1, selected: false, forced: false);
-    final existing = MediaSubtitleTrack(id: 2, external: true, selected: false, forced: false);
-    final downloaded = MediaSubtitleTrack(id: 3, external: true, selected: false, forced: false);
-
-    expect(findNewExternalSubtitleTrack([embedded, existing, downloaded], {1, 2}), downloaded);
-  });
-
   test('subtitle download treats an already-selected source as applied', () {
     expect(
       subtitleDownloadApplyOutcomeFor(PlaybackSourceChangeOutcome.unchanged),

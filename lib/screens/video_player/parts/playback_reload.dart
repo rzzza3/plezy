@@ -157,7 +157,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         : newSubtitleChoice.isOff
         ? const SubtitlePreference.off()
         : SubtitlePreference.trackOrNull(
-            PlaybackSubtitleResolver.preferredTrackForSource(_currentMediaInfo, newSubtitleChoice.sourceStreamId!),
+            PlaybackSubtitleResolver.preferredTrackForSource(_currentMediaInfo, newSubtitleChoice.sourceStreamId!) ??
+                switch (newSubtitleChoice.pendingTrack) {
+                  final track? => PlaybackSubtitleResolver.subtitleTrackForSource(track),
+                  null => null,
+                },
           );
     final effectiveMediaSourceId = newMediaIndex != null
         ? PlaybackSession.mediaSourceIdForIndex(_availableVersions, effectiveMediaIndex) ?? _requestedMediaSourceId

@@ -35,7 +35,6 @@ import '../../focus/focus_navigation_intent.dart';
 import '../../focus/transport_keys.dart';
 
 import '../../database/app_database.dart';
-import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
 import '../../media/stepped_seek.dart';
 import '../../models/livetv_capture_buffer.dart';
@@ -142,14 +141,6 @@ List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
         return CodecUtils.isTranscodableSubtitleCodec(track.codec);
       })
       .toList(growable: false);
-}
-
-@visibleForTesting
-MediaSubtitleTrack? findNewExternalSubtitleTrack(List<MediaSubtitleTrack> tracks, Set<int> existingSourceIds) {
-  for (final track in tracks) {
-    if (track.isExternal && !existingSourceIds.contains(track.id)) return track;
-  }
-  return null;
 }
 
 @visibleForTesting

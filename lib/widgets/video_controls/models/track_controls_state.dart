@@ -12,6 +12,15 @@ import '../helpers/track_filter_helper.dart';
 
 enum SubtitleDownloadApplyOutcome { applied, timedOut, busy, superseded, unavailable, failed }
 
+/// Selects a subtitle the server stored for the playing item. [track] is its
+/// row in the replanned source, or null when the replan did not list it.
+typedef SubtitleDownloadedCallback =
+    Future<SubtitleDownloadApplyOutcome> Function({
+      required String serverId,
+      required String ratingKey,
+      required MediaSubtitleTrack? track,
+    });
+
 /// Immutable configuration for track/chapter control widgets.
 class TrackControlsState {
   final List<MediaVersion> availableVersions;
@@ -70,13 +79,14 @@ class TrackControlsState {
   final bool showQueueButton;
   final Function(MediaItem)? onQueueItemSelected;
   final String ratingKey;
-  final String? mediaTitle;
+
+  /// Where the player is, for the replan that mounts a stored subtitle.
+  final Duration Function()? playerPosition;
 
   /// Item currently playing, used to key scope-persisted player settings
   /// ([ScopedPlayerPrefs]). Null only for embedders without item identity.
   final MediaItem? metadata;
-  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
-  onSubtitleDownloaded;
+  final SubtitleDownloadedCallback? onSubtitleDownloaded;
 
   /// Whether OpenSubtitles search is reachable for this server. The Plex
   /// server proxies the OpenSubtitles plugin; other backends don't expose an
@@ -135,7 +145,7 @@ class TrackControlsState {
     this.showQueueButton = false,
     this.onQueueItemSelected,
     this.ratingKey = '',
-    this.mediaTitle,
+    this.playerPosition,
     this.onSubtitleDownloaded,
     this.subtitleSearchSupported = true,
   });

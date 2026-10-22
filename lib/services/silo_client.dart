@@ -32,6 +32,7 @@ import '../silo/silo_media_proxy.dart';
 import '../silo/silo_models.dart';
 import '../silo/silo_playback.dart';
 import '../silo/silo_playback_session.dart';
+import '../silo/silo_subtitles.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController;
 import 'api_cache.dart';
@@ -63,6 +64,11 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   /// The one session this client is playing, and its proxy route.
   SiloPlaybackSession? _playback;
   SiloMediaRoute? _route;
+
+  /// Set when a stored subtitle replanned [_playback] after its route was
+  /// opened, so the next reload of the same file mounts that plan instead of
+  /// starting a new session.
+  SiloPlaybackSession? _replanned;
 
   /// A stopped report holds the session for a moment, so a reload that only
   /// changes the audio or quality can replan it instead of starting anew.
@@ -679,6 +685,10 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final operation = sameItem && (fileId == null || fileId == previous.playingVersion.fileId)
         ? previous.replanForReload(quality: quality, audioTrackIndex: audio, startSeconds: start)
         : null;
+    if (operation == null && sameItem && identical(previous, _replanned)) {
+      _replanned = null;
+      return _initialization(previous);
+    }
     if (operation != null) {
       try {
         await previous!.replan(
@@ -909,9 +919,65 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   Future<void> _endPlayback() async {
     final playback = _playback;
     _playback = null;
+    _replanned = null;
     _route?.close();
     _route = null;
     if (playback != null && !playback.isStopped) await playback.stop();
+  }
+
+  /// The live session playing [itemId], if any. Subtitle search works on
+  /// the file it plays.
+  SiloPlaybackSession? _playbackOf(String itemId) {
+    final playback = _playback;
+    return playback != null && !playback.isStopped && playback.detail.contentId == itemId ? playback : null;
+  }
+
+  /// Provider subtitles for the file [itemId] is playing, in [language]
+  /// (ISO 639-1). Null when no session plays it.
+  Future<SiloSubtitleSearch?> searchSubtitles(String itemId, {required String language}) async {
+    final playback = _playbackOf(itemId);
+    if (playback == null) return null;
+    final found = await SiloSubtitles(http).search(playback.playingVersion.fileId, [language]);
+    appLogger.i('Silo subtitles: search found ${found.results.length} (${found.warnings.length} warnings)');
+    return found;
+  }
+
+  /// Stores [candidate] on the server, then replans the live session with
+  /// `track_change` so the stored row joins its inventory, as Silo does for
+  /// `subtitle_inventory_changed` (`T/ui/screens/player/TvPlayerViewModel.kt:5684-5695`,
+  /// `A/player/PlaybackSessionManager.kt:2542-2547`). Returns the new row as
+  /// a source track, or null when the replanned inventory cannot mount it.
+  /// The next reload of the same file mounts the replanned plan.
+  Future<MediaSubtitleTrack?> storeSubtitle(
+    String itemId,
+    SiloSubtitleCandidate candidate, {
+    required Duration position,
+  }) async {
+    final playback = _playbackOf(itemId);
+    if (playback == null) return null;
+    final storedId = await SiloSubtitles(http).download(playback.playingVersion.fileId, candidate);
+    appLogger.i('Silo subtitles: stored a ${candidate.format} subtitle');
+    final before = {for (final row in playback.plan.subtitleInventory) row.trackId};
+    final plan = await playback.replan(
+      operation: SiloReplanOperation.trackChange,
+      positionSeconds: _source(playback, position),
+    );
+    if (!identical(_playback, playback)) return null;
+    _replanned = playback;
+    final row =
+        plan.subtitleInventory.where((r) => r.syncKey == 'stored-$storedId').firstOrNull ??
+        plan.subtitleInventory.where((r) => r.isDownloaded && !before.contains(r.trackId)).firstOrNull;
+    final streamId = row == null ? null : siloSubtitleStreamId(plan, row);
+    final track = streamId == null
+        ? null
+        : siloMediaSourceInfo(
+            playback.playingVersion,
+            plan,
+            videoUrl: '',
+            mediaIndex: 0,
+          ).subtitleTracks.where((t) => t.id == streamId).firstOrNull;
+    appLogger.i('Silo subtitles: replanned inventory ${track == null ? 'lacks' : 'has'} the stored row');
+    return track;
   }
 
   /// Intro and credits from watch detail (`S/network/apiv2/WatchDetailV2Api.kt:43-49`).

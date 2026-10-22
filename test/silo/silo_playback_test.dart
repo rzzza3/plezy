@@ -156,6 +156,67 @@ void main() {
     });
   });
 
+  group('downloaded subtitles (SubtitleTrackMerge.kt:37-64)', () {
+    final version = SiloFileVersion.fromJson(_version('41', resolution: '1080p'));
+    Map<String, Object?> row(int index, String source, {String? syncKey}) => {
+      'track_id': 'track-$index',
+      'combined_index': index,
+      'source': source,
+      'codec': 'subrip',
+      'language': 'fra',
+      'label': 'French',
+      'delivery': 'sidecar',
+      'url': '/api/v2/stream/sess-1/subtitles/$index.vtt',
+      'sync_key': ?syncKey,
+    };
+    SiloPlan plan(String delivery) =>
+        (parseSiloDecision(
+                  _decision(
+                    plan: _plan(
+                      delivery: delivery,
+                      extra: {
+                        'subtitle': {
+                          'inventory': [row(0, 'embedded'), row(1, 'downloaded', syncKey: 'stored-9')],
+                        },
+                      },
+                    ),
+                  ),
+                )
+                as SiloPlayable)
+            .plan;
+
+    test('the inventory row keeps its sync key', () {
+      expect(plan('original_http').subtitleInventory.map((r) => (r.syncKey, r.isDownloaded)), [
+        (null, false),
+        ('stored-9', true),
+      ]);
+    });
+
+    test('direct play mounts a downloaded row beside the container tracks, clear of their ids', () {
+      final direct = plan('original_http');
+      final info = siloMediaSourceInfo(version, direct, videoUrl: 'u', mediaIndex: 0);
+      final sidecars = siloSubtitleSidecars(direct, (url) => Uri.parse('http://p$url'));
+
+      expect(info.subtitleTracks.map((t) => (t.id, t.language, t.usesExternalDelivery)), [
+        (1, 'eng', false),
+        (siloDownloadedSubtitleIdBase + 1, 'fra', true),
+      ]);
+      expect(sidecars.map((s) => (s.sourceStreamId, s.track.uri)), [
+        (siloDownloadedSubtitleIdBase + 1, 'http://p/api/v2/stream/sess-1/subtitles/1.vtt'),
+      ], reason: 'the embedded row is the container track, never a sidecar');
+    });
+
+    test('a transcode keeps numbering the whole inventory from 1', () {
+      final transcode = plan('server_transcode_hls');
+
+      expect(siloMediaSourceInfo(version, transcode, videoUrl: 'u', mediaIndex: 0).subtitleTracks.map((t) => t.id), [
+        1,
+        2,
+      ]);
+      expect(siloSubtitleStreamId(transcode, transcode.subtitleInventory.last), 2);
+    });
+  });
+
   group('carried audio', () {
     final version = SiloWatchDetail.fromJson(_watch(), 'movie-tmdb-1').versions.single;
 

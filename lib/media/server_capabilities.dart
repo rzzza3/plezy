@@ -117,7 +117,7 @@ class ServerCapabilities {
     numericUserRating: true,
     wholeStarRating: true,
     userFavorites: true,
-    externalSubtitleSearch: false,
+    externalSubtitleSearch: true,
     richMetadataEdit: false,
     scrubThumbnails: false,
     folderGrouping: false,

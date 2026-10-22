@@ -512,6 +512,11 @@ class SiloSubtitleRow {
   final String delivery;
   final String? url;
 
+  /// The sync name of an external or downloaded row, `stored-<id>` for a
+  /// subtitle the server stored from a provider
+  /// (`S/model/playback/PlaybackProtocolV3.kt:381-385`).
+  final String? syncKey;
+
   const SiloSubtitleRow({
     required this.trackId,
     required this.combinedIndex,
@@ -523,7 +528,12 @@ class SiloSubtitleRow {
     this.isDefault = false,
     required this.delivery,
     this.url,
+    this.syncKey,
   });
+
+  /// A provider subtitle the server stored for this file. It is never in the
+  /// container, so direct play mounts it as a sidecar too.
+  bool get isDownloaded => source == 'downloaded';
 }
 
 class SiloPlan {
@@ -618,6 +628,7 @@ SiloPlan _parsePlan(SiloJson json) {
         isDefault: row['default'] == true,
         delivery: _str(row, 'delivery') ?? '',
         url: _str(row, 'url'),
+        syncKey: _str(row, 'sync_key'),
       ),
   ];
   for (final row in rows) {

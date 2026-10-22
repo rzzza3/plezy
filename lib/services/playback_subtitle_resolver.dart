@@ -17,11 +17,20 @@ final class PlaybackSourceSubtitleChoice {
   final bool isOff;
   final int? sourceStreamId;
 
+  /// The source row, for a track the playing source does not list yet: a
+  /// subtitle the server just stored arrives only with the reload. Not part
+  /// of equality.
+  final MediaSubtitleTrack? pendingTrack;
+
   const PlaybackSourceSubtitleChoice.off() : this._(isOff: true);
 
   const PlaybackSourceSubtitleChoice.source(int sourceStreamId) : this._(isOff: false, sourceStreamId: sourceStreamId);
 
-  const PlaybackSourceSubtitleChoice._({required this.isOff, this.sourceStreamId});
+  /// A choice of [track], which the reload's source will list.
+  PlaybackSourceSubtitleChoice.pending(MediaSubtitleTrack track)
+    : this._(isOff: false, sourceStreamId: track.id, pendingTrack: track);
+
+  const PlaybackSourceSubtitleChoice._({required this.isOff, this.sourceStreamId, this.pendingTrack});
 
   @override
   bool operator ==(Object other) =>

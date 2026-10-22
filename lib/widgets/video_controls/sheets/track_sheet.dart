@@ -503,7 +503,7 @@ List<Widget> _buildSubtitleSearchFooter(BuildContext context, TrackControlsState
           builder: (_) => SubtitleSearchSheet(
             ratingKey: state.ratingKey,
             serverId: state.serverId!,
-            mediaTitle: state.mediaTitle,
+            playerPosition: state.playerPosition,
             onSubtitleDownloaded: state.onSubtitleDownloaded,
           ),
         );
