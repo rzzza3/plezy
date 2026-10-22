@@ -1,6 +1,6 @@
 # S8 live lanes, how to run them
 
-This file is for whoever runs the S8 **Verify, live** and **Verify, perf** blocks of `docs/silo-migration/plan.md`. No lane has run yet. S7 is `6a1d88684` on `feat/silo-s7-silo-only`. The head is the commit that adds this file on `feat/silo-s8-drop-jellyfin`.
+This file is for whoever runs the S8 **Verify, live** and **Verify, perf** blocks of `docs/silo-migration/plan.md`. The lanes ran on 2026-10-22; the results are in the S8 lane record in `plan.md`. S7 is `6a1d88684` on `feat/silo-s7-silo-only`. The head is the commit that adds this file on `feat/silo-s8-drop-jellyfin`.
 
 **Read "Back up first" and "Signing" before you install anything.** The emulator holds trunk `5fc148779` with the operator's restored Plex data. The first launch of an S7 or S8 build runs the schema 26 migration and deletes that Plex data. Only a backup taken through `run-as` brings it back, and an uninstall would lose it for good. The operator forbids uninstalling.
 

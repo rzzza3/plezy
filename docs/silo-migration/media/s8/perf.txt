@@ -1,0 +1,8 @@
+S8 perf lane, 2026-10-22, Television_1080p emulator (android-x64), state: s7-state.tar (Silo A signed in).
+Release APKs re-signed with the host debug key (SHA-256 b4a70e96...1ee9).
+Metric: logcat epoch "Start proc ...com.edde746.plezy" -> "Home: first hub frame, rows <n>". 10 interleaved cold starts each (install -r, force-stop, 5 s, am start -W).
+
+APK size (unsigned app-release.apk): S7 6a1d88684 176,602,610 B; head 5fc13ef1a 175,813,898 B (-788,712 B). PASS (not larger).
+Cold start median: S7 2287.5 ms (min 2247, max 2460); head 2268.0 ms (min 2219, max 2358). Delta -0.9%. PASS (within 5%).
+am start -W TotalTime median: S7 514.5 ms, head 496.5 ms (reference only).
+All 20 launches landed on the Silo A home (screenshots compared), no picker, no release crash.
