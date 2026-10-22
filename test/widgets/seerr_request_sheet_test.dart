@@ -126,7 +126,7 @@ Future<SeerrAccountProvider> _account(MockClient mock, int permissions) async {
   await account.adoptSession(
     SeerrSession(
       baseUrl: 'https://seerr.example.com',
-      method: SeerrAuthMethod.quickConnect,
+      method: SeerrAuthMethod.local,
       identifier: 'alice',
       secret: '',
       cookie: 'cookie',
@@ -494,7 +494,7 @@ void main() {
       switch (request.url.path) {
         case '/api/v1/settings/public':
           // mediaServerType present -> Jellyseerr -> status 6 = BLOCKLISTED.
-          return _json(_publicSettings(mediaServerType: SeerrMediaServerType.jellyfin));
+          return _json(_publicSettings(mediaServerType: 2));
         case '/api/v1/movie/603':
           return _json({
             'id': 603,

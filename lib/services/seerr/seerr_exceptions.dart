@@ -33,8 +33,8 @@ class SeerrAuthException implements Exception {
   String toString() => 'SeerrAuthException: $message${statusCode == null ? '' : ' ($statusCode)'}';
 }
 
-/// Silent re-auth could not safely restore this principal (e.g. a missing
-/// live Plex token or a login that resolved to another user). Deliberately
+/// Silent re-auth could not safely restore this principal (e.g. a login that
+/// resolved to another user). Deliberately
 /// not a [SeerrAuthException]: this does not prove the stored credentials
 /// were rejected and must not unlink the session.
 ///

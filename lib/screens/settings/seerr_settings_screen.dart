@@ -47,11 +47,7 @@ class SeerrSettingsScreen extends StatelessWidget {
         }
 
         final methodLabel = switch (session.method) {
-          SeerrAuthMethod.plex => 'Plex',
-          SeerrAuthMethod.jellyfin => 'Jellyfin',
-          SeerrAuthMethod.emby => 'Emby',
           SeerrAuthMethod.local => t.seerr.email,
-          SeerrAuthMethod.quickConnect => t.auth.quickConnect,
         };
         return SettingsPage(
           title: Text(t.seerr.title),

@@ -160,13 +160,6 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
               ChangeNotifierProvider(
                 create: (context) {
                   final provider = SeerrAccountProvider();
-                  provider.bindPlexTokenSupplier(
-                    buildSeerrPlexTokenSupplier(
-                      activeProfile: context.read<ActiveProfileProvider>(),
-                      connections: context.read<ConnectionRegistry>(),
-                      profileConnections: context.read<ProfileConnectionRegistry>(),
-                    ),
-                  );
                   unawaited(
                     provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
                       appLogger.w('Seerr profile hydrate failed', error: e, stackTrace: s);
