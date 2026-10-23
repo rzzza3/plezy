@@ -476,7 +476,7 @@ void main() {
   });
 
   testWidgets('library name back-fills from loaded libraries when the row only carries an id', (tester) async {
-    // Plex search rows name their section only by librarySectionKey; the
+    // Search rows can name their library only by id; the
     // title must resolve against the loaded libraries without a request.
     final (_, key) = await _pumpTvSearchScreen(
       tester,
@@ -953,7 +953,7 @@ List<MediaItem> _mixedKindItems() => [
 MediaLibrary _library(String id, String title) =>
     MediaLibrary(id: id, backend: MediaBackend.silo, title: title, kind: MediaKind.movie, serverId: 'server_1');
 
-/// A Plex actor on `server_1`, shaped like a `searchTypes=people` row.
+/// An actor on `server_1`, shaped like a `searchTypes=people` row.
 MediaPerson _christophWaltz() => MediaPerson(
   id: '38797',
   name: 'Christoph Waltz',

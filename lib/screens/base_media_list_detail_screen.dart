@@ -172,7 +172,7 @@ mixin StandardItemLoader<T extends StatefulWidget> on BaseMediaListDetailScreen<
     }
 
     try {
-      // Items are automatically tagged with server info by PlexClient
+      // Items are automatically tagged with server info by the client
       final newItems = await fetchItems();
 
       if (mounted) {

@@ -44,7 +44,7 @@ void main() {
     await db.close();
   });
 
-  test('the Silo backend dispatches to the Silo cache, not the Plex fallback', () {
+  test('the Silo backend dispatches to the Silo cache', () {
     expect(ApiCache.forBackend(MediaBackend.silo), same(cache));
   });
 
@@ -86,7 +86,7 @@ void main() {
     expect(pinned['srv:episode-tvdb-344961-1-1']?.viewOffsetMs, 60000);
   });
 
-  test('a legacy Plex row under the same key prefix never decodes as a Silo item', () async {
+  test('a row of a removed backend under the same key prefix never decodes as a Silo item', () async {
     await cache.put(scopeA, SiloApiCache.itemEndpoint('x'), {'backend': 'plex', 'id': 'x', 'kind': 'movie'});
     await cache.pinForOffline(scopeA, 'x');
 

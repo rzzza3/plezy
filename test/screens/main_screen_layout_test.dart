@@ -325,19 +325,19 @@ void main() {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       final connections = ConnectionRegistry(db);
       final storage = await StorageService.getInstance();
-      final plexHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
+      final serverHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
       final active = _GatedInitializeActiveProfileProvider(
-        households: plexHome,
+        households: serverHome,
         connections: connections,
         storage: storage,
       );
       addTearDown(() async {
         await active.resetForTesting();
         active.dispose();
-        plexHome.dispose();
+        serverHome.dispose();
         await db.close();
       });
-      return _PromptFixture(connections: connections, households: plexHome, storage: storage, active: active);
+      return _PromptFixture(connections: connections, households: serverHome, storage: storage, active: active);
     }
 
     test('mid-initialize synchronous notify pushes exactly one requireSelection picker', () async {

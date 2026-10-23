@@ -596,7 +596,7 @@ void main() {
     });
   });
 
-  // The reporter's setup (#1829, first seen on Plex on macOS): the client's
+  // The reporter's setup (#1829, first seen on macOS): the client's
   // cache scope is a profile scope that differs from the public server id, as
   // a Silo client's `silo:<server>/<profile>` scope does. The observation and
   // the patch must land on the same key or suppression silently never fires.

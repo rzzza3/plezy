@@ -72,7 +72,7 @@ void main() {
       expect(candidates, ['You and I Are Polar Opposites Season 2', 'You and I Are Polar Opposites']);
     });
     test('normalizes typographic punctuation the server search misses on', () {
-      // Verified live: Plex returns 0 for the curly form.
+      // Verified live: a server returned 0 for the curly form.
       expect(titleMatchCandidates(['Frieren: Beyond Journey\u2019s End']), ["Frieren: Beyond Journey's End"]);
       expect(titleMatchCandidates(['Kaguya-sama \u2013 Love is War']), ['Kaguya-sama - Love is War']);
     });

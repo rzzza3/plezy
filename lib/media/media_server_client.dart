@@ -41,7 +41,7 @@ typedef CollectionMembership = ({MediaItem collection, List<String> memberIds});
 ///
 /// Each implementation wraps the per-backend HTTP layer and exposes the same
 /// operations the rest of the app needs to browse libraries, mark watch
-/// state, and render items. Concrete classes ([PlexClient], `SiloClient`)
+/// state, and render items. The concrete class (`SiloClient`)
 /// own the per-backend networking — providers and UI consume them only
 /// through this interface.
 ///

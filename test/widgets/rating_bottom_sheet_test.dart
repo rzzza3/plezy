@@ -91,7 +91,7 @@ void main() {
     });
   }
 
-  testWidgets('a Silo server row names Silo, not Plex', (tester) async {
+  testWidgets('a Silo server row names Silo', (tester) async {
     await _pumpRatingSheet(
       tester,
       viewport: const Size(1280, 800),

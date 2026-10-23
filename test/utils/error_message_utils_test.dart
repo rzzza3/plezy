@@ -112,7 +112,7 @@ void main() {
         message: serverText,
         statusCode: 500,
         responseData: {'error': serverText},
-        requestUri: Uri.parse('https://media.example.test/library/metadata/42?X-Plex-Token=secret'),
+        requestUri: Uri.parse('https://media.example.test/items/42?access_token=secret'),
       );
 
       final reason = localizedErrorReason(error);

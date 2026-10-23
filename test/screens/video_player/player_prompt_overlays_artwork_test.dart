@@ -100,7 +100,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('offline play-next paints the downloaded still for a token-free Plex thumb', (tester) async {
+  testWidgets('offline play-next paints the downloaded still for a token-free thumb', (tester) async {
     final episode = _episode(backend: MediaBackend.silo, thumbPath: '/library/metadata/episode-2/thumb/1');
     final written = (await tester.runAsync(() => downloadThumb(episode)))!;
 

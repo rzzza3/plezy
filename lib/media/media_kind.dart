@@ -2,7 +2,7 @@ import '../i18n/strings.g.dart';
 
 /// Backend-neutral classification of a media item.
 ///
-/// Mirrors the categories in [PlexMediaType] but is the canonical type used by
+/// The canonical media type used by
 /// neutral domain models. Each backend's adapter is responsible for mapping
 /// its own type strings (the `type` field) into one
 /// of these values.

@@ -121,14 +121,14 @@ void main() {
       final raw = jsonEncode({
         'trakt_session': _traktSession(access: 'aaa-access-secret', refresh: 'bbb-refresh-secret'),
         'seerr_session': _seerrSession(cookie: 'ccc-cookie-secret'),
-        legacyPlexTokenPref: 'ddd-plex-secret',
+        legacyPlexTokenPref: 'ddd-legacy-secret',
       });
 
       PrefsRecovery.salvage(raw);
 
       // A bare token quoted on its own must redact too; registering only the
       // encoded blob would leave these exposed.
-      for (final secret in ['aaa-access-secret', 'bbb-refresh-secret', 'ccc-cookie-secret', 'ddd-plex-secret']) {
+      for (final secret in ['aaa-access-secret', 'bbb-refresh-secret', 'ccc-cookie-secret', 'ddd-legacy-secret']) {
         expect(LogRedactionManager.redact('value=$secret'), isNot(contains(secret)), reason: secret);
       }
     });

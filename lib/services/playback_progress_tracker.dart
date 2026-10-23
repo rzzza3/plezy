@@ -751,7 +751,7 @@ class PlaybackProgressTracker {
 
   /// The engine's current selection, resolved for every report state.
   ///
-  /// The terminal report carries the indexes too: MediaBrowser backends only
+  /// The terminal report carries the indexes too: some backends only
   /// learn a track pick from a report body, and [updateInterval] means a pick
   /// made just before exit has no progress ping left to ride.
   Future<PlaybackStreamSelection> _currentStreamSelection() async {
@@ -815,7 +815,7 @@ class PlaybackProgressTracker {
     // and a native track id is the engine's own ordinal, so neither the n-th
     // row nor the row whose stream index happens to equal the native id is
     // this track. An unmatched track is withheld rather than guessed.
-    return findPlexTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle)?.id;
+    return findServerTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle)?.id;
   }
 
   /// Queue progress update locally (offline mode)

@@ -185,8 +185,8 @@ class _Harness {
     final storage = await StorageService.getInstance();
     final settings = await SettingsService.getInstance();
     final connections = ConnectionRegistry(database);
-    final plexHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
-    final active = ActiveProfileProvider(households: plexHome, connections: connections, storage: storage);
+    final serverHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
+    final active = ActiveProfileProvider(households: serverHome, connections: connections, storage: storage);
     final manager = MultiServerManager();
     final multi = testMultiServerProvider(manager);
     final harness = _Harness(active);
@@ -196,12 +196,12 @@ class _Harness {
       active.dispose();
       multi.dispose();
       manager.dispose();
-      plexHome.dispose();
+      serverHome.dispose();
       await database.close();
     });
     final connection = testSiloConnection('agent-srv');
     await connections.upsert(connection);
-    await plexHome.put(connection, testHousehold([('agent-test', 'Agent')]));
+    await serverHome.put(connection, testHousehold([('agent-test', 'Agent')]));
     await storage.setActiveProfileId('silo:agent-srv/agent-test');
     await active.initialize();
     await tester.pumpWidget(

@@ -617,7 +617,7 @@ void main() {
     });
 
     test('same-language rows are told apart by their titles across episodes (#1785)', () {
-      // Real-world shape (Madoka Magica on Plex): both rows English ASS with
+      // Real-world shape (Madoka Magica): both rows English ASS with
       // the bare displayTitle "English"; only Title separates the full
       // dialogue track from the signs/songs track.
       MediaSubtitleTrack row(int id, String title, {bool selected = false}) => MediaSubtitleTrack(

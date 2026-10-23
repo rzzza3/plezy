@@ -218,7 +218,7 @@ class TrackManager {
     final realSubtitleTracks = tracks.subtitle
         .where((track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id)
         .toList(growable: false);
-    final service = TrackSelectionService(metadata: metadata, plexMediaInfo: mediaInfo);
+    final service = TrackSelectionService(metadata: metadata, serverMediaInfo: mediaInfo);
 
     // A burned-in primary is already in the picture, so no native track is ever coming for it.
     // Waiting for one holds up audio and rate setup for the five-second fallback and then logs a
@@ -317,7 +317,7 @@ class TrackManager {
         player: player,
         profileSettings: profileSettings,
         metadata: metadata,
-        plexMediaInfo: mediaInfo,
+        serverMediaInfo: mediaInfo,
       );
 
       return await trackService.selectAndApplyTracks(
@@ -464,8 +464,8 @@ class TrackManager {
     final partId = await _guardTrackChange(info, 'audio');
     if (partId == null || info == null) return;
 
-    final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
-    final streamID = matchedPlex?.id;
+    final matchedServer = findServerTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
+    final streamID = matchedServer?.id;
     if (streamID != null) {
       appLogger.d('Matched audio to streamID $streamID');
     } else {
@@ -490,12 +490,12 @@ class TrackManager {
       streamID = sourceStreamId;
       appLogger.d('Using authoritative subtitle streamID $streamID');
     } else if (info != null) {
-      final matchedPlex = findPlexTrackForMpvSubtitle(
+      final matchedServer = findServerTrackForMpvSubtitle(
         track,
         info.subtitleTracks,
         allMpvTracks: player.state.tracks.subtitle,
       );
-      streamID = matchedPlex?.id;
+      streamID = matchedServer?.id;
       if (streamID != null) {
         appLogger.d('Matched subtitle to streamID $streamID');
       } else {

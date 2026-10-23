@@ -13,8 +13,8 @@ void main() {
         backend: MediaBackend.silo,
         title: 'Movies',
         kind: MediaKind.movie,
-        serverId: 'plex-server',
-        serverName: 'Plex Server',
+        serverId: 'srv',
+        serverName: 'Den Server',
       ),
       const MediaLibrary(
         id: '2',
@@ -42,7 +42,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Plex Server'), findsOneWidget);
+    expect(find.text('Den Server'), findsOneWidget);
     expect(find.text('Silo Server'), findsOneWidget);
     expect(find.text('Movies'), findsOneWidget);
     expect(find.text('Shows'), findsOneWidget);
@@ -58,8 +58,8 @@ void main() {
         backend: MediaBackend.silo,
         title: 'Movies',
         kind: MediaKind.movie,
-        serverId: 'plex-server',
-        serverName: 'Plex Server',
+        serverId: 'srv',
+        serverName: 'Den Server',
       ),
       const MediaLibrary(
         id: '2',
@@ -88,7 +88,7 @@ void main() {
 
     expect(find.text('Movies'), findsOneWidget);
     expect(find.text('Shows'), findsOneWidget);
-    expect(find.text('Plex Server'), findsOneWidget);
+    expect(find.text('Den Server'), findsOneWidget);
     expect(find.text('Silo Server'), findsOneWidget);
   });
 }

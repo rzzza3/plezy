@@ -7,7 +7,7 @@ MediaHub _hub({required String id, String? identifier}) {
 
 void main() {
   group('MediaHub continue watching semantics', () {
-    test('recognizes Plex in-progress hubs as continue watching rows', () {
+    test('recognizes in-progress hub identifiers as continue watching rows', () {
       final hub = _hub(id: '/hubs/sections/1', identifier: 'movie.inprogress.1');
 
       expect(hub.isContinueWatchingHub, isTrue);
@@ -41,7 +41,7 @@ void main() {
       expect(homeHub.usesContinueWatchingAction, isTrue);
     });
 
-    test('uses continue watching action for Plex on deck without removal semantics', () {
+    test('uses continue watching action for on-deck hubs without removal semantics', () {
       final hub = _hub(id: '/hubs/sections/1', identifier: 'tv.ondeck.1');
 
       expect(hub.isContinueWatchingHub, isFalse);

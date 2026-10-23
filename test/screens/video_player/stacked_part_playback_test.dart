@@ -317,7 +317,7 @@ class _StackedPlayer extends FakeSyncPlayer {
   }
 }
 
-/// Resolves the file holding the requested start position, the way the Plex
+/// Resolves the file holding the requested start position, the way a
 /// mapper does, and names it in the URL.
 class _StackedClient with PlaybackReportRecorder implements MediaServerClient {
   static const _parts = [MediaPart(id: '11', durationMs: 3000000), MediaPart(id: '12', durationMs: 2400000)];

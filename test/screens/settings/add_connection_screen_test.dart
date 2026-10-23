@@ -21,7 +21,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Connect to Silo'), findsOneWidget);
-    expect(find.text('Sign in with Plex'), findsNothing);
     expect(find.byType(FocusableWrapper), findsOneWidget);
 
     final badges = tester.widgetList<BackendBadge>(find.byType(BackendBadge)).map((b) => b.backend).toList();

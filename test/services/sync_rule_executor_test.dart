@@ -222,11 +222,11 @@ void main() {
     ]);
     manager.debugRegisterClientForTesting(client);
 
-    const ruleKey = 'profile-a|plex-machine:show-1';
+    const ruleKey = 'profile-a|srv-machine:show-1';
     final show = testMediaItem(id: 'show-1', backend: MediaBackend.silo, kind: MediaKind.show, title: 'Show');
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: ServerId('plex-machine'),
+      serverId: ServerId('srv-machine'),
       ratingKey: 'show-1',
       globalKey: ruleKey,
       targetType: 'show',
@@ -312,18 +312,18 @@ void main() {
     final client = _CollectionPagingClient();
     manager.debugRegisterClientForTesting(client);
 
-    const ruleKey = 'profile-a|plex-machine:collection-1';
+    const ruleKey = 'profile-a|srv-machine:collection-1';
     final collection = testMediaItem(
       id: 'collection-1',
       backend: MediaBackend.silo,
       kind: MediaKind.collection,
       title: 'Collection',
-      serverId: 'plex-machine',
+      serverId: 'srv-machine',
     );
 
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: ServerId('plex-machine'),
+      serverId: ServerId('srv-machine'),
       ratingKey: 'collection-1',
       globalKey: ruleKey,
       targetType: 'collection',
@@ -350,7 +350,7 @@ void main() {
 
     expect(results.single.queuedCount, 1);
     expect(queued.single.id, 'movie-1');
-    expect(associated, ['plex-machine:movie-1']);
+    expect(associated, ['srv-machine:movie-1']);
     expect((await db.getSyncRule(ruleKey))!.downloadLinksInitialized, isTrue);
     expect(client.collectionPageCalls, [(start: 0, size: 100)]);
     expect(client.fetchChildrenCalled, isFalse);
@@ -370,17 +370,17 @@ void main() {
     ]);
     manager.debugRegisterClientForTesting(client);
 
-    const ruleKey = 'profile-a|plex-machine:collection-1';
+    const ruleKey = 'profile-a|srv-machine:collection-1';
     final collection = testMediaItem(
       id: 'collection-1',
       backend: MediaBackend.silo,
       kind: MediaKind.collection,
       title: 'Collection',
-      serverId: 'plex-machine',
+      serverId: 'srv-machine',
     );
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: ServerId('plex-machine'),
+      serverId: ServerId('srv-machine'),
       ratingKey: 'collection-1',
       globalKey: ruleKey,
       targetType: 'collection',
@@ -394,7 +394,7 @@ void main() {
       profileId: 'profile-a',
       serverManager: manager,
       downloads: const {
-        'plex-machine:ep-2': DownloadProgress(globalKey: 'plex-machine:ep-2', status: DownloadStatus.completed),
+        'srv-machine:ep-2': DownloadProgress(globalKey: 'srv-machine:ep-2', status: DownloadStatus.completed),
       },
       metadata: {ruleKey: collection},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
@@ -409,7 +409,7 @@ void main() {
     expect(client.fetchPlayableDescendantsCalls, ['show-1']);
     expect(queued.map((item) => item.id), ['ep-1']);
     // The watched member stays associated for cleanup provenance.
-    expect(associated, ['plex-machine:ep-2', 'plex-machine:ep-1']);
+    expect(associated, ['srv-machine:ep-2', 'srv-machine:ep-1']);
     expect(results.single.queuedCount, 1);
   });
 
@@ -423,17 +423,17 @@ void main() {
 
     final client = _CollectionPagingClient();
     manager.debugRegisterClientForTesting(client);
-    const ruleKey = 'profile-a|plex-machine:collection-1';
+    const ruleKey = 'profile-a|srv-machine:collection-1';
     final collection = testMediaItem(
       id: 'collection-1',
       backend: MediaBackend.silo,
       kind: MediaKind.collection,
       title: 'Collection',
-      serverId: 'plex-machine',
+      serverId: 'srv-machine',
     );
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: ServerId('plex-machine'),
+      serverId: ServerId('srv-machine'),
       ratingKey: 'collection-1',
       globalKey: ruleKey,
       targetType: 'collection',
@@ -447,14 +447,14 @@ void main() {
       rule: rule,
       serverManager: manager,
       downloads: const {
-        'plex-machine:movie-1': DownloadProgress(globalKey: 'plex-machine:movie-1', status: DownloadStatus.completed),
+        'srv-machine:movie-1': DownloadProgress(globalKey: 'srv-machine:movie-1', status: DownloadStatus.completed),
       },
       metadata: {ruleKey: collection},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
     );
 
     expect(backfilled, isTrue);
-    expect(associated, ['plex-machine:movie-1']);
+    expect(associated, ['srv-machine:movie-1']);
     expect((await db.getSyncRule(ruleKey))!.downloadLinksInitialized, isTrue);
   });
 
@@ -518,10 +518,10 @@ class _ShowCollectionClient implements MediaServerClient {
   final fetchPlayableDescendantsCalls = <String>[];
 
   @override
-  ServerId get serverId => ServerId('plex-machine');
+  ServerId get serverId => ServerId('srv-machine');
 
   @override
-  String? get serverName => 'Plex';
+  String? get serverName => 'Silo';
 
   @override
   MediaBackend get backend => MediaBackend.silo;
@@ -569,10 +569,10 @@ class _PlayableDescendantsClient implements MediaServerClient {
   final fetchPlayableDescendantsCalls = <String>[];
 
   @override
-  ServerId get serverId => ServerId('plex-machine');
+  ServerId get serverId => ServerId('srv-machine');
 
   @override
-  String? get serverName => 'Plex';
+  String? get serverName => 'Silo';
 
   @override
   MediaBackend get backend => MediaBackend.silo;
@@ -643,10 +643,10 @@ class _CollectionPagingClient implements MediaServerClient {
   final collectionPageCalls = <({int? start, int? size})>[];
 
   @override
-  ServerId get serverId => ServerId('plex-machine');
+  ServerId get serverId => ServerId('srv-machine');
 
   @override
-  String? get serverName => 'Plex';
+  String? get serverName => 'Silo';
 
   @override
   MediaBackend get backend => MediaBackend.silo;

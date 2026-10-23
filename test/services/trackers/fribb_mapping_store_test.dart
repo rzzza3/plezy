@@ -58,7 +58,7 @@ void main() {
       expect(index.byImdb['tt2']!.single, same(tv));
 
       // AniDB is the dataset's primary key, so it indexes to a single row —
-      // the only handle a HAMA-matched Plex library can offer (#1788).
+      // the only handle an AniDB-keyed library can offer (#1788).
       expect(index.byAnidb[7], same(movie));
       expect(index.byAnidb[8], same(tv));
     });

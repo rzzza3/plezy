@@ -963,7 +963,7 @@ void main() {
             DownloadOwnersCompanion.insert(
               profileId: 'profile-a',
               globalKey: 'srv:100',
-              backend: const Value('plex'),
+              backend: const Value('silo'),
               clientScopeId: const Value('scope-a'),
               createdAt: 1234,
             ),
@@ -974,7 +974,7 @@ void main() {
 
       final owner = (await db.select(db.downloadOwners).get()).single;
       expect(owner.createdAt, 1234);
-      expect(owner.backend, 'plex');
+      expect(owner.backend, 'silo');
       expect(owner.clientScopeId, 'scope-a');
     });
 
@@ -991,9 +991,9 @@ void main() {
       expect(owner.clientScopeId, 'srv/user-a');
     });
 
-    test('owner counts ignore Plex Home rows whose parent connection is gone', () async {
-      const plexHomeProfileId = 'plex-home-missing-account-00000000-0000-0000-0000-000000000001';
-      await db.addDownloadOwner(profileId: plexHomeProfileId, globalKey: 'srv:100');
+    test('owner counts ignore owners that are not Silo profile scopes', () async {
+      const legacyProfileId = 'local-0000';
+      await db.addDownloadOwner(profileId: legacyProfileId, globalKey: 'srv:100');
 
       expect(await db.getValidDownloadOwnersForKey('srv:100'), isEmpty);
       expect(await db.hasDownloadOwner('srv:100'), isFalse);

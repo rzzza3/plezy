@@ -575,16 +575,16 @@ void main() {
           _ => dss.getTrackAudioPath(item, 'mkv'),
         };
 
-        final plex = sameTitle(kind, 'plex-srv', '42');
+        final other = sameTitle(kind, 'srv-b', '42');
         final paths = {
-          await pathOf(plex),
+          await pathOf(other),
           await pathOf(sameTitle(kind, 'jf-srv', '42')),
-          await pathOf(sameTitle(kind, 'plex-srv', '43')),
+          await pathOf(sameTitle(kind, 'srv-b', '43')),
         };
 
         expect(paths, hasLength(3));
         expect(paths.map(p.dirname).toSet(), hasLength(1), reason: 'copies still share the title folder');
-        expect(await pathOf(plex), paths.first, reason: 'the name is deterministic');
+        expect(await pathOf(other), paths.first, reason: 'the name is deterministic');
       });
     }
   });

@@ -134,7 +134,7 @@ class RecordingConflictException extends MediaServerException {
 /// "stop stream", paused-too-long auto-termination, concurrent-stream limit).
 ///
 /// A server signals this with `terminationCode`/`terminationText` on the
-/// MediaContainer of a timeline report response. The MediaBrowser backends
+/// MediaContainer of a timeline report response. Other backends
 /// deliver admin stops as a WebSocket remote-control command Plezy does not
 /// subscribe to, so they never throw this — intentionally unsupported there.
 ///

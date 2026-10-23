@@ -666,7 +666,7 @@ void main() {
   });
 
   test('a detail load that adds the native title is not served the bare form\'s cached negative', () async {
-    // A Plex Discover row carries no originalTitle; the detail body does,
+    // A catalog row carries no originalTitle; the detail body does,
     // and only that title reaches a romaji-filed library.
     final harness = _Harness();
     addTearDown(harness.dispose);
@@ -715,7 +715,7 @@ void main() {
   });
 
   test('an id-poor negative does not suppress the detail-enriched retry', () async {
-    // #1715: a Plex Discover row item carries only its rating key, and the
+    // #1715: a catalog row item carries no ids, and the
     // exact-guid lookup can miss even for owned titles (Discover dupes).
     // The detail body brings the external ids moments later; that richer
     // lookup must reach the servers instead of the bare form's cached

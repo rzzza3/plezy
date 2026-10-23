@@ -1963,7 +1963,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
       } else {
         // Resolve the right backend client so other backends (where the typed
-        // PlexClient helper returns null) load episodes too.
+        // client helper returns null) load episodes too.
         final mediaClient = _getMediaClientForMetadata(context);
         if (mediaClient == null) {
           _completeSeasonEpisodesLoad(

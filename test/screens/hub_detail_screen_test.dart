@@ -76,7 +76,7 @@ void main() {
     expect(position.pixels, 0);
   });
 
-  testWidgets('Plex hub replaces its preview with the full-hub response', (tester) async {
+  testWidgets('a hub replaces its preview with the full-hub response', (tester) async {
     final items = List.generate(205, (index) => _item(index));
     final harness = await _createHarness(items);
 
@@ -281,10 +281,10 @@ void main() {
   });
 
   group('default sort fallback logging', () {
-    // Sort options are fetched per Plex library section. Aggregated rows
+    // Sort options are fetched per library. Aggregated rows
     // (Continue Watching spans servers) and synthesized hubs name no section,
     // so falling back to the default sorts is the designed path and must not
-    // raise a warning; a Plex section hub that lost its serverId is a real
+    // raise a warning; a library hub that lost its serverId is a real
     // tagging defect and must.
     late Logger originalLogger;
     late _RecordingLogOutput logOutput;

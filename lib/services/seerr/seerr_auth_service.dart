@@ -266,7 +266,7 @@ class SeerrAuthService {
   ///
   /// The login response body is ignored on purpose. Each handler returns
   /// whatever `User` instance it happened to build: `POST /auth/local` loads
-  /// only id, email, password, and plexId to check the password, so its body
+  /// only id, email, password and its linked-account id to check the password, so its body
   /// carries the entity's `permissions` default of 0 rather than the stored
   /// mask (#2213). `/auth/me` reloads
   /// the full row, which is what the Seerr web UI itself reads after login.

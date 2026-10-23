@@ -94,9 +94,9 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final connectionRegistry = _FakeConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      households: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
       storage: storage,
     );
@@ -120,7 +120,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       multiServerProvider.dispose();
-      plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -257,9 +257,9 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final connectionRegistry = _FakeConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      households: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
       storage: storage,
     );
@@ -278,7 +278,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       // multiServerProvider + its manager are torn down by testMultiServer.
-      plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -362,9 +362,9 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final connectionRegistry = _FakeConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      households: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
       storage: storage,
     );
@@ -384,7 +384,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       // multiServerProvider + its manager are torn down by testMultiServer.
-      plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -485,9 +485,9 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final connectionRegistry = _FakeConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      households: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
       storage: storage,
     );
@@ -508,7 +508,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       multiServerProvider.dispose();
-      plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -586,9 +586,9 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final connectionRegistry = _FakeConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      households: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
       storage: storage,
     );
@@ -608,7 +608,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       multiServerProvider.dispose();
-      plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -840,9 +840,9 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final connectionRegistry = _FakeConnectionRegistry(db);
   final storage = await StorageService.getInstance();
-  final plexHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
+  final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
   final activeProfileProvider = ActiveProfileProvider(
-    households: plexHome,
+    households: serverHome,
     connections: connectionRegistry,
     storage: storage,
   );
@@ -865,7 +865,7 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
     librariesProvider.dispose();
     hiddenLibrariesProvider.dispose();
     // multiServerProvider + its manager are torn down by testMultiServer.
-    plexHome.dispose();
+    serverHome.dispose();
     await db.close();
   });
 
@@ -939,9 +939,9 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final storage = await StorageService.getInstance();
   final connectionRegistry = _FakeConnectionRegistry(db);
-  final plexHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
+  final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
   final activeProfileProvider = ActiveProfileProvider(
-    households: plexHome,
+    households: serverHome,
     connections: connectionRegistry,
     storage: storage,
   );
@@ -961,7 +961,7 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
     librariesProvider.dispose();
     hiddenLibrariesProvider.dispose();
     multiServerProvider.dispose();
-    plexHome.dispose();
+    serverHome.dispose();
     await db.close();
   });
 

@@ -158,7 +158,7 @@ class PlaybackSubtitleResolver {
         }
         // Same-item raw native/uri reference: identity-match it back to this
         // item's own rows so the selection is source-backed where possible.
-        final sourceMatch = findPlexTrackForMpvSubtitle(
+        final sourceMatch = findServerTrackForMpvSubtitle(
           track,
           mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
         );
@@ -211,7 +211,7 @@ class PlaybackSubtitleResolver {
     final service = TrackSelectionService(
       profileSettings: profileSettings,
       metadata: metadata,
-      plexMediaInfo: mediaInfo,
+      serverMediaInfo: mediaInfo,
     );
     final selectedAudio = service.selectAudioTrack(audioTracksForSource(mediaInfo), preferredAudioTrack)?.track;
     final primaryPreference = _sourceBackedPreference(
@@ -378,7 +378,7 @@ class PlaybackSubtitleResolver {
     if (isResolvedSidecar) {
       if (isContainerSidecar) {
         final containerTracks = nativeTracks.where((track) => track.isContainer).toList(growable: false);
-        return findMpvTrackForPlexSubtitle(sourceTrack, containerTracks, allPlexTracks: allSourceTracks);
+        return findMpvTrackForServerSubtitle(sourceTrack, containerTracks, allServerTracks: allSourceTracks);
       }
       final key = sourceTrack.key;
       if (key != null && key.isNotEmpty) {
@@ -394,7 +394,7 @@ class PlaybackSubtitleResolver {
       }
       return null;
     }
-    return findMpvTrackForPlexSubtitle(sourceTrack, nativeTracks, allPlexTracks: allSourceTracks);
+    return findMpvTrackForServerSubtitle(sourceTrack, nativeTracks, allServerTracks: allSourceTracks);
   }
 
   static PlaybackSourceSubtitleChoice advanceSourceChoice(

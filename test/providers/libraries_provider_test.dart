@@ -266,7 +266,7 @@ void main() {
     });
 
     test('libraryLabelFor resolves a missing title through the loaded library', () async {
-      // Plex search rows carry only `librarySectionKey` — a library id without
+      // Search rows can carry only a library id without
       // its title. The label falls back to the loaded library's title.
       final p = LibrariesProvider();
       await p.updateLibraryOrder([_serverLib(ServerId('A'), '1', 'Movies'), _serverLib(ServerId('A'), '2', 'Anime')]);

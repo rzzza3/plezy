@@ -26,7 +26,7 @@ final _filters = [
   ),
   MediaFilter(filter: 'addedAt', filterType: MediaFilterType.date, key: '', title: 'Date Added', type: 'filter'),
   MediaFilter(
-    // Equality only, as MediaBrowser declares its value facets.
+    // Equality only, as the server declares its value facets.
     filter: 'tag',
     filterType: MediaFilterType.tag,
     key: 'tag',
@@ -339,7 +339,7 @@ void main() {
     await tester.enterText(find.byType(TextField).first, '90');
     await tester.pumpAndSettle();
 
-    // Plex keeps durations in milliseconds: sent as typed, `duration>>=90`
+    // The server keeps durations in milliseconds: sent as typed, `duration>>=90`
     // would match every item in the library.
     expect(applied.last, const [
       LibraryFilter(field: 'duration', op: LibraryFilterOperator.atLeast, values: ['5400000']),

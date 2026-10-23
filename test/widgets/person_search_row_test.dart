@@ -58,7 +58,7 @@ Future<void> _pumpRow(WidgetTester tester) {
                 thumbPath: 'https://example.invalid/christoph-waltz.jpg',
                 credit: PersonCredit.actor,
                 backend: MediaBackend.silo,
-                serverId: ServerId('plex-1'),
+                serverId: ServerId('srv-1'),
               ),
             ),
           ],

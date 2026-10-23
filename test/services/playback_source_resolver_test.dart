@@ -133,7 +133,7 @@ void main() {
     );
 
     expect(context.sourceKind, PlaybackSourceKind.remoteDirect);
-    expect(context.streamHeaders, isNot(contains('X-Plex-Session-Identifier')));
+    expect(context.streamHeaders, {'X-Test': 'token'});
   });
 
   group('downloaded copy under a capped quality preset (issue #2466)', () {

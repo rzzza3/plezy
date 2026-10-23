@@ -43,7 +43,7 @@ enum MediaFilterUnit {
   /// Short label appended to the bound's title, or null when there is none.
   final String? suffix;
 
-  static MediaFilterUnit fromPlexSubType(Object? subType) => switch (subType) {
+  static MediaFilterUnit fromServerSubType(Object? subType) => switch (subType) {
     'duration' => duration,
     'fileSize' => fileSize,
     _ => none,

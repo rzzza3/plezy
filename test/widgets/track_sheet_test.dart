@@ -24,7 +24,7 @@ void main() {
   });
 
   group('TrackSheet subtitle controls', () {
-    testWidgets('shows subtitle search when Plex search is available without subtitle tracks', (tester) async {
+    testWidgets('shows subtitle search when server search is available without subtitle tracks', (tester) async {
       final player = _FakeTrackSheetPlayer(
         tracks: const Tracks(
           audio: [
@@ -41,11 +41,7 @@ void main() {
       await _pumpTrackSheet(
         tester,
         player: player,
-        trackControlsState: const TrackControlsState(
-          ratingKey: '123',
-          serverId: 'plex-server',
-          subtitleSearchSupported: true,
-        ),
+        trackControlsState: const TrackControlsState(ratingKey: '123', serverId: 'srv', subtitleSearchSupported: true),
       );
 
       expect(find.text('Search Subtitles'), findsOneWidget);

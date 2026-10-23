@@ -176,16 +176,16 @@ void main() {
   group('stream headers across gapless arms (#2511)', () {
     // What each stream request carries is replayed through _MpvHeaderModel,
     // so these assert the headers a server receives, not a command string.
-    const plexHeaders = {
-      'X-Plex-Product': 'Plezy',
-      'X-Plex-Device': 'Mac17,9',
-      'X-Plex-Device-Name': r"Eddé's Mac, work\",
-      'X-Plex-Token': 'secret',
+    const serverHeaders = {
+      'X-Product': 'Plezy',
+      'X-Device': 'Mac17,9',
+      'X-Device-Name': r"Eddé's Mac, work\",
+      'X-Token': 'secret',
     };
-    final plexItems = [for (final e in plexHeaders.entries) '${e.key}: ${e.value}'];
-    const plex1 = 'https://media.example.test/plex/library/parts/1/file.flac';
-    const plex2 = 'https://media.example.test/plex/library/parts/2/file.flac';
-    const plex3 = 'https://media.example.test/plex/library/parts/3/file.flac';
+    final serverItems = [for (final e in serverHeaders.entries) '${e.key}: ${e.value}'];
+    const track1 = 'https://media.example.test/media/parts/1/file.flac';
+    const track2 = 'https://media.example.test/media/parts/2/file.flac';
+    const track3 = 'https://media.example.test/media/parts/3/file.flac';
     // Another server behind the same origin (path-routed reverse proxy).
     const other1 = 'https://media.example.test/other/Audio/1/stream?ApiKey=k';
     const other2 = 'https://media.example.test/other/Audio/2/stream?ApiKey=k';
@@ -197,35 +197,35 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
 
-    Future<void> openPlex(_AudioCoreMock core, PlayerNative player, String uri) async {
-      await player.open(Media(uri, headers: plexHeaders));
+    Future<void> openServer(_AudioCoreMock core, PlayerNative player, String uri) async {
+      await player.open(Media(uri, headers: serverHeaders));
       player.handlePlayerEvent('file-loaded', null);
     }
 
     test('every armed track of one server is prefetched with all of its headers', () async {
       final core = _AudioCoreMock();
       await run(core, (player, transitions) async {
-        await openPlex(core, player, plex1);
-        await player.setNext(Media(plex2, headers: plexHeaders));
+        await openServer(core, player, track1);
+        await player.setNext(Media(track2, headers: serverHeaders));
         await advance(core, player);
-        await player.setNext(Media(plex3, headers: plexHeaders));
+        await player.setNext(Media(track3, headers: serverHeaders));
         await advance(core, player);
 
-        expect(core.mpv.openedHeaders, {plex1: plexItems, plex2: plexItems, plex3: plexItems});
-        expect(core.mpv.prefetched, {plex2, plex3}, reason: 'same-server arms keep gapless prefetch');
+        expect(core.mpv.openedHeaders, {track1: serverItems, track2: serverItems, track3: serverItems});
+        expect(core.mpv.prefetched, {track2, track3}, reason: 'same-server arms keep gapless prefetch');
       });
     });
 
     test("an arm with other headers never receives the playing track's", () async {
       final core = _AudioCoreMock();
       await run(core, (player, transitions) async {
-        await openPlex(core, player, plex1);
+        await openServer(core, player, track1);
         await player.setNext(Media(other1));
         await advance(core, player);
-        await player.setNext(Media(plex2, headers: plexHeaders));
+        await player.setNext(Media(track2, headers: serverHeaders));
         await advance(core, player);
 
-        expect(core.mpv.openedHeaders, {plex1: plexItems, other1: <String>[], plex2: plexItems});
+        expect(core.mpv.openedHeaders, {track1: serverItems, other1: <String>[], track2: serverItems});
         expect(core.mpv.prefetched, isEmpty, reason: 'a prefetch sends the playing entry headers');
       });
     });
@@ -233,8 +233,8 @@ void main() {
     test('opening after a gapless advance sends only the opened track headers', () async {
       final core = _AudioCoreMock();
       await run(core, (player, transitions) async {
-        await openPlex(core, player, plex1);
-        await player.setNext(Media(plex2, headers: plexHeaders));
+        await openServer(core, player, track1);
+        await player.setNext(Media(track2, headers: serverHeaders));
         await advance(core, player);
         await player.open(Media(other1));
 
@@ -247,18 +247,18 @@ void main() {
       await run(core, (player, transitions) async {
         String? prefetchValue() => prefetchWrite(core).$2;
 
-        await openPlex(core, player, plex1);
+        await openServer(core, player, track1);
         await player.setNext(Media(other1));
         expect(prefetchValue(), 'no');
 
         await advance(core, player);
         await player.setNext(Media(other2));
         expect(prefetchValue(), 'yes', reason: "the other server's track now plays");
-        await player.setNext(Media(plex2, headers: plexHeaders));
+        await player.setNext(Media(track2, headers: serverHeaders));
         expect(prefetchValue(), 'no');
 
-        await openPlex(core, player, plex3);
-        await player.setNext(Media(plex2, headers: plexHeaders));
+        await openServer(core, player, track3);
+        await player.setNext(Media(track2, headers: serverHeaders));
         expect(prefetchValue(), 'yes');
       });
     });

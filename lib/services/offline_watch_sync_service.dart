@@ -272,7 +272,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
   /// Called when servers connect on app startup.
   ///
-  /// Triggers the initial sync now that PlexClients are available.
+  /// Triggers the initial sync now that clients are available.
   /// Only runs once per app session.
   void onServersConnected() {
     if (isDisposed) return;

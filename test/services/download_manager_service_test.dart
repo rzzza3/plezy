@@ -1856,21 +1856,21 @@ void main() {
       (
         'Android DNS failure, typed as a file-system error',
         TaskFileSystemException(
-          'java.net.UnknownHostException: Unable to resolve host "plex.example.com": No address associated with hostname',
+          'java.net.UnknownHostException: Unable to resolve host "media.example.com": No address associated with hostname',
         ),
         () => t.errors.reasonUnreachable,
       ),
       (
         'desktop DNS failure, typed as a file-system error',
         TaskFileSystemException(
-          "SocketException: Failed host lookup: 'plex.example.com' (OS Error: nodename nor servname provided, errno = 8)",
+          "SocketException: Failed host lookup: 'media.example.com' (OS Error: nodename nor servname provided, errno = 8)",
         ),
         () => t.errors.reasonUnreachable,
       ),
       ('native timeout', TaskConnectionException('Task timed out'), () => t.errors.reasonTimedOut),
       (
         "Android's catch-all quoting the tokenized URL",
-        TaskException('Error for url https://plex.example.com/library/parts/1/file.mkv?X-Plex-Token=secret: boom'),
+        TaskException('Error for url https://media.example.com/library/parts/1/file.mkv?access_token=secret: boom'),
         () => t.errors.reasonUnexpected,
       ),
       (

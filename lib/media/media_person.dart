@@ -3,7 +3,7 @@ import 'ids.dart';
 import 'media_backend.dart';
 
 /// The credit a person search hit matched on. A people search may answer only
-/// actors and directors; MediaBrowser `/Persons` rows do not name one.
+/// actors and directors; some person rows do not name one.
 enum PersonCredit { actor, director }
 
 /// A person found by [MediaServerClient.searchPeople].

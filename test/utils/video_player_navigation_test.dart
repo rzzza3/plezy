@@ -103,19 +103,19 @@ void main() {
   });
 
   group('video player launch identity', () {
-    final plexA = testMediaItem(
+    final serverA = testMediaItem(
       id: '123',
       backend: MediaBackend.silo,
       kind: MediaKind.episode,
-      title: 'Plex A',
-      serverId: 'plex-a',
+      title: 'Server A',
+      serverId: 'srv-a',
     );
-    final plexB = testMediaItem(
+    final serverB = testMediaItem(
       id: '123',
       backend: MediaBackend.silo,
       kind: MediaKind.episode,
-      title: 'Plex B',
-      serverId: 'plex-b',
+      title: 'Server B',
+      serverId: 'srv-b',
     );
     final silo = testMediaItem(
       id: '123',
@@ -146,31 +146,31 @@ void main() {
     test('active guard blocks only the complete server-qualified route target', () {
       final guard = VideoPlayerActiveRouteGuard();
       final owner = Object();
-      final target = identity(plexA);
+      final target = identity(serverA);
       guard.activate(owner, target);
 
-      expect(guard.activeGlobalKey, 'plex-a:123');
+      expect(guard.activeGlobalKey, 'srv-a:123');
       expect(guard.blocks(target), isTrue);
-      expect(guard.blocks(identity(plexB)), isFalse);
+      expect(guard.blocks(identity(serverB)), isFalse);
       expect(guard.blocks(identity(silo)), isFalse);
-      expect(guard.blocks(identity(plexA, mediaIndex: 1)), isFalse);
-      expect(guard.blocks(identity(plexA, sourceId: 'source-b')), isFalse);
-      expect(guard.blocks(identity(plexA, quality: TranscodeQualityPreset.p720_4mbps)), isFalse);
-      expect(guard.blocks(identity(plexA, isOffline: true)), isFalse);
-      expect(guard.blocks(identity(plexA, routeKind: VideoPlayerRouteKind.liveTv)), isFalse);
+      expect(guard.blocks(identity(serverA, mediaIndex: 1)), isFalse);
+      expect(guard.blocks(identity(serverA, sourceId: 'source-b')), isFalse);
+      expect(guard.blocks(identity(serverA, quality: TranscodeQualityPreset.p720_4mbps)), isFalse);
+      expect(guard.blocks(identity(serverA, isOffline: true)), isFalse);
+      expect(guard.blocks(identity(serverA, routeKind: VideoPlayerRouteKind.liveTv)), isFalse);
     });
 
     test('blank and null source IDs identify the same route target', () {
-      expect(identity(plexA, sourceId: ''), identity(plexA));
-      expect(identity(plexA, sourceId: '   '), identity(plexA));
+      expect(identity(serverA, sourceId: ''), identity(serverA));
+      expect(identity(serverA, sourceId: '   '), identity(serverA));
     });
 
     test('owner checks preserve a replacement and support exact rollback', () {
       final guard = VideoPlayerActiveRouteGuard();
       final ownerA = Object();
       final ownerB = Object();
-      final initial = identity(plexA, sourceId: 'source-a');
-      final replacement = identity(plexB, quality: TranscodeQualityPreset.p1080_8mbps);
+      final initial = identity(serverA, sourceId: 'source-a');
+      final replacement = identity(serverB, quality: TranscodeQualityPreset.p1080_8mbps);
       guard.activate(ownerA, initial);
       guard.activate(ownerB, replacement);
 
@@ -179,7 +179,7 @@ void main() {
       expect(guard.blocks(replacement), isTrue);
 
       final beforeReload = guard.identityFor(ownerB);
-      final reloadTarget = identity(plexB, sourceId: 'source-b', quality: TranscodeQualityPreset.p720_4mbps);
+      final reloadTarget = identity(serverB, sourceId: 'source-b', quality: TranscodeQualityPreset.p720_4mbps);
       expect(guard.update(ownerB, reloadTarget), isTrue);
       expect(guard.blocks(reloadTarget), isTrue);
       expect(guard.update(ownerB, beforeReload!), isTrue);

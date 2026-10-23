@@ -220,7 +220,7 @@ void main() {
   group('carried audio', () {
     final version = SiloWatchDetail.fromJson(_watch(), 'movie-tmdb-1').versions.single;
 
-    test('a carried track resolves to the version track with its language, as the Plex carry does', () {
+    test('a carried track resolves to the version track with its language', () {
       expect(siloCarriedAudioOrdinal(const AudioTrack(id: '7', language: 'fra'), version), 1);
       expect(siloCarriedAudioOrdinal(const AudioTrack(id: '7', language: 'eng', channels: 6), version), 0);
     });

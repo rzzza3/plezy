@@ -188,7 +188,7 @@ class _FakeWatchlistSource implements CatalogSource {
 }
 
 /// Overrides the bound-client source list so the cache can be exercised with
-/// fake sources; the invalidation paths (Plex session rebinds) stay real.
+/// fake sources; the invalidation paths (session rebinds) stay real.
 class _FakeSourcesProvider extends CatalogSourcesProvider {
   _FakeSourcesProvider(this.sources);
 

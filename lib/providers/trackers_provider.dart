@@ -177,7 +177,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _invalidateConnect();
     final userUuid = newUserUuid ?? '';
     // Drop any in-flight scrobble state and release the resolver (which
-    // holds a PlexClient + session cache) before binding to the new profile.
+    // holds a client + session cache) before binding to the new profile.
     TrackerCoordinator.instance.onActiveProfileChanged(userUuid);
 
     final generation = ++_profileBindingGeneration;

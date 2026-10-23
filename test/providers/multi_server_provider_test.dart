@@ -168,10 +168,10 @@ void main() {
 
       test('onlineServerIds respect the visibility filter', () {
         final p = MultiServerProvider(manager, aggregation);
-        // updateServerStatus only populates _serverStatus, not _plexServers, so
+        // updateServerStatus only populates _serverStatus, not the client map, so
         // we exercise the filter via onlineServerIds (which is keyed off
         // status). The serverIds list requires actual server registration
-        // which goes through addPlexAccount/addSiloConnection — beyond
+        // which goes through addSiloConnection — beyond
         // what this unit test needs to cover.
         manager.updateServerStatus(ServerId('srv-1'), true);
         manager.updateServerStatus(ServerId('srv-2'), true);

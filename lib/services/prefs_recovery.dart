@@ -414,7 +414,7 @@ abstract final class PrefsRecovery {
       final valid =
           value != null &&
           value.isNotEmpty &&
-          (key == legacyPlexTokenPref ? _registerLegacyPlexToken(value) : _validateAndRegisterSession(key, value));
+          (key == legacyPlexTokenPref ? _registerLegacyServerToken(value) : _validateAndRegisterSession(key, value));
       if (!valid) {
         losses++;
         continue;
@@ -572,7 +572,7 @@ abstract final class PrefsRecovery {
 
   /// The legacy account-token slot is an opaque bearer token. Registering it as a token
   /// also covers its URL-encoded form.
-  static bool _registerLegacyPlexToken(String value) {
+  static bool _registerLegacyServerToken(String value) {
     LogRedactionManager.registerToken(value);
     return true;
   }

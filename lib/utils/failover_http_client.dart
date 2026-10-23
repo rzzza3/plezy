@@ -3,7 +3,7 @@ import 'media_server_http_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
 /// [MediaServerHttpClient] with endpoint failover (the extracted
-/// implementation of what used to be `PlexClient._getWithFailover`).
+/// implementation).
 ///
 /// Semantics — decided once, here ([retryTransientMediaServerCall]'s doc
 /// cross-references this):

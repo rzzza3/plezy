@@ -205,7 +205,7 @@ void main() {
     });
 
     test('records the watch explicitly when a low server threshold beats Simkl own rule', () async {
-      // Plex offers 25/50/75%; at 75% a truthful stop sits below Simkl's 80%
+      // A server may offer 25/50/75%; at 75% a truthful stop sits below Simkl's 80%
       // rule, so the stop alone would only file resumable progress.
       await coordinator.startPlayback(_episode(durationMs: 100000), _client(watchedThreshold: 0.75));
       await pumpEventQueue();

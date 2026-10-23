@@ -688,7 +688,7 @@ void main() {
   });
 
   test('a deletion evicts only the emitting server\'s copy of a colliding id', () async {
-    // Plex rating keys are small sequential integers, so two servers
+    // Item ids can be small sequential integers, so two servers
     // routinely hold the same raw id; push removals made deletion an
     // automated event (#1646) and must not evict the other server's item.
     aggregation.onDeckResult = () => [_item('42', serverId: 'server_1'), _item('42', serverId: 'server_2')];
@@ -805,7 +805,7 @@ void main() {
   });
 
   test('nothing is fetched while the profile binder runs (#2599)', () async {
-    // A profile switch mounts the new session while the shared Plex client
+    // A profile switch mounts the new session while the shared client
     // still carries the previous user's token: a fetch here returns that
     // user's rows, and a pass still in flight at settle swallows the prime.
     isBinding = true;

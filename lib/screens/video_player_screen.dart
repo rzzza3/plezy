@@ -2721,7 +2721,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         }
       }
       if (sourceTrack == null && currentPlayer != null) {
-        sourceTrack = findPlexTrackForMpvSubtitle(
+        sourceTrack = findServerTrackForMpvSubtitle(
           track,
           info.subtitleTracks,
           allMpvTracks: currentPlayer.state.tracks.subtitle,

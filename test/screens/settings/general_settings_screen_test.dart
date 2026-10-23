@@ -31,9 +31,9 @@ void main() {
 
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     final connections = ConnectionRegistry(database);
-    final plexHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
+    final serverHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
     // Never initialized: zero profiles, so hasMultipleProfiles stays false.
-    final activeProfile = ActiveProfileProvider(households: plexHome, connections: connections);
+    final activeProfile = ActiveProfileProvider(households: serverHome, connections: connections);
 
     await tester.pumpWidget(
       ChangeNotifierProvider<ActiveProfileProvider>.value(
@@ -42,7 +42,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    return (database: database, households: plexHome, activeProfile: activeProfile);
+    return (database: database, households: serverHome, activeProfile: activeProfile);
   }
 
   Future<void> disposeHarness(

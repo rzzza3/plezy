@@ -5,7 +5,7 @@ import 'ids.dart';
 ///
 /// Deliberately coarse for additions and updates: raw notifications arrive
 /// mid-scan when backends disagree about what an id even means (a server can emit
-/// per-state timeline floods, MediaBrowser batches server-side), and every
+/// per-state timeline floods, others batch server-side), and every
 /// consumer responds by refetching its own views anyway. The one exact
 /// carve-out is [removedItemIds]: a removal names an item the app may be
 /// displaying right now, so those ids ride along for in-place drops through
@@ -16,12 +16,12 @@ class LibraryChangeEvent {
   final ServerId serverId;
 
   /// Backend-native ids of the affected libraries (section ids,
-  /// MediaBrowser collection-folder ids). Empty when the backend did not say,
+  /// collection-folder ids). Empty when the backend did not say,
   /// which consumers must read as [targetsWholeServer] — never as "nothing".
   final Set<String> libraryIds;
 
   /// Backend-native ids of removed items, when the backend named them (a server
-  /// settled `type: -1` timeline entries, MediaBrowser `ItemsRemoved`).
+  /// settled `type: -1` timeline entries, `ItemsRemoved`).
   final Set<String> removedItemIds;
 
   /// Advisory flags describing what the change contained. A backend that

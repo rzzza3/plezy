@@ -210,7 +210,7 @@ void main() {
   test('sortEpisodesByWatchOrder interleaves Specials into aired order by air date', () {
     // Mirrors a real interleaved-Specials show (e.g. The Eminence in Shadow):
     // S00E01 aired between S01E02 and S01E05, so it plays there — not after the
-    // whole season. This is what Plex's own play queue returns (#1416).
+    // whole season. This is what server play queues return (#1416).
     final s1e1 = _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05');
     final s1e2 = _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-10-12');
     final s0e1 = _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27');
@@ -454,7 +454,7 @@ void main() {
   });
 
   group('same-file adjacency (#1500)', () {
-    // Episodes of a Plex multi-episode file (S02E24-E25.mkv) are distinct
+    // Episodes of a multi-episode file (S02E24-E25.mkv) are distinct
     // items with distinct part ids but the same Part.file: e24/e25 here.
     // e23 and e26 are their own files.
     MediaVersion version(String key, String file) => MediaVersion(

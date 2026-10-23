@@ -1325,7 +1325,7 @@ void main() {
 
     // When the advance is announced, the live player state still carries the
     // finished track's playhead — the new file has not reported yet. Reporting
-    // that as the new track's first sample told Plex it was already at ~100%,
+    // that as the new track's first sample told the server it was already at ~100%,
     // which recorded a play (and a Last.fm scrobble) at track start on top of
     // the real one (#1849).
     h.player.setOutgoingPlayhead(position: const Duration(minutes: 7), duration: const Duration(minutes: 7));

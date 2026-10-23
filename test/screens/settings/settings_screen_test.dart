@@ -611,7 +611,7 @@ class _MigratedRow {
 class _SettingsHarness {
   _SettingsHarness({
     required this.database,
-    required this.plexHome,
+    required this.serverHome,
     required this.activeProfile,
     required this.libraries,
     required this.hiddenLibraries,
@@ -625,7 +625,7 @@ class _SettingsHarness {
   });
 
   final AppDatabase database;
-  final SiloHouseholdService plexHome;
+  final SiloHouseholdService serverHome;
   final ActiveProfileProvider activeProfile;
   final LibrariesProvider libraries;
   final HiddenLibrariesProvider hiddenLibraries;
@@ -648,7 +648,7 @@ class _SettingsHarness {
     trackers.dispose();
     seerr.dispose();
     activeProfile.dispose();
-    plexHome.dispose();
+    serverHome.dispose();
     await database.close();
     expect(trackerHttpClients, hasLength(6));
     expect(trackerHttpClients.toSet(), hasLength(6));
@@ -675,8 +675,8 @@ Future<_SettingsHarness> _pumpSettingsScreen(
 
   final database = AppDatabase.forTesting(NativeDatabase.memory());
   final connections = ConnectionRegistry(database);
-  final plexHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
-  final activeProfile = ActiveProfileProvider(households: plexHome, connections: connections);
+  final serverHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
+  final activeProfile = ActiveProfileProvider(households: serverHome, connections: connections);
   final libraries = _FixtureLibrariesProvider(initialLibraries);
   final hiddenLibraries = HiddenLibrariesProvider(storageService: _FakeHiddenLibrariesStorage());
   await hiddenLibraries.ensureInitialized();
@@ -722,7 +722,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: database);
   final harness = _SettingsHarness(
     database: database,
-    plexHome: plexHome,
+    serverHome: serverHome,
     activeProfile: activeProfile,
     libraries: libraries,
     hiddenLibraries: hiddenLibraries,

@@ -1141,7 +1141,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// then album title. Uses stored album metadata (persisted alongside each
   /// track download) and falls back to synthesizing from track fields.
   /// Library identity is inherited from the stamped tracks when the album
-  /// metadata lacks it (MediaBrowser album parents carry none).
+  /// metadata lacks it (some album parents carry none).
   List<MediaItem> get downloadedAlbums {
     final list = _downloadedContainers(
       isLeaf: (meta) => meta.kind == MediaKind.track,

@@ -935,7 +935,7 @@ void main() {
     });
 
     test('a session with no observable crossing still issues the explicit mark', () async {
-      // A lone stopped report at 95%: Plex never held a sub-threshold offset
+      // A lone stopped report at 95%: the server never held a sub-threshold offset
       // for this session, so it will not mark the item itself (#1740).
       final client = _FakeClient(thresholdPercent: 90);
       final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
@@ -1475,7 +1475,7 @@ void main() {
     test('a report at position zero does not arm the crossing', () async {
       // Verified against PMS 1.43: a session reporting time=0 and then the full
       // duration is NOT marked played, while the same session starting at
-      // time=1000 is. Plex treats zero as session initialisation, so it has
+      // time=1000 is. A server may treat zero as session initialisation, so it has
       // nothing to cross from. Short music tracks hit this — the initial report
       // fires at 0 and the next one is the terminal stop at duration.
       final client = _FakeClient(thresholdPercent: 90);
