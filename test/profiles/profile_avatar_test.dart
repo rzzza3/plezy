@@ -27,13 +27,13 @@ void main() {
     );
   }
 
-  Profile localProfile({String? avatarThumbUrl, String? pinHash}) {
-    return Profile.local(
-      id: 'local-owner',
+  Profile localProfile({String? avatarThumbUrl, bool hasPin = false}) {
+    return Profile(
+      serverId: 'srv',
+      siloProfileId: 'owner',
       displayName: 'Owner',
       avatarThumbUrl: avatarThumbUrl,
-      pinHash: pinHash,
-      createdAt: DateTime(2026, 1, 1),
+      hasPin: hasPin,
     );
   }
 
@@ -133,7 +133,7 @@ void main() {
   testWidgets('a derived avatar keeps the PIN lock badge visible', (tester) async {
     await pumpAvatar(
       tester,
-      profile: localProfile(pinHash: 'stored-pin-hash'),
+      profile: localProfile(hasPin: true),
       avatarUrl: 'https://silo.example/avatars/user-1?tag=derived',
     );
 
