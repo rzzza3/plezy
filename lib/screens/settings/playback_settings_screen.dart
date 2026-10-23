@@ -244,7 +244,7 @@ class PlaybackSettingsScreen extends StatelessWidget {
         pref: SettingsService.rememberTrackSelections,
         icon: Symbols.bookmark_rounded,
         title: t.settings.rememberTrackSelections,
-        subtitle: '${t.settings.rememberTrackSelectionsDescription} · ${t.settings.rememberTrackSelectionsBackendRule}',
+        subtitle: t.settings.rememberTrackSelectionsDescription,
       ),
       SettingSwitchTile(
         pref: SettingsService.followServerTrackSelections,

@@ -57,7 +57,6 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$messages$ko messages = _Translations$messages$ko._(_root);
 	@override late final _Translations$subtitlingStyling$ko subtitlingStyling = _Translations$subtitlingStyling$ko._(_root);
 	@override late final _Translations$mpvConfig$ko mpvConfig = _Translations$mpvConfig$ko._(_root);
-	@override late final _Translations$dialog$ko dialog = _Translations$dialog$ko._(_root);
 	@override late final _Translations$profiles$ko profiles = _Translations$profiles$ko._(_root);
 	@override late final _Translations$connections$ko connections = _Translations$connections$ko._(_root);
 	@override late final _Translations$accountPreferences$ko accountPreferences = _Translations$accountPreferences$ko._(_root);
@@ -65,7 +64,6 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$errors$ko errors = _Translations$errors$ko._(_root);
 	@override late final _Translations$libraries$ko libraries = _Translations$libraries$ko._(_root);
 	@override late final _Translations$about$ko about = _Translations$about$ko._(_root);
-	@override late final _Translations$serverSelection$ko serverSelection = _Translations$serverSelection$ko._(_root);
 	@override late final _Translations$hubDetail$ko hubDetail = _Translations$hubDetail$ko._(_root);
 	@override late final _Translations$logs$ko logs = _Translations$logs$ko._(_root);
 	@override late final _Translations$startup$ko startup = _Translations$startup$ko._(_root);
@@ -109,23 +107,7 @@ class _Translations$auth$ko extends Translations$auth$en {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get signInWithPlex => 'Plex 계정으로 로그인';
-	@override String get showQRCode => 'QR 코드 표시';
-	@override String get authenticate => '인증';
-	@override String get authenticationTimeout => '인증 시간이 초과되었습니다. 다시 시도해 주세요.';
-	@override String get scanQRToSignIn => '로그인하려면 이 QR 코드를 스캔하세요';
-	@override String get waitingForAuth => '인증 대기 중...\n브라우저에서 로그인하세요.';
-	@override String get useBrowser => '브라우저 사용';
-	@override String get or => '또는';
-	@override String connectToMediaBrowser({required Object product}) => '${product}에 연결';
-	@override String get quickConnect => 'Quick Connect';
-	@override String get useQuickConnect => 'Quick Connect 사용';
-	@override String get quickConnectInstructions => 'Jellyfin에서 Quick Connect를 열고 이 코드를 입력하세요.';
-	@override String get quickConnectWaiting => '승인 대기 중…';
-	@override String get quickConnectCancel => '취소';
-	@override String get quickConnectExpired => 'Quick Connect가 만료되었습니다. 다시 시도하세요.';
 	@override String get localDataRecoveryRequired => 'Plezy에서 로컬 로그인 정보와 대기 중인 재생 데이터를 안전하게 복구하지 못했습니다. 다시 로그인해 주세요.';
-	@override String get pinCheckRejected => 'Plex PIN 확인이 거부되었습니다';
 }
 
 // Path: common
@@ -142,7 +124,6 @@ class _Translations$common$ko extends Translations$common$en {
 	@override String get reset => '초기화';
 	@override String get later => '나중에';
 	@override String get submit => '제출';
-	@override String get confirm => '확인';
 	@override String get retry => '재시도';
 	@override String get logout => '로그아웃';
 	@override String get unknown => '알 수 없는';
@@ -325,7 +306,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes}분';
 	@override String get rememberTrackSelections => '시리즈/영화별 트랙 선택 기억';
 	@override String get rememberTrackSelectionsDescription => '작품별 오디오 및 자막 선택 기억';
-	@override String get rememberTrackSelectionsBackendRule => 'Plex는 파일별로 각 선택을 서버에 저장합니다. Jellyfin은 계정의 선택 기억도 활성화합니다. Emby는 지원되지 않습니다';
 	@override String get followServerTrackSelections => '서버의 에피소드별 트랙 선택 사용';
 	@override String get followServerTrackSelectionsDescription => '에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다';
 	@override String get resumeMusicOnLaunch => '음악 세션 기억';
@@ -402,7 +382,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get skipMarkerModeButton => '버튼 표시';
 	@override String get skipMarkerModeAuto => '자동';
 	@override String get forceSkipMarkerFallback => '대체 마커 강제 사용';
-	@override String get forceSkipMarkerFallbackDescription => 'Plex에 마커가 있어도 챕터 제목 패턴 사용';
 	@override String get autoSkipDelay => '자동 건너뛰기 지연';
 	@override String autoSkipDelayDescription({required Object seconds}) => '자동으로 건너뛰기 전 ${seconds}초 대기';
 	@override String get introPattern => '인트로 마커 패턴';
@@ -498,9 +477,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get showNavBarLabelsDescription => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다';
 	@override String get startupSection => '시작 섹션';
 	@override String get showExploreTab => '둘러보기 탭 표시';
-	@override String get showExploreTabDescription => 'Plex Discover와 연결된 트래커의 콘텐츠가 포함된 둘러보기 탭을 표시합니다';
-	@override String get liveTvDefaultFavorites => '즐겨찾기 채널 기본 설정';
-	@override String get liveTvDefaultFavoritesDescription => '라이브 TV를 열 때 즐겨찾기 채널만 표시';
 	@override String get general => '일반';
 	@override String get generalDescription => '언어, 시작 및 창 동작';
 	@override String get languageAndRegion => '언어 및 지역';
@@ -709,34 +685,6 @@ class _Translations$mediaMenu$ko extends Translations$mediaMenu$en {
 	@override String get shufflePlay => '무작위 재생';
 	@override String get shuffleNotAvailableOffline => '오프라인에서는 무작위 재생을 사용할 수 없습니다';
 	@override String get fileInfo => '파일 정보';
-	@override String get deleteEpisodeFromServer => '서버에서 에피소드 삭제';
-	@override String get deleteSeasonFromServer => '서버에서 시즌 삭제';
-	@override String get deleteShowFromServer => '서버에서 프로그램 삭제';
-	@override String get deleteMovieFromServer => '서버에서 영화 삭제';
-	@override String get deleteEpisodeTitle => '이 에피소드를 삭제할까요?';
-	@override String get deleteSeasonTitle => '이 시즌을 삭제할까요?';
-	@override String get deleteShowTitle => '이 프로그램을 삭제할까요?';
-	@override String get deleteMovieTitle => '이 영화를 삭제할까요?';
-	@override String get deleteEpisodeConfirm => '에피소드 삭제';
-	@override String get deleteSeasonConfirm => '시즌 삭제';
-	@override String get deleteShowConfirm => '프로그램 삭제';
-	@override String get deleteMovieConfirm => '영화 삭제';
-	@override String get deleteAnyway => '그래도 삭제';
-	@override String confirmDeleteTarget({required Object title}) => '서버에서 ${title}을(를) 영구 삭제할까요?';
-	@override String get deleteMultipleWarning => '모든 에피소드와 파일이 포함됩니다.';
-	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
-		other: '포함된 에피소드 ${n}개와 해당 파일이 모두 삭제됩니다.',
-	);
-	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
-		other: '이 항목은 파일 ${n}개에 걸쳐 저장되어 있으며, 모든 파일이 삭제됩니다.',
-	);
-	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
-		other: '같은 파일에 저장된 다른 에피소드 ${n}개도 함께 삭제됩니다:',
-	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'Plezy가 어떤 파일이 삭제될지 확인하지 못해 위 항목보다 더 많은 파일이 삭제될 수 있습니다. 취소하고 다시 시도하거나 그래도 삭제하세요.';
-	@override String get deleteScopeUnverifiedNoFileInfo => '서버가 이 항목의 파일 정보를 제공하지 않아 Plezy가 어떤 파일이 삭제될지 확인할 수 없습니다. 위 항목보다 더 많은 파일이 삭제될 수 있습니다.';
-	@override String get mediaDeletedSuccessfully => '미디어 항목이 성공적으로 삭제되었습니다';
-	@override String get mediaFailedToDelete => '미디어 항목 삭제 실패';
 	@override String get rate => '평가';
 	@override String get playFromBeginning => '처음부터 재생';
 	@override String get playVersion => '버전 재생...';
@@ -929,7 +877,6 @@ class _Translations$messages$ko extends Translations$messages$en {
 	@override String errorLoading({required Object error}) => '오류: ${error}';
 	@override String get searchPartialResults => '일부 미디어 서버를 검색하지 못했습니다. 사용 가능한 결과만 표시합니다.';
 	@override String get streamInterrupted => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.';
-	@override String get liveStreamInterrupted => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.';
 	@override String get fileInfoNotAvailable => '파일 정보가 없습니다';
 	@override String get playbackAuthenticationRequired => '이 항목을 재생하려면 미디어 서버에 다시 로그인하세요.';
 	@override String get playbackServerUnavailable => '미디어 서버를 사용할 수 없습니다. 나중에 다시 시도하세요.';
@@ -949,12 +896,6 @@ class _Translations$messages$ko extends Translations$messages$en {
 	@override String get logsCleared => '로그가 삭제되었습니다';
 	@override String get logsCopied => '로그가 클립보드에 복사되었습니다';
 	@override String get noLogsAvailable => '사용 가능한 로그가 없습니다';
-	@override String libraryScanning({required Object title}) => '"${title}"을(를) 스캔 중입니다...';
-	@override String libraryScanStarted({required Object title}) => '"${title}" 미디어 라이브러리 스캔 시작';
-	@override String libraryScanFailed({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}';
-	@override String metadataRefreshing({required Object title}) => '"${title}" 메타데이터 새로고침 중...';
-	@override String metadataRefreshStarted({required Object title}) => '"${title}" 메타데이터 새로고침 시작됨';
-	@override String metadataRefreshFailed({required Object error}) => '메타데이터 새로고침 실패: ${error}';
 	@override String get logoutConfirm => '로그아웃하시겠습니까?';
 	@override String get noSeasonsFound => '시즌을 찾을 수 없음';
 	@override String get seasonsLoadFailed => '시즌을 불러오지 못했습니다';
@@ -980,10 +921,7 @@ class _Translations$messages$ko extends Translations$messages$en {
 	@override String get logId => '로그 ID';
 	@override String get burnedSubtitlesUseMenu => '자막이 이 스트림에 입혀져 있습니다. 자막 메뉴에서 변경하세요.';
 	@override String get noVideoUrl => '사용 가능한 비디오 URL이 없습니다';
-	@override String get playbackNoMediaSources => '서버에서 재생 가능한 미디어 소스를 반환하지 않았습니다';
 	@override String get playbackDataNotPrepared => '재생 데이터가 준비되기 전에 재생이 시작되었습니다';
-	@override String get streamSelectionUnavailable => '이 소스에서는 스트림을 선택할 수 없습니다';
-	@override String get streamSelectionFailed => '선택한 스트림을 적용할 수 없습니다';
 	@override String get trackSelectionNotRemembered => '이 트랙 선택은 현재 재생에만 적용됩니다.';
 	@override String get serverUnavailableForProfile => '활성 프로필에 사용할 수 있는 서버가 없습니다';
 }
@@ -1049,16 +987,6 @@ class _Translations$mpvConfig$ko extends Translations$mpvConfig$en {
 	@override String get embeddedVoHint => 'Linux에서는 vo, gpu-context, gpu-api가 무시됩니다. 내장 동영상은 항상 비디오 평면에서 vo=libmpv로 렌더링되며, gpu-next(ArtCNN 같은 컴퓨트 셰이더에 필요)는 내장 방식으로 실행할 수 없습니다.';
 }
 
-// Path: dialog
-class _Translations$dialog$ko extends Translations$dialog$en {
-	_Translations$dialog$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get confirmAction => '작업 확인';
-}
-
 // Path: profiles
 class _Translations$profiles$ko extends Translations$profiles$en {
 	_Translations$profiles$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -1066,69 +994,18 @@ class _Translations$profiles$ko extends Translations$profiles$en {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get addPlezyProfile => 'Plezy 프로필 추가';
 	@override String get switchingProfile => '프로필 전환 중…';
-	@override String get deleteThisProfileTitle => '이 프로필을 삭제하시겠습니까?';
-	@override String deleteThisProfileMessage({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.';
 	@override String get active => '활성';
 	@override String get manage => '관리';
 	@override String get delete => '삭제';
 	@override String get signOut => '로그아웃';
-	@override String get signOutPlexTitle => 'Plex에서 로그아웃하시겠습니까?';
-	@override String signOutPlexMessage({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.';
-	@override String get signedOutPlex => 'Plex에서 로그아웃되었습니다.';
 	@override String get signOutFailed => '로그아웃에 실패했습니다.';
 	@override String get sectionTitle => '프로필';
-	@override String get summarySingle => '관리되는 사용자와 로컬 ID를 혼합하려면 프로필을 추가하세요';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count}개 프로필';
-	@override String get removeConnectionTitle => '연결을 제거하시겠습니까?';
-	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName}의 ${connectionLabel} 접근 권한을 제거합니다. 다른 프로필에는 유지됩니다.';
-	@override String get deleteProfileTitle => '프로필을 삭제하시겠습니까?';
-	@override String deleteProfileMessage({required Object displayName}) => '${displayName} 및 해당 연결을 제거합니다. 서버는 계속 사용할 수 있습니다.';
-	@override String get profileNameLabel => '프로필 이름';
-	@override String get pinProtectionLabel => 'PIN 보호';
-	@override String get pinManagedByPlex => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.';
-	@override String get noPinSetEditOnPlex => '설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.';
-	@override String get setPin => 'PIN 설정';
-	@override String get setPinTitle => 'PIN 설정';
-	@override String get confirmPinTitle => 'PIN 확인';
-	@override String get pinSet => 'PIN 설정됨';
-	@override String get changePin => '변경';
-	@override String get removePin => '제거';
-	@override String get connectionsLabel => '연결';
 	@override String get add => '추가';
-	@override String get deleteProfileButton => '프로필 삭제';
-	@override String get noConnectionsHint => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.';
 	@override String get noConnections => '연결 없음';
-	@override String get plexHomeAccount => 'Plex Home 계정';
-	@override String plexAccountChip({required Object account}) => 'Plex 계정: ${account}';
-	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} 계정의 ${user}';
-	@override String get connectionDefault => '기본값';
-	@override String connectionAs({required Object displayName}) => '${displayName}(으)로';
-	@override String get makeDefault => '기본값으로 설정';
-	@override String get removeConnection => '제거';
-	@override String get profileRenamed => '프로필 이름이 변경되었습니다.';
-	@override String borrowAddTo({required Object displayName}) => '${displayName}에 추가';
-	@override String get borrowExplain => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.';
-	@override String get borrowEmpty => '아직 빌릴 것이 없습니다.';
-	@override String get borrowEmptySubtitle => '먼저 다른 프로필에 Plex, Jellyfin 또는 Emby를 연결하세요.';
-	@override String get borrowLoadFailed => '사용 가능한 연결을 불러오지 못했습니다. 다시 시도하세요.';
-	@override String borrowFromProfile({required Object displayName}) => '${displayName}에서';
-	@override String get borrowConnectionBorrowed => '연결을 빌렸습니다.';
-	@override String get borrowFailed => '연결을 빌리지 못했습니다.';
-	@override String get incorrectPin => 'PIN이 올바르지 않습니다.';
 	@override String get incorrectPinTryAgain => 'PIN이 올바르지 않습니다. 다시 시도하세요.';
-	@override String get sourceProfileMissingParentAccount => '원본 프로필에 상위 계정이 없습니다.';
-	@override String get failedToLoadHomeUsers => 'Plex Home 사용자를 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.';
-	@override String get failedToVerifyPin => 'PIN을 확인하지 못했습니다.';
-	@override String get newProfile => '새 프로필';
-	@override String get profileNameHint => '예: 손님, 어린이, 가족실';
-	@override String get pinProtectionOptional => 'PIN 보호 (선택 사항)';
-	@override String get pinExplain => '프로필 전환에는 4자리 PIN이 필요합니다.';
-	@override String get continueButton => '계속';
-	@override String get pinsDontMatch => 'PIN이 일치하지 않습니다';
-	@override String get tokenIdentityMismatch => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다';
 }
 
 // Path: connections
@@ -1145,8 +1022,6 @@ class _Translations$connections$ko extends Translations$connections$en {
 	@override String accessDeniedOne({required Object name}) => '${name}에서 이 계정의 접근을 거부했습니다';
 	@override String accessDeniedMany({required Object count}) => '${count}개 서버에서 이 계정의 접근을 거부했습니다';
 	@override String get signInAgain => '다시 로그인';
-	@override String editMediaBrowserTitle({required Object product}) => '${product} 연결 편집';
-	@override String editMediaBrowserIntro({required Object serverName}) => '${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.';
 }
 
 // Path: accountPreferences
@@ -1157,39 +1032,12 @@ class _Translations$accountPreferences$ko extends Translations$accountPreference
 
 	// Translations
 	@override String get sectionTitle => '계정 기본 설정';
-	@override String hubSubtitleSingle({required Object account}) => '${account}에 저장된 오디오, 자막 및 라이브러리 옵션';
-	@override String hubSubtitleMultiple({required Object count}) => '${count}개 계정에 저장된 오디오, 자막 및 라이브러리 옵션';
-	@override String get pickAccount => '각 계정은 고유한 기본 설정을 저장합니다. 편집할 계정을 선택하세요.';
-	@override String get storedOnAccount => '이 옵션은 계정 자체에 저장되므로 해당 계정으로 로그인한 모든 앱에서 사용됩니다 — 다른 기기의 Plezy를 포함합니다.';
-	@override String get noAccounts => '구성할 계정이 없습니다';
-	@override String get noAccountsHint => 'Plex에 로그인하거나 Jellyfin 또는 Emby 서버에 연결하면 해당 계정에 저장된 기본 설정이 여기에 표시됩니다.';
 	@override String get unavailable => '이 계정에 연결할 수 없습니다';
-	@override String get loadFailed => '이 기본 설정을 불러올 수 없습니다';
-	@override String get noPreference => '기본 설정 없음';
-	@override String get notSet => '설정되지 않음';
-	@override late final _Translations$accountPreferences$groups$ko groups = _Translations$accountPreferences$groups$ko._(_root);
-	@override String get preferredAudioLanguage => '선호 오디오 언어';
 	@override String get autoSelectAudio => '언어별로 오디오 선택';
-	@override String get autoSelectAudioDescription => '끄면 파일이 기본으로 표시한 오디오 트랙을 유지합니다.';
-	@override String get preferredSubtitleLanguage => '선호 자막 언어';
 	@override String get subtitleMode => '자막 자동 켜기';
 	@override late final _Translations$accountPreferences$subtitleModes$ko subtitleModes = _Translations$accountPreferences$subtitleModes$ko._(_root);
-	@override String get subtitleAccessibility => 'SDH 자막';
-	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$ko subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$ko._(_root);
-	@override String get forcedSubtitles => '강제 자막';
 	@override late final _Translations$accountPreferences$forcedSubtitleOptions$ko forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$ko._(_root);
-	@override String get displayMissingEpisodes => '누락된 에피소드 표시';
-	@override String get displayMissingEpisodesDescription => '서버가 알고 있지만 파일이 없는 에피소드를 나열합니다.';
-	@override String get hidePlayedInLatest => '최신 항목에서 시청한 항목 숨기기';
-	@override String get hidePlayedInLatestDescription => '이미 시청한 항목은 서버의 최신 행에서 제외합니다.';
-	@override String get displayCollectionsView => '컬렉션 보기 표시';
-	@override String get displayCollectionsViewDescription => '라이브러리와 함께 서버의 컬렉션 보기를 제공합니다.';
-	@override String get rewatchingInNextUp => '재시청한 프로그램을 다음 에피소드에 유지';
-	@override String get rewatchingInNextUpDescription => '프로그램을 끝까지 본 뒤 다시 시작하면, 목록에서 제거하는 대신 다음 에피소드가 재시청을 따라갑니다.';
-	@override String get watchedIndicator => '시청 표시';
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$ko watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$ko._(_root);
-	@override String get mediaReviewsVisibility => '평점 및 리뷰';
-	@override late final _Translations$accountPreferences$mediaReviewsOptions$ko mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$ko._(_root);
 }
 
 // Path: discover
@@ -1203,14 +1051,7 @@ class _Translations$discover$ko extends Translations$discover$en {
 	@override String get noContentAvailable => '사용 가능한 콘텐츠가 없습니다';
 	@override String get addMediaToLibraries => '미디어 라이브러리에 미디어를 추가해 주세요';
 	@override String get continueWatching => '계속 시청';
-	@override String continueWatchingIn({required Object library}) => '${library}에서 계속 시청';
 	@override String get nextUp => '다음 에피소드';
-	@override String nextUpIn({required Object library}) => '${library}의 다음 에피소드';
-	@override String get recentlyAdded => '최근에 추가됨';
-	@override String recentlyAddedIn({required Object library}) => '${library}에 최근에 추가됨';
-	@override String latestAlbumsIn({required Object library}) => '${library}의 최신 앨범';
-	@override String recentlyPlayedIn({required Object library}) => '${library}에서 최근 재생';
-	@override String mostPlayedIn({required Object library}) => '${library}에서 가장 많이 재생';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '개요';
 	@override String get cast => '출연진';
@@ -1241,11 +1082,7 @@ class _Translations$errors$ko extends Translations$errors$en {
 	@override String get connectionFailed => '미디어 서버에 연결할 수 없습니다';
 	@override String unableToLoad({required Object context}) => '${context}을(를) 불러올 수 없습니다. 다시 시도하세요.';
 	@override String get noClientAvailable => '사용 가능한 클라이언트가 없습니다';
-	@override String get pleaseEnterToken => '토큰을 입력해 주세요';
-	@override String get invalidToken => '토큰이 유효하지 않습니다';
-	@override String failedToVerifyToken({required Object error}) => '토큰을 확인할 수 없습니다: ${error}';
 	@override String failedToSwitchProfile({required Object displayName}) => '${displayName}으로 전환할 수 없습니다';
-	@override String failedToDeleteProfile({required Object displayName}) => '${displayName}을(를) 삭제할 수 없습니다';
 	@override String get failedToRate => '평점을 업데이트하지 못했습니다';
 	@override String get reasonTimedOut => '연결 시간이 초과되었습니다';
 	@override String get reasonUnreachable => '서버에 연결할 수 없습니다';
@@ -1264,19 +1101,6 @@ class _Translations$libraries$ko extends Translations$libraries$en {
 
 	// Translations
 	@override String get title => '미디어 라이브러리';
-	@override String get fallbackTitle => '라이브러리';
-	@override String get scanLibraryFiles => '미디어 라이브러리 파일 스캔';
-	@override String get scanLibrary => '미디어 라이브러리 스캔';
-	@override String get analyze => '분석';
-	@override String get analyzeLibrary => '미디어 라이브러리 분석';
-	@override String get refreshMetadata => '메타데이터 새로 고침';
-	@override String get emptyTrash => '휴지통 비우기';
-	@override String emptyingTrash({required Object title}) => '「${title}」의 휴지통을 비우고 있습니다...';
-	@override String trashEmptied({required Object title}) => '「${title}」의 휴지통을 비웠습니다';
-	@override String failedToEmptyTrash({required Object error}) => '휴지통 비우기 실패: ${error}';
-	@override String analyzing({required Object title}) => '"${title}" 분석 중...';
-	@override String analysisStarted({required Object title}) => '"${title}" 분석 시작됨';
-	@override String failedToAnalyze({required Object error}) => '미디어 라이브러리 분석 실패: ${error}';
 	@override String get noLibrariesFound => '미디어 라이브러리 없음';
 	@override String get allLibrariesHidden => '모든 라이브러리가 숨겨졌습니다';
 	@override String hiddenLibrariesCount({required Object count}) => '숨겨진 라이브러리 (${count})';
@@ -1285,15 +1109,10 @@ class _Translations$libraries$ko extends Translations$libraries$en {
 	@override String get resetFilters => '필터 초기화';
 	@override String get all => '전체';
 	@override String get clearAll => '모두 삭제';
-	@override String scanLibraryConfirm({required Object title}) => '「${title}」을(를) 스캔하시겠습니까?';
-	@override String analyzeLibraryConfirm({required Object title}) => '「${title}」을(를) 분석하시겠습니까?';
-	@override String refreshMetadataConfirm({required Object title}) => '「${title}」의 메타데이터를 새로고침하시겠습니까?';
-	@override String emptyTrashConfirm({required Object title}) => '${title}의 휴지통을 비우시겠습니까?';
 	@override String get manageLibraries => '미디어 라이브러리 관리';
 	@override String get sort => '정렬';
 	@override String get sortBy => '정렬 기준';
 	@override String get filters => '필터';
-	@override String get confirmActionMessage => '이 작업을 실행하시겠습니까?';
 	@override String get showLibrary => '미디어 라이브러리 표시';
 	@override String get hideLibrary => '미디어 라이브러리 숨기기';
 	@override String get libraryOptions => '미디어 라이브러리 옵션';
@@ -1320,20 +1139,7 @@ class _Translations$about$ko extends Translations$about$en {
 	@override String get title => '소개';
 	@override String get openSourceLicenses => '오픈소스 라이선스';
 	@override String versionLabel({required Object version}) => '버전 ${version}';
-	@override String get appDescription => 'Flutter로 만든 아름다운 Plex, Jellyfin 및 Emby 클라이언트';
 	@override String get viewLicensesDescription => '타사 라이브러리 라이선스 보기';
-}
-
-// Path: serverSelection
-class _Translations$serverSelection$ko extends Translations$serverSelection$en {
-	_Translations$serverSelection$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String noServersFoundForAccount({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.';
-	@override String failedToLoadServers({required Object error}) => '서버를 로드할 수 없습니다: ${error}';
-	@override String get noValidServers => '이 계정에서 사용할 수 있는 서버를 찾지 못했습니다';
 }
 
 // Path: hubDetail
@@ -1484,90 +1290,15 @@ class _Translations$liveTv$ko extends Translations$liveTv$en {
 
 	// Translations
 	@override String get title => '실시간 TV';
-	@override String get guide => '편성표';
-	@override String get noChannels => '사용 가능한 채널이 없습니다';
-	@override String get noDvr => '서버에 DVR이 구성되어 있지 않습니다';
 	@override String get serverUnavailable => '라이브 TV 서버를 사용할 수 없습니다.';
-	@override String get serverNotConnected => '라이브 TV 서버에 연결되어 있지 않습니다.';
-	@override String get noPrograms => '프로그램 데이터가 없습니다';
-	@override String get liveStreamFailed => '라이브 스트림 실패';
-	@override String get unknownProgram => '알 수 없는 프로그램';
-	@override String get unknownHub => '알 수 없음';
-	@override String get unknownError => '알 수 없는 오류';
-	@override String channelNumber({required Object number}) => '채널 ${number}';
-	@override String get unknownChannel => '알 수 없는 채널';
 	@override String get live => '실시간';
-	@override String get reloadGuide => '편성표 새로고침';
-	@override String get searchGuide => '편성표 검색';
 	@override String get searchHint => '채널 및 프로그램 검색';
-	@override String searchNoResults({required Object query}) => '「${query}」와(과) 일치하는 항목이 없습니다';
-	@override String get channelsSection => '채널';
-	@override String get programsSection => '프로그램';
 	@override String get now => '지금';
 	@override String get today => '오늘';
 	@override String get tomorrow => '내일';
-	@override String get midnight => '자정';
-	@override String get overnight => '심야';
-	@override String get morning => '아침';
-	@override String get daytime => '낮';
-	@override String get evening => '저녁';
-	@override String get lateNight => '심야 방송';
-	@override String get whatsOn => '지금 방송 중';
-	@override String get watchChannel => '채널 시청';
-	@override String get favorites => '즐겨찾기';
-	@override String get reorderFavorites => '즐겨찾기 순서 변경';
-	@override String get noFavoriteChannels => '즐겨찾기 채널 없음';
-	@override String get noFavoriteChannelsHint => '모든 채널을 표시한 다음 채널을 길게 눌러 즐겨찾기에 추가하세요.';
-	@override String get showAllChannels => '모든 채널 표시';
-	@override String get favoritesLoadFailed => '즐겨찾기를 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.';
-	@override String get favoritesUpdateFailed => '즐겨찾기를 업데이트할 수 없습니다. 연결을 확인하고 다시 시도하세요.';
 	@override String get joinSession => '진행 중인 세션 참여';
-	@override String watchFromStart({required Object minutes}) => '처음부터 시청 (${minutes}분 전 시작)';
-	@override String get watchLive => '실시간 시청';
-	@override String get goToLive => '실시간으로 이동';
 	@override String get record => '녹화';
-	@override String get recordEpisode => '에피소드 녹화';
-	@override String get recordSeries => '시리즈 녹화';
-	@override String get recordOptions => '녹화 옵션';
-	@override String get saveTo => '저장 위치';
-	@override String get recordings => '녹화';
-	@override String get scheduledRecordings => '예약됨';
-	@override String get recordingRules => '녹화 규칙';
-	@override String get noScheduledRecordings => '예약된 녹화 없음';
-	@override String get manageRecording => '녹화 관리';
-	@override String get cancelRecording => '녹화 취소';
-	@override String get cancelRecordingTitle => '이 녹화를 취소할까요?';
-	@override String cancelRecordingMessage({required Object title}) => '${title}이(가) 더 이상 녹화되지 않습니다.';
-	@override String get deleteRule => '규칙 삭제';
-	@override String get deleteRuleTitle => '녹화 규칙을 삭제할까요?';
-	@override String deleteRuleMessage({required Object title}) => '${title}의 향후 에피소드는 녹화되지 않습니다.';
-	@override String get recordingScheduled => '녹화 예약됨';
-	@override String get alreadyScheduled => '이 프로그램은 이미 예약되어 있습니다';
-	@override String get dvrAdminRequired => 'DVR 설정은 관리자 계정이 필요합니다';
-	@override String get recordingFailed => '녹화를 예약할 수 없습니다';
-	@override String get recordingTargetMissing => '녹화 라이브러리를 확인할 수 없습니다';
-	@override String get recordNotAvailable => '이 프로그램은 녹화할 수 없습니다';
-	@override String get recordingCancelled => '녹화 취소됨';
-	@override String get recordingRuleDeleted => '녹화 규칙 삭제됨';
-	@override String get processRecordingRules => '규칙 재평가';
-	@override String get recordingInProgress => '녹화 중';
-	@override String recordingsCount({required Object count}) => '${count}개 예약됨';
-	@override String get editRule => '규칙 편집';
-	@override String get editRuleAction => '편집';
-	@override String get recordingRuleUpdated => '녹화 규칙 업데이트됨';
-	@override String get guideReloadRequested => '가이드 새로고침 요청됨';
-	@override String get guideReloadFailed => '편성표를 새로고침할 수 없습니다';
-	@override String get rulesProcessRequested => '규칙 재평가 요청됨';
-	@override String get rulesProcessFailed => '녹화 규칙을 다시 적용할 수 없습니다';
-	@override String get recordShow => '프로그램 녹화';
-	@override late final _Translations$liveTv$recordSettings$ko recordSettings = _Translations$liveTv$recordSettings$ko._(_root);
-	@override String startingInMinutes({required Object minutes}) => '${minutes}분 후 시작';
-	@override String dayAtTime({required Object day, required Object time}) => '${day} ${time}';
 	@override String invalidPlaybackData({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다';
-	@override String get failedToStartChannel => '실시간 채널을 시작할 수 없습니다';
-	@override String get failedToBuildStreamUrl => '스트림 URL을 생성할 수 없습니다';
-	@override String playbackStartFailed({required Object reason}) => '채널을 시작하지 못했습니다: ${reason}';
-	@override String channelSwitchFailed({required Object reason}) => '채널을 전환하지 못했습니다: ${reason}';
 }
 
 // Path: collections
@@ -2023,11 +1754,7 @@ class _Translations$metadataEdit$ko extends Translations$metadataEdit$en {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get editMetadata => '편집...';
-	@override String get screenTitle => '메타데이터 편집';
-	@override String get basicInfo => '기본 정보';
 	@override String get artwork => '아트워크';
-	@override String get advancedSettings => '고급 설정';
 	@override String get title => '제목';
 	@override String get sortTitle => '정렬 제목';
 	@override String get originalTitle => '원제';
@@ -2039,57 +1766,14 @@ class _Translations$metadataEdit$ko extends Translations$metadataEdit$en {
 	@override String get poster => '포스터';
 	@override String get background => '배경';
 	@override String get logo => '로고';
-	@override String get squareArt => '정사각형 아트';
-	@override String get selectPoster => '포스터 선택';
-	@override String get selectBackground => '배경 선택';
-	@override String get selectLogo => '로고 선택';
-	@override String get selectSquareArt => '정사각형 아트 선택';
-	@override String get fromUrl => 'URL에서';
-	@override String get uploadFile => '파일 업로드';
-	@override String get enterImageUrl => '이미지 URL 입력';
 	@override String get imageUrl => '이미지 URL';
-	@override String get metadataUpdated => '메타데이터가 업데이트되었습니다';
-	@override String get metadataUpdateFailed => '메타데이터 업데이트 실패';
-	@override String get artworkUpdated => '아트워크가 업데이트되었습니다';
-	@override String get artworkUpdateFailed => '아트워크 업데이트 실패';
-	@override String get noArtworkAvailable => '사용 가능한 아트워크 없음';
-	@override String artworkOption({required Object index}) => '아트워크 옵션 ${index}';
-	@override String selectedArtworkOption({required Object index}) => '아트워크 옵션 ${index}, 선택됨';
-	@override String get notSet => '설정되지 않음';
-	@override String get libraryDefault => '라이브러리 기본값';
-	@override String get accountDefault => '계정 기본값';
-	@override String get seriesDefault => '시리즈 기본값';
-	@override String get episodeSorting => '에피소드 정렬';
-	@override String get oldestFirst => '오래된 순';
-	@override String get newestFirst => '최신 순';
-	@override String get keep => '유지';
 	@override String get allEpisodes => '모든 에피소드';
-	@override String latestEpisodes({required Object count}) => '최신 에피소드 ${count}개';
-	@override String get latestEpisode => '최신 에피소드';
-	@override String episodesAddedPastDays({required Object count}) => '최근 ${count}일 내 추가된 에피소드';
-	@override String get deleteAfterPlaying => '재생 후 에피소드 삭제';
 	@override String get never => '안 함';
-	@override String get afterADay => '하루 후';
-	@override String get afterAWeek => '일주일 후';
-	@override String get afterAMonth => '한 달 후';
-	@override String get onNextRefresh => '다음 새로고침 시';
 	@override String get seasons => '시즌';
 	@override String get show => '표시';
 	@override String get hide => '숨기기';
-	@override String get episodeOrdering => '에피소드 순서';
-	@override String get tmdbAiring => 'The Movie Database (방영순)';
-	@override String get tvdbAiring => 'TheTVDB (방영순)';
-	@override String get tvdbAbsolute => 'TheTVDB (절대순)';
-	@override String get metadataLanguage => '메타데이터 언어';
-	@override String get useOriginalTitle => '원제 사용';
-	@override String get preferredAudioLanguage => '선호 오디오 언어';
-	@override String get preferredSubtitleLanguage => '선호 자막 언어';
 	@override String get subtitleMode => '자막 자동 선택 모드';
-	@override String get manuallySelected => '수동 선택';
-	@override String get shownWithForeignAudio => '외국어 오디오 시 표시';
-	@override String get alwaysEnabled => '항상 활성화';
 	@override String get tags => '태그';
-	@override String get addTag => '태그 추가';
 	@override String get genre => '장르';
 	@override String get director => '감독';
 	@override String get writer => '작가';
@@ -2097,7 +1781,6 @@ class _Translations$metadataEdit$ko extends Translations$metadataEdit$en {
 	@override String get country => '국가';
 	@override String get collection => '컬렉션';
 	@override String get label => '라벨';
-	@override String get quickTag => '빠른 태그…';
 }
 
 // Path: matchScreen
@@ -2108,17 +1791,7 @@ class _Translations$matchScreen$ko extends Translations$matchScreen$en {
 
 	// Translations
 	@override String get match => '일치...';
-	@override String get fixMatch => '일치 수정...';
-	@override String get unmatch => '일치 해제';
-	@override String get unmatchConfirm => '이 매칭을 지울까요? 다시 매칭될 때까지 Plex에서는 미매칭으로 처리됩니다.';
-	@override String get unmatchSuccess => '일치 해제됨';
-	@override String get unmatchFailed => '일치 해제에 실패했습니다';
-	@override String get matchApplied => '일치 적용됨';
-	@override String get matchFailed => '일치 적용에 실패했습니다';
-	@override String get titleHint => '제목';
-	@override String get yearHint => '연도';
 	@override String get search => '검색';
-	@override String get noMatchesFound => '일치하는 항목이 없습니다';
 }
 
 // Path: serverTasks
@@ -2129,8 +1802,6 @@ class _Translations$serverTasks$ko extends Translations$serverTasks$en {
 
 	// Translations
 	@override String get title => '서버 작업';
-	@override String get failedToLoad => '작업을 불러올 수 없습니다';
-	@override String get noTasks => '실행 중인 작업 없음';
 }
 
 // Path: trakt
@@ -2163,8 +1834,6 @@ class _Translations$seerr$ko extends Translations$seerr$en {
 	@override String get serverUrl => '서버 URL';
 	@override String get serverUrlHelper => 'Seerr 인스턴스의 주소';
 	@override String get checkServer => '계속';
-	@override String get signInWithJellyfin => 'Jellyfin으로 로그인';
-	@override String get signInWithEmby => 'Emby로 로그인';
 	@override String get signInWithLocal => '로컬 계정 사용';
 	@override String get email => '이메일';
 	@override String get noSignInMethods => '이 Seerr 인스턴스에는 Plezy가 지원하는 로그인 방법이 없습니다.';
@@ -2197,9 +1866,7 @@ class _Translations$seerr$ko extends Translations$seerr$en {
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url}에 Seerr 인스턴스가 없습니다(HTTP ${status})';
 	@override String get behindAuthProxy => 'Seerr 대신 인증이 필요한 리버스 프록시(SSO 또는 HTTP 인증)가 응답했습니다. Plezy는 이를 통해 로그인할 수 없습니다. 이 앱에서 Seerr의 /api/v1 경로가 프록시를 우회하도록 하거나, Seerr에 직접 연결되는 주소를 사용하세요.';
 	@override String get invalidUrl => 'https://seerr.example.com과 같은 서버 주소를 입력하세요';
-	@override String get quickConnectUnsupported => '이 Seerr 인스턴스는 Quick Connect를 지원하지 않습니다. Seerr 3.4 이상이 필요합니다.';
 	@override String get notInitialized => '이 Seerr 인스턴스는 최초 실행 설정을 완료하지 않았습니다';
-	@override String get noPlexTokenForReauth => '다시 로그인하는 데 사용할 수 있는 Plex 토큰이 없습니다';
 	@override String get noStoredCredentials => '다시 로그인하는 데 사용할 수 있는 저장된 인증 정보가 없습니다';
 	@override String get signInRejected => '로그인이 거부되었습니다';
 	@override String get noSessionCookie => 'Seerr에서 세션 쿠키를 발급하지 않았습니다';
@@ -2241,53 +1908,14 @@ class _Translations$addServer$ko extends Translations$addServer$en {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String addMediaBrowserTitle({required Object product}) => '${product} 서버 추가';
-	@override String get serverUrls => '서버 URL';
-	@override String get serverUrlsHelper => '쉼표로 구분하여 여러 URL을 입력할 수 있습니다.';
-	@override String get findServer => '서버 찾기';
-	@override String searchingLocalMediaBrowserServers({required Object product}) => '로컬 ${product} 서버를 찾는 중...';
-	@override String localMediaBrowserServers({required Object product}) => '로컬 ${product} 서버';
 	@override String get username => '사용자 이름';
 	@override String get password => '비밀번호';
 	@override String get signIn => '로그인';
 	@override String get change => '변경';
 	@override String get required => '필수';
 	@override String couldNotReachServer({required Object error}) => '서버에 연결할 수 없습니다: ${error}';
-	@override String signInFailed({required Object error}) => '로그인 실패: ${error}';
-	@override String quickConnectFailed({required Object error}) => 'Quick Connect 실패: ${error}';
-	@override String get addPlexTitle => 'Plex로 로그인';
-	@override String get pinExpired => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.';
-	@override String failedToRegisterAccount({required Object error}) => '계정 등록 실패: ${error}';
-	@override String enterMediaBrowserUrlError({required Object product}) => '${product} 서버 URL을 입력하세요';
 	@override String get addConnectionTitle => '연결 추가';
-	@override String addConnectionTitleScoped({required Object name}) => '${name}에 추가';
-	@override String get signInWithPlexCard => 'Plex로 로그인';
-	@override String get signInWithPlexCardSubtitle => '이 기기를 승인합니다. 공유 서버가 추가됩니다.';
-	@override String get signInWithPlexCardSubtitleScoped => 'Plex 계정을 승인합니다. Home 사용자는 프로필이 됩니다.';
-	@override String connectToMediaBrowserCard({required Object product}) => '${product}에 연결';
-	@override String get connectToMediaBrowserCardSubtitle => '서버 URL, 사용자 이름, 비밀번호를 입력하세요.';
-	@override String connectToMediaBrowserCardSubtitleScoped({required Object product, required Object name}) => '${product} 서버에 로그인하세요. ${name}에 연결됩니다.';
-	@override String get borrowFromAnotherProfile => '다른 프로필에서 빌리기';
-	@override String get borrowFromAnotherProfileSubtitle => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.';
 	@override String get invalidCredentials => '사용자 이름 또는 비밀번호가 올바르지 않습니다';
-	@override String get authResponseNotJson => '인증 응답이 유효한 JSON이 아닙니다';
-	@override String get authResponseIncomplete => '서버의 로그인 응답이 불완전합니다';
-	@override String get quickConnectRejected => '서버에서 Quick Connect를 거부했습니다';
-	@override String get quickConnectNotJson => 'Quick Connect 응답이 유효한 JSON이 아닙니다';
-	@override String get quickConnectMissingFields => 'Quick Connect 응답에 코드 또는 비밀 키가 없습니다';
-	@override String get quickConnectPollRejected => '서버에서 Quick Connect 폴링을 거부했습니다';
-	@override String get serverTimedOut => '서버가 제시간에 응답하지 않았습니다';
-	@override String get responseNotJson => '서버 응답이 유효한 JSON이 아닙니다';
-	@override String responseMissingIdentity({required Object product}) => '응답에 ID 또는 서버 이름이 없습니다. 이 서버가 ${product} 서버인가요?';
-	@override String probeFailed({required Object error}) => '서버에 연결할 수 없습니다: ${error}';
-	@override String enterAtLeastOneUrl({required Object product}) => '${product} 서버 URL을 하나 이상 입력하세요';
-	@override String noReachableServer({required Object product}) => '연결 가능한 ${product} 서버를 찾을 수 없습니다';
-	@override String urlsPointToDifferentServers({required Object product}) => '이 URL들은 서로 다른 ${product} 서버를 가리킵니다';
-	@override String urlDoesNotMatchServer({required Object product}) => '이 URL은 ${product} 서버와 일치하지 않습니다';
-	@override String get redirectUnsupported => '서버가 지원되지 않는 URL로 리디렉션했습니다';
-	@override String redirectDifferentHost({required Object product}) => '서버가 다른 호스트로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요.';
-	@override String get redirectInsecure => '서버가 HTTPS에서 안전하지 않은 URL로 리디렉션했습니다';
-	@override String redirectUnsupportedEnterFinal({required Object product}) => '서버가 지원되지 않는 URL로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요.';
 }
 
 // Path: common.ratingSource
@@ -2382,18 +2010,6 @@ class _Translations$videoControls$pipErrors$ko extends Translations$videoControl
 	@override String unknown({required Object error}) => '오류가 발생했습니다: ${error}';
 }
 
-// Path: accountPreferences.groups
-class _Translations$accountPreferences$groups$ko extends Translations$accountPreferences$groups$en {
-	_Translations$accountPreferences$groups$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get audioAndSubtitles => '오디오 및 자막';
-	@override String get libraryDisplay => '라이브러리';
-	@override String get personalMedia => '개인 미디어';
-}
-
 // Path: accountPreferences.subtitleModes
 class _Translations$accountPreferences$subtitleModes$ko extends Translations$accountPreferences$subtitleModes$en {
 	_Translations$accountPreferences$subtitleModes$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -2402,28 +2018,10 @@ class _Translations$accountPreferences$subtitleModes$ko extends Translations$acc
 
 	// Translations
 	@override String get none => '수동 선택';
-	@override String get noneDescription => '자동으로 자막을 켜지 않습니다.';
 	@override String get defaultMode => '트랙 플래그 따르기';
-	@override String get defaultModeDescription => '각 자막 트랙에 저장된 기본 및 강제 플래그를 사용합니다.';
 	@override String get always => '항상 활성화';
-	@override String get alwaysDescription => '선호 언어의 자막 트랙이 있으면 항상 켭니다.';
 	@override String get onlyForced => '강제 자막만';
-	@override String get onlyForcedDescription => '강제로 표시된 트랙만 로드합니다.';
 	@override String get smart => '외국어 오디오 시 표시';
-	@override String get smartDescription => '오디오가 다른 언어일 때만 자막을 켭니다.';
-}
-
-// Path: accountPreferences.subtitleAccessibilityOptions
-class _Translations$accountPreferences$subtitleAccessibilityOptions$ko extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
-	_Translations$accountPreferences$subtitleAccessibilityOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get preferNonSdh => 'SDH가 아닌 자막 선호';
-	@override String get preferSdh => 'SDH 자막 선호';
-	@override String get onlySdh => 'SDH 자막만';
-	@override String get onlyNonSdh => 'SDH가 아닌 자막만';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -2433,10 +2031,7 @@ class _Translations$accountPreferences$forcedSubtitleOptions$ko extends Translat
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get preferNonForced => '강제가 아닌 자막 선호';
-	@override String get preferForced => '강제 자막 선호';
 	@override String get onlyForced => '강제 자막만';
-	@override String get onlyNonForced => '강제가 아닌 자막만';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -2447,22 +2042,8 @@ class _Translations$accountPreferences$watchedIndicatorOptions$ko extends Transl
 
 	// Translations
 	@override String get none => '안 함';
-	@override String get moviesAndShows => '영화 및 TV 프로그램';
 	@override String get movies => '영화만';
 	@override String get shows => 'TV 프로그램만';
-}
-
-// Path: accountPreferences.mediaReviewsOptions
-class _Translations$accountPreferences$mediaReviewsOptions$ko extends Translations$accountPreferences$mediaReviewsOptions$en {
-	_Translations$accountPreferences$mediaReviewsOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get usersAndCritics => '사용자 및 평론가';
-	@override String get usersOnly => '사용자만';
-	@override String get criticsOnly => '평론가만';
-	@override String get nobody => '숨김';
 }
 
 // Path: libraries.tabs
@@ -2509,8 +2090,6 @@ class _Translations$libraries$filterCategories$ko extends Translations$libraries
 	@override String get contentRating => '시청 등급';
 	@override String get tag => '태그';
 	@override String get unwatched => '미시청';
-	@override String get unplayed => '재생하지 않음';
-	@override String get favorites => '즐겨찾기';
 }
 
 // Path: libraries.sortLabels
@@ -2524,22 +2103,11 @@ class _Translations$libraries$sortLabels$ko extends Translations$libraries$sortL
 	@override String get dateAdded => '추가된 날짜';
 	@override String get releaseDate => '출시일';
 	@override String get rating => '평점';
-	@override String get communityRating => '커뮤니티 평점';
-	@override String get criticRating => '평론가 평점';
 	@override String get userRating => '사용자 평점';
-	@override String get datePlayed => '재생일';
-	@override String get playCount => '재생 횟수';
 	@override String get productionYear => '제작 연도';
 	@override String get runtime => '재생 시간';
-	@override String get officialRating => '공식 등급';
-	@override String get premiereDate => '최초 공개일';
 	@override String get startDate => '시작일';
-	@override String get airTime => '방영 시간';
 	@override String get studio => '스튜디오';
-	@override String get random => '무작위';
-	@override String get dateShared => '공유된 날짜';
-	@override String get latestEpisodeAirDate => '최신 에피소드 방영일';
-	@override String get lastEpisodeDateAdded => '최신 에피소드 추가일';
 	@override String get dateDownloaded => '다운로드된 날짜';
 	@override String get size => '크기';
 	@override String get library => '라이브러리';
@@ -2758,23 +2326,6 @@ class _Translations$explore$detail$ko extends Translations$explore$detail$en {
 	@override String get background => '배경';
 }
 
-// Path: liveTv.recordSettings
-class _Translations$liveTv$recordSettings$ko extends Translations$liveTv$recordSettings$en {
-	_Translations$liveTv$recordSettings$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get startEarly => '일찍 시작 (초)';
-	@override String get endLate => '늦게 종료 (초)';
-	@override String get newOnly => '새 에피소드만';
-	@override String get anyChannel => '모든 채널에서 녹화';
-	@override String get anyTime => '모든 시간대에 녹화';
-	@override String get skipInLibrary => '라이브러리에 이미 있는 에피소드 건너뛰기';
-	@override String get keepUpTo => '보관할 에피소드 수';
-	@override String get keepUpToHint => '0이면 모든 에피소드 보관';
-}
-
 // Path: music.discography
 class _Translations$music$discography$ko extends Translations$music$discography$en {
 	_Translations$music$discography$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -2874,7 +2425,6 @@ class _Translations$companionRemote$pairing$ko extends Translations$companionRem
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get discoveryDescription => '같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => '연결 중...';
 	@override String get searchingForDevices => '기기 검색 중...';
@@ -2882,12 +2432,10 @@ class _Translations$companionRemote$pairing$ko extends Translations$companionRem
 	@override String get noDevicesHint => '데스크톱에서 Plezy를 열고 같은 Wi-Fi를 사용하세요';
 	@override String get availableDevices => '사용 가능한 기기';
 	@override String get manualConnection => '수동 연결';
-	@override String get cryptoInitFailed => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.';
 	@override String get validationHostRequired => '호스트 주소를 입력하세요';
 	@override String get validationHostFormat => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)';
 	@override String get connectionTimedOut => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.';
 	@override String get sessionNotFound => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.';
-	@override String get authFailed => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.';
 	@override String failedToConnect({required Object error}) => '연결 실패: ${error}';
 }
 
@@ -3026,23 +2574,7 @@ extension on TranslationsKo {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
-			'auth.signInWithPlex' => 'Plex 계정으로 로그인',
-			'auth.showQRCode' => 'QR 코드 표시',
-			'auth.authenticate' => '인증',
-			'auth.authenticationTimeout' => '인증 시간이 초과되었습니다. 다시 시도해 주세요.',
-			'auth.scanQRToSignIn' => '로그인하려면 이 QR 코드를 스캔하세요',
-			'auth.waitingForAuth' => '인증 대기 중...\n브라우저에서 로그인하세요.',
-			'auth.useBrowser' => '브라우저 사용',
-			'auth.or' => '또는',
-			'auth.connectToMediaBrowser' => ({required Object product}) => '${product}에 연결',
-			'auth.quickConnect' => 'Quick Connect',
-			'auth.useQuickConnect' => 'Quick Connect 사용',
-			'auth.quickConnectInstructions' => 'Jellyfin에서 Quick Connect를 열고 이 코드를 입력하세요.',
-			'auth.quickConnectWaiting' => '승인 대기 중…',
-			'auth.quickConnectCancel' => '취소',
-			'auth.quickConnectExpired' => 'Quick Connect가 만료되었습니다. 다시 시도하세요.',
 			'auth.localDataRecoveryRequired' => 'Plezy에서 로컬 로그인 정보와 대기 중인 재생 데이터를 안전하게 복구하지 못했습니다. 다시 로그인해 주세요.',
-			'auth.pinCheckRejected' => 'Plex PIN 확인이 거부되었습니다',
 			'common.cancel' => '취소',
 			'common.save' => '저장',
 			'common.close' => '닫기',
@@ -3050,7 +2582,6 @@ extension on TranslationsKo {
 			'common.reset' => '초기화',
 			'common.later' => '나중에',
 			'common.submit' => '제출',
-			'common.confirm' => '확인',
 			'common.retry' => '재시도',
 			'common.logout' => '로그아웃',
 			'common.unknown' => '알 수 없는',
@@ -3227,7 +2758,6 @@ extension on TranslationsKo {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}분',
 			'settings.rememberTrackSelections' => '시리즈/영화별 트랙 선택 기억',
 			'settings.rememberTrackSelectionsDescription' => '작품별 오디오 및 자막 선택 기억',
-			'settings.rememberTrackSelectionsBackendRule' => 'Plex는 파일별로 각 선택을 서버에 저장합니다. Jellyfin은 계정의 선택 기억도 활성화합니다. Emby는 지원되지 않습니다',
 			'settings.followServerTrackSelections' => '서버의 에피소드별 트랙 선택 사용',
 			'settings.followServerTrackSelectionsDescription' => '에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다',
 			'settings.resumeMusicOnLaunch' => '음악 세션 기억',
@@ -3304,7 +2834,6 @@ extension on TranslationsKo {
 			'settings.skipMarkerModeButton' => '버튼 표시',
 			'settings.skipMarkerModeAuto' => '자동',
 			'settings.forceSkipMarkerFallback' => '대체 마커 강제 사용',
-			'settings.forceSkipMarkerFallbackDescription' => 'Plex에 마커가 있어도 챕터 제목 패턴 사용',
 			'settings.autoSkipDelay' => '자동 건너뛰기 지연',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '자동으로 건너뛰기 전 ${seconds}초 대기',
 			'settings.introPattern' => '인트로 마커 패턴',
@@ -3400,9 +2929,6 @@ extension on TranslationsKo {
 			'settings.showNavBarLabelsDescription' => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다',
 			'settings.startupSection' => '시작 섹션',
 			'settings.showExploreTab' => '둘러보기 탭 표시',
-			'settings.showExploreTabDescription' => 'Plex Discover와 연결된 트래커의 콘텐츠가 포함된 둘러보기 탭을 표시합니다',
-			'settings.liveTvDefaultFavorites' => '즐겨찾기 채널 기본 설정',
-			'settings.liveTvDefaultFavoritesDescription' => '라이브 TV를 열 때 즐겨찾기 채널만 표시',
 			'settings.general' => '일반',
 			'settings.generalDescription' => '언어, 시작 및 창 동작',
 			'settings.languageAndRegion' => '언어 및 지역',
@@ -3537,8 +3063,6 @@ extension on TranslationsKo {
 			'fileInfo.streamId' => '스트림 ID',
 			'fileInfo.language' => '언어',
 			'fileInfo.languageCode' => '언어 코드',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamTitle' => '트랙 제목',
 			'fileInfo.channels' => '채널',
 			'fileInfo.sampleRate' => '샘플 레이트',
@@ -3561,6 +3085,8 @@ extension on TranslationsKo {
 			'fileInfo.duration' => '재생 시간',
 			'fileInfo.previewThumbnails' => '미리보기 썸네일',
 			'fileInfo.previewIndex' => '미리보기 인덱스',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.packetLength' => '패킷 길이',
 			'fileInfo.filePresent' => '파일 있음',
 			'fileInfo.fileReadable' => '서버에서 읽기 가능',
@@ -3601,28 +3127,6 @@ extension on TranslationsKo {
 			'mediaMenu.shufflePlay' => '무작위 재생',
 			'mediaMenu.shuffleNotAvailableOffline' => '오프라인에서는 무작위 재생을 사용할 수 없습니다',
 			'mediaMenu.fileInfo' => '파일 정보',
-			'mediaMenu.deleteEpisodeFromServer' => '서버에서 에피소드 삭제',
-			'mediaMenu.deleteSeasonFromServer' => '서버에서 시즌 삭제',
-			'mediaMenu.deleteShowFromServer' => '서버에서 프로그램 삭제',
-			'mediaMenu.deleteMovieFromServer' => '서버에서 영화 삭제',
-			'mediaMenu.deleteEpisodeTitle' => '이 에피소드를 삭제할까요?',
-			'mediaMenu.deleteSeasonTitle' => '이 시즌을 삭제할까요?',
-			'mediaMenu.deleteShowTitle' => '이 프로그램을 삭제할까요?',
-			'mediaMenu.deleteMovieTitle' => '이 영화를 삭제할까요?',
-			'mediaMenu.deleteEpisodeConfirm' => '에피소드 삭제',
-			'mediaMenu.deleteSeasonConfirm' => '시즌 삭제',
-			'mediaMenu.deleteShowConfirm' => '프로그램 삭제',
-			'mediaMenu.deleteMovieConfirm' => '영화 삭제',
-			'mediaMenu.deleteAnyway' => '그래도 삭제',
-			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => '서버에서 ${title}을(를) 영구 삭제할까요?',
-			'mediaMenu.deleteMultipleWarning' => '모든 에피소드와 파일이 포함됩니다.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '포함된 에피소드 ${n}개와 해당 파일이 모두 삭제됩니다.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '이 항목은 파일 ${n}개에 걸쳐 저장되어 있으며, 모든 파일이 삭제됩니다.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '같은 파일에 저장된 다른 에피소드 ${n}개도 함께 삭제됩니다:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy가 어떤 파일이 삭제될지 확인하지 못해 위 항목보다 더 많은 파일이 삭제될 수 있습니다. 취소하고 다시 시도하거나 그래도 삭제하세요.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => '서버가 이 항목의 파일 정보를 제공하지 않아 Plezy가 어떤 파일이 삭제될지 확인할 수 없습니다. 위 항목보다 더 많은 파일이 삭제될 수 있습니다.',
-			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
-			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
 			'mediaMenu.rate' => '평가',
 			'mediaMenu.playFromBeginning' => '처음부터 재생',
 			'mediaMenu.playVersion' => '버전 재생...',
@@ -3766,7 +3270,6 @@ extension on TranslationsKo {
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
 			'messages.searchPartialResults' => '일부 미디어 서버를 검색하지 못했습니다. 사용 가능한 결과만 표시합니다.',
 			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
-			'messages.liveStreamInterrupted' => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.',
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
 			'messages.playbackAuthenticationRequired' => '이 항목을 재생하려면 미디어 서버에 다시 로그인하세요.',
 			'messages.playbackServerUnavailable' => '미디어 서버를 사용할 수 없습니다. 나중에 다시 시도하세요.',
@@ -3786,12 +3289,6 @@ extension on TranslationsKo {
 			'messages.logsCleared' => '로그가 삭제되었습니다',
 			'messages.logsCopied' => '로그가 클립보드에 복사되었습니다',
 			'messages.noLogsAvailable' => '사용 가능한 로그가 없습니다',
-			'messages.libraryScanning' => ({required Object title}) => '"${title}"을(를) 스캔 중입니다...',
-			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" 미디어 라이브러리 스캔 시작',
-			'messages.libraryScanFailed' => ({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}',
-			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" 메타데이터 새로고침 중...',
-			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" 메타데이터 새로고침 시작됨',
-			'messages.metadataRefreshFailed' => ({required Object error}) => '메타데이터 새로고침 실패: ${error}',
 			'messages.logoutConfirm' => '로그아웃하시겠습니까?',
 			'messages.noSeasonsFound' => '시즌을 찾을 수 없음',
 			'messages.seasonsLoadFailed' => '시즌을 불러오지 못했습니다',
@@ -3817,10 +3314,7 @@ extension on TranslationsKo {
 			'messages.logId' => '로그 ID',
 			'messages.burnedSubtitlesUseMenu' => '자막이 이 스트림에 입혀져 있습니다. 자막 메뉴에서 변경하세요.',
 			'messages.noVideoUrl' => '사용 가능한 비디오 URL이 없습니다',
-			'messages.playbackNoMediaSources' => '서버에서 재생 가능한 미디어 소스를 반환하지 않았습니다',
 			'messages.playbackDataNotPrepared' => '재생 데이터가 준비되기 전에 재생이 시작되었습니다',
-			'messages.streamSelectionUnavailable' => '이 소스에서는 스트림을 선택할 수 없습니다',
-			'messages.streamSelectionFailed' => '선택한 스트림을 적용할 수 없습니다',
 			'messages.trackSelectionNotRemembered' => '이 트랙 선택은 현재 재생에만 적용됩니다.',
 			'messages.serverUnavailableForProfile' => '활성 프로필에 사용할 수 있는 서버가 없습니다',
 			'subtitlingStyling.text' => '텍스트',
@@ -3866,70 +3360,18 @@ extension on TranslationsKo {
 			'mpvConfig.addLine' => '줄 추가',
 			'mpvConfig.removeLine' => '줄 제거',
 			'mpvConfig.embeddedVoHint' => 'Linux에서는 vo, gpu-context, gpu-api가 무시됩니다. 내장 동영상은 항상 비디오 평면에서 vo=libmpv로 렌더링되며, gpu-next(ArtCNN 같은 컴퓨트 셰이더에 필요)는 내장 방식으로 실행할 수 없습니다.',
-			'dialog.confirmAction' => '작업 확인',
-			'profiles.addPlezyProfile' => 'Plezy 프로필 추가',
 			'profiles.switchingProfile' => '프로필 전환 중…',
-			'profiles.deleteThisProfileTitle' => '이 프로필을 삭제하시겠습니까?',
-			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.',
 			'profiles.active' => '활성',
 			'profiles.manage' => '관리',
 			'profiles.delete' => '삭제',
 			'profiles.signOut' => '로그아웃',
-			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.',
-			'profiles.signedOutPlex' => 'Plex에서 로그아웃되었습니다.',
 			'profiles.signOutFailed' => '로그아웃에 실패했습니다.',
 			'profiles.sectionTitle' => '프로필',
-			'profiles.summarySingle' => '관리되는 사용자와 로컬 ID를 혼합하려면 프로필을 추가하세요',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count}개 프로필',
-			'profiles.removeConnectionTitle' => '연결을 제거하시겠습니까?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}의 ${connectionLabel} 접근 권한을 제거합니다. 다른 프로필에는 유지됩니다.',
-			'profiles.deleteProfileTitle' => '프로필을 삭제하시겠습니까?',
-			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName} 및 해당 연결을 제거합니다. 서버는 계속 사용할 수 있습니다.',
-			'profiles.profileNameLabel' => '프로필 이름',
-			'profiles.pinProtectionLabel' => 'PIN 보호',
-			'profiles.pinManagedByPlex' => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.',
-			'profiles.noPinSetEditOnPlex' => '설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.',
-			'profiles.setPin' => 'PIN 설정',
-			'profiles.setPinTitle' => 'PIN 설정',
-			'profiles.confirmPinTitle' => 'PIN 확인',
-			'profiles.pinSet' => 'PIN 설정됨',
-			'profiles.changePin' => '변경',
-			'profiles.removePin' => '제거',
-			'profiles.connectionsLabel' => '연결',
 			'profiles.add' => '추가',
-			'profiles.deleteProfileButton' => '프로필 삭제',
-			'profiles.noConnectionsHint' => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.',
 			'profiles.noConnections' => '연결 없음',
-			'profiles.plexHomeAccount' => 'Plex Home 계정',
-			'profiles.plexAccountChip' => ({required Object account}) => 'Plex 계정: ${account}',
-			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} 계정의 ${user}',
-			'profiles.connectionDefault' => '기본값',
-			'profiles.connectionAs' => ({required Object displayName}) => '${displayName}(으)로',
-			'profiles.makeDefault' => '기본값으로 설정',
-			'profiles.removeConnection' => '제거',
-			'profiles.profileRenamed' => '프로필 이름이 변경되었습니다.',
-			'profiles.borrowAddTo' => ({required Object displayName}) => '${displayName}에 추가',
-			'profiles.borrowExplain' => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
-			'profiles.borrowEmpty' => '아직 빌릴 것이 없습니다.',
-			'profiles.borrowEmptySubtitle' => '먼저 다른 프로필에 Plex, Jellyfin 또는 Emby를 연결하세요.',
-			'profiles.borrowLoadFailed' => '사용 가능한 연결을 불러오지 못했습니다. 다시 시도하세요.',
-			'profiles.borrowFromProfile' => ({required Object displayName}) => '${displayName}에서',
-			'profiles.borrowConnectionBorrowed' => '연결을 빌렸습니다.',
-			'profiles.borrowFailed' => '연결을 빌리지 못했습니다.',
-			'profiles.incorrectPin' => 'PIN이 올바르지 않습니다.',
 			'profiles.incorrectPinTryAgain' => 'PIN이 올바르지 않습니다. 다시 시도하세요.',
-			'profiles.sourceProfileMissingParentAccount' => '원본 프로필에 상위 계정이 없습니다.',
-			'profiles.failedToLoadHomeUsers' => 'Plex Home 사용자를 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.',
-			'profiles.failedToVerifyPin' => 'PIN을 확인하지 못했습니다.',
-			'profiles.newProfile' => '새 프로필',
-			'profiles.profileNameHint' => '예: 손님, 어린이, 가족실',
-			'profiles.pinProtectionOptional' => 'PIN 보호 (선택 사항)',
-			'profiles.pinExplain' => '프로필 전환에는 4자리 PIN이 필요합니다.',
-			'profiles.continueButton' => '계속',
-			'profiles.pinsDontMatch' => 'PIN이 일치하지 않습니다',
-			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
 			'connections.sectionTitle' => '연결',
 			'connections.addConnection' => '연결 추가',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name}의 세션이 만료되었습니다',
@@ -3937,77 +3379,24 @@ extension on TranslationsKo {
 			'connections.accessDeniedOne' => ({required Object name}) => '${name}에서 이 계정의 접근을 거부했습니다',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count}개 서버에서 이 계정의 접근을 거부했습니다',
 			'connections.signInAgain' => '다시 로그인',
-			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product} 연결 편집',
-			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.',
 			'accountPreferences.sectionTitle' => '계정 기본 설정',
-			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => '${account}에 저장된 오디오, 자막 및 라이브러리 옵션',
-			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '${count}개 계정에 저장된 오디오, 자막 및 라이브러리 옵션',
-			'accountPreferences.pickAccount' => '각 계정은 고유한 기본 설정을 저장합니다. 편집할 계정을 선택하세요.',
-			'accountPreferences.storedOnAccount' => '이 옵션은 계정 자체에 저장되므로 해당 계정으로 로그인한 모든 앱에서 사용됩니다 — 다른 기기의 Plezy를 포함합니다.',
-			'accountPreferences.noAccounts' => '구성할 계정이 없습니다',
-			'accountPreferences.noAccountsHint' => 'Plex에 로그인하거나 Jellyfin 또는 Emby 서버에 연결하면 해당 계정에 저장된 기본 설정이 여기에 표시됩니다.',
 			'accountPreferences.unavailable' => '이 계정에 연결할 수 없습니다',
-			'accountPreferences.loadFailed' => '이 기본 설정을 불러올 수 없습니다',
-			'accountPreferences.noPreference' => '기본 설정 없음',
-			'accountPreferences.notSet' => '설정되지 않음',
-			'accountPreferences.groups.audioAndSubtitles' => '오디오 및 자막',
-			'accountPreferences.groups.libraryDisplay' => '라이브러리',
-			'accountPreferences.groups.personalMedia' => '개인 미디어',
-			'accountPreferences.preferredAudioLanguage' => '선호 오디오 언어',
 			'accountPreferences.autoSelectAudio' => '언어별로 오디오 선택',
-			'accountPreferences.autoSelectAudioDescription' => '끄면 파일이 기본으로 표시한 오디오 트랙을 유지합니다.',
-			'accountPreferences.preferredSubtitleLanguage' => '선호 자막 언어',
 			'accountPreferences.subtitleMode' => '자막 자동 켜기',
 			'accountPreferences.subtitleModes.none' => '수동 선택',
-			'accountPreferences.subtitleModes.noneDescription' => '자동으로 자막을 켜지 않습니다.',
 			'accountPreferences.subtitleModes.defaultMode' => '트랙 플래그 따르기',
-			'accountPreferences.subtitleModes.defaultModeDescription' => '각 자막 트랙에 저장된 기본 및 강제 플래그를 사용합니다.',
 			'accountPreferences.subtitleModes.always' => '항상 활성화',
-			'accountPreferences.subtitleModes.alwaysDescription' => '선호 언어의 자막 트랙이 있으면 항상 켭니다.',
 			'accountPreferences.subtitleModes.onlyForced' => '강제 자막만',
-			'accountPreferences.subtitleModes.onlyForcedDescription' => '강제로 표시된 트랙만 로드합니다.',
 			'accountPreferences.subtitleModes.smart' => '외국어 오디오 시 표시',
-			'accountPreferences.subtitleModes.smartDescription' => '오디오가 다른 언어일 때만 자막을 켭니다.',
-			'accountPreferences.subtitleAccessibility' => 'SDH 자막',
-			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'SDH가 아닌 자막 선호',
-			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH 자막 선호',
-			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'SDH 자막만',
-			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'SDH가 아닌 자막만',
-			'accountPreferences.forcedSubtitles' => '강제 자막',
-			'accountPreferences.forcedSubtitleOptions.preferNonForced' => '강제가 아닌 자막 선호',
-			'accountPreferences.forcedSubtitleOptions.preferForced' => '강제 자막 선호',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => '강제 자막만',
-			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => '강제가 아닌 자막만',
-			'accountPreferences.displayMissingEpisodes' => '누락된 에피소드 표시',
-			'accountPreferences.displayMissingEpisodesDescription' => '서버가 알고 있지만 파일이 없는 에피소드를 나열합니다.',
-			'accountPreferences.hidePlayedInLatest' => '최신 항목에서 시청한 항목 숨기기',
-			'accountPreferences.hidePlayedInLatestDescription' => '이미 시청한 항목은 서버의 최신 행에서 제외합니다.',
-			'accountPreferences.displayCollectionsView' => '컬렉션 보기 표시',
-			'accountPreferences.displayCollectionsViewDescription' => '라이브러리와 함께 서버의 컬렉션 보기를 제공합니다.',
-			'accountPreferences.rewatchingInNextUp' => '재시청한 프로그램을 다음 에피소드에 유지',
-			'accountPreferences.rewatchingInNextUpDescription' => '프로그램을 끝까지 본 뒤 다시 시작하면, 목록에서 제거하는 대신 다음 에피소드가 재시청을 따라갑니다.',
-			'accountPreferences.watchedIndicator' => '시청 표시',
 			'accountPreferences.watchedIndicatorOptions.none' => '안 함',
-			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => '영화 및 TV 프로그램',
 			'accountPreferences.watchedIndicatorOptions.movies' => '영화만',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'TV 프로그램만',
-			'accountPreferences.mediaReviewsVisibility' => '평점 및 리뷰',
-			'accountPreferences.mediaReviewsOptions.usersAndCritics' => '사용자 및 평론가',
-			'accountPreferences.mediaReviewsOptions.usersOnly' => '사용자만',
-			'accountPreferences.mediaReviewsOptions.criticsOnly' => '평론가만',
-			'accountPreferences.mediaReviewsOptions.nobody' => '숨김',
 			'discover.title' => '둘러보기',
 			'discover.noContentAvailable' => '사용 가능한 콘텐츠가 없습니다',
 			'discover.addMediaToLibraries' => '미디어 라이브러리에 미디어를 추가해 주세요',
 			'discover.continueWatching' => '계속 시청',
-			'discover.continueWatchingIn' => ({required Object library}) => '${library}에서 계속 시청',
 			'discover.nextUp' => '다음 에피소드',
-			'discover.nextUpIn' => ({required Object library}) => '${library}의 다음 에피소드',
-			'discover.recentlyAdded' => '최근에 추가됨',
-			'discover.recentlyAddedIn' => ({required Object library}) => '${library}에 최근에 추가됨',
-			'discover.latestAlbumsIn' => ({required Object library}) => '${library}의 최신 앨범',
-			'discover.recentlyPlayedIn' => ({required Object library}) => '${library}에서 최근 재생',
-			'discover.mostPlayedIn' => ({required Object library}) => '${library}에서 가장 많이 재생',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '개요',
 			'discover.cast' => '출연진',
@@ -4027,11 +3416,7 @@ extension on TranslationsKo {
 			'errors.connectionFailed' => '미디어 서버에 연결할 수 없습니다',
 			'errors.unableToLoad' => ({required Object context}) => '${context}을(를) 불러올 수 없습니다. 다시 시도하세요.',
 			'errors.noClientAvailable' => '사용 가능한 클라이언트가 없습니다',
-			'errors.pleaseEnterToken' => '토큰을 입력해 주세요',
-			'errors.invalidToken' => '토큰이 유효하지 않습니다',
-			'errors.failedToVerifyToken' => ({required Object error}) => '토큰을 확인할 수 없습니다: ${error}',
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '${displayName}으로 전환할 수 없습니다',
-			'errors.failedToDeleteProfile' => ({required Object displayName}) => '${displayName}을(를) 삭제할 수 없습니다',
 			'errors.failedToRate' => '평점을 업데이트하지 못했습니다',
 			'errors.reasonTimedOut' => '연결 시간이 초과되었습니다',
 			'errors.reasonUnreachable' => '서버에 연결할 수 없습니다',
@@ -4041,21 +3426,6 @@ extension on TranslationsKo {
 			'errors.reasonCancelled' => '요청이 취소되었습니다',
 			'errors.reasonUnexpected' => '예기치 않은 오류가 발생했습니다',
 			'libraries.title' => '미디어 라이브러리',
-			'libraries.fallbackTitle' => '라이브러리',
-			'libraries.scanLibraryFiles' => '미디어 라이브러리 파일 스캔',
-			'libraries.scanLibrary' => '미디어 라이브러리 스캔',
-			'libraries.analyze' => '분석',
-			'libraries.analyzeLibrary' => '미디어 라이브러리 분석',
-			'libraries.refreshMetadata' => '메타데이터 새로 고침',
-			'libraries.emptyTrash' => '휴지통 비우기',
-			'libraries.emptyingTrash' => ({required Object title}) => '「${title}」의 휴지통을 비우고 있습니다...',
-			'libraries.trashEmptied' => ({required Object title}) => '「${title}」의 휴지통을 비웠습니다',
-			'libraries.failedToEmptyTrash' => ({required Object error}) => '휴지통 비우기 실패: ${error}',
-			_ => null,
-		} ?? switch (path) {
-			'libraries.analyzing' => ({required Object title}) => '"${title}" 분석 중...',
-			'libraries.analysisStarted' => ({required Object title}) => '"${title}" 분석 시작됨',
-			'libraries.failedToAnalyze' => ({required Object error}) => '미디어 라이브러리 분석 실패: ${error}',
 			'libraries.noLibrariesFound' => '미디어 라이브러리 없음',
 			'libraries.allLibrariesHidden' => '모든 라이브러리가 숨겨졌습니다',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '숨겨진 라이브러리 (${count})',
@@ -4064,15 +3434,10 @@ extension on TranslationsKo {
 			'libraries.resetFilters' => '필터 초기화',
 			'libraries.all' => '전체',
 			'libraries.clearAll' => '모두 삭제',
-			'libraries.scanLibraryConfirm' => ({required Object title}) => '「${title}」을(를) 스캔하시겠습니까?',
-			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '「${title}」을(를) 분석하시겠습니까?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => '「${title}」의 메타데이터를 새로고침하시겠습니까?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '${title}의 휴지통을 비우시겠습니까?',
 			'libraries.manageLibraries' => '미디어 라이브러리 관리',
 			'libraries.sort' => '정렬',
 			'libraries.sortBy' => '정렬 기준',
 			'libraries.filters' => '필터',
-			'libraries.confirmActionMessage' => '이 작업을 실행하시겠습니까?',
 			'libraries.showLibrary' => '미디어 라이브러리 표시',
 			'libraries.hideLibrary' => '미디어 라이브러리 숨기기',
 			'libraries.libraryOptions' => '미디어 라이브러리 옵션',
@@ -4102,39 +3467,22 @@ extension on TranslationsKo {
 			'libraries.filterCategories.contentRating' => '시청 등급',
 			'libraries.filterCategories.tag' => '태그',
 			'libraries.filterCategories.unwatched' => '미시청',
-			'libraries.filterCategories.unplayed' => '재생하지 않음',
-			'libraries.filterCategories.favorites' => '즐겨찾기',
 			'libraries.sortLabels.title' => '제목',
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
 			'libraries.sortLabels.releaseDate' => '출시일',
 			'libraries.sortLabels.rating' => '평점',
-			'libraries.sortLabels.communityRating' => '커뮤니티 평점',
-			'libraries.sortLabels.criticRating' => '평론가 평점',
 			'libraries.sortLabels.userRating' => '사용자 평점',
-			'libraries.sortLabels.datePlayed' => '재생일',
-			'libraries.sortLabels.playCount' => '재생 횟수',
 			'libraries.sortLabels.productionYear' => '제작 연도',
 			'libraries.sortLabels.runtime' => '재생 시간',
-			'libraries.sortLabels.officialRating' => '공식 등급',
-			'libraries.sortLabels.premiereDate' => '최초 공개일',
 			'libraries.sortLabels.startDate' => '시작일',
-			'libraries.sortLabels.airTime' => '방영 시간',
 			'libraries.sortLabels.studio' => '스튜디오',
-			'libraries.sortLabels.random' => '무작위',
-			'libraries.sortLabels.dateShared' => '공유된 날짜',
-			'libraries.sortLabels.latestEpisodeAirDate' => '최신 에피소드 방영일',
-			'libraries.sortLabels.lastEpisodeDateAdded' => '최신 에피소드 추가일',
 			'libraries.sortLabels.dateDownloaded' => '다운로드된 날짜',
 			'libraries.sortLabels.size' => '크기',
 			'libraries.sortLabels.library' => '라이브러리',
 			'about.title' => '소개',
 			'about.openSourceLicenses' => '오픈소스 라이선스',
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
-			'about.appDescription' => 'Flutter로 만든 아름다운 Plex, Jellyfin 및 Emby 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
-			'serverSelection.noValidServers' => '이 계정에서 사용할 수 있는 서버를 찾지 못했습니다',
 			'hubDetail.title' => '제목',
 			'hubDetail.releaseYear' => '출시 연도',
 			'hubDetail.dateAdded' => '추가 날짜',
@@ -4251,6 +3599,8 @@ extension on TranslationsKo {
 			'explore.stats.favorited' => ({required Object n}) => '즐겨찾기 ${n}명',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} 하차',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '댓글 ${n}개', ), 
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '투표 ${n}개',
 			'explore.stats.watching' => ({required Object n}) => '시청 중 ${n}명',
 			'explore.stats.completed' => ({required Object n}) => '완료 ${n}명',
@@ -4325,97 +3675,15 @@ extension on TranslationsKo {
 			'explore.detail.background' => '배경',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '결과 ${n}개', ), 
 			'liveTv.title' => '실시간 TV',
-			'liveTv.guide' => '편성표',
-			'liveTv.noChannels' => '사용 가능한 채널이 없습니다',
-			'liveTv.noDvr' => '서버에 DVR이 구성되어 있지 않습니다',
 			'liveTv.serverUnavailable' => '라이브 TV 서버를 사용할 수 없습니다.',
-			'liveTv.serverNotConnected' => '라이브 TV 서버에 연결되어 있지 않습니다.',
-			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
-			'liveTv.liveStreamFailed' => '라이브 스트림 실패',
-			'liveTv.unknownProgram' => '알 수 없는 프로그램',
-			'liveTv.unknownHub' => '알 수 없음',
-			'liveTv.unknownError' => '알 수 없는 오류',
-			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
-			'liveTv.unknownChannel' => '알 수 없는 채널',
 			'liveTv.live' => '실시간',
-			'liveTv.reloadGuide' => '편성표 새로고침',
-			'liveTv.searchGuide' => '편성표 검색',
 			'liveTv.searchHint' => '채널 및 프로그램 검색',
-			'liveTv.searchNoResults' => ({required Object query}) => '「${query}」와(과) 일치하는 항목이 없습니다',
-			'liveTv.channelsSection' => '채널',
-			'liveTv.programsSection' => '프로그램',
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.tomorrow' => '내일',
-			'liveTv.midnight' => '자정',
-			'liveTv.overnight' => '심야',
-			'liveTv.morning' => '아침',
-			'liveTv.daytime' => '낮',
-			'liveTv.evening' => '저녁',
-			'liveTv.lateNight' => '심야 방송',
-			'liveTv.whatsOn' => '지금 방송 중',
-			'liveTv.watchChannel' => '채널 시청',
-			'liveTv.favorites' => '즐겨찾기',
-			'liveTv.reorderFavorites' => '즐겨찾기 순서 변경',
-			'liveTv.noFavoriteChannels' => '즐겨찾기 채널 없음',
-			'liveTv.noFavoriteChannelsHint' => '모든 채널을 표시한 다음 채널을 길게 눌러 즐겨찾기에 추가하세요.',
-			'liveTv.showAllChannels' => '모든 채널 표시',
-			'liveTv.favoritesLoadFailed' => '즐겨찾기를 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.',
-			'liveTv.favoritesUpdateFailed' => '즐겨찾기를 업데이트할 수 없습니다. 연결을 확인하고 다시 시도하세요.',
 			'liveTv.joinSession' => '진행 중인 세션 참여',
-			'liveTv.watchFromStart' => ({required Object minutes}) => '처음부터 시청 (${minutes}분 전 시작)',
-			'liveTv.watchLive' => '실시간 시청',
-			'liveTv.goToLive' => '실시간으로 이동',
 			'liveTv.record' => '녹화',
-			'liveTv.recordEpisode' => '에피소드 녹화',
-			'liveTv.recordSeries' => '시리즈 녹화',
-			'liveTv.recordOptions' => '녹화 옵션',
-			'liveTv.saveTo' => '저장 위치',
-			'liveTv.recordings' => '녹화',
-			'liveTv.scheduledRecordings' => '예약됨',
-			'liveTv.recordingRules' => '녹화 규칙',
-			'liveTv.noScheduledRecordings' => '예약된 녹화 없음',
-			'liveTv.manageRecording' => '녹화 관리',
-			'liveTv.cancelRecording' => '녹화 취소',
-			'liveTv.cancelRecordingTitle' => '이 녹화를 취소할까요?',
-			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title}이(가) 더 이상 녹화되지 않습니다.',
-			'liveTv.deleteRule' => '규칙 삭제',
-			'liveTv.deleteRuleTitle' => '녹화 규칙을 삭제할까요?',
-			'liveTv.deleteRuleMessage' => ({required Object title}) => '${title}의 향후 에피소드는 녹화되지 않습니다.',
-			'liveTv.recordingScheduled' => '녹화 예약됨',
-			'liveTv.alreadyScheduled' => '이 프로그램은 이미 예약되어 있습니다',
-			'liveTv.dvrAdminRequired' => 'DVR 설정은 관리자 계정이 필요합니다',
-			'liveTv.recordingFailed' => '녹화를 예약할 수 없습니다',
-			'liveTv.recordingTargetMissing' => '녹화 라이브러리를 확인할 수 없습니다',
-			'liveTv.recordNotAvailable' => '이 프로그램은 녹화할 수 없습니다',
-			'liveTv.recordingCancelled' => '녹화 취소됨',
-			'liveTv.recordingRuleDeleted' => '녹화 규칙 삭제됨',
-			'liveTv.processRecordingRules' => '규칙 재평가',
-			'liveTv.recordingInProgress' => '녹화 중',
-			'liveTv.recordingsCount' => ({required Object count}) => '${count}개 예약됨',
-			'liveTv.editRule' => '규칙 편집',
-			'liveTv.editRuleAction' => '편집',
-			'liveTv.recordingRuleUpdated' => '녹화 규칙 업데이트됨',
-			'liveTv.guideReloadRequested' => '가이드 새로고침 요청됨',
-			'liveTv.guideReloadFailed' => '편성표를 새로고침할 수 없습니다',
-			'liveTv.rulesProcessRequested' => '규칙 재평가 요청됨',
-			'liveTv.rulesProcessFailed' => '녹화 규칙을 다시 적용할 수 없습니다',
-			'liveTv.recordShow' => '프로그램 녹화',
-			'liveTv.recordSettings.startEarly' => '일찍 시작 (초)',
-			'liveTv.recordSettings.endLate' => '늦게 종료 (초)',
-			'liveTv.recordSettings.newOnly' => '새 에피소드만',
-			'liveTv.recordSettings.anyChannel' => '모든 채널에서 녹화',
-			'liveTv.recordSettings.anyTime' => '모든 시간대에 녹화',
-			'liveTv.recordSettings.skipInLibrary' => '라이브러리에 이미 있는 에피소드 건너뛰기',
-			'liveTv.recordSettings.keepUpTo' => '보관할 에피소드 수',
-			'liveTv.recordSettings.keepUpToHint' => '0이면 모든 에피소드 보관',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}분 후 시작',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다',
-			'liveTv.failedToStartChannel' => '실시간 채널을 시작할 수 없습니다',
-			'liveTv.failedToBuildStreamUrl' => '스트림 URL을 생성할 수 없습니다',
-			'liveTv.playbackStartFailed' => ({required Object reason}) => '채널을 시작하지 못했습니다: ${reason}',
-			'liveTv.channelSwitchFailed' => ({required Object reason}) => '채널을 전환하지 못했습니다: ${reason}',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',
@@ -4565,8 +3833,6 @@ extension on TranslationsKo {
 			'watchTogether.guestSwitchUnavailable' => '전환할 수 없음 — 동기화 서버를 사용할 수 없습니다',
 			'watchTogether.guestSwitchFailed' => '전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다',
 			'watchTogether.defaultDisplayName' => '사용자',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.timedOut' => '릴레이 서버가 제시간에 응답하지 않았습니다',
 			'watchTogether.errors.connectionLost' => '세션이 준비되기 전에 연결이 종료되었습니다',
 			'watchTogether.errors.invalidRelayResponse' => '릴레이 서버가 예기치 않은 응답을 보냈습니다',
@@ -4723,7 +3989,6 @@ extension on TranslationsKo {
 			'companionRemote.session.stopServer' => '서버 중지',
 			'companionRemote.session.minimize' => '최소화',
 			'companionRemote.session.manualAddressHint' => '수동 연결 주소:',
-			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '연결 중...',
 			'companionRemote.pairing.searchingForDevices' => '기기 검색 중...',
@@ -4731,12 +3996,10 @@ extension on TranslationsKo {
 			'companionRemote.pairing.noDevicesHint' => '데스크톱에서 Plezy를 열고 같은 Wi-Fi를 사용하세요',
 			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
 			'companionRemote.pairing.manualConnection' => '수동 연결',
-			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
 			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
-			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',
@@ -4850,6 +4113,8 @@ extension on TranslationsKo {
 			'externalPlayer.useExternalPlayerDescription' => '동영상을 다른 앱에서 열기',
 			'externalPlayer.selectPlayer' => '플레이어 선택',
 			'externalPlayer.customPlayers' => '사용자 정의 플레이어',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.systemDefault' => '시스템 기본값',
 			'externalPlayer.addCustomPlayer' => '사용자 정의 플레이어 추가',
 			'externalPlayer.playerName' => '플레이어 이름',
@@ -4861,11 +4126,7 @@ extension on TranslationsKo {
 			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',
 			'externalPlayer.playInExternalPlayer' => '외부 플레이어에서 재생',
-			'metadataEdit.editMetadata' => '편집...',
-			'metadataEdit.screenTitle' => '메타데이터 편집',
-			'metadataEdit.basicInfo' => '기본 정보',
 			'metadataEdit.artwork' => '아트워크',
-			'metadataEdit.advancedSettings' => '고급 설정',
 			'metadataEdit.title' => '제목',
 			'metadataEdit.sortTitle' => '정렬 제목',
 			'metadataEdit.originalTitle' => '원제',
@@ -4877,57 +4138,14 @@ extension on TranslationsKo {
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',
 			'metadataEdit.logo' => '로고',
-			'metadataEdit.squareArt' => '정사각형 아트',
-			'metadataEdit.selectPoster' => '포스터 선택',
-			'metadataEdit.selectBackground' => '배경 선택',
-			'metadataEdit.selectLogo' => '로고 선택',
-			'metadataEdit.selectSquareArt' => '정사각형 아트 선택',
-			'metadataEdit.fromUrl' => 'URL에서',
-			'metadataEdit.uploadFile' => '파일 업로드',
-			'metadataEdit.enterImageUrl' => '이미지 URL 입력',
 			'metadataEdit.imageUrl' => '이미지 URL',
-			'metadataEdit.metadataUpdated' => '메타데이터가 업데이트되었습니다',
-			'metadataEdit.metadataUpdateFailed' => '메타데이터 업데이트 실패',
-			'metadataEdit.artworkUpdated' => '아트워크가 업데이트되었습니다',
-			'metadataEdit.artworkUpdateFailed' => '아트워크 업데이트 실패',
-			'metadataEdit.noArtworkAvailable' => '사용 가능한 아트워크 없음',
-			'metadataEdit.artworkOption' => ({required Object index}) => '아트워크 옵션 ${index}',
-			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '아트워크 옵션 ${index}, 선택됨',
-			'metadataEdit.notSet' => '설정되지 않음',
-			'metadataEdit.libraryDefault' => '라이브러리 기본값',
-			'metadataEdit.accountDefault' => '계정 기본값',
-			'metadataEdit.seriesDefault' => '시리즈 기본값',
-			'metadataEdit.episodeSorting' => '에피소드 정렬',
-			'metadataEdit.oldestFirst' => '오래된 순',
-			'metadataEdit.newestFirst' => '최신 순',
-			'metadataEdit.keep' => '유지',
 			'metadataEdit.allEpisodes' => '모든 에피소드',
-			'metadataEdit.latestEpisodes' => ({required Object count}) => '최신 에피소드 ${count}개',
-			'metadataEdit.latestEpisode' => '최신 에피소드',
-			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '최근 ${count}일 내 추가된 에피소드',
-			'metadataEdit.deleteAfterPlaying' => '재생 후 에피소드 삭제',
 			'metadataEdit.never' => '안 함',
-			'metadataEdit.afterADay' => '하루 후',
-			'metadataEdit.afterAWeek' => '일주일 후',
-			'metadataEdit.afterAMonth' => '한 달 후',
-			'metadataEdit.onNextRefresh' => '다음 새로고침 시',
 			'metadataEdit.seasons' => '시즌',
 			'metadataEdit.show' => '표시',
 			'metadataEdit.hide' => '숨기기',
-			'metadataEdit.episodeOrdering' => '에피소드 순서',
-			'metadataEdit.tmdbAiring' => 'The Movie Database (방영순)',
-			'metadataEdit.tvdbAiring' => 'TheTVDB (방영순)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (절대순)',
-			'metadataEdit.metadataLanguage' => '메타데이터 언어',
-			'metadataEdit.useOriginalTitle' => '원제 사용',
-			'metadataEdit.preferredAudioLanguage' => '선호 오디오 언어',
-			'metadataEdit.preferredSubtitleLanguage' => '선호 자막 언어',
 			'metadataEdit.subtitleMode' => '자막 자동 선택 모드',
-			'metadataEdit.manuallySelected' => '수동 선택',
-			'metadataEdit.shownWithForeignAudio' => '외국어 오디오 시 표시',
-			'metadataEdit.alwaysEnabled' => '항상 활성화',
 			'metadataEdit.tags' => '태그',
-			'metadataEdit.addTag' => '태그 추가',
 			'metadataEdit.genre' => '장르',
 			'metadataEdit.director' => '감독',
 			'metadataEdit.writer' => '작가',
@@ -4935,22 +4153,9 @@ extension on TranslationsKo {
 			'metadataEdit.country' => '국가',
 			'metadataEdit.collection' => '컬렉션',
 			'metadataEdit.label' => '라벨',
-			'metadataEdit.quickTag' => '빠른 태그…',
 			'matchScreen.match' => '일치...',
-			'matchScreen.fixMatch' => '일치 수정...',
-			'matchScreen.unmatch' => '일치 해제',
-			'matchScreen.unmatchConfirm' => '이 매칭을 지울까요? 다시 매칭될 때까지 Plex에서는 미매칭으로 처리됩니다.',
-			'matchScreen.unmatchSuccess' => '일치 해제됨',
-			'matchScreen.unmatchFailed' => '일치 해제에 실패했습니다',
-			'matchScreen.matchApplied' => '일치 적용됨',
-			'matchScreen.matchFailed' => '일치 적용에 실패했습니다',
-			'matchScreen.titleHint' => '제목',
-			'matchScreen.yearHint' => '연도',
 			'matchScreen.search' => '검색',
-			'matchScreen.noMatchesFound' => '일치하는 항목이 없습니다',
 			'serverTasks.title' => '서버 작업',
-			'serverTasks.failedToLoad' => '작업을 불러올 수 없습니다',
-			'serverTasks.noTasks' => '실행 중인 작업 없음',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => '연결됨',
 			'trakt.connectedAs' => ({required Object username}) => '@${username}(으)로 연결됨',
@@ -4965,8 +4170,6 @@ extension on TranslationsKo {
 			'seerr.serverUrl' => '서버 URL',
 			'seerr.serverUrlHelper' => 'Seerr 인스턴스의 주소',
 			'seerr.checkServer' => '계속',
-			'seerr.signInWithJellyfin' => 'Jellyfin으로 로그인',
-			'seerr.signInWithEmby' => 'Emby로 로그인',
 			'seerr.signInWithLocal' => '로컬 계정 사용',
 			'seerr.email' => '이메일',
 			'seerr.noSignInMethods' => '이 Seerr 인스턴스에는 Plezy가 지원하는 로그인 방법이 없습니다.',
@@ -4999,9 +4202,7 @@ extension on TranslationsKo {
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url}에 Seerr 인스턴스가 없습니다(HTTP ${status})',
 			'seerr.behindAuthProxy' => 'Seerr 대신 인증이 필요한 리버스 프록시(SSO 또는 HTTP 인증)가 응답했습니다. Plezy는 이를 통해 로그인할 수 없습니다. 이 앱에서 Seerr의 /api/v1 경로가 프록시를 우회하도록 하거나, Seerr에 직접 연결되는 주소를 사용하세요.',
 			'seerr.invalidUrl' => 'https://seerr.example.com과 같은 서버 주소를 입력하세요',
-			'seerr.quickConnectUnsupported' => '이 Seerr 인스턴스는 Quick Connect를 지원하지 않습니다. Seerr 3.4 이상이 필요합니다.',
 			'seerr.notInitialized' => '이 Seerr 인스턴스는 최초 실행 설정을 완료하지 않았습니다',
-			'seerr.noPlexTokenForReauth' => '다시 로그인하는 데 사용할 수 있는 Plex 토큰이 없습니다',
 			'seerr.noStoredCredentials' => '다시 로그인하는 데 사용할 수 있는 저장된 인증 정보가 없습니다',
 			'seerr.signInRejected' => '로그인이 거부되었습니다',
 			'seerr.noSessionCookie' => 'Seerr에서 세션 쿠키를 발급하지 않았습니다',
@@ -5048,55 +4249,14 @@ extension on TranslationsKo {
 			'services.libraryFilter.modeHintWhitelist' => '아래에 선택한 라이브러리만 동기화합니다.',
 			'services.libraryFilter.libraries' => '라이브러리',
 			'services.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
-			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} 서버 추가',
-			'addServer.serverUrls' => '서버 URL',
-			'addServer.serverUrlsHelper' => '쉼표로 구분하여 여러 URL을 입력할 수 있습니다.',
-			'addServer.findServer' => '서버 찾기',
-			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => '로컬 ${product} 서버를 찾는 중...',
-			'addServer.localMediaBrowserServers' => ({required Object product}) => '로컬 ${product} 서버',
 			'addServer.username' => '사용자 이름',
 			'addServer.password' => '비밀번호',
 			'addServer.signIn' => '로그인',
 			'addServer.change' => '변경',
 			'addServer.required' => '필수',
 			'addServer.couldNotReachServer' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
-			'addServer.signInFailed' => ({required Object error}) => '로그인 실패: ${error}',
-			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 실패: ${error}',
-			'addServer.addPlexTitle' => 'Plex로 로그인',
-			'addServer.pinExpired' => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.',
-			'addServer.failedToRegisterAccount' => ({required Object error}) => '계정 등록 실패: ${error}',
-			'addServer.enterMediaBrowserUrlError' => ({required Object product}) => '${product} 서버 URL을 입력하세요',
 			'addServer.addConnectionTitle' => '연결 추가',
-			'addServer.addConnectionTitleScoped' => ({required Object name}) => '${name}에 추가',
-			'addServer.signInWithPlexCard' => 'Plex로 로그인',
-			'addServer.signInWithPlexCardSubtitle' => '이 기기를 승인합니다. 공유 서버가 추가됩니다.',
-			'addServer.signInWithPlexCardSubtitleScoped' => 'Plex 계정을 승인합니다. Home 사용자는 프로필이 됩니다.',
-			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}에 연결',
-			'addServer.connectToMediaBrowserCardSubtitle' => '서버 URL, 사용자 이름, 비밀번호를 입력하세요.',
-			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} 서버에 로그인하세요. ${name}에 연결됩니다.',
-			'addServer.borrowFromAnotherProfile' => '다른 프로필에서 빌리기',
-			'addServer.borrowFromAnotherProfileSubtitle' => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'addServer.invalidCredentials' => '사용자 이름 또는 비밀번호가 올바르지 않습니다',
-			'addServer.authResponseNotJson' => '인증 응답이 유효한 JSON이 아닙니다',
-			'addServer.authResponseIncomplete' => '서버의 로그인 응답이 불완전합니다',
-			_ => null,
-		} ?? switch (path) {
-			'addServer.quickConnectRejected' => '서버에서 Quick Connect를 거부했습니다',
-			'addServer.quickConnectNotJson' => 'Quick Connect 응답이 유효한 JSON이 아닙니다',
-			'addServer.quickConnectMissingFields' => 'Quick Connect 응답에 코드 또는 비밀 키가 없습니다',
-			'addServer.quickConnectPollRejected' => '서버에서 Quick Connect 폴링을 거부했습니다',
-			'addServer.serverTimedOut' => '서버가 제시간에 응답하지 않았습니다',
-			'addServer.responseNotJson' => '서버 응답이 유효한 JSON이 아닙니다',
-			'addServer.responseMissingIdentity' => ({required Object product}) => '응답에 ID 또는 서버 이름이 없습니다. 이 서버가 ${product} 서버인가요?',
-			'addServer.probeFailed' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
-			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '${product} 서버 URL을 하나 이상 입력하세요',
-			'addServer.noReachableServer' => ({required Object product}) => '연결 가능한 ${product} 서버를 찾을 수 없습니다',
-			'addServer.urlsPointToDifferentServers' => ({required Object product}) => '이 URL들은 서로 다른 ${product} 서버를 가리킵니다',
-			'addServer.urlDoesNotMatchServer' => ({required Object product}) => '이 URL은 ${product} 서버와 일치하지 않습니다',
-			'addServer.redirectUnsupported' => '서버가 지원되지 않는 URL로 리디렉션했습니다',
-			'addServer.redirectDifferentHost' => ({required Object product}) => '서버가 다른 호스트로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요.',
-			'addServer.redirectInsecure' => '서버가 HTTPS에서 안전하지 않은 URL로 리디렉션했습니다',
-			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => '서버가 지원되지 않는 URL로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요.',
 			_ => null,
 		};
 	}

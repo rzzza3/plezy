@@ -58,7 +58,6 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$messages$en messages = Translations$messages$en.internal(_root);
 	late final Translations$subtitlingStyling$en subtitlingStyling = Translations$subtitlingStyling$en.internal(_root);
 	late final Translations$mpvConfig$en mpvConfig = Translations$mpvConfig$en.internal(_root);
-	late final Translations$dialog$en dialog = Translations$dialog$en.internal(_root);
 	late final Translations$profiles$en profiles = Translations$profiles$en.internal(_root);
 	late final Translations$connections$en connections = Translations$connections$en.internal(_root);
 	late final Translations$accountPreferences$en accountPreferences = Translations$accountPreferences$en.internal(_root);
@@ -66,7 +65,6 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$errors$en errors = Translations$errors$en.internal(_root);
 	late final Translations$libraries$en libraries = Translations$libraries$en.internal(_root);
 	late final Translations$about$en about = Translations$about$en.internal(_root);
-	late final Translations$serverSelection$en serverSelection = Translations$serverSelection$en.internal(_root);
 	late final Translations$hubDetail$en hubDetail = Translations$hubDetail$en.internal(_root);
 	late final Translations$logs$en logs = Translations$logs$en.internal(_root);
 	late final Translations$startup$en startup = Translations$startup$en.internal(_root);
@@ -114,56 +112,8 @@ class Translations$auth$en {
 
 	// Translations
 
-	/// en: 'Sign in with Plex'
-	String get signInWithPlex => 'Sign in with Plex';
-
-	/// en: 'Show QR Code'
-	String get showQRCode => 'Show QR Code';
-
-	/// en: 'Authenticate'
-	String get authenticate => 'Authenticate';
-
-	/// en: 'Authentication timed out. Please try again.'
-	String get authenticationTimeout => 'Authentication timed out. Please try again.';
-
-	/// en: 'Scan this QR code to sign in'
-	String get scanQRToSignIn => 'Scan this QR code to sign in';
-
-	/// en: 'Waiting for authentication... Sign in from your browser.'
-	String get waitingForAuth => 'Waiting for authentication...\nSign in from your browser.';
-
-	/// en: 'Use browser'
-	String get useBrowser => 'Use browser';
-
-	/// en: 'or'
-	String get or => 'or';
-
-	/// en: 'Connect to ${product}'
-	String connectToMediaBrowser({required Object product}) => 'Connect to ${product}';
-
-	/// en: 'Quick Connect'
-	String get quickConnect => 'Quick Connect';
-
-	/// en: 'Use Quick Connect'
-	String get useQuickConnect => 'Use Quick Connect';
-
-	/// en: 'Open Quick Connect in Jellyfin and enter this code.'
-	String get quickConnectInstructions => 'Open Quick Connect in Jellyfin and enter this code.';
-
-	/// en: 'Waiting for approval…'
-	String get quickConnectWaiting => 'Waiting for approval…';
-
-	/// en: 'Cancel'
-	String get quickConnectCancel => 'Cancel';
-
-	/// en: 'Quick Connect expired. Try again.'
-	String get quickConnectExpired => 'Quick Connect expired. Try again.';
-
 	/// en: 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.'
 	String get localDataRecoveryRequired => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.';
-
-	/// en: 'The Plex PIN check was rejected'
-	String get pinCheckRejected => 'The Plex PIN check was rejected';
 }
 
 // Path: common
@@ -194,9 +144,6 @@ class Translations$common$en {
 
 	/// en: 'Submit'
 	String get submit => 'Submit';
-
-	/// en: 'Confirm'
-	String get confirm => 'Confirm';
 
 	/// en: 'Retry'
 	String get retry => 'Retry';
@@ -688,9 +635,6 @@ class Translations$settings$en {
 	/// en: 'Remember audio and subtitle choices per title'
 	String get rememberTrackSelectionsDescription => 'Remember audio and subtitle choices per title';
 
-	/// en: 'Plex saves each choice on the server per file; Jellyfin also turns on the account's Remember selections; Emby is not supported'
-	String get rememberTrackSelectionsBackendRule => 'Plex saves each choice on the server per file; Jellyfin also turns on the account\'s Remember selections; Emby is not supported';
-
 	/// en: 'Use server's per-episode track selections'
 	String get followServerTrackSelections => 'Use server\'s per-episode track selections';
 
@@ -922,8 +866,8 @@ class Translations$settings$en {
 	/// en: 'Force Fallback Markers'
 	String get forceSkipMarkerFallback => 'Force Fallback Markers';
 
-	/// en: 'Use chapter title patterns even when Plex has markers'
-	String get forceSkipMarkerFallbackDescription => 'Use chapter title patterns even when Plex has markers';
+	/// en: 'Use chapter title patterns even when the server has markers'
+	String get forceSkipMarkerFallbackDescription => 'Use chapter title patterns even when the server has markers';
 
 	/// en: 'Auto Skip Delay'
 	String get autoSkipDelay => 'Auto Skip Delay';
@@ -1234,14 +1178,8 @@ class Translations$settings$en {
 	/// en: 'Show Explore Tab'
 	String get showExploreTab => 'Show Explore Tab';
 
-	/// en: 'Display the Explore tab with content from Plex Discover and connected trackers'
-	String get showExploreTabDescription => 'Display the Explore tab with content from Plex Discover and connected trackers';
-
-	/// en: 'Default to Favorite Channels'
-	String get liveTvDefaultFavorites => 'Default to Favorite Channels';
-
-	/// en: 'Show only favorite channels when opening Live TV'
-	String get liveTvDefaultFavoritesDescription => 'Show only favorite channels when opening Live TV';
+	/// en: 'Display the Explore tab with content from connected trackers'
+	String get showExploreTabDescription => 'Display the Explore tab with content from connected trackers';
 
 	/// en: 'General'
 	String get general => 'General';
@@ -1797,81 +1735,6 @@ class Translations$mediaMenu$en {
 	/// en: 'File Info'
 	String get fileInfo => 'File Info';
 
-	/// en: 'Delete episode from server'
-	String get deleteEpisodeFromServer => 'Delete episode from server';
-
-	/// en: 'Delete season from server'
-	String get deleteSeasonFromServer => 'Delete season from server';
-
-	/// en: 'Delete show from server'
-	String get deleteShowFromServer => 'Delete show from server';
-
-	/// en: 'Delete movie from server'
-	String get deleteMovieFromServer => 'Delete movie from server';
-
-	/// en: 'Delete this episode?'
-	String get deleteEpisodeTitle => 'Delete this episode?';
-
-	/// en: 'Delete this season?'
-	String get deleteSeasonTitle => 'Delete this season?';
-
-	/// en: 'Delete this show?'
-	String get deleteShowTitle => 'Delete this show?';
-
-	/// en: 'Delete this movie?'
-	String get deleteMovieTitle => 'Delete this movie?';
-
-	/// en: 'Delete episode'
-	String get deleteEpisodeConfirm => 'Delete episode';
-
-	/// en: 'Delete season'
-	String get deleteSeasonConfirm => 'Delete season';
-
-	/// en: 'Delete show'
-	String get deleteShowConfirm => 'Delete show';
-
-	/// en: 'Delete movie'
-	String get deleteMovieConfirm => 'Delete movie';
-
-	/// en: 'Delete anyway'
-	String get deleteAnyway => 'Delete anyway';
-
-	/// en: 'Permanently delete ${title} from your server?'
-	String confirmDeleteTarget({required Object title}) => 'Permanently delete ${title} from your server?';
-
-	/// en: 'This includes all episodes and their files.'
-	String get deleteMultipleWarning => 'This includes all episodes and their files.';
-
-	/// en: '(one) {This deletes all ${n} episode in it, and its file.} (other) {This deletes all ${n} episodes in it, and their files.}'
-	String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: 'This deletes all ${n} episode in it, and its file.',
-		other: 'This deletes all ${n} episodes in it, and their files.',
-	);
-
-	/// en: '(one) {This item is stored as ${n} file, which will be deleted.} (other) {This item is stored across ${n} files, and all of them will be deleted.}'
-	String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: 'This item is stored as ${n} file, which will be deleted.',
-		other: 'This item is stored across ${n} files, and all of them will be deleted.',
-	);
-
-	/// en: '(one) {${n} other episode is stored in the same file and will be deleted too:} (other) {${n} other episodes are stored in the same file and will be deleted too:}'
-	String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} other episode is stored in the same file and will be deleted too:',
-		other: '${n} other episodes are stored in the same file and will be deleted too:',
-	);
-
-	/// en: 'Plezy could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.'
-	String get deleteScopeUnverifiedProbeFailed => 'Plezy could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.';
-
-	/// en: 'Your server did not provide file details for this item, so Plezy cannot check which files this will remove. It may delete more than the item named above.'
-	String get deleteScopeUnverifiedNoFileInfo => 'Your server did not provide file details for this item, so Plezy cannot check which files this will remove. It may delete more than the item named above.';
-
-	/// en: 'Media item deleted successfully'
-	String get mediaDeletedSuccessfully => 'Media item deleted successfully';
-
-	/// en: 'Failed to delete media item'
-	String get mediaFailedToDelete => 'Failed to delete media item';
-
 	/// en: 'Rate'
 	String get rate => 'Rate';
 
@@ -2336,9 +2199,6 @@ class Translations$messages$en {
 	/// en: 'The stream was interrupted. Press play or seek to retry.'
 	String get streamInterrupted => 'The stream was interrupted. Press play or seek to retry.';
 
-	/// en: 'The live stream was interrupted. Press play to retry.'
-	String get liveStreamInterrupted => 'The live stream was interrupted. Press play to retry.';
-
 	/// en: 'File information not available'
 	String get fileInfoNotAvailable => 'File information not available';
 
@@ -2395,24 +2255,6 @@ class Translations$messages$en {
 
 	/// en: 'No logs available'
 	String get noLogsAvailable => 'No logs available';
-
-	/// en: 'Scanning "${title}"...'
-	String libraryScanning({required Object title}) => 'Scanning "${title}"...';
-
-	/// en: 'Library scan started for "${title}"'
-	String libraryScanStarted({required Object title}) => 'Library scan started for "${title}"';
-
-	/// en: 'Failed to scan library: ${error}'
-	String libraryScanFailed({required Object error}) => 'Failed to scan library: ${error}';
-
-	/// en: 'Refreshing metadata for "${title}"...'
-	String metadataRefreshing({required Object title}) => 'Refreshing metadata for "${title}"...';
-
-	/// en: 'Metadata refresh started for "${title}"'
-	String metadataRefreshStarted({required Object title}) => 'Metadata refresh started for "${title}"';
-
-	/// en: 'Failed to refresh metadata: ${error}'
-	String metadataRefreshFailed({required Object error}) => 'Failed to refresh metadata: ${error}';
 
 	/// en: 'Are you sure you want to log out?'
 	String get logoutConfirm => 'Are you sure you want to log out?';
@@ -2489,17 +2331,8 @@ class Translations$messages$en {
 	/// en: 'No video URL available'
 	String get noVideoUrl => 'No video URL available';
 
-	/// en: 'The server returned no playable media sources'
-	String get playbackNoMediaSources => 'The server returned no playable media sources';
-
 	/// en: 'Playback was started before its data was ready'
 	String get playbackDataNotPrepared => 'Playback was started before its data was ready';
-
-	/// en: 'Stream selection is not available for this source'
-	String get streamSelectionUnavailable => 'Stream selection is not available for this source';
-
-	/// en: 'Could not apply the selected streams'
-	String get streamSelectionFailed => 'Could not apply the selected streams';
 
 	/// en: 'This track choice applies to the current playback only.'
 	String get trackSelectionNotRemembered => 'This track choice applies to the current playback only.';
@@ -2655,18 +2488,6 @@ class Translations$mpvConfig$en {
 	String get embeddedVoHint => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.';
 }
 
-// Path: dialog
-class Translations$dialog$en {
-	Translations$dialog$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Confirm Action'
-	String get confirmAction => 'Confirm Action';
-}
-
 // Path: profiles
 class Translations$profiles$en {
 	Translations$profiles$en.internal(this._root);
@@ -2675,17 +2496,8 @@ class Translations$profiles$en {
 
 	// Translations
 
-	/// en: 'Add Plezy profile'
-	String get addPlezyProfile => 'Add Plezy profile';
-
 	/// en: 'Switching profile…'
 	String get switchingProfile => 'Switching profile…';
-
-	/// en: 'Delete this profile?'
-	String get deleteThisProfileTitle => 'Delete this profile?';
-
-	/// en: 'Remove ${displayName}. Connections aren't affected.'
-	String deleteThisProfileMessage({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.';
 
 	/// en: 'Active'
 	String get active => 'Active';
@@ -2698,21 +2510,6 @@ class Translations$profiles$en {
 
 	/// en: 'Sign out'
 	String get signOut => 'Sign out';
-
-	/// en: 'Sign out of Plex?'
-	String get signOutPlexTitle => 'Sign out of Plex?';
-
-	/// en: 'Remove ${displayName} and all Plex Home users? Sign back in anytime.'
-	String signOutPlexMessage({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.';
-
-	/// en: 'Also delete downloads'
-	String get signOutPlexDeleteDownloads => 'Also delete downloads';
-
-	/// en: 'Otherwise they stay on this device and come back when you sign back in to this account.'
-	String get signOutPlexDeleteDownloadsDescription => 'Otherwise they stay on this device and come back when you sign back in to this account.';
-
-	/// en: 'Signed out of Plex.'
-	String get signedOutPlex => 'Signed out of Plex.';
 
 	/// en: 'Sign out of ${serverName}?'
 	String signOutServerTitle({required Object serverName}) => 'Sign out of ${serverName}?';
@@ -2735,8 +2532,8 @@ class Translations$profiles$en {
 	/// en: 'Profiles'
 	String get sectionTitle => 'Profiles';
 
-	/// en: 'Add profiles to mix managed users and local identities'
-	String get summarySingle => 'Add profiles to mix managed users and local identities';
+	/// en: 'Profiles come from your Silo server'
+	String get summarySingle => 'Profiles come from your Silo server';
 
 	/// en: '${count} profiles · active: ${activeName}'
 	String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}';
@@ -2744,146 +2541,14 @@ class Translations$profiles$en {
 	/// en: '${count} profiles'
 	String summaryMultiple({required Object count}) => '${count} profiles';
 
-	/// en: 'Remove connection?'
-	String get removeConnectionTitle => 'Remove connection?';
-
-	/// en: 'Remove ${displayName}'s access to ${connectionLabel}. Other profiles keep it.'
-	String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.';
-
-	/// en: 'Delete profile?'
-	String get deleteProfileTitle => 'Delete profile?';
-
-	/// en: 'Remove ${displayName} and its connections. Servers stay available.'
-	String deleteProfileMessage({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.';
-
-	/// en: 'Profile name'
-	String get profileNameLabel => 'Profile name';
-
-	/// en: 'PIN protection'
-	String get pinProtectionLabel => 'PIN protection';
-
-	/// en: 'PIN managed by Plex. Edit on plex.tv.'
-	String get pinManagedByPlex => 'PIN managed by Plex. Edit on plex.tv.';
-
-	/// en: 'No PIN set. To require one, edit the home user on plex.tv.'
-	String get noPinSetEditOnPlex => 'No PIN set. To require one, edit the home user on plex.tv.';
-
-	/// en: 'Set PIN'
-	String get setPin => 'Set PIN';
-
-	/// en: 'Set PIN'
-	String get setPinTitle => 'Set PIN';
-
-	/// en: 'Confirm PIN'
-	String get confirmPinTitle => 'Confirm PIN';
-
-	/// en: 'PIN set'
-	String get pinSet => 'PIN set';
-
-	/// en: 'Change'
-	String get changePin => 'Change';
-
-	/// en: 'Remove'
-	String get removePin => 'Remove';
-
-	/// en: 'Connections'
-	String get connectionsLabel => 'Connections';
-
 	/// en: 'Add'
 	String get add => 'Add';
-
-	/// en: 'Delete profile'
-	String get deleteProfileButton => 'Delete profile';
-
-	/// en: 'No connections — add one to use this profile.'
-	String get noConnectionsHint => 'No connections — add one to use this profile.';
 
 	/// en: 'No connections'
 	String get noConnections => 'No connections';
 
-	/// en: 'Plex Home account'
-	String get plexHomeAccount => 'Plex Home account';
-
-	/// en: 'Plex account: ${account}'
-	String plexAccountChip({required Object account}) => 'Plex account: ${account}';
-
-	/// en: '${user} via ${account}'
-	String plexAccountUserChip({required Object user, required Object account}) => '${user} via ${account}';
-
-	/// en: 'Default'
-	String get connectionDefault => 'Default';
-
-	/// en: 'as ${displayName}'
-	String connectionAs({required Object displayName}) => 'as ${displayName}';
-
-	/// en: 'Make default'
-	String get makeDefault => 'Make default';
-
-	/// en: 'Remove'
-	String get removeConnection => 'Remove';
-
-	/// en: 'Profile renamed.'
-	String get profileRenamed => 'Profile renamed.';
-
-	/// en: 'Add to ${displayName}'
-	String borrowAddTo({required Object displayName}) => 'Add to ${displayName}';
-
-	/// en: 'Borrow another profile's connection. PIN-protected profiles require a PIN.'
-	String get borrowExplain => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.';
-
-	/// en: 'Nothing to borrow yet.'
-	String get borrowEmpty => 'Nothing to borrow yet.';
-
-	/// en: 'Connect Plex, Jellyfin, or Emby to another profile first.'
-	String get borrowEmptySubtitle => 'Connect Plex, Jellyfin, or Emby to another profile first.';
-
-	/// en: 'Available connections could not be loaded. Try again.'
-	String get borrowLoadFailed => 'Available connections could not be loaded. Try again.';
-
-	/// en: 'From ${displayName}'
-	String borrowFromProfile({required Object displayName}) => 'From ${displayName}';
-
-	/// en: 'Connection borrowed.'
-	String get borrowConnectionBorrowed => 'Connection borrowed.';
-
-	/// en: 'Failed to borrow connection.'
-	String get borrowFailed => 'Failed to borrow connection.';
-
-	/// en: 'Incorrect PIN.'
-	String get incorrectPin => 'Incorrect PIN.';
-
 	/// en: 'Incorrect PIN. Please try again.'
 	String get incorrectPinTryAgain => 'Incorrect PIN. Please try again.';
-
-	/// en: 'Source profile is missing its parent account.'
-	String get sourceProfileMissingParentAccount => 'Source profile is missing its parent account.';
-
-	/// en: 'Could not load your Plex Home users. Check your connection and try again.'
-	String get failedToLoadHomeUsers => 'Could not load your Plex Home users. Check your connection and try again.';
-
-	/// en: 'Failed to verify PIN.'
-	String get failedToVerifyPin => 'Failed to verify PIN.';
-
-	/// en: 'New profile'
-	String get newProfile => 'New profile';
-
-	/// en: 'e.g. Guests, Kids, Family Room'
-	String get profileNameHint => 'e.g. Guests, Kids, Family Room';
-
-	/// en: 'PIN protection (optional)'
-	String get pinProtectionOptional => 'PIN protection (optional)';
-
-	/// en: '4-digit PIN required to switch profiles.'
-	String get pinExplain => '4-digit PIN required to switch profiles.';
-
-	/// en: 'Continue'
-	String get continueButton => 'Continue';
-
-	/// en: 'PINs don't match'
-	String get pinsDontMatch => 'PINs don\'t match';
-
-	/// en: 'The Plex profile token resolved to an unexpected server'
-	String get tokenIdentityMismatch => 'The Plex profile token resolved to an unexpected server';
 }
 
 // Path: connections
@@ -2920,12 +2585,6 @@ class Translations$connections$en {
 
 	/// en: 'Sign in again'
 	String get signInAgain => 'Sign in again';
-
-	/// en: 'Edit ${product} connection'
-	String editMediaBrowserTitle({required Object product}) => 'Edit ${product} connection';
-
-	/// en: 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.'
-	String editMediaBrowserIntro({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.';
 }
 
 // Path: accountPreferences
@@ -2939,98 +2598,18 @@ class Translations$accountPreferences$en {
 	/// en: 'Account preferences'
 	String get sectionTitle => 'Account preferences';
 
-	/// en: 'Audio, subtitle and library options saved on ${account}'
-	String hubSubtitleSingle({required Object account}) => 'Audio, subtitle and library options saved on ${account}';
-
-	/// en: 'Audio, subtitle and library options saved on ${count} accounts'
-	String hubSubtitleMultiple({required Object count}) => 'Audio, subtitle and library options saved on ${count} accounts';
-
-	/// en: 'Every account stores its own preferences. Pick the one to edit.'
-	String get pickAccount => 'Every account stores its own preferences. Pick the one to edit.';
-
-	/// en: 'These options are saved on the account itself, so every app signed in to it uses them — including Plezy on your other devices.'
-	String get storedOnAccount => 'These options are saved on the account itself, so every app signed in to it uses them — including Plezy on your other devices.';
-
-	/// en: 'No accounts to configure'
-	String get noAccounts => 'No accounts to configure';
-
-	/// en: 'Sign in to Plex, or connect a Jellyfin or Emby server, and the preferences stored on that account show up here.'
-	String get noAccountsHint => 'Sign in to Plex, or connect a Jellyfin or Emby server, and the preferences stored on that account show up here.';
-
 	/// en: 'Can't reach this account'
 	String get unavailable => 'Can\'t reach this account';
 
-	/// en: 'Couldn't load these preferences'
-	String get loadFailed => 'Couldn\'t load these preferences';
-
-	/// en: 'No preference'
-	String get noPreference => 'No preference';
-
-	/// en: 'Not set'
-	String get notSet => 'Not set';
-
-	late final Translations$accountPreferences$groups$en groups = Translations$accountPreferences$groups$en.internal(_root);
-
-	/// en: 'Preferred audio language'
-	String get preferredAudioLanguage => 'Preferred audio language';
-
 	/// en: 'Choose audio by language'
 	String get autoSelectAudio => 'Choose audio by language';
-
-	/// en: 'Off keeps whatever audio track the file marks as default.'
-	String get autoSelectAudioDescription => 'Off keeps whatever audio track the file marks as default.';
-
-	/// en: 'Preferred subtitle language'
-	String get preferredSubtitleLanguage => 'Preferred subtitle language';
 
 	/// en: 'Turn subtitles on'
 	String get subtitleMode => 'Turn subtitles on';
 
 	late final Translations$accountPreferences$subtitleModes$en subtitleModes = Translations$accountPreferences$subtitleModes$en.internal(_root);
-
-	/// en: 'SDH subtitles'
-	String get subtitleAccessibility => 'SDH subtitles';
-
-	late final Translations$accountPreferences$subtitleAccessibilityOptions$en subtitleAccessibilityOptions = Translations$accountPreferences$subtitleAccessibilityOptions$en.internal(_root);
-
-	/// en: 'Forced subtitles'
-	String get forcedSubtitles => 'Forced subtitles';
-
 	late final Translations$accountPreferences$forcedSubtitleOptions$en forcedSubtitleOptions = Translations$accountPreferences$forcedSubtitleOptions$en.internal(_root);
-
-	/// en: 'Show missing episodes'
-	String get displayMissingEpisodes => 'Show missing episodes';
-
-	/// en: 'List episodes the server knows about but has no file for.'
-	String get displayMissingEpisodesDescription => 'List episodes the server knows about but has no file for.';
-
-	/// en: 'Hide watched items in Latest'
-	String get hidePlayedInLatest => 'Hide watched items in Latest';
-
-	/// en: 'Leave items you have already watched out of the server's Latest rows.'
-	String get hidePlayedInLatestDescription => 'Leave items you have already watched out of the server\'s Latest rows.';
-
-	/// en: 'Show the Collections view'
-	String get displayCollectionsView => 'Show the Collections view';
-
-	/// en: 'Offer the server's Collections view alongside your libraries.'
-	String get displayCollectionsViewDescription => 'Offer the server\'s Collections view alongside your libraries.';
-
-	/// en: 'Keep rewatched shows in Next Up'
-	String get rewatchingInNextUp => 'Keep rewatched shows in Next Up';
-
-	/// en: 'Once you finish a show, start it again and Next Up follows the rewatch instead of dropping the show.'
-	String get rewatchingInNextUpDescription => 'Once you finish a show, start it again and Next Up follows the rewatch instead of dropping the show.';
-
-	/// en: 'Watched indicators'
-	String get watchedIndicator => 'Watched indicators';
-
 	late final Translations$accountPreferences$watchedIndicatorOptions$en watchedIndicatorOptions = Translations$accountPreferences$watchedIndicatorOptions$en.internal(_root);
-
-	/// en: 'Ratings & reviews'
-	String get mediaReviewsVisibility => 'Ratings & reviews';
-
-	late final Translations$accountPreferences$mediaReviewsOptions$en mediaReviewsOptions = Translations$accountPreferences$mediaReviewsOptions$en.internal(_root);
 }
 
 // Path: discover
@@ -3053,29 +2632,8 @@ class Translations$discover$en {
 	/// en: 'Continue Watching'
 	String get continueWatching => 'Continue Watching';
 
-	/// en: 'Continue Watching in ${library}'
-	String continueWatchingIn({required Object library}) => 'Continue Watching in ${library}';
-
 	/// en: 'Next Up'
 	String get nextUp => 'Next Up';
-
-	/// en: 'Next Up in ${library}'
-	String nextUpIn({required Object library}) => 'Next Up in ${library}';
-
-	/// en: 'Recently Added'
-	String get recentlyAdded => 'Recently Added';
-
-	/// en: 'Recently Added in ${library}'
-	String recentlyAddedIn({required Object library}) => 'Recently Added in ${library}';
-
-	/// en: 'Latest Albums in ${library}'
-	String latestAlbumsIn({required Object library}) => 'Latest Albums in ${library}';
-
-	/// en: 'Recently Played in ${library}'
-	String recentlyPlayedIn({required Object library}) => 'Recently Played in ${library}';
-
-	/// en: 'Most Played in ${library}'
-	String mostPlayedIn({required Object library}) => 'Most Played in ${library}';
 
 	/// en: 'S${season}E${episode}'
 	String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
@@ -3146,20 +2704,8 @@ class Translations$errors$en {
 	/// en: 'No client available'
 	String get noClientAvailable => 'No client available';
 
-	/// en: 'Please enter a token'
-	String get pleaseEnterToken => 'Please enter a token';
-
-	/// en: 'Invalid token'
-	String get invalidToken => 'Invalid token';
-
-	/// en: 'Failed to verify token: ${error}'
-	String failedToVerifyToken({required Object error}) => 'Failed to verify token: ${error}';
-
 	/// en: 'Failed to switch to ${displayName}'
 	String failedToSwitchProfile({required Object displayName}) => 'Failed to switch to ${displayName}';
-
-	/// en: 'Failed to delete ${displayName}'
-	String failedToDeleteProfile({required Object displayName}) => 'Failed to delete ${displayName}';
 
 	/// en: 'Couldn't update rating'
 	String get failedToRate => 'Couldn\'t update rating';
@@ -3197,45 +2743,6 @@ class Translations$libraries$en {
 	/// en: 'Libraries'
 	String get title => 'Libraries';
 
-	/// en: 'Library'
-	String get fallbackTitle => 'Library';
-
-	/// en: 'Scan Library Files'
-	String get scanLibraryFiles => 'Scan Library Files';
-
-	/// en: 'Scan Library'
-	String get scanLibrary => 'Scan Library';
-
-	/// en: 'Analyze'
-	String get analyze => 'Analyze';
-
-	/// en: 'Analyze Library'
-	String get analyzeLibrary => 'Analyze Library';
-
-	/// en: 'Refresh Metadata'
-	String get refreshMetadata => 'Refresh Metadata';
-
-	/// en: 'Empty Trash'
-	String get emptyTrash => 'Empty Trash';
-
-	/// en: 'Emptying trash for "${title}"...'
-	String emptyingTrash({required Object title}) => 'Emptying trash for "${title}"...';
-
-	/// en: 'Trash emptied for "${title}"'
-	String trashEmptied({required Object title}) => 'Trash emptied for "${title}"';
-
-	/// en: 'Failed to empty trash: ${error}'
-	String failedToEmptyTrash({required Object error}) => 'Failed to empty trash: ${error}';
-
-	/// en: 'Analyzing "${title}"...'
-	String analyzing({required Object title}) => 'Analyzing "${title}"...';
-
-	/// en: 'Analysis started for "${title}"'
-	String analysisStarted({required Object title}) => 'Analysis started for "${title}"';
-
-	/// en: 'Failed to analyze library: ${error}'
-	String failedToAnalyze({required Object error}) => 'Failed to analyze library: ${error}';
-
 	/// en: 'No libraries found'
 	String get noLibrariesFound => 'No libraries found';
 
@@ -3260,18 +2767,6 @@ class Translations$libraries$en {
 	/// en: 'Clear All'
 	String get clearAll => 'Clear All';
 
-	/// en: 'Are you sure you want to scan "${title}"?'
-	String scanLibraryConfirm({required Object title}) => 'Are you sure you want to scan "${title}"?';
-
-	/// en: 'Are you sure you want to analyze "${title}"?'
-	String analyzeLibraryConfirm({required Object title}) => 'Are you sure you want to analyze "${title}"?';
-
-	/// en: 'Are you sure you want to refresh metadata for "${title}"?'
-	String refreshMetadataConfirm({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?';
-
-	/// en: 'Are you sure you want to empty trash for "${title}"?'
-	String emptyTrashConfirm({required Object title}) => 'Are you sure you want to empty trash for "${title}"?';
-
 	/// en: 'Manage Libraries'
 	String get manageLibraries => 'Manage Libraries';
 
@@ -3283,9 +2778,6 @@ class Translations$libraries$en {
 
 	/// en: 'Filters'
 	String get filters => 'Filters';
-
-	/// en: 'Are you sure you want to perform this action?'
-	String get confirmActionMessage => 'Are you sure you want to perform this action?';
 
 	/// en: 'Show library'
 	String get showLibrary => 'Show library';
@@ -3341,29 +2833,11 @@ class Translations$about$en {
 	/// en: 'Version ${version}'
 	String versionLabel({required Object version}) => 'Version ${version}';
 
-	/// en: 'A beautiful Plex, Jellyfin, and Emby client for Flutter'
-	String get appDescription => 'A beautiful Plex, Jellyfin, and Emby client for Flutter';
+	/// en: 'A beautiful Silo client for Flutter'
+	String get appDescription => 'A beautiful Silo client for Flutter';
 
 	/// en: 'View licenses of third-party libraries'
 	String get viewLicensesDescription => 'View licenses of third-party libraries';
-}
-
-// Path: serverSelection
-class Translations$serverSelection$en {
-	Translations$serverSelection$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'No servers found for ${username} (${email})'
-	String noServersFoundForAccount({required Object username, required Object email}) => 'No servers found for ${username} (${email})';
-
-	/// en: 'Failed to load servers: ${error}'
-	String failedToLoadServers({required Object error}) => 'Failed to load servers: ${error}';
-
-	/// en: 'No usable servers were found on this account'
-	String get noValidServers => 'No usable servers were found on this account';
 }
 
 // Path: hubDetail
@@ -3663,62 +3137,14 @@ class Translations$liveTv$en {
 	/// en: 'Live TV'
 	String get title => 'Live TV';
 
-	/// en: 'Guide'
-	String get guide => 'Guide';
-
-	/// en: 'No channels available'
-	String get noChannels => 'No channels available';
-
-	/// en: 'No DVR configured on any server'
-	String get noDvr => 'No DVR configured on any server';
-
 	/// en: 'Live TV server is not available.'
 	String get serverUnavailable => 'Live TV server is not available.';
-
-	/// en: 'Live TV server is not connected.'
-	String get serverNotConnected => 'Live TV server is not connected.';
-
-	/// en: 'No program data available'
-	String get noPrograms => 'No program data available';
-
-	/// en: 'Live stream failed'
-	String get liveStreamFailed => 'Live stream failed';
-
-	/// en: 'Unknown Program'
-	String get unknownProgram => 'Unknown Program';
-
-	/// en: 'Unknown'
-	String get unknownHub => 'Unknown';
-
-	/// en: 'Unknown error'
-	String get unknownError => 'Unknown error';
-
-	/// en: 'Channel ${number}'
-	String channelNumber({required Object number}) => 'Channel ${number}';
-
-	/// en: 'Unknown channel'
-	String get unknownChannel => 'Unknown channel';
 
 	/// en: 'LIVE'
 	String get live => 'LIVE';
 
-	/// en: 'Reload Guide'
-	String get reloadGuide => 'Reload Guide';
-
-	/// en: 'Search Guide'
-	String get searchGuide => 'Search Guide';
-
 	/// en: 'Search channels & programs'
 	String get searchHint => 'Search channels & programs';
-
-	/// en: 'No matches for "${query}"'
-	String searchNoResults({required Object query}) => 'No matches for "${query}"';
-
-	/// en: 'Channels'
-	String get channelsSection => 'Channels';
-
-	/// en: 'Programs'
-	String get programsSection => 'Programs';
 
 	/// en: 'Now'
 	String get now => 'Now';
@@ -3729,190 +3155,14 @@ class Translations$liveTv$en {
 	/// en: 'Tomorrow'
 	String get tomorrow => 'Tomorrow';
 
-	/// en: 'Midnight'
-	String get midnight => 'Midnight';
-
-	/// en: 'Overnight'
-	String get overnight => 'Overnight';
-
-	/// en: 'Morning'
-	String get morning => 'Morning';
-
-	/// en: 'Daytime'
-	String get daytime => 'Daytime';
-
-	/// en: 'Evening'
-	String get evening => 'Evening';
-
-	/// en: 'Late Night'
-	String get lateNight => 'Late Night';
-
-	/// en: 'What's On'
-	String get whatsOn => 'What\'s On';
-
-	/// en: 'Watch Channel'
-	String get watchChannel => 'Watch Channel';
-
-	/// en: 'Favorites'
-	String get favorites => 'Favorites';
-
-	/// en: 'Reorder Favorites'
-	String get reorderFavorites => 'Reorder Favorites';
-
-	/// en: 'No favorite channels'
-	String get noFavoriteChannels => 'No favorite channels';
-
-	/// en: 'Show all channels, then long-press a channel to add it to your favorites.'
-	String get noFavoriteChannelsHint => 'Show all channels, then long-press a channel to add it to your favorites.';
-
-	/// en: 'Show All Channels'
-	String get showAllChannels => 'Show All Channels';
-
-	/// en: 'Could not load favorites. Check your connection and try again.'
-	String get favoritesLoadFailed => 'Could not load favorites. Check your connection and try again.';
-
-	/// en: 'Could not update favorites. Check your connection and try again.'
-	String get favoritesUpdateFailed => 'Could not update favorites. Check your connection and try again.';
-
 	/// en: 'Join Session in Progress'
 	String get joinSession => 'Join Session in Progress';
-
-	/// en: 'Watch from start (${minutes} min ago)'
-	String watchFromStart({required Object minutes}) => 'Watch from start (${minutes} min ago)';
-
-	/// en: 'Watch Live'
-	String get watchLive => 'Watch Live';
-
-	/// en: 'Go to Live'
-	String get goToLive => 'Go to Live';
 
 	/// en: 'Record'
 	String get record => 'Record';
 
-	/// en: 'Record Episode'
-	String get recordEpisode => 'Record Episode';
-
-	/// en: 'Record Series'
-	String get recordSeries => 'Record Series';
-
-	/// en: 'Record Options'
-	String get recordOptions => 'Record Options';
-
-	/// en: 'Save to'
-	String get saveTo => 'Save to';
-
-	/// en: 'Recordings'
-	String get recordings => 'Recordings';
-
-	/// en: 'Scheduled'
-	String get scheduledRecordings => 'Scheduled';
-
-	/// en: 'Recording Rules'
-	String get recordingRules => 'Recording Rules';
-
-	/// en: 'Nothing scheduled to record'
-	String get noScheduledRecordings => 'Nothing scheduled to record';
-
-	/// en: 'Manage recording'
-	String get manageRecording => 'Manage recording';
-
-	/// en: 'Cancel recording'
-	String get cancelRecording => 'Cancel recording';
-
-	/// en: 'Cancel this recording?'
-	String get cancelRecordingTitle => 'Cancel this recording?';
-
-	/// en: '${title} will no longer be recorded.'
-	String cancelRecordingMessage({required Object title}) => '${title} will no longer be recorded.';
-
-	/// en: 'Delete rule'
-	String get deleteRule => 'Delete rule';
-
-	/// en: 'Delete recording rule?'
-	String get deleteRuleTitle => 'Delete recording rule?';
-
-	/// en: 'Future episodes of ${title} will not be recorded.'
-	String deleteRuleMessage({required Object title}) => 'Future episodes of ${title} will not be recorded.';
-
-	/// en: 'Recording scheduled'
-	String get recordingScheduled => 'Recording scheduled';
-
-	/// en: 'This program is already scheduled'
-	String get alreadyScheduled => 'This program is already scheduled';
-
-	/// en: 'DVR settings require an admin account'
-	String get dvrAdminRequired => 'DVR settings require an admin account';
-
-	/// en: 'Couldn't schedule recording'
-	String get recordingFailed => 'Couldn\'t schedule recording';
-
-	/// en: 'Couldn't determine recording library'
-	String get recordingTargetMissing => 'Couldn\'t determine recording library';
-
-	/// en: 'Recording not available for this program'
-	String get recordNotAvailable => 'Recording not available for this program';
-
-	/// en: 'Recording canceled'
-	String get recordingCancelled => 'Recording canceled';
-
-	/// en: 'Recording rule deleted'
-	String get recordingRuleDeleted => 'Recording rule deleted';
-
-	/// en: 'Re-evaluate rules'
-	String get processRecordingRules => 'Re-evaluate rules';
-
-	/// en: 'Recording now'
-	String get recordingInProgress => 'Recording now';
-
-	/// en: '${count} scheduled'
-	String recordingsCount({required Object count}) => '${count} scheduled';
-
-	/// en: 'Edit rule'
-	String get editRule => 'Edit rule';
-
-	/// en: 'Edit'
-	String get editRuleAction => 'Edit';
-
-	/// en: 'Recording rule updated'
-	String get recordingRuleUpdated => 'Recording rule updated';
-
-	/// en: 'Guide refresh requested'
-	String get guideReloadRequested => 'Guide refresh requested';
-
-	/// en: 'Couldn't refresh the guide'
-	String get guideReloadFailed => 'Couldn\'t refresh the guide';
-
-	/// en: 'Rule re-evaluation requested'
-	String get rulesProcessRequested => 'Rule re-evaluation requested';
-
-	/// en: 'Couldn't re-evaluate recording rules'
-	String get rulesProcessFailed => 'Couldn\'t re-evaluate recording rules';
-
-	/// en: 'Record show'
-	String get recordShow => 'Record show';
-
-	late final Translations$liveTv$recordSettings$en recordSettings = Translations$liveTv$recordSettings$en.internal(_root);
-
-	/// en: 'Starting in ${minutes} min'
-	String startingInMinutes({required Object minutes}) => 'Starting in ${minutes} min';
-
-	/// en: '${day} at ${time}'
-	String dayAtTime({required Object day, required Object time}) => '${day} at ${time}';
-
 	/// en: '${product} returned invalid Live TV playback data'
 	String invalidPlaybackData({required Object product}) => '${product} returned invalid Live TV playback data';
-
-	/// en: 'Could not start the live channel'
-	String get failedToStartChannel => 'Could not start the live channel';
-
-	/// en: 'Could not build the stream URL'
-	String get failedToBuildStreamUrl => 'Could not build the stream URL';
-
-	/// en: 'Couldn't start the channel: ${reason}'
-	String playbackStartFailed({required Object reason}) => 'Couldn\'t start the channel: ${reason}';
-
-	/// en: 'Couldn't switch channel: ${reason}'
-	String channelSwitchFailed({required Object reason}) => 'Couldn\'t switch channel: ${reason}';
 }
 
 // Path: collections
@@ -5103,20 +4353,8 @@ class Translations$metadataEdit$en {
 
 	// Translations
 
-	/// en: 'Edit...'
-	String get editMetadata => 'Edit...';
-
-	/// en: 'Edit Metadata'
-	String get screenTitle => 'Edit Metadata';
-
-	/// en: 'Basic Info'
-	String get basicInfo => 'Basic Info';
-
 	/// en: 'Artwork'
 	String get artwork => 'Artwork';
-
-	/// en: 'Advanced Settings'
-	String get advancedSettings => 'Advanced Settings';
 
 	/// en: 'Title'
 	String get title => 'Title';
@@ -5151,107 +4389,14 @@ class Translations$metadataEdit$en {
 	/// en: 'Logo'
 	String get logo => 'Logo';
 
-	/// en: 'Square Art'
-	String get squareArt => 'Square Art';
-
-	/// en: 'Select Poster'
-	String get selectPoster => 'Select Poster';
-
-	/// en: 'Select Background'
-	String get selectBackground => 'Select Background';
-
-	/// en: 'Select Logo'
-	String get selectLogo => 'Select Logo';
-
-	/// en: 'Select Square Art'
-	String get selectSquareArt => 'Select Square Art';
-
-	/// en: 'From URL'
-	String get fromUrl => 'From URL';
-
-	/// en: 'Upload File'
-	String get uploadFile => 'Upload File';
-
-	/// en: 'Enter image URL'
-	String get enterImageUrl => 'Enter image URL';
-
 	/// en: 'Image URL'
 	String get imageUrl => 'Image URL';
-
-	/// en: 'Metadata updated'
-	String get metadataUpdated => 'Metadata updated';
-
-	/// en: 'Failed to update metadata'
-	String get metadataUpdateFailed => 'Failed to update metadata';
-
-	/// en: 'Artwork updated'
-	String get artworkUpdated => 'Artwork updated';
-
-	/// en: 'Failed to update artwork'
-	String get artworkUpdateFailed => 'Failed to update artwork';
-
-	/// en: 'No artwork available'
-	String get noArtworkAvailable => 'No artwork available';
-
-	/// en: 'Artwork option ${index}'
-	String artworkOption({required Object index}) => 'Artwork option ${index}';
-
-	/// en: 'Artwork option ${index}, selected'
-	String selectedArtworkOption({required Object index}) => 'Artwork option ${index}, selected';
-
-	/// en: 'Not set'
-	String get notSet => 'Not set';
-
-	/// en: 'Library default'
-	String get libraryDefault => 'Library default';
-
-	/// en: 'Account default'
-	String get accountDefault => 'Account default';
-
-	/// en: 'Series default'
-	String get seriesDefault => 'Series default';
-
-	/// en: 'Episode Sorting'
-	String get episodeSorting => 'Episode Sorting';
-
-	/// en: 'Oldest first'
-	String get oldestFirst => 'Oldest first';
-
-	/// en: 'Newest first'
-	String get newestFirst => 'Newest first';
-
-	/// en: 'Keep'
-	String get keep => 'Keep';
 
 	/// en: 'All episodes'
 	String get allEpisodes => 'All episodes';
 
-	/// en: '${count} latest episodes'
-	String latestEpisodes({required Object count}) => '${count} latest episodes';
-
-	/// en: 'Latest episode'
-	String get latestEpisode => 'Latest episode';
-
-	/// en: 'Episodes added in the past ${count} days'
-	String episodesAddedPastDays({required Object count}) => 'Episodes added in the past ${count} days';
-
-	/// en: 'Delete Episodes After Playing'
-	String get deleteAfterPlaying => 'Delete Episodes After Playing';
-
 	/// en: 'Never'
 	String get never => 'Never';
-
-	/// en: 'After a day'
-	String get afterADay => 'After a day';
-
-	/// en: 'After a week'
-	String get afterAWeek => 'After a week';
-
-	/// en: 'After a month'
-	String get afterAMonth => 'After a month';
-
-	/// en: 'On next refresh'
-	String get onNextRefresh => 'On next refresh';
 
 	/// en: 'Seasons'
 	String get seasons => 'Seasons';
@@ -5262,47 +4407,11 @@ class Translations$metadataEdit$en {
 	/// en: 'Hide'
 	String get hide => 'Hide';
 
-	/// en: 'Episode Ordering'
-	String get episodeOrdering => 'Episode Ordering';
-
-	/// en: 'The Movie Database (Aired)'
-	String get tmdbAiring => 'The Movie Database (Aired)';
-
-	/// en: 'TheTVDB (Aired)'
-	String get tvdbAiring => 'TheTVDB (Aired)';
-
-	/// en: 'TheTVDB (Absolute)'
-	String get tvdbAbsolute => 'TheTVDB (Absolute)';
-
-	/// en: 'Metadata Language'
-	String get metadataLanguage => 'Metadata Language';
-
-	/// en: 'Use Original Title'
-	String get useOriginalTitle => 'Use Original Title';
-
-	/// en: 'Preferred Audio Language'
-	String get preferredAudioLanguage => 'Preferred Audio Language';
-
-	/// en: 'Preferred Subtitle Language'
-	String get preferredSubtitleLanguage => 'Preferred Subtitle Language';
-
 	/// en: 'Auto-Select Subtitle Mode'
 	String get subtitleMode => 'Auto-Select Subtitle Mode';
 
-	/// en: 'Manually selected'
-	String get manuallySelected => 'Manually selected';
-
-	/// en: 'Shown with foreign audio'
-	String get shownWithForeignAudio => 'Shown with foreign audio';
-
-	/// en: 'Always enabled'
-	String get alwaysEnabled => 'Always enabled';
-
 	/// en: 'Tags'
 	String get tags => 'Tags';
-
-	/// en: 'Add tag'
-	String get addTag => 'Add tag';
 
 	/// en: 'Genre'
 	String get genre => 'Genre';
@@ -5324,9 +4433,6 @@ class Translations$metadataEdit$en {
 
 	/// en: 'Label'
 	String get label => 'Label';
-
-	/// en: 'Quick Tag...'
-	String get quickTag => 'Quick Tag...';
 }
 
 // Path: matchScreen
@@ -5340,38 +4446,8 @@ class Translations$matchScreen$en {
 	/// en: 'Match...'
 	String get match => 'Match...';
 
-	/// en: 'Fix Match...'
-	String get fixMatch => 'Fix Match...';
-
-	/// en: 'Unmatch'
-	String get unmatch => 'Unmatch';
-
-	/// en: 'Clear this match? Plex treats it as unmatched until rematched.'
-	String get unmatchConfirm => 'Clear this match? Plex treats it as unmatched until rematched.';
-
-	/// en: 'Item unmatched'
-	String get unmatchSuccess => 'Item unmatched';
-
-	/// en: 'Failed to unmatch item'
-	String get unmatchFailed => 'Failed to unmatch item';
-
-	/// en: 'Match applied'
-	String get matchApplied => 'Match applied';
-
-	/// en: 'Failed to apply match'
-	String get matchFailed => 'Failed to apply match';
-
-	/// en: 'Title'
-	String get titleHint => 'Title';
-
-	/// en: 'Year'
-	String get yearHint => 'Year';
-
 	/// en: 'Search'
 	String get search => 'Search';
-
-	/// en: 'No matches found'
-	String get noMatchesFound => 'No matches found';
 }
 
 // Path: serverTasks
@@ -5384,12 +4460,6 @@ class Translations$serverTasks$en {
 
 	/// en: 'Server Tasks'
 	String get title => 'Server Tasks';
-
-	/// en: 'Failed to load tasks'
-	String get failedToLoad => 'Failed to load tasks';
-
-	/// en: 'No tasks running'
-	String get noTasks => 'No tasks running';
 }
 
 // Path: trakt
@@ -5450,12 +4520,6 @@ class Translations$seerr$en {
 
 	/// en: 'Continue'
 	String get checkServer => 'Continue';
-
-	/// en: 'Sign in with Jellyfin'
-	String get signInWithJellyfin => 'Sign in with Jellyfin';
-
-	/// en: 'Sign in with Emby'
-	String get signInWithEmby => 'Sign in with Emby';
 
 	/// en: 'Use a local account'
 	String get signInWithLocal => 'Use a local account';
@@ -5553,14 +4617,8 @@ class Translations$seerr$en {
 	/// en: 'Enter a server address like https://seerr.example.com'
 	String get invalidUrl => 'Enter a server address like https://seerr.example.com';
 
-	/// en: 'This Seerr instance does not support Quick Connect. It needs Seerr 3.4 or newer.'
-	String get quickConnectUnsupported => 'This Seerr instance does not support Quick Connect. It needs Seerr 3.4 or newer.';
-
 	/// en: 'This Seerr instance has not completed first-run setup'
 	String get notInitialized => 'This Seerr instance has not completed first-run setup';
-
-	/// en: 'No Plex token is available to sign in again'
-	String get noPlexTokenForReauth => 'No Plex token is available to sign in again';
 
 	/// en: 'No stored credentials are available to sign in again'
 	String get noStoredCredentials => 'No stored credentials are available to sign in again';
@@ -5641,24 +4699,6 @@ class Translations$addServer$en {
 
 	// Translations
 
-	/// en: 'Add ${product} server'
-	String addMediaBrowserTitle({required Object product}) => 'Add ${product} server';
-
-	/// en: 'Server URLs'
-	String get serverUrls => 'Server URLs';
-
-	/// en: 'Multiple URLs allowed, separated by commas.'
-	String get serverUrlsHelper => 'Multiple URLs allowed, separated by commas.';
-
-	/// en: 'Find server'
-	String get findServer => 'Find server';
-
-	/// en: 'Looking for local ${product} servers...'
-	String searchingLocalMediaBrowserServers({required Object product}) => 'Looking for local ${product} servers...';
-
-	/// en: 'Local ${product} servers'
-	String localMediaBrowserServers({required Object product}) => 'Local ${product} servers';
-
 	/// en: 'Username'
 	String get username => 'Username';
 
@@ -5677,110 +4717,11 @@ class Translations$addServer$en {
 	/// en: 'Could not reach the server: ${error}'
 	String couldNotReachServer({required Object error}) => 'Could not reach the server: ${error}';
 
-	/// en: 'Sign-in failed: ${error}'
-	String signInFailed({required Object error}) => 'Sign-in failed: ${error}';
-
-	/// en: 'Quick Connect failed: ${error}'
-	String quickConnectFailed({required Object error}) => 'Quick Connect failed: ${error}';
-
-	/// en: 'Sign in with Plex'
-	String get addPlexTitle => 'Sign in with Plex';
-
-	/// en: 'PIN expired before sign-in. Please try again.'
-	String get pinExpired => 'PIN expired before sign-in. Please try again.';
-
-	/// en: 'Failed to register account: ${error}'
-	String failedToRegisterAccount({required Object error}) => 'Failed to register account: ${error}';
-
-	/// en: 'Enter your ${product} server URL'
-	String enterMediaBrowserUrlError({required Object product}) => 'Enter your ${product} server URL';
-
 	/// en: 'Add connection'
 	String get addConnectionTitle => 'Add connection';
 
-	/// en: 'Add to ${name}'
-	String addConnectionTitleScoped({required Object name}) => 'Add to ${name}';
-
-	/// en: 'Sign in with Plex'
-	String get signInWithPlexCard => 'Sign in with Plex';
-
-	/// en: 'Authorize this device. Shared servers are added.'
-	String get signInWithPlexCardSubtitle => 'Authorize this device. Shared servers are added.';
-
-	/// en: 'Authorize a Plex account. Home users become profiles.'
-	String get signInWithPlexCardSubtitleScoped => 'Authorize a Plex account. Home users become profiles.';
-
-	/// en: 'Connect to ${product}'
-	String connectToMediaBrowserCard({required Object product}) => 'Connect to ${product}';
-
-	/// en: 'Enter your server URL, username, and password.'
-	String get connectToMediaBrowserCardSubtitle => 'Enter your server URL, username, and password.';
-
-	/// en: 'Sign in to your ${product} server. Binds to ${name}.'
-	String connectToMediaBrowserCardSubtitleScoped({required Object product, required Object name}) => 'Sign in to your ${product} server. Binds to ${name}.';
-
-	/// en: 'Borrow from another profile'
-	String get borrowFromAnotherProfile => 'Borrow from another profile';
-
-	/// en: 'Reuse another profile's connection. PIN-protected profiles require a PIN.'
-	String get borrowFromAnotherProfileSubtitle => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.';
-
 	/// en: 'Invalid username or password'
 	String get invalidCredentials => 'Invalid username or password';
-
-	/// en: 'The authentication response was not valid JSON'
-	String get authResponseNotJson => 'The authentication response was not valid JSON';
-
-	/// en: 'The sign-in response from the server was incomplete'
-	String get authResponseIncomplete => 'The sign-in response from the server was incomplete';
-
-	/// en: 'Quick Connect was rejected by the server'
-	String get quickConnectRejected => 'Quick Connect was rejected by the server';
-
-	/// en: 'The Quick Connect response was not valid JSON'
-	String get quickConnectNotJson => 'The Quick Connect response was not valid JSON';
-
-	/// en: 'The Quick Connect response is missing a code or secret'
-	String get quickConnectMissingFields => 'The Quick Connect response is missing a code or secret';
-
-	/// en: 'Quick Connect polling was rejected by the server'
-	String get quickConnectPollRejected => 'Quick Connect polling was rejected by the server';
-
-	/// en: 'The server did not respond in time'
-	String get serverTimedOut => 'The server did not respond in time';
-
-	/// en: 'The server response was not valid JSON'
-	String get responseNotJson => 'The server response was not valid JSON';
-
-	/// en: 'The response is missing an ID or server name — is this a ${product} server?'
-	String responseMissingIdentity({required Object product}) => 'The response is missing an ID or server name — is this a ${product} server?';
-
-	/// en: 'Could not reach the server: ${error}'
-	String probeFailed({required Object error}) => 'Could not reach the server: ${error}';
-
-	/// en: 'Enter at least one ${product} server URL'
-	String enterAtLeastOneUrl({required Object product}) => 'Enter at least one ${product} server URL';
-
-	/// en: 'No reachable ${product} server was found'
-	String noReachableServer({required Object product}) => 'No reachable ${product} server was found';
-
-	/// en: 'These URLs point to different ${product} servers'
-	String urlsPointToDifferentServers({required Object product}) => 'These URLs point to different ${product} servers';
-
-	/// en: 'This URL does not match the ${product} server'
-	String urlDoesNotMatchServer({required Object product}) => 'This URL does not match the ${product} server';
-
-	/// en: 'The server redirected to an unsupported URL'
-	String get redirectUnsupported => 'The server redirected to an unsupported URL';
-
-	/// en: 'The server redirected to a different host. Enter the final ${product} URL directly.'
-	String redirectDifferentHost({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.';
-
-	/// en: 'The server redirected from HTTPS to an insecure URL'
-	String get redirectInsecure => 'The server redirected from HTTPS to an insecure URL';
-
-	/// en: 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.'
-	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
 }
 
 // Path: silo
@@ -5796,9 +4737,6 @@ class Translations$silo$en {
 
 	/// en: 'Sign in with a code or your password'
 	String get connectCardSubtitle => 'Sign in with a code or your password';
-
-	/// en: 'Add a Silo server to ${name}'
-	String connectCardSubtitleScoped({required Object name}) => 'Add a Silo server to ${name}';
 
 	/// en: 'Connect to Silo'
 	String get serverTitle => 'Connect to Silo';
@@ -5909,12 +4847,6 @@ class Translations$silo$en {
 
 	/// en: 'Couldn't load profiles.'
 	String get profilesFailed => 'Couldn\'t load profiles.';
-
-	/// en: 'Enter the PIN for ${name}'
-	String enterPin({required Object name}) => 'Enter the PIN for ${name}';
-
-	/// en: 'PIN'
-	String get pin => 'PIN';
 
 	/// en: 'Wrong PIN. Try again.'
 	String get wrongPin => 'Wrong PIN. Try again.';
@@ -6124,24 +5056,6 @@ class Translations$videoControls$pipErrors$en {
 	String unknown({required Object error}) => 'An error occurred: ${error}';
 }
 
-// Path: accountPreferences.groups
-class Translations$accountPreferences$groups$en {
-	Translations$accountPreferences$groups$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Audio & subtitles'
-	String get audioAndSubtitles => 'Audio & subtitles';
-
-	/// en: 'Library'
-	String get libraryDisplay => 'Library';
-
-	/// en: 'Personal media'
-	String get personalMedia => 'Personal media';
-}
-
 // Path: accountPreferences.subtitleModes
 class Translations$accountPreferences$subtitleModes$en {
 	Translations$accountPreferences$subtitleModes$en.internal(this._root);
@@ -6153,53 +5067,17 @@ class Translations$accountPreferences$subtitleModes$en {
 	/// en: 'Manually selected'
 	String get none => 'Manually selected';
 
-	/// en: 'Never turn subtitles on by itself.'
-	String get noneDescription => 'Never turn subtitles on by itself.';
-
 	/// en: 'Follow the track flags'
 	String get defaultMode => 'Follow the track flags';
-
-	/// en: 'Use the default and forced flags stored on each subtitle track.'
-	String get defaultModeDescription => 'Use the default and forced flags stored on each subtitle track.';
 
 	/// en: 'Always enabled'
 	String get always => 'Always enabled';
 
-	/// en: 'Turn on a subtitle track in the preferred language whenever one exists.'
-	String get alwaysDescription => 'Turn on a subtitle track in the preferred language whenever one exists.';
-
 	/// en: 'Only forced subtitles'
 	String get onlyForced => 'Only forced subtitles';
 
-	/// en: 'Load only the tracks marked as forced.'
-	String get onlyForcedDescription => 'Load only the tracks marked as forced.';
-
 	/// en: 'Shown with foreign audio'
 	String get smart => 'Shown with foreign audio';
-
-	/// en: 'Turn subtitles on only when the audio is in another language.'
-	String get smartDescription => 'Turn subtitles on only when the audio is in another language.';
-}
-
-// Path: accountPreferences.subtitleAccessibilityOptions
-class Translations$accountPreferences$subtitleAccessibilityOptions$en {
-	Translations$accountPreferences$subtitleAccessibilityOptions$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Prefer non-SDH subtitles'
-	String get preferNonSdh => 'Prefer non-SDH subtitles';
-
-	/// en: 'Prefer SDH subtitles'
-	String get preferSdh => 'Prefer SDH subtitles';
-
-	/// en: 'Only SDH subtitles'
-	String get onlySdh => 'Only SDH subtitles';
-
-	/// en: 'Only non-SDH subtitles'
-	String get onlyNonSdh => 'Only non-SDH subtitles';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -6210,17 +5088,8 @@ class Translations$accountPreferences$forcedSubtitleOptions$en {
 
 	// Translations
 
-	/// en: 'Prefer non-forced subtitles'
-	String get preferNonForced => 'Prefer non-forced subtitles';
-
-	/// en: 'Prefer forced subtitles'
-	String get preferForced => 'Prefer forced subtitles';
-
 	/// en: 'Only forced subtitles'
 	String get onlyForced => 'Only forced subtitles';
-
-	/// en: 'Only non-forced subtitles'
-	String get onlyNonForced => 'Only non-forced subtitles';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -6234,35 +5103,11 @@ class Translations$accountPreferences$watchedIndicatorOptions$en {
 	/// en: 'Never'
 	String get none => 'Never';
 
-	/// en: 'Movies and TV shows'
-	String get moviesAndShows => 'Movies and TV shows';
-
 	/// en: 'Movies only'
 	String get movies => 'Movies only';
 
 	/// en: 'TV shows only'
 	String get shows => 'TV shows only';
-}
-
-// Path: accountPreferences.mediaReviewsOptions
-class Translations$accountPreferences$mediaReviewsOptions$en {
-	Translations$accountPreferences$mediaReviewsOptions$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Users and critics'
-	String get usersAndCritics => 'Users and critics';
-
-	/// en: 'Users only'
-	String get usersOnly => 'Users only';
-
-	/// en: 'Critics only'
-	String get criticsOnly => 'Critics only';
-
-	/// en: 'Hidden'
-	String get nobody => 'Hidden';
 }
 
 // Path: libraries.tabs
@@ -6348,12 +5193,6 @@ class Translations$libraries$filterCategories$en {
 	/// en: 'Unwatched'
 	String get unwatched => 'Unwatched';
 
-	/// en: 'Unplayed'
-	String get unplayed => 'Unplayed';
-
-	/// en: 'Favorites'
-	String get favorites => 'Favorites';
-
 	/// en: 'File Path'
 	String get filePath => 'File Path';
 }
@@ -6378,20 +5217,8 @@ class Translations$libraries$sortLabels$en {
 	/// en: 'Rating'
 	String get rating => 'Rating';
 
-	/// en: 'Community Rating'
-	String get communityRating => 'Community Rating';
-
-	/// en: 'Critic Rating'
-	String get criticRating => 'Critic Rating';
-
 	/// en: 'User Rating'
 	String get userRating => 'User Rating';
-
-	/// en: 'Date Played'
-	String get datePlayed => 'Date Played';
-
-	/// en: 'Play Count'
-	String get playCount => 'Play Count';
 
 	/// en: 'Production Year'
 	String get productionYear => 'Production Year';
@@ -6399,32 +5226,11 @@ class Translations$libraries$sortLabels$en {
 	/// en: 'Runtime'
 	String get runtime => 'Runtime';
 
-	/// en: 'Official Rating'
-	String get officialRating => 'Official Rating';
-
-	/// en: 'Premiere Date'
-	String get premiereDate => 'Premiere Date';
-
 	/// en: 'Start Date'
 	String get startDate => 'Start Date';
 
-	/// en: 'Air Time'
-	String get airTime => 'Air Time';
-
 	/// en: 'Studio'
 	String get studio => 'Studio';
-
-	/// en: 'Random'
-	String get random => 'Random';
-
-	/// en: 'Date Shared'
-	String get dateShared => 'Date Shared';
-
-	/// en: 'Latest Episode Air Date'
-	String get latestEpisodeAirDate => 'Latest Episode Air Date';
-
-	/// en: 'Last Episode Date Added'
-	String get lastEpisodeDateAdded => 'Last Episode Date Added';
 
 	/// en: 'Date Downloaded'
 	String get dateDownloaded => 'Date Downloaded';
@@ -6979,39 +5785,6 @@ class Translations$explore$detail$en {
 	String get background => 'Background';
 }
 
-// Path: liveTv.recordSettings
-class Translations$liveTv$recordSettings$en {
-	Translations$liveTv$recordSettings$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Start early (seconds)'
-	String get startEarly => 'Start early (seconds)';
-
-	/// en: 'End late (seconds)'
-	String get endLate => 'End late (seconds)';
-
-	/// en: 'Only new episodes'
-	String get newOnly => 'Only new episodes';
-
-	/// en: 'Record on any channel'
-	String get anyChannel => 'Record on any channel';
-
-	/// en: 'Record at any time'
-	String get anyTime => 'Record at any time';
-
-	/// en: 'Skip episodes already in the library'
-	String get skipInLibrary => 'Skip episodes already in the library';
-
-	/// en: 'Episodes to keep'
-	String get keepUpTo => 'Episodes to keep';
-
-	/// en: '0 keeps every episode'
-	String get keepUpToHint => '0 keeps every episode';
-}
-
 // Path: music.discography
 class Translations$music$discography$en {
 	Translations$music$discography$en.internal(this._root);
@@ -7209,8 +5982,8 @@ class Translations$companionRemote$pairing$en {
 
 	// Translations
 
-	/// en: 'Plezy devices with the same Plex account appear here'
-	String get discoveryDescription => 'Plezy devices with the same Plex account appear here';
+	/// en: 'Plezy devices signed in to the same Silo account appear here'
+	String get discoveryDescription => 'Plezy devices signed in to the same Silo account appear here';
 
 	/// en: '192.168.1.100:48632'
 	String get hostAddressHint => '192.168.1.100:48632';
@@ -7233,8 +6006,8 @@ class Translations$companionRemote$pairing$en {
 	/// en: 'Manual Connection'
 	String get manualConnection => 'Manual Connection';
 
-	/// en: 'Couldn't start secure connection. Sign in to Plex first.'
-	String get cryptoInitFailed => 'Couldn\'t start secure connection. Sign in to Plex first.';
+	/// en: 'Couldn't start secure connection. Sign in to Silo first.'
+	String get cryptoInitFailed => 'Couldn\'t start secure connection. Sign in to Silo first.';
 
 	/// en: 'Please enter host address'
 	String get validationHostRequired => 'Please enter host address';
@@ -7248,8 +6021,8 @@ class Translations$companionRemote$pairing$en {
 	/// en: 'Device not found. Make sure Plezy is running on the host.'
 	String get sessionNotFound => 'Device not found. Make sure Plezy is running on the host.';
 
-	/// en: 'Authentication failed. Both devices need the same Plex account.'
-	String get authFailed => 'Authentication failed. Both devices need the same Plex account.';
+	/// en: 'Authentication failed. Both devices need the same Silo account.'
+	String get authFailed => 'Authentication failed. Both devices need the same Silo account.';
 
 	/// en: 'Failed to connect: ${error}'
 	String failedToConnect({required Object error}) => 'Failed to connect: ${error}';
@@ -7582,23 +6355,7 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
-			'auth.signInWithPlex' => 'Sign in with Plex',
-			'auth.showQRCode' => 'Show QR Code',
-			'auth.authenticate' => 'Authenticate',
-			'auth.authenticationTimeout' => 'Authentication timed out. Please try again.',
-			'auth.scanQRToSignIn' => 'Scan this QR code to sign in',
-			'auth.waitingForAuth' => 'Waiting for authentication...\nSign in from your browser.',
-			'auth.useBrowser' => 'Use browser',
-			'auth.or' => 'or',
-			'auth.connectToMediaBrowser' => ({required Object product}) => 'Connect to ${product}',
-			'auth.quickConnect' => 'Quick Connect',
-			'auth.useQuickConnect' => 'Use Quick Connect',
-			'auth.quickConnectInstructions' => 'Open Quick Connect in Jellyfin and enter this code.',
-			'auth.quickConnectWaiting' => 'Waiting for approval…',
-			'auth.quickConnectCancel' => 'Cancel',
-			'auth.quickConnectExpired' => 'Quick Connect expired. Try again.',
 			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
-			'auth.pinCheckRejected' => 'The Plex PIN check was rejected',
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
@@ -7606,7 +6363,6 @@ extension on Translations {
 			'common.reset' => 'Reset',
 			'common.later' => 'Later',
 			'common.submit' => 'Submit',
-			'common.confirm' => 'Confirm',
 			'common.retry' => 'Retry',
 			'common.logout' => 'Log out',
 			'common.unknown' => 'Unknown',
@@ -7783,7 +6539,6 @@ extension on Translations {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.rememberTrackSelectionsDescription' => 'Remember audio and subtitle choices per title',
-			'settings.rememberTrackSelectionsBackendRule' => 'Plex saves each choice on the server per file; Jellyfin also turns on the account\'s Remember selections; Emby is not supported',
 			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
 			'settings.followServerTrackSelectionsDescription' => 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice',
 			'settings.resumeMusicOnLaunch' => 'Remember music session',
@@ -7861,7 +6616,7 @@ extension on Translations {
 			'settings.skipMarkerModeButton' => 'Show button',
 			'settings.skipMarkerModeAuto' => 'Automatic',
 			'settings.forceSkipMarkerFallback' => 'Force Fallback Markers',
-			'settings.forceSkipMarkerFallbackDescription' => 'Use chapter title patterns even when Plex has markers',
+			'settings.forceSkipMarkerFallbackDescription' => 'Use chapter title patterns even when the server has markers',
 			'settings.autoSkipDelay' => 'Auto Skip Delay',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Wait ${seconds} seconds before auto-skipping',
 			'settings.introPattern' => 'Intro Marker Pattern',
@@ -7965,9 +6720,7 @@ extension on Translations {
 			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
 			'settings.startupSection' => 'Startup Section',
 			'settings.showExploreTab' => 'Show Explore Tab',
-			'settings.showExploreTabDescription' => 'Display the Explore tab with content from Plex Discover and connected trackers',
-			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
-			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
+			'settings.showExploreTabDescription' => 'Display the Explore tab with content from connected trackers',
 			'settings.general' => 'General',
 			'settings.generalDescription' => 'Language, startup, and window behavior',
 			'settings.languageAndRegion' => 'Language & Region',
@@ -8093,8 +6846,6 @@ extension on Translations {
 			'fileInfo.dolbyVision' => 'Dolby Vision',
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
 			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
 			'fileInfo.avcBitstream' => 'AVC Bitstream',
@@ -8115,6 +6866,8 @@ extension on Translations {
 			'fileInfo.matchScore' => 'Match Score',
 			'fileInfo.externalDelivery' => 'Can Be Served Separately',
 			'fileInfo.sidecarPath' => 'Sidecar Path',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.sourceStream' => 'Copied From',
 			'fileInfo.temporary' => 'Temporary',
 			'fileInfo.timeBase' => 'Time Base',
@@ -8167,28 +6920,6 @@ extension on Translations {
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Shuffle not available offline',
 			'mediaMenu.fileInfo' => 'File Info',
-			'mediaMenu.deleteEpisodeFromServer' => 'Delete episode from server',
-			'mediaMenu.deleteSeasonFromServer' => 'Delete season from server',
-			'mediaMenu.deleteShowFromServer' => 'Delete show from server',
-			'mediaMenu.deleteMovieFromServer' => 'Delete movie from server',
-			'mediaMenu.deleteEpisodeTitle' => 'Delete this episode?',
-			'mediaMenu.deleteSeasonTitle' => 'Delete this season?',
-			'mediaMenu.deleteShowTitle' => 'Delete this show?',
-			'mediaMenu.deleteMovieTitle' => 'Delete this movie?',
-			'mediaMenu.deleteEpisodeConfirm' => 'Delete episode',
-			'mediaMenu.deleteSeasonConfirm' => 'Delete season',
-			'mediaMenu.deleteShowConfirm' => 'Delete show',
-			'mediaMenu.deleteMovieConfirm' => 'Delete movie',
-			'mediaMenu.deleteAnyway' => 'Delete anyway',
-			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Permanently delete ${title} from your server?',
-			'mediaMenu.deleteMultipleWarning' => 'This includes all episodes and their files.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This deletes all ${n} episode in it, and its file.', other: 'This deletes all ${n} episodes in it, and their files.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This item is stored as ${n} file, which will be deleted.', other: 'This item is stored across ${n} files, and all of them will be deleted.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} other episode is stored in the same file and will be deleted too:', other: '${n} other episodes are stored in the same file and will be deleted too:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Your server did not provide file details for this item, so Plezy cannot check which files this will remove. It may delete more than the item named above.',
-			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
-			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
 			'mediaMenu.playFromBeginning' => 'Play from Beginning',
 			'mediaMenu.playVersion' => 'Play Version...',
@@ -8332,7 +7063,6 @@ extension on Translations {
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.searchPartialResults' => 'Some media servers could not be searched. Showing available results.',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
-			'messages.liveStreamInterrupted' => 'The live stream was interrupted. Press play to retry.',
 			'messages.fileInfoNotAvailable' => 'File information not available',
 			'messages.playbackAuthenticationRequired' => 'Sign in to the media server again to play this item.',
 			'messages.playbackServerUnavailable' => 'The media server is unavailable. Try again later.',
@@ -8352,12 +7082,6 @@ extension on Translations {
 			'messages.logsCleared' => 'Logs cleared',
 			'messages.logsCopied' => 'Logs copied to clipboard',
 			'messages.noLogsAvailable' => 'No logs available',
-			'messages.libraryScanning' => ({required Object title}) => 'Scanning "${title}"...',
-			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
-			'messages.libraryScanFailed' => ({required Object error}) => 'Failed to scan library: ${error}',
-			'messages.metadataRefreshing' => ({required Object title}) => 'Refreshing metadata for "${title}"...',
-			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata refresh started for "${title}"',
-			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
 			'messages.logoutConfirm' => 'Are you sure you want to log out?',
 			'messages.noSeasonsFound' => 'No seasons found',
 			'messages.seasonsLoadFailed' => 'Couldn\'t load seasons',
@@ -8383,10 +7107,7 @@ extension on Translations {
 			'messages.logId' => 'Log ID',
 			'messages.burnedSubtitlesUseMenu' => 'Subtitles are burned into this stream. Change them from the subtitle menu.',
 			'messages.noVideoUrl' => 'No video URL available',
-			'messages.playbackNoMediaSources' => 'The server returned no playable media sources',
 			'messages.playbackDataNotPrepared' => 'Playback was started before its data was ready',
-			'messages.streamSelectionUnavailable' => 'Stream selection is not available for this source',
-			'messages.streamSelectionFailed' => 'Could not apply the selected streams',
 			'messages.trackSelectionNotRemembered' => 'This track choice applies to the current playback only.',
 			'messages.serverUnavailableForProfile' => 'No server is available for the active profile',
 			'subtitlingStyling.text' => 'Text',
@@ -8432,20 +7153,11 @@ extension on Translations {
 			'mpvConfig.addLine' => 'Add line',
 			'mpvConfig.removeLine' => 'Remove line',
 			'mpvConfig.embeddedVoHint' => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.',
-			'dialog.confirmAction' => 'Confirm Action',
-			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
-			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
-			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
-			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
-			'profiles.signOutPlexDeleteDownloads' => 'Also delete downloads',
-			'profiles.signOutPlexDeleteDownloadsDescription' => 'Otherwise they stay on this device and come back when you sign back in to this account.',
-			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutServerTitle' => ({required Object serverName}) => 'Sign out of ${serverName}?',
 			'profiles.signOutServerMessage' => ({required Object serverName}) => 'Remove ${serverName} and its profiles from this device? Sign back in anytime.',
 			'profiles.signOutDeleteDownloads' => 'Also delete downloads',
@@ -8453,56 +7165,12 @@ extension on Translations {
 			'profiles.signedOutServer' => ({required Object serverName}) => 'Signed out of ${serverName}.',
 			'profiles.signOutFailed' => 'Sign out failed.',
 			'profiles.sectionTitle' => 'Profiles',
-			'profiles.summarySingle' => 'Add profiles to mix managed users and local identities',
+			'profiles.summarySingle' => 'Profiles come from your Silo server',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiles',
-			'profiles.removeConnectionTitle' => 'Remove connection?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
-			'profiles.deleteProfileTitle' => 'Delete profile?',
-			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
-			'profiles.profileNameLabel' => 'Profile name',
-			'profiles.pinProtectionLabel' => 'PIN protection',
-			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
-			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
-			'profiles.setPin' => 'Set PIN',
-			'profiles.setPinTitle' => 'Set PIN',
-			'profiles.confirmPinTitle' => 'Confirm PIN',
-			'profiles.pinSet' => 'PIN set',
-			'profiles.changePin' => 'Change',
-			'profiles.removePin' => 'Remove',
-			'profiles.connectionsLabel' => 'Connections',
 			'profiles.add' => 'Add',
-			'profiles.deleteProfileButton' => 'Delete profile',
-			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
-			'profiles.plexHomeAccount' => 'Plex Home account',
-			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
-			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
-			'profiles.connectionDefault' => 'Default',
-			'profiles.connectionAs' => ({required Object displayName}) => 'as ${displayName}',
-			'profiles.makeDefault' => 'Make default',
-			'profiles.removeConnection' => 'Remove',
-			'profiles.profileRenamed' => 'Profile renamed.',
-			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
-			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
-			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
-			'profiles.borrowEmptySubtitle' => 'Connect Plex, Jellyfin, or Emby to another profile first.',
-			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
-			'profiles.borrowFromProfile' => ({required Object displayName}) => 'From ${displayName}',
-			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
-			'profiles.borrowFailed' => 'Failed to borrow connection.',
-			'profiles.incorrectPin' => 'Incorrect PIN.',
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
-			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
-			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
-			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
-			'profiles.newProfile' => 'New profile',
-			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
-			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
-			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
-			'profiles.continueButton' => 'Continue',
-			'profiles.pinsDontMatch' => 'PINs don\'t match',
-			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Connect to a Silo server',
@@ -8512,77 +7180,24 @@ extension on Translations {
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servers refused access for this account',
 			'connections.signInAgain' => 'Sign in again',
-			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Edit ${product} connection',
-			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.',
 			'accountPreferences.sectionTitle' => 'Account preferences',
-			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Audio, subtitle and library options saved on ${account}',
-			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Audio, subtitle and library options saved on ${count} accounts',
-			'accountPreferences.pickAccount' => 'Every account stores its own preferences. Pick the one to edit.',
-			'accountPreferences.storedOnAccount' => 'These options are saved on the account itself, so every app signed in to it uses them — including Plezy on your other devices.',
-			'accountPreferences.noAccounts' => 'No accounts to configure',
-			'accountPreferences.noAccountsHint' => 'Sign in to Plex, or connect a Jellyfin or Emby server, and the preferences stored on that account show up here.',
 			'accountPreferences.unavailable' => 'Can\'t reach this account',
-			'accountPreferences.loadFailed' => 'Couldn\'t load these preferences',
-			'accountPreferences.noPreference' => 'No preference',
-			'accountPreferences.notSet' => 'Not set',
-			'accountPreferences.groups.audioAndSubtitles' => 'Audio & subtitles',
-			'accountPreferences.groups.libraryDisplay' => 'Library',
-			'accountPreferences.groups.personalMedia' => 'Personal media',
-			'accountPreferences.preferredAudioLanguage' => 'Preferred audio language',
 			'accountPreferences.autoSelectAudio' => 'Choose audio by language',
-			'accountPreferences.autoSelectAudioDescription' => 'Off keeps whatever audio track the file marks as default.',
-			'accountPreferences.preferredSubtitleLanguage' => 'Preferred subtitle language',
 			'accountPreferences.subtitleMode' => 'Turn subtitles on',
 			'accountPreferences.subtitleModes.none' => 'Manually selected',
-			'accountPreferences.subtitleModes.noneDescription' => 'Never turn subtitles on by itself.',
 			'accountPreferences.subtitleModes.defaultMode' => 'Follow the track flags',
-			'accountPreferences.subtitleModes.defaultModeDescription' => 'Use the default and forced flags stored on each subtitle track.',
 			'accountPreferences.subtitleModes.always' => 'Always enabled',
-			'accountPreferences.subtitleModes.alwaysDescription' => 'Turn on a subtitle track in the preferred language whenever one exists.',
 			'accountPreferences.subtitleModes.onlyForced' => 'Only forced subtitles',
-			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Load only the tracks marked as forced.',
 			'accountPreferences.subtitleModes.smart' => 'Shown with foreign audio',
-			'accountPreferences.subtitleModes.smartDescription' => 'Turn subtitles on only when the audio is in another language.',
-			'accountPreferences.subtitleAccessibility' => 'SDH subtitles',
-			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Prefer non-SDH subtitles',
-			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Prefer SDH subtitles',
-			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Only SDH subtitles',
-			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Only non-SDH subtitles',
-			'accountPreferences.forcedSubtitles' => 'Forced subtitles',
-			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Prefer non-forced subtitles',
-			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Prefer forced subtitles',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Only forced subtitles',
-			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Only non-forced subtitles',
-			'accountPreferences.displayMissingEpisodes' => 'Show missing episodes',
-			'accountPreferences.displayMissingEpisodesDescription' => 'List episodes the server knows about but has no file for.',
-			'accountPreferences.hidePlayedInLatest' => 'Hide watched items in Latest',
-			'accountPreferences.hidePlayedInLatestDescription' => 'Leave items you have already watched out of the server\'s Latest rows.',
-			'accountPreferences.displayCollectionsView' => 'Show the Collections view',
-			'accountPreferences.displayCollectionsViewDescription' => 'Offer the server\'s Collections view alongside your libraries.',
-			'accountPreferences.rewatchingInNextUp' => 'Keep rewatched shows in Next Up',
-			'accountPreferences.rewatchingInNextUpDescription' => 'Once you finish a show, start it again and Next Up follows the rewatch instead of dropping the show.',
-			'accountPreferences.watchedIndicator' => 'Watched indicators',
 			'accountPreferences.watchedIndicatorOptions.none' => 'Never',
-			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Movies and TV shows',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Movies only',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'TV shows only',
-			'accountPreferences.mediaReviewsVisibility' => 'Ratings & reviews',
-			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Users and critics',
-			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Users only',
-			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Critics only',
-			'accountPreferences.mediaReviewsOptions.nobody' => 'Hidden',
 			'discover.title' => 'Discover',
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
 			'discover.continueWatching' => 'Continue Watching',
-			'discover.continueWatchingIn' => ({required Object library}) => 'Continue Watching in ${library}',
 			'discover.nextUp' => 'Next Up',
-			'discover.nextUpIn' => ({required Object library}) => 'Next Up in ${library}',
-			'discover.recentlyAdded' => 'Recently Added',
-			'discover.recentlyAddedIn' => ({required Object library}) => 'Recently Added in ${library}',
-			'discover.latestAlbumsIn' => ({required Object library}) => 'Latest Albums in ${library}',
-			'discover.recentlyPlayedIn' => ({required Object library}) => 'Recently Played in ${library}',
-			'discover.mostPlayedIn' => ({required Object library}) => 'Most Played in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overview',
 			'discover.cast' => 'Cast',
@@ -8602,13 +7217,7 @@ extension on Translations {
 			'errors.connectionFailed' => 'Unable to connect to media server',
 			'errors.unableToLoad' => ({required Object context}) => 'Unable to load ${context}. Please try again.',
 			'errors.noClientAvailable' => 'No client available',
-			'errors.pleaseEnterToken' => 'Please enter a token',
-			'errors.invalidToken' => 'Invalid token',
-			'errors.failedToVerifyToken' => ({required Object error}) => 'Failed to verify token: ${error}',
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
-			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
-			_ => null,
-		} ?? switch (path) {
 			'errors.failedToRate' => 'Couldn\'t update rating',
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
@@ -8618,19 +7227,6 @@ extension on Translations {
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
 			'libraries.title' => 'Libraries',
-			'libraries.fallbackTitle' => 'Library',
-			'libraries.scanLibraryFiles' => 'Scan Library Files',
-			'libraries.scanLibrary' => 'Scan Library',
-			'libraries.analyze' => 'Analyze',
-			'libraries.analyzeLibrary' => 'Analyze Library',
-			'libraries.refreshMetadata' => 'Refresh Metadata',
-			'libraries.emptyTrash' => 'Empty Trash',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Emptying trash for "${title}"...',
-			'libraries.trashEmptied' => ({required Object title}) => 'Trash emptied for "${title}"',
-			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Failed to empty trash: ${error}',
-			'libraries.analyzing' => ({required Object title}) => 'Analyzing "${title}"...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Analysis started for "${title}"',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Failed to analyze library: ${error}',
 			'libraries.noLibrariesFound' => 'No libraries found',
 			'libraries.allLibrariesHidden' => 'All libraries are hidden',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Hidden libraries (${count})',
@@ -8639,15 +7235,10 @@ extension on Translations {
 			'libraries.resetFilters' => 'Reset filters',
 			'libraries.all' => 'All',
 			'libraries.clearAll' => 'Clear All',
-			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
-			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
 			'libraries.manageLibraries' => 'Manage Libraries',
 			'libraries.sort' => 'Sort',
 			'libraries.sortBy' => 'Sort By',
 			'libraries.filters' => 'Filters',
-			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
@@ -8677,29 +7268,16 @@ extension on Translations {
 			'libraries.filterCategories.contentRating' => 'Content Rating',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Unwatched',
-			'libraries.filterCategories.unplayed' => 'Unplayed',
-			'libraries.filterCategories.favorites' => 'Favorites',
 			'libraries.filterCategories.filePath' => 'File Path',
 			'libraries.sortLabels.title' => 'Title',
 			'libraries.sortLabels.dateAdded' => 'Date Added',
 			'libraries.sortLabels.releaseDate' => 'Release Date',
 			'libraries.sortLabels.rating' => 'Rating',
-			'libraries.sortLabels.communityRating' => 'Community Rating',
-			'libraries.sortLabels.criticRating' => 'Critic Rating',
 			'libraries.sortLabels.userRating' => 'User Rating',
-			'libraries.sortLabels.datePlayed' => 'Date Played',
-			'libraries.sortLabels.playCount' => 'Play Count',
 			'libraries.sortLabels.productionYear' => 'Production Year',
 			'libraries.sortLabels.runtime' => 'Runtime',
-			'libraries.sortLabels.officialRating' => 'Official Rating',
-			'libraries.sortLabels.premiereDate' => 'Premiere Date',
 			'libraries.sortLabels.startDate' => 'Start Date',
-			'libraries.sortLabels.airTime' => 'Air Time',
 			'libraries.sortLabels.studio' => 'Studio',
-			'libraries.sortLabels.random' => 'Random',
-			'libraries.sortLabels.dateShared' => 'Date Shared',
-			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
-			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
 			'libraries.sortLabels.dateDownloaded' => 'Date Downloaded',
 			'libraries.sortLabels.size' => 'Size',
 			'libraries.sortLabels.library' => 'Library',
@@ -8732,11 +7310,8 @@ extension on Translations {
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
-			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
+			'about.appDescription' => 'A beautiful Silo client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
-			'serverSelection.noValidServers' => 'No usable servers were found on this account',
 			'hubDetail.title' => 'Title',
 			'hubDetail.releaseYear' => 'Release Year',
 			'hubDetail.dateAdded' => 'Date Added',
@@ -8805,6 +7380,8 @@ extension on Translations {
 			'explore.status.upcoming' => 'Upcoming',
 			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
 			'explore.cast' => 'Cast',
+			_ => null,
+		} ?? switch (path) {
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
 			'explore.removeFromWatchlist' => 'Remove from Watchlist',
@@ -8928,97 +7505,15 @@ extension on Translations {
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
 			'liveTv.title' => 'Live TV',
-			'liveTv.guide' => 'Guide',
-			'liveTv.noChannels' => 'No channels available',
-			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.serverUnavailable' => 'Live TV server is not available.',
-			'liveTv.serverNotConnected' => 'Live TV server is not connected.',
-			'liveTv.noPrograms' => 'No program data available',
-			'liveTv.liveStreamFailed' => 'Live stream failed',
-			'liveTv.unknownProgram' => 'Unknown Program',
-			'liveTv.unknownHub' => 'Unknown',
-			'liveTv.unknownError' => 'Unknown error',
-			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
-			'liveTv.unknownChannel' => 'Unknown channel',
 			'liveTv.live' => 'LIVE',
-			'liveTv.reloadGuide' => 'Reload Guide',
-			'liveTv.searchGuide' => 'Search Guide',
 			'liveTv.searchHint' => 'Search channels & programs',
-			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
-			'liveTv.channelsSection' => 'Channels',
-			'liveTv.programsSection' => 'Programs',
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
 			'liveTv.tomorrow' => 'Tomorrow',
-			'liveTv.midnight' => 'Midnight',
-			'liveTv.overnight' => 'Overnight',
-			'liveTv.morning' => 'Morning',
-			'liveTv.daytime' => 'Daytime',
-			'liveTv.evening' => 'Evening',
-			'liveTv.lateNight' => 'Late Night',
-			'liveTv.whatsOn' => 'What\'s On',
-			'liveTv.watchChannel' => 'Watch Channel',
-			'liveTv.favorites' => 'Favorites',
-			'liveTv.reorderFavorites' => 'Reorder Favorites',
-			'liveTv.noFavoriteChannels' => 'No favorite channels',
-			'liveTv.noFavoriteChannelsHint' => 'Show all channels, then long-press a channel to add it to your favorites.',
-			'liveTv.showAllChannels' => 'Show All Channels',
-			'liveTv.favoritesLoadFailed' => 'Could not load favorites. Check your connection and try again.',
-			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Join Session in Progress',
-			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
-			'liveTv.watchLive' => 'Watch Live',
-			'liveTv.goToLive' => 'Go to Live',
 			'liveTv.record' => 'Record',
-			'liveTv.recordEpisode' => 'Record Episode',
-			'liveTv.recordSeries' => 'Record Series',
-			'liveTv.recordOptions' => 'Record Options',
-			'liveTv.saveTo' => 'Save to',
-			'liveTv.recordings' => 'Recordings',
-			'liveTv.scheduledRecordings' => 'Scheduled',
-			'liveTv.recordingRules' => 'Recording Rules',
-			'liveTv.noScheduledRecordings' => 'Nothing scheduled to record',
-			'liveTv.manageRecording' => 'Manage recording',
-			'liveTv.cancelRecording' => 'Cancel recording',
-			'liveTv.cancelRecordingTitle' => 'Cancel this recording?',
-			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} will no longer be recorded.',
-			'liveTv.deleteRule' => 'Delete rule',
-			'liveTv.deleteRuleTitle' => 'Delete recording rule?',
-			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Future episodes of ${title} will not be recorded.',
-			'liveTv.recordingScheduled' => 'Recording scheduled',
-			'liveTv.alreadyScheduled' => 'This program is already scheduled',
-			'liveTv.dvrAdminRequired' => 'DVR settings require an admin account',
-			'liveTv.recordingFailed' => 'Couldn\'t schedule recording',
-			'liveTv.recordingTargetMissing' => 'Couldn\'t determine recording library',
-			'liveTv.recordNotAvailable' => 'Recording not available for this program',
-			'liveTv.recordingCancelled' => 'Recording canceled',
-			'liveTv.recordingRuleDeleted' => 'Recording rule deleted',
-			'liveTv.processRecordingRules' => 'Re-evaluate rules',
-			'liveTv.recordingInProgress' => 'Recording now',
-			'liveTv.recordingsCount' => ({required Object count}) => '${count} scheduled',
-			'liveTv.editRule' => 'Edit rule',
-			'liveTv.editRuleAction' => 'Edit',
-			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
-			'liveTv.guideReloadRequested' => 'Guide refresh requested',
-			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
-			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
-			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			'liveTv.recordShow' => 'Record show',
-			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
-			'liveTv.recordSettings.endLate' => 'End late (seconds)',
-			'liveTv.recordSettings.newOnly' => 'Only new episodes',
-			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
-			'liveTv.recordSettings.anyTime' => 'Record at any time',
-			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
-			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
-			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
-			'liveTv.failedToStartChannel' => 'Could not start the live channel',
-			'liveTv.failedToBuildStreamUrl' => 'Could not build the stream URL',
-			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Couldn\'t start the channel: ${reason}',
-			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Couldn\'t switch channel: ${reason}',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
@@ -9121,8 +7616,6 @@ extension on Translations {
 			'watchTogether.makeHostQuestion' => 'Transfer host?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
 			'watchTogether.transfer' => 'Transfer',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
 			'watchTogether.youAreNowHost' => 'You are now the host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
@@ -9332,7 +7825,7 @@ extension on Translations {
 			'companionRemote.session.stopServer' => 'Stop Server',
 			'companionRemote.session.minimize' => 'Minimize',
 			'companionRemote.session.manualAddressHint' => 'Manual connection address:',
-			'companionRemote.pairing.discoveryDescription' => 'Plezy devices with the same Plex account appear here',
+			'companionRemote.pairing.discoveryDescription' => 'Plezy devices signed in to the same Silo account appear here',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
@@ -9340,12 +7833,12 @@ extension on Translations {
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
-			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
+			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Silo first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
-			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
+			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Silo account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
@@ -9401,6 +7894,8 @@ extension on Translations {
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
@@ -9477,11 +7972,7 @@ extension on Translations {
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
-			'metadataEdit.editMetadata' => 'Edit...',
-			'metadataEdit.screenTitle' => 'Edit Metadata',
-			'metadataEdit.basicInfo' => 'Basic Info',
 			'metadataEdit.artwork' => 'Artwork',
-			'metadataEdit.advancedSettings' => 'Advanced Settings',
 			'metadataEdit.title' => 'Title',
 			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',
@@ -9493,57 +7984,14 @@ extension on Translations {
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Background',
 			'metadataEdit.logo' => 'Logo',
-			'metadataEdit.squareArt' => 'Square Art',
-			'metadataEdit.selectPoster' => 'Select Poster',
-			'metadataEdit.selectBackground' => 'Select Background',
-			'metadataEdit.selectLogo' => 'Select Logo',
-			'metadataEdit.selectSquareArt' => 'Select Square Art',
-			'metadataEdit.fromUrl' => 'From URL',
-			'metadataEdit.uploadFile' => 'Upload File',
-			'metadataEdit.enterImageUrl' => 'Enter image URL',
 			'metadataEdit.imageUrl' => 'Image URL',
-			'metadataEdit.metadataUpdated' => 'Metadata updated',
-			'metadataEdit.metadataUpdateFailed' => 'Failed to update metadata',
-			'metadataEdit.artworkUpdated' => 'Artwork updated',
-			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
-			'metadataEdit.noArtworkAvailable' => 'No artwork available',
-			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
-			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artwork option ${index}, selected',
-			'metadataEdit.notSet' => 'Not set',
-			'metadataEdit.libraryDefault' => 'Library default',
-			'metadataEdit.accountDefault' => 'Account default',
-			'metadataEdit.seriesDefault' => 'Series default',
-			'metadataEdit.episodeSorting' => 'Episode Sorting',
-			'metadataEdit.oldestFirst' => 'Oldest first',
-			'metadataEdit.newestFirst' => 'Newest first',
-			'metadataEdit.keep' => 'Keep',
 			'metadataEdit.allEpisodes' => 'All episodes',
-			'metadataEdit.latestEpisodes' => ({required Object count}) => '${count} latest episodes',
-			'metadataEdit.latestEpisode' => 'Latest episode',
-			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Episodes added in the past ${count} days',
-			'metadataEdit.deleteAfterPlaying' => 'Delete Episodes After Playing',
 			'metadataEdit.never' => 'Never',
-			'metadataEdit.afterADay' => 'After a day',
-			'metadataEdit.afterAWeek' => 'After a week',
-			'metadataEdit.afterAMonth' => 'After a month',
-			'metadataEdit.onNextRefresh' => 'On next refresh',
 			'metadataEdit.seasons' => 'Seasons',
 			'metadataEdit.show' => 'Show',
 			'metadataEdit.hide' => 'Hide',
-			'metadataEdit.episodeOrdering' => 'Episode Ordering',
-			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
-			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
-			'metadataEdit.metadataLanguage' => 'Metadata Language',
-			'metadataEdit.useOriginalTitle' => 'Use Original Title',
-			'metadataEdit.preferredAudioLanguage' => 'Preferred Audio Language',
-			'metadataEdit.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
 			'metadataEdit.subtitleMode' => 'Auto-Select Subtitle Mode',
-			'metadataEdit.manuallySelected' => 'Manually selected',
-			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',
-			'metadataEdit.alwaysEnabled' => 'Always enabled',
 			'metadataEdit.tags' => 'Tags',
-			'metadataEdit.addTag' => 'Add tag',
 			'metadataEdit.genre' => 'Genre',
 			'metadataEdit.director' => 'Director',
 			'metadataEdit.writer' => 'Writer',
@@ -9551,22 +7999,9 @@ extension on Translations {
 			'metadataEdit.country' => 'Country',
 			'metadataEdit.collection' => 'Collection',
 			'metadataEdit.label' => 'Label',
-			'metadataEdit.quickTag' => 'Quick Tag...',
 			'matchScreen.match' => 'Match...',
-			'matchScreen.fixMatch' => 'Fix Match...',
-			'matchScreen.unmatch' => 'Unmatch',
-			'matchScreen.unmatchConfirm' => 'Clear this match? Plex treats it as unmatched until rematched.',
-			'matchScreen.unmatchSuccess' => 'Item unmatched',
-			'matchScreen.unmatchFailed' => 'Failed to unmatch item',
-			'matchScreen.matchApplied' => 'Match applied',
-			'matchScreen.matchFailed' => 'Failed to apply match',
-			'matchScreen.titleHint' => 'Title',
-			'matchScreen.yearHint' => 'Year',
 			'matchScreen.search' => 'Search',
-			'matchScreen.noMatchesFound' => 'No matches found',
 			'serverTasks.title' => 'Server Tasks',
-			'serverTasks.failedToLoad' => 'Failed to load tasks',
-			'serverTasks.noTasks' => 'No tasks running',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Connected',
 			'trakt.connectedAs' => ({required Object username}) => 'Connected as @${username}',
@@ -9581,8 +8016,6 @@ extension on Translations {
 			'seerr.serverUrl' => 'Server URL',
 			'seerr.serverUrlHelper' => 'The address of your Seerr instance',
 			'seerr.checkServer' => 'Continue',
-			'seerr.signInWithJellyfin' => 'Sign in with Jellyfin',
-			'seerr.signInWithEmby' => 'Sign in with Emby',
 			'seerr.signInWithLocal' => 'Use a local account',
 			'seerr.email' => 'Email',
 			'seerr.noSignInMethods' => 'This Seerr instance offers no sign-in method Plezy supports.',
@@ -9615,9 +8048,7 @@ extension on Translations {
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'No Seerr instance at ${url} (HTTP ${status})',
 			'seerr.behindAuthProxy' => 'An authenticating reverse proxy (SSO or HTTP auth) answered instead of Seerr. Plezy cannot sign in through it: let Seerr\'s /api/v1 path bypass the proxy for this app, or use an address that reaches Seerr directly.',
 			'seerr.invalidUrl' => 'Enter a server address like https://seerr.example.com',
-			'seerr.quickConnectUnsupported' => 'This Seerr instance does not support Quick Connect. It needs Seerr 3.4 or newer.',
 			'seerr.notInitialized' => 'This Seerr instance has not completed first-run setup',
-			'seerr.noPlexTokenForReauth' => 'No Plex token is available to sign in again',
 			'seerr.noStoredCredentials' => 'No stored credentials are available to sign in again',
 			'seerr.signInRejected' => 'Sign-in was rejected',
 			'seerr.noSessionCookie' => 'Seerr did not issue a session cookie',
@@ -9635,8 +8066,6 @@ extension on Translations {
 			'services.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
 			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
 			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
-			_ => null,
-		} ?? switch (path) {
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
@@ -9668,56 +8097,16 @@ extension on Translations {
 			'services.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
 			'services.libraryFilter.libraries' => 'Libraries',
 			'services.libraryFilter.noLibraries' => 'No libraries available',
-			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Add ${product} server',
-			'addServer.serverUrls' => 'Server URLs',
-			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
-			'addServer.findServer' => 'Find server',
-			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Looking for local ${product} servers...',
-			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Local ${product} servers',
 			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',
 			'addServer.change' => 'Change',
 			'addServer.required' => 'Required',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
-			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
-			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
-			'addServer.addPlexTitle' => 'Sign in with Plex',
-			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
-			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
-			'addServer.enterMediaBrowserUrlError' => ({required Object product}) => 'Enter your ${product} server URL',
 			'addServer.addConnectionTitle' => 'Add connection',
-			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Add to ${name}',
-			'addServer.signInWithPlexCard' => 'Sign in with Plex',
-			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device. Shared servers are added.',
-			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',
-			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connect to ${product}',
-			'addServer.connectToMediaBrowserCardSubtitle' => 'Enter your server URL, username, and password.',
-			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Sign in to your ${product} server. Binds to ${name}.',
-			'addServer.borrowFromAnotherProfile' => 'Borrow from another profile',
-			'addServer.borrowFromAnotherProfileSubtitle' => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.',
 			'addServer.invalidCredentials' => 'Invalid username or password',
-			'addServer.authResponseNotJson' => 'The authentication response was not valid JSON',
-			'addServer.authResponseIncomplete' => 'The sign-in response from the server was incomplete',
-			'addServer.quickConnectRejected' => 'Quick Connect was rejected by the server',
-			'addServer.quickConnectNotJson' => 'The Quick Connect response was not valid JSON',
-			'addServer.quickConnectMissingFields' => 'The Quick Connect response is missing a code or secret',
-			'addServer.quickConnectPollRejected' => 'Quick Connect polling was rejected by the server',
-			'addServer.serverTimedOut' => 'The server did not respond in time',
-			'addServer.responseNotJson' => 'The server response was not valid JSON',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'The response is missing an ID or server name — is this a ${product} server?',
-			'addServer.probeFailed' => ({required Object error}) => 'Could not reach the server: ${error}',
-			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Enter at least one ${product} server URL',
-			'addServer.noReachableServer' => ({required Object product}) => 'No reachable ${product} server was found',
-			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'These URLs point to different ${product} servers',
-			'addServer.urlDoesNotMatchServer' => ({required Object product}) => 'This URL does not match the ${product} server',
-			'addServer.redirectUnsupported' => 'The server redirected to an unsupported URL',
-			'addServer.redirectDifferentHost' => ({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.',
-			'addServer.redirectInsecure' => 'The server redirected from HTTPS to an insecure URL',
-			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
 			'silo.connectCard' => 'Connect to Silo',
 			'silo.connectCardSubtitle' => 'Sign in with a code or your password',
-			'silo.connectCardSubtitleScoped' => ({required Object name}) => 'Add a Silo server to ${name}',
 			'silo.serverTitle' => 'Connect to Silo',
 			'silo.serverAddress' => 'Server address',
 			'silo.serverAddressHint' => 'silo.example.com',
@@ -9768,8 +8157,6 @@ extension on Translations {
 			'silo.errors.server' => 'The server couldn\'t sign you in.',
 			'silo.profilesTitle' => 'Who\'s watching?',
 			'silo.profilesFailed' => 'Couldn\'t load profiles.',
-			'silo.enterPin' => ({required Object name}) => 'Enter the PIN for ${name}',
-			'silo.pin' => 'PIN',
 			'silo.wrongPin' => 'Wrong PIN. Try again.',
 			_ => null,
 		};

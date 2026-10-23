@@ -74,9 +74,4 @@ void _expectSiloOnly() {
   expect(find.text(t.silo.connectCard), findsOneWidget);
   expect(find.byType(ElevatedButton), findsOneWidget);
   expect(find.byType(OutlinedButton), findsNothing);
-  expect(find.text(t.auth.signInWithPlex), findsNothing);
-  expect(find.text(t.auth.showQRCode), findsNothing);
-  expect(find.text(t.auth.useBrowser), findsNothing);
-  expect(find.text(t.auth.connectToMediaBrowser(product: 'Jellyfin')), findsNothing);
-  expect(find.text(t.auth.connectToMediaBrowser(product: 'Emby')), findsNothing);
 }
