@@ -114,7 +114,7 @@ class _FakeAnimeListsLookup implements AnimeListsMappingLookup {
 
 MediaItem _episode({int season = 23, int number = 6}) => testMediaItem(
   id: 'episode-$season-$number',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode $number',
   grandparentId: 'show-1',
@@ -362,7 +362,7 @@ void main() {
       );
       final season2 = testMediaItem(
         id: 'season-2',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.season,
         title: 'Season 2',
         parentId: 'show-1',

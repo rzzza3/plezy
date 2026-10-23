@@ -7,7 +7,7 @@ import 'package:plezy/screens/libraries/library_browse_grouping.dart';
 MediaLibrary _library({required MediaKind kind, bool isShared = false}) {
   return MediaLibrary(
     id: '1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     title: 'Library',
     kind: kind,
     isShared: isShared,

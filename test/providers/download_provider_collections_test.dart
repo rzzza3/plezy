@@ -32,7 +32,7 @@ class _CollectionsClient implements MediaServerClient {
   ServerId get serverId => ServerId('srv');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<List<CollectionMembership>> fetchCollectionMemberships(Set<String> itemIds, {AbortController? abort}) async {

@@ -105,14 +105,14 @@ void main() {
   group('video player launch identity', () {
     final plexA = testMediaItem(
       id: '123',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Plex A',
       serverId: 'plex-a',
     );
     final plexB = testMediaItem(
       id: '123',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Plex B',
       serverId: 'plex-b',
@@ -198,7 +198,7 @@ void main() {
 
     final episode = testMediaItem(
       id: 'ep-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       serverId: 'srv-1',
@@ -294,7 +294,7 @@ void main() {
   group('launching a downloaded item while its server is reachable (issue #2466)', () {
     const urlLauncherChannel = MethodChannel('plugins.flutter.io/url_launcher');
     const localCopy = 'content://sdcard/Movie.mkv';
-    final movie = testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv');
+    final movie = testMediaItem(id: 'movie-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv');
     // Only the second version is on disk, so a launch that ignored the
     // download would request version 0 and stream it.
     final downloadedRow = DownloadedMediaItem(
@@ -433,7 +433,7 @@ class _ExternalUrlClient implements MediaServerClient {
   ServerId get serverId => ServerId('srv');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<ExternalPlaybackTarget?> resolveExternalPlayback(

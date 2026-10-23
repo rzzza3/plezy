@@ -549,7 +549,7 @@ class _FileInfoClient implements MediaServerClient {
   ServerId get serverId => ServerId('file-info-server');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<MediaFileInfo?> getFileInfo(MediaItem item) {

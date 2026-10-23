@@ -545,7 +545,7 @@ void main() {
   group('download identity in file names', () {
     MediaItem sameTitle(MediaKind kind, String serverId, String id) => testMediaItem(
       id: id,
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: kind,
       serverId: ServerId(serverId),
       title: 'Same Title',
@@ -767,7 +767,7 @@ void main() {
 MediaItem _movie({required String title, int? year}) {
   return testMediaItem(
     id: 'm-${title.hashCode}',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
     title: title,
     year: year,
@@ -777,7 +777,7 @@ MediaItem _movie({required String title, int? year}) {
 MediaItem _show({required String title, int? year}) {
   return testMediaItem(
     id: 's-${title.hashCode}',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.show,
     title: title,
     year: year,
@@ -787,7 +787,7 @@ MediaItem _show({required String title, int? year}) {
 MediaItem _season({required String showTitle, int? showYear, required int seasonNumber}) {
   return testMediaItem(
     id: 'season-$showTitle-$seasonNumber',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.season,
     title: 'Season $seasonNumber',
     grandparentTitle: showTitle,
@@ -805,7 +805,7 @@ MediaItem _episode({
 }) {
   return testMediaItem(
     id: 'ep-$showTitle-$seasonNumber-$episodeNumber',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     title: episodeTitle,
     grandparentTitle: showTitle,
@@ -818,7 +818,7 @@ MediaItem _episode({
 MediaItem _track({required String title, String? artist, String? album, int? trackNumber, int? discNumber}) {
   return testMediaItem(
     id: 'track-$title-$trackNumber',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.track,
     title: title,
     grandparentTitle: artist,

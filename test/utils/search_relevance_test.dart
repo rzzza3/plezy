@@ -163,7 +163,7 @@ void main() {
 List<String> _ids(Iterable<MediaItem> items) => [for (final item in items) item.id];
 
 MediaPerson _person(String id, String name) =>
-    MediaPerson(id: id, name: name, backend: MediaBackend.plex, serverId: ServerId('plex-1'));
+    MediaPerson(id: id, name: name, backend: MediaBackend.silo, serverId: ServerId('plex-1'));
 
 List<String> _hitIds(Iterable<SearchHit> hits) => [
   for (final hit in hits)

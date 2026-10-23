@@ -380,7 +380,7 @@ AnimatedPositioned _promptPosition(WidgetTester tester) {
 MediaItem _episode() {
   return testMediaItem(
     id: 'episode-2',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     title: 'Episode 2',
     parentIndex: 1,
@@ -391,7 +391,7 @@ MediaItem _episode() {
 MediaItem _thumbEpisode() {
   return testMediaItem(
     id: 'episode-2',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     title: 'Episode 2',
     parentIndex: 1,

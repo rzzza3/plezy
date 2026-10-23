@@ -18,14 +18,16 @@ void main() {
       }
     });
 
-    test('an unknown id is null instead of Plex', () {
+    test('an unknown or removed id is null instead of Silo', () {
       expect(MediaBackend.fromString('kodi'), isNull);
       expect(MediaBackend.fromString(''), isNull);
-      expect(MediaBackend.fromString('Plex'), isNull);
+      for (final removed in MediaBackend.removedIds) {
+        expect(MediaBackend.fromString(removed), isNull, reason: removed);
+      }
     });
 
-    test('a missing id is the legacy Plex shape', () {
-      expect(MediaBackend.fromString(null), MediaBackend.plex);
+    test('a missing id, the oldest stored shape, is dropped too', () {
+      expect(MediaBackend.fromString(null), isNull);
     });
   });
 
@@ -36,7 +38,12 @@ void main() {
       expect(MediaItem.tryFromJson(json), isNull);
     });
 
-    test('fromJson throws instead of decoding it as Plex', () {
+    test('a stored row of a removed backend is dropped', () {
+      expect(MediaItem.tryFromJson({...json, 'backend': 'plex'}), isNull);
+      expect(MediaItem.tryFromJson({'id': 'movie-1', 'kind': 'movie'}), isNull);
+    });
+
+    test('fromJson throws instead of decoding it as Silo', () {
       expect(() => MediaItem.fromJson(json), throwsA(isA<FormatException>()));
     });
 

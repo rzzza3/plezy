@@ -54,14 +54,14 @@ import '../../test_helpers/prefs.dart';
 
 const _libraryA = MediaLibrary(
   id: 'movies',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Library A',
   kind: MediaKind.movie,
   serverId: 'server',
 );
 const _libraryB = MediaLibrary(
   id: 'shows',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Library B',
   kind: MediaKind.show,
   serverId: 'server',
@@ -70,7 +70,7 @@ const _libraryB = MediaLibrary(
 // rebuilds the tab set.
 const _sharedLibrary = MediaLibrary(
   id: 'shared',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Shared',
   kind: MediaKind.movie,
   isShared: true,
@@ -711,7 +711,7 @@ MediaHub _recommendationHub(String id) => MediaHub(
         id: '$id-$i',
         title: '$id-$i',
         kind: MediaKind.collection,
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         serverId: 'server',
       ),
   ],
@@ -724,7 +724,7 @@ class _HubClient extends _PagedClient {
   final Object authenticationSessionId = Object();
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerCapabilities get capabilities => ServerCapabilities.plex;

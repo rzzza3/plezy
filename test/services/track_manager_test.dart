@@ -43,7 +43,7 @@ import '../test_helpers/media_items.dart';
 //   - `onBackendSwitched` — wraps applyTrackSelectionWhenReady and is
 //     therefore gated on the same SettingsService dependency.
 
-MediaItem _meta() => testMediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie);
+MediaItem _meta() => testMediaItem(id: 'rk1', backend: MediaBackend.silo, kind: MediaKind.movie);
 
 /// Player that records calls and can be configured per-test.
 class _FakePlayer with PlayerStreamControllersMixin implements Player {

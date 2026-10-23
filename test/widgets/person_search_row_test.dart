@@ -57,7 +57,7 @@ Future<void> _pumpRow(WidgetTester tester) {
                 name: 'Christoph Waltz',
                 thumbPath: 'https://example.invalid/christoph-waltz.jpg',
                 credit: PersonCredit.actor,
-                backend: MediaBackend.plex,
+                backend: MediaBackend.silo,
                 serverId: ServerId('plex-1'),
               ),
             ),

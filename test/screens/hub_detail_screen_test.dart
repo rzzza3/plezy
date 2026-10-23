@@ -283,7 +283,7 @@ void main() {
   testWidgets('Plex section sorts order by their own field and unsupported ones are not offered', (tester) async {
     MediaItem played(String id, String title, int plays) => testMediaItem(
       id: id,
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: title,
       viewCount: plays,
@@ -389,7 +389,7 @@ void main() {
 
 MediaItem _item(int index) => testMediaItem(
   id: 'item_$index',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: 'Item $index',
   serverId: 'server_1',
@@ -398,7 +398,7 @@ MediaItem _item(int index) => testMediaItem(
 
 MediaItem _titled(String id, String title) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: title,
   serverId: 'server_1',
@@ -452,7 +452,7 @@ class _PagedHubClient implements MediaServerClient {
   List<MediaSort> sortOptions = const [];
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerId get serverId => ServerId('server_1');

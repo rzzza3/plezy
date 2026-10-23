@@ -220,7 +220,7 @@ void _resetTrackerBindings() {
 /// [capabilities] (which decides whether the server row renders at all),
 /// [backend], [serverName], and [serverId].
 class _StubServerClient implements MediaServerClient {
-  _StubServerClient(this.capabilities, {this.externalIdsError, this.backend = MediaBackend.plex});
+  _StubServerClient(this.capabilities, {this.externalIdsError, this.backend = MediaBackend.silo});
 
   @override
   final ServerCapabilities capabilities;

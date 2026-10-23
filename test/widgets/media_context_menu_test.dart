@@ -121,16 +121,6 @@ void main() {
 
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('isMediaDeletionAllowed', () {
-    test('Silo offers no deletion, even to an administrator', () {
-      expect(isMediaDeletionAllowed(itemBackend: MediaBackend.silo, isAdminActionAllowed: true), isFalse);
-    });
-
-    test('an item with no backend marker is never deletable', () {
-      expect(isMediaDeletionAllowed(itemBackend: null, isAdminActionAllowed: true), isFalse);
-    });
-  });
-
   group('MediaContextMenu actions', () {
     testWidgets('audio playlist play and shuffle actions use music playback', (tester) async {
       LocaleSettings.setLocaleSync(AppLocale.en);

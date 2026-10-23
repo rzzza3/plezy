@@ -223,7 +223,7 @@ void main() {
     manager.debugRegisterClientForTesting(client);
 
     const ruleKey = 'profile-a|plex-machine:show-1';
-    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.silo, kind: MediaKind.show, title: 'Show');
     await db.insertSyncRule(
       profileId: 'profile-a',
       serverId: ServerId('plex-machine'),
@@ -315,7 +315,7 @@ void main() {
     const ruleKey = 'profile-a|plex-machine:collection-1';
     final collection = testMediaItem(
       id: 'collection-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.collection,
       title: 'Collection',
       serverId: 'plex-machine',
@@ -373,7 +373,7 @@ void main() {
     const ruleKey = 'profile-a|plex-machine:collection-1';
     final collection = testMediaItem(
       id: 'collection-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.collection,
       title: 'Collection',
       serverId: 'plex-machine',
@@ -426,7 +426,7 @@ void main() {
     const ruleKey = 'profile-a|plex-machine:collection-1';
     final collection = testMediaItem(
       id: 'collection-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.collection,
       title: 'Collection',
       serverId: 'plex-machine',
@@ -464,10 +464,10 @@ void main() {
 
     final items = [
       _track('loose-track'),
-      testMediaItem(id: 'album-1', backend: MediaBackend.plex, kind: MediaKind.album, title: 'Album'),
-      testMediaItem(id: 'artist-1', backend: MediaBackend.plex, kind: MediaKind.artist, title: 'Artist'),
+      testMediaItem(id: 'album-1', backend: MediaBackend.silo, kind: MediaKind.album, title: 'Album'),
+      testMediaItem(id: 'artist-1', backend: MediaBackend.silo, kind: MediaKind.artist, title: 'Artist'),
       // Still skipped: nested lists / unplayable kinds.
-      testMediaItem(id: 'photo-1', backend: MediaBackend.plex, kind: MediaKind.photo, title: 'Photo'),
+      testMediaItem(id: 'photo-1', backend: MediaBackend.silo, kind: MediaKind.photo, title: 'Photo'),
     ];
 
     final out = <MediaItem>[];
@@ -489,7 +489,7 @@ void main() {
 }
 
 MediaItem _track(String id, {bool played = false}) {
-  return testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.track, title: id, viewCount: played ? 1 : 0);
+  return testMediaItem(id: id, backend: MediaBackend.silo, kind: MediaKind.track, title: id, viewCount: played ? 1 : 0);
 }
 
 MediaItem _episode(
@@ -501,7 +501,7 @@ MediaItem _episode(
 }) {
   return testMediaItem(
     id: id,
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     title: id,
     parentIndex: parentIndex,
@@ -524,7 +524,7 @@ class _ShowCollectionClient implements MediaServerClient {
   String? get serverName => 'Plex';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerCapabilities get capabilities => ServerCapabilities.plex;
@@ -553,7 +553,7 @@ class _ShowCollectionClient implements MediaServerClient {
     String? libraryId,
     String? libraryTitle,
   }) async => LibraryPage(
-    items: [testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show')],
+    items: [testMediaItem(id: 'show-1', backend: MediaBackend.silo, kind: MediaKind.show, title: 'Show')],
     totalCount: 1,
     offset: start ?? 0,
   );
@@ -575,7 +575,7 @@ class _PlayableDescendantsClient implements MediaServerClient {
   String? get serverName => 'Plex';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerCapabilities get capabilities => ServerCapabilities.plex;
@@ -649,7 +649,7 @@ class _CollectionPagingClient implements MediaServerClient {
   String? get serverName => 'Plex';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerCapabilities get capabilities => ServerCapabilities.plex;
@@ -681,7 +681,7 @@ class _CollectionPagingClient implements MediaServerClient {
     collectionPageCalls.add((start: start, size: size));
     expect(collectionId, 'collection-1');
     return LibraryPage(
-      items: [testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie')],
+      items: [testMediaItem(id: 'movie-1', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Movie')],
       totalCount: 1,
       offset: start ?? 0,
     );

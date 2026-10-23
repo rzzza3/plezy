@@ -48,7 +48,7 @@ void main() {
     const summary =
         'A family of four is suddenly sealed inside their house with no way out and must work together to survive '
         'against both their dwindling resources and the mysterious force outside.';
-    const movie = MediaItem.plex(
+    const movie = MediaItem.silo(
       id: 'movie_1',
       kind: MediaKind.movie,
       title: 'The Last House',
@@ -109,7 +109,7 @@ void main() {
   });
 
   testWidgets('names an episode and labels it with its number and air date instead of the year', (tester) async {
-    const episode = MediaItem.plex(
+    const episode = MediaItem.silo(
       id: 'episode_1',
       kind: MediaKind.episode,
       title: 'Chapter Three',
@@ -136,7 +136,7 @@ void main() {
 
   testWidgets('D-pad up and down page a description taller than the sheet', (tester) async {
     final longDescription = List.generate(60, (index) => 'Sentence $index of a very long synopsis.').join(' ');
-    const movie = MediaItem.plex(id: 'movie_long', kind: MediaKind.movie, title: 'Long Movie');
+    const movie = MediaItem.silo(id: 'movie_long', kind: MediaKind.movie, title: 'Long Movie');
 
     await pumpSheet(tester, item: movie, description: longDescription, size: const Size(500, 400));
 

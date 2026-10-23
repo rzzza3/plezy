@@ -31,7 +31,7 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
-  const artist = MediaItem.plex(
+  const artist = MediaItem.silo(
     id: 'artist_1',
     kind: MediaKind.artist,
     title: 'Test Artist',
@@ -39,7 +39,7 @@ void main() {
     serverName: 'Server',
   );
 
-  MediaItem album(String id) => MediaItem.plex(
+  MediaItem album(String id) => MediaItem.silo(
     id: id,
     kind: MediaKind.album,
     title: id,
@@ -163,7 +163,7 @@ class _FakeDiscographyClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerCapabilities get capabilities => ServerCapabilities.plex;

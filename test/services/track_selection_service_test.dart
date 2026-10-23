@@ -14,7 +14,7 @@ import '../test_helpers/media_items.dart';
 // including fallback and ambiguity rules. `selectAndApplyTracks` is excluded
 // because it requires a real Player and SettingsService singleton.
 
-MediaItem _meta({MediaBackend backend = MediaBackend.plex}) =>
+MediaItem _meta({MediaBackend backend = MediaBackend.silo}) =>
     testMediaItem(id: 'rk1', backend: backend, kind: MediaKind.movie);
 
 TestUserProfile _profile({bool autoSelectAudio = true, String? defaultAudioLanguage, String? defaultSubtitleLanguage}) {

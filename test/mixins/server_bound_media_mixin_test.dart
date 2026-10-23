@@ -39,7 +39,7 @@ class _ProbeState extends State<_Probe> with ServerBoundMediaMixin<_Probe> {
 }
 
 MediaItem _meta({ServerId? serverId, String ratingKey = 'rk1'}) =>
-    testMediaItem(id: ratingKey, backend: MediaBackend.plex, kind: MediaKind.movie, serverId: serverId);
+    testMediaItem(id: ratingKey, backend: MediaBackend.silo, kind: MediaKind.movie, serverId: serverId);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -7,11 +7,11 @@ import 'package:plezy/media/media_version.dart';
 /// Canonical backend-neutral [MediaItem] fixture.
 ///
 /// Tests should override only fields relevant to the behavior under test. The
-/// defaults deliberately form a valid Plex movie without inventing hierarchy,
+/// defaults deliberately form a valid Silo movie without inventing hierarchy,
 /// watch-state, or library metadata that could influence derived getters.
 MediaItem testMediaItem({
   String id = 'item-1',
-  MediaBackend backend = MediaBackend.plex,
+  MediaBackend backend = MediaBackend.silo,
   MediaKind kind = MediaKind.movie,
   String? guid,
   String? title,
@@ -68,69 +68,10 @@ MediaItem testMediaItem({
   String? backendFolderKey,
   Map<String, Object?>? raw,
 }) {
-  // Dispatch straight to the concrete variants: the fixture keeps the full
-  // union surface while the production `MediaItem()` factory only declares
-  // the fields synthetic call sites actually use. Mirrors the old compat
-  // dispatch, including dropping the Plex-only fields for Silo.
+  // Build the concrete variant directly: the fixture keeps the full field
+  // surface while the production `MediaItem()` factory only declares the
+  // fields synthetic call sites actually use.
   return switch (backend) {
-    MediaBackend.plex => MediaItem.plex(
-      id: id,
-      kind: kind,
-      guid: guid,
-      title: title,
-      titleSort: titleSort,
-      summary: summary,
-      tagline: tagline,
-      originalTitle: originalTitle,
-      studio: studio,
-      year: year,
-      originallyAvailableAt: originallyAvailableAt,
-      contentRating: contentRating,
-      parentId: parentId,
-      parentTitle: parentTitle,
-      parentThumbPath: parentThumbPath,
-      parentIndex: parentIndex,
-      index: index,
-      grandparentId: grandparentId,
-      grandparentTitle: grandparentTitle,
-      grandparentThumbPath: grandparentThumbPath,
-      grandparentArtPath: grandparentArtPath,
-      grandparentBackdropPaths: grandparentBackdropPaths,
-      thumbPath: thumbPath,
-      artPath: artPath,
-      backdropPaths: backdropPaths,
-      clearLogoPath: clearLogoPath,
-      backgroundSquarePath: backgroundSquarePath,
-      durationMs: durationMs,
-      viewOffsetMs: viewOffsetMs,
-      viewCount: viewCount,
-      lastViewedAt: lastViewedAt,
-      leafCount: leafCount,
-      viewedLeafCount: viewedLeafCount,
-      childCount: childCount,
-      addedAt: addedAt,
-      updatedAt: updatedAt,
-      rating: rating,
-      userRating: userRating,
-      isFavorite: isFavorite,
-      genres: genres,
-      directors: directors,
-      writers: writers,
-      producers: producers,
-      countries: countries,
-      collections: collections,
-      labels: labels,
-      styles: styles,
-      moods: moods,
-      roles: roles,
-      mediaVersions: mediaVersions,
-      libraryId: libraryId,
-      libraryTitle: libraryTitle,
-      serverId: serverId,
-      serverName: serverName,
-      backendFolderKey: backendFolderKey,
-      raw: raw,
-    ),
     MediaBackend.silo => MediaItem.silo(
       id: id,
       kind: kind,

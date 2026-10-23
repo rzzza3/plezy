@@ -52,7 +52,7 @@ void main() {
     return capturedContext;
   }
 
-  final seed = testMediaItem(id: 'track-1', backend: MediaBackend.plex, kind: MediaKind.track);
+  final seed = testMediaItem(id: 'track-1', backend: MediaBackend.silo, kind: MediaKind.track);
 
   testWidgets('a thrown fetch failure surfaces the generic instant mix snackbar', (tester) async {
     final context = await pumpWithService(tester, _OutcomeMusicService(error: StateError('boom')));

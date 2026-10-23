@@ -25,7 +25,7 @@ import '../test_helpers/prefs.dart';
 import '../test_helpers/saf_fakes.dart';
 
 class _PlaybackClient implements MediaServerClient {
-  _PlaybackClient({this.clientBackend = MediaBackend.plex, PlaybackInitializationResult? result})
+  _PlaybackClient({this.clientBackend = MediaBackend.silo, PlaybackInitializationResult? result})
     : result =
           result ??
           PlaybackInitializationResult(availableVersions: const [], videoUrl: 'https://example.com/video.mp4');
@@ -71,7 +71,7 @@ void main() {
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
       PlaybackInitializationOptions(
-        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
         selectedMediaIndex: 0,
         qualityPreset: TranscodeQualityPreset.original,
       ),
@@ -96,7 +96,7 @@ void main() {
         PlaybackInitializationOptions(
           metadata: testMediaItem(
             id: 'missing-download',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.movie,
             serverId: 'srv',
           ),
@@ -124,7 +124,7 @@ void main() {
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
       PlaybackInitializationOptions(
-        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
         selectedMediaIndex: 0,
         qualityPreset: TranscodeQualityPreset.original,
         sessionIdentifier: 'playback-session-id',
@@ -179,7 +179,7 @@ void main() {
 
       final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
         PlaybackInitializationOptions(
-          metadata: testMediaItem(id: 'track-1', backend: MediaBackend.plex, kind: MediaKind.track, serverId: 'srv'),
+          metadata: testMediaItem(id: 'track-1', backend: MediaBackend.silo, kind: MediaKind.track, serverId: 'srv'),
           selectedMediaIndex: 0,
           qualityPreset: TranscodeQualityPreset.original,
           sessionIdentifier: 'playback-session-id',
@@ -252,7 +252,7 @@ void main() {
     Future<PlaybackContext> resolveAt720p({required bool downloadOutranksQuality}) {
       return PlaybackSourceResolver(serverManager: manager, database: db).resolve(
         PlaybackInitializationOptions(
-          metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+          metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
           selectedMediaIndex: 0,
           qualityPreset: TranscodeQualityPreset.p720_2mbps,
         ),
@@ -281,7 +281,7 @@ void main() {
       // the version on disk beats failing, as it does with no client at all.
       final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
         PlaybackInitializationOptions(
-          metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+          metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
           selectedMediaIndex: 1,
           qualityPreset: TranscodeQualityPreset.original,
         ),

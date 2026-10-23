@@ -2,11 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/media/media_part.dart';
-import 'package:plezy/media/media_rating.dart';
-import 'package:plezy/media/media_role.dart';
-import 'package:plezy/media/media_version.dart';
-import 'package:plezy/services/settings_service.dart';
 import '../test_helpers/media_items.dart';
 
 /// Backend-agnostic [MediaItem] tests. The per-backend mapper tests exercise
@@ -25,7 +20,7 @@ MediaItem _movie({
   String? artPath,
   List<String>? backdropPaths,
   String? backgroundSquarePath,
-  MediaBackend backend = MediaBackend.plex,
+  MediaBackend backend = MediaBackend.silo,
 }) => testMediaItem(
   id: id,
   backend: backend,
@@ -58,7 +53,7 @@ void main() {
     test('show with all leaves watched is watched', () {
       final show = testMediaItem(
         id: 's',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         leafCount: 10,
         viewedLeafCount: 10,
@@ -70,7 +65,7 @@ void main() {
     test('show with viewedLeafCount > leafCount is still watched (defensive)', () {
       final show = testMediaItem(
         id: 's',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         leafCount: 10,
         viewedLeafCount: 11,
@@ -83,7 +78,7 @@ void main() {
     test('show with no leaf info falls back to viewCount', () {
       final show = testMediaItem(
         id: 's',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         viewCount: 1,
         serverId: 's1',
@@ -99,7 +94,7 @@ void main() {
     test('container media uses aggregate leaf counts', () {
       final album = testMediaItem(
         id: 'a',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.album,
         viewCount: 0,
         leafCount: 8,
@@ -124,7 +119,7 @@ void main() {
       for (final kind in MediaKind.values) {
         final item = testMediaItem(
           id: kind.id,
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: kind,
           viewCount: 0,
           leafCount: 2,
@@ -141,7 +136,7 @@ void main() {
     test('zero container leaf total falls back to viewCount', () {
       final show = testMediaItem(
         id: 's',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         viewCount: 1,
         leafCount: 0,
@@ -174,7 +169,7 @@ void main() {
     test('episodes prefer show art before episode art for wide hero containers', () {
       final episode = testMediaItem(
         id: 'e1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Episode',
         grandparentTitle: 'Show',
@@ -294,7 +289,7 @@ void main() {
     test('show with some leaves watched is partially watched', () {
       final show = testMediaItem(
         id: 's',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         leafCount: 10,
         viewedLeafCount: 3,
@@ -320,7 +315,7 @@ void main() {
     test('show with zero leaves watched is NOT partially watched', () {
       final show = testMediaItem(
         id: 's',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         leafCount: 10,
         viewedLeafCount: 0,
@@ -332,7 +327,7 @@ void main() {
     test('show with all leaves watched is NOT partially watched', () {
       final show = testMediaItem(
         id: 's',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         leafCount: 10,
         viewedLeafCount: 10,
@@ -344,7 +339,7 @@ void main() {
     test('aggregate progress clamps contradictory counts', () {
       final overReported = testMediaItem(
         id: 'show',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         leafCount: 10,
         viewedLeafCount: 11,
@@ -382,7 +377,7 @@ void main() {
     test('container mutations update the aggregate and item flags together', () {
       final album = testMediaItem(
         id: 'a',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.album,
         viewCount: 0,
         leafCount: 8,
@@ -403,7 +398,7 @@ void main() {
     test('container unwatched counts are clamped', () {
       final overReported = testMediaItem(
         id: 's1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         leafCount: 10,
         viewedLeafCount: 11,
@@ -442,32 +437,6 @@ void main() {
       expect(copy.id, 'm1', reason: 'untouched fields preserved');
     });
 
-    test('preserves Plex-only fields when omitted', () {
-      const original = PlexMediaItem(
-        id: 'p1',
-        kind: MediaKind.movie,
-        title: 'Old',
-        editionTitle: 'Director Cut',
-        ratings: [
-          MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.4),
-          MediaRatingSource(source: 'imdb', value: 8.9, votes: 1200),
-        ],
-        trailerKey: '/library/metadata/1',
-        playlistItemId: 42,
-        playQueueItemId: 7,
-      );
-
-      final copy = original.copyWith(title: 'New');
-
-      expect(copy.title, 'New');
-      expect(copy.editionTitle, 'Director Cut');
-      expect(copy.ratings?.map((rating) => rating.source), ['rottenTomatoesCritic', 'imdb']);
-      expect(copy.ratings?.last.votes, 1200);
-      expect(copy.trailerKey, '/library/metadata/1');
-      expect(copy.playlistItemId, 42);
-      expect(copy.playQueueItemId, 7);
-    });
-
     test('preserves Silo playlist item id when omitted', () {
       const original = SiloMediaItem(id: 's1', kind: MediaKind.movie, title: 'Old', playlistItemId: 'playlist-entry-1');
 
@@ -489,50 +458,6 @@ void main() {
   });
 
   group('MediaItem JSON', () {
-    test('round-trips Plex-only fields', () {
-      const original = PlexMediaItem(
-        id: 'p1',
-        kind: MediaKind.movie,
-        title: 'Movie',
-        editionTitle: 'Theatrical',
-        ratings: [
-          MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.1),
-          MediaRatingSource(source: 'imdb', value: 8.4, votes: 250858),
-        ],
-        genres: ['Drama'],
-        roles: [MediaRole(id: '1', tag: 'Actor', role: 'Lead', thumbPath: '/photo')],
-        mediaVersions: [
-          MediaVersion(
-            id: 'v1',
-            width: 1920,
-            height: 1080,
-            parts: [MediaPart(id: 'part1', streamPath: '/stream', sizeBytes: 1000)],
-          ),
-        ],
-        trailerKey: '/trailer',
-        playlistItemId: 4,
-        playQueueItemId: 5,
-      );
-
-      final json = original.toJson();
-      final decoded = MediaItem.fromJson(json);
-
-      expect(json['backend'], 'plex');
-      expect(json.containsKey('summary'), isFalse);
-      expect(decoded, isA<PlexMediaItem>());
-      final plex = decoded as PlexMediaItem;
-      expect(plex.editionTitle, 'Theatrical');
-      expect(plex.ratings?.map((rating) => rating.source), ['rottenTomatoesCritic', 'imdb']);
-      expect(plex.ratings?.first.value, 9.1);
-      expect(plex.ratings?.last.votes, 250858);
-      expect(plex.genres, ['Drama']);
-      expect(plex.roles?.single.tag, 'Actor');
-      expect(plex.mediaVersions?.single.parts.single.streamPath, '/stream');
-      expect(plex.trailerKey, '/trailer');
-      expect(plex.playlistItemId, 4);
-      expect(plex.playQueueItemId, 5);
-    });
-
     test('round-trips Silo playlist item id', () {
       const original = SiloMediaItem(id: 's1', kind: MediaKind.movie, title: 'Movie', playlistItemId: 'entry-1');
 
@@ -577,50 +502,13 @@ void main() {
       expect(decoded.isPartiallyWatched, isFalse);
       expect(decoded.unwatchedCount, isNull);
     });
-
-    test('missing backend keeps legacy Plex fallback', () {
-      final decoded = MediaItem.fromJson({'id': 'legacy', 'kind': 'movie'});
-
-      expect(decoded, isA<PlexMediaItem>());
-      expect(decoded.backend, MediaBackend.plex);
-      expect(decoded.id, 'legacy');
-      expect(decoded.kind, MediaKind.movie);
-    });
-  });
-
-  group('MediaItem card shape for Plex home videos (#2036)', () {
-    const homeVideo = PlexMediaItem(
-      id: 'hv1',
-      kind: MediaKind.movie,
-      subtype: 'clip',
-      thumbPath: '/thumb',
-      artPath: '/art',
-    );
-
-    test('movie with subtype=clip renders wide in every episode poster mode', () {
-      for (final mode in EpisodePosterMode.values) {
-        expect(homeVideo.usesWideAspectRatio(mode), isTrue, reason: mode.name);
-        expect(homeVideo.cardShape(mode), CardShape.wide, reason: mode.name);
-      }
-    });
-
-    test('posterThumb prefers the generated video-frame thumb over art, even in mixed hubs', () {
-      expect(homeVideo.posterThumb(), '/thumb');
-      expect(homeVideo.posterThumb(mode: EpisodePosterMode.episodeThumbnail, mixedHubContext: true), '/thumb');
-    });
-
-    test('other Plex subtypes do not widen a movie', () {
-      const trailer = PlexMediaItem(id: 't1', kind: MediaKind.movie, subtype: 'trailer', thumbPath: '/thumb');
-      expect(trailer.usesWideAspectRatio(EpisodePosterMode.seriesPoster), isFalse);
-      expect(trailer.cardShape(EpisodePosterMode.seriesPoster), CardShape.poster);
-    });
   });
 
   group('MediaItem.displayTitle', () {
     test('episode prefers grandparent (show) title', () {
       final ep = testMediaItem(
         id: 'e1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Pilot',
         grandparentTitle: 'Breaking Bad',
@@ -634,7 +522,7 @@ void main() {
     test('season prefers grandparent over parent (when both present)', () {
       final season = testMediaItem(
         id: 'sn1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.season,
         title: 'Season 1',
         grandparentTitle: 'Breaking Bad',

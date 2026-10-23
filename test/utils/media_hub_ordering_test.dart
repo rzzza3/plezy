@@ -13,7 +13,7 @@ const Object _defaultServerId = Object();
 MediaLibrary _library(String id, {ServerId? serverId}) {
   return MediaLibrary(
     id: id,
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     title: 'Library $id',
     kind: MediaKind.movie,
     serverId: serverId ?? ServerId('server'),
@@ -23,7 +23,7 @@ MediaLibrary _library(String id, {ServerId? serverId}) {
 MediaItem _item(String id, {String? libraryId, Object? serverId = _defaultServerId}) {
   return testMediaItem(
     id: id,
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
     libraryId: libraryId,
     serverId: identical(serverId, _defaultServerId) ? ServerId('server') : serverId as ServerId?,

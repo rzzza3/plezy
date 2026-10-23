@@ -69,7 +69,7 @@ void main() {
       playlistItemsPageSize + 5,
       (index) => testMediaItem(
         id: 'item_$index',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Item $index',
         serverId: 'server_1',
@@ -103,7 +103,7 @@ void main() {
     final harness = await _createHarness([
       testMediaItem(
         id: 'track_1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: 'Track 1',
         serverId: 'server_1',
@@ -131,7 +131,7 @@ void main() {
     final harness = await _createHarness([
       testMediaItem(
         id: 'track_1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: 'Track 1',
         serverId: 'server_1',
@@ -554,7 +554,8 @@ void main() {
 
   testWidgets('refreshing a row keeps its playlist entry id for the next removal', (tester) async {
     final items = [
-      for (final (index, item) in _mediaItems(2).indexed) (item as PlexMediaItem).copyWith(playlistItemId: 100 + index),
+      for (final (index, item) in _mediaItems(2).indexed)
+        (item as SiloMediaItem).copyWith(playlistItemId: '${100 + index}'),
     ];
     final harness = await _createHarness(items);
     await _pushPlaylistRoute(tester, harness);
@@ -566,8 +567,8 @@ void main() {
 
     await tester.tap(find.byTooltip(t.playlists.removeItem).first);
     await tester.pump();
-    final removed = harness.client.removeRequests.single.item as PlexMediaItem;
-    expect(removed.playlistItemId, 100);
+    final removed = harness.client.removeRequests.single.item as SiloMediaItem;
+    expect(removed.playlistItemId, '100');
     harness.client.completeRemove(0, true, applyToServer: true);
     await tester.pumpAndSettle();
   });
@@ -713,7 +714,7 @@ List<String> _visiblePlaylistItemIds(WidgetTester tester) {
 
 const _playlist = MediaPlaylist(
   id: 'playlist_1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Long Playlist',
   playlistType: 'video',
   serverId: 'server_1',
@@ -722,7 +723,7 @@ const _playlist = MediaPlaylist(
 
 const _audioPlaylist = MediaPlaylist(
   id: 'audio_playlist_1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Audio Playlist',
   playlistType: 'audio',
   serverId: 'server_1',
@@ -731,7 +732,7 @@ const _audioPlaylist = MediaPlaylist(
 
 const _smartAudioPlaylist = MediaPlaylist(
   id: 'smart_audio_playlist_1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Smart Audio Playlist',
   playlistType: 'audio',
   smart: true,
@@ -744,7 +745,7 @@ List<MediaItem> _mediaItems(int count) {
     count,
     (index) => testMediaItem(
       id: 'item_$index',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Item $index',
       serverId: 'server_1',
@@ -850,7 +851,7 @@ class _PagedPlaylistClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerCapabilities get capabilities => ServerCapabilities.plex;
@@ -944,7 +945,7 @@ class _PagedPlaylistClient implements MediaServerClient {
   @override
   Future<MediaItem?> fetchItem(String id) async {
     final item = items.firstWhere((item) => item.id == id);
-    return item is PlexMediaItem ? item.copyWith(playlistItemId: null, title: '${item.title} (refreshed)') : item;
+    return item is SiloMediaItem ? item.copyWith(playlistItemId: null, title: '${item.title} (refreshed)') : item;
   }
 
   @override

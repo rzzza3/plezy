@@ -82,7 +82,7 @@ void main() {
   testWidgets('shows file size alongside media quality labels', (tester) async {
     final episode = testMediaItem(
       id: 'sized_episode',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'A Large Episode',
       index: 4,
@@ -114,7 +114,7 @@ void main() {
   testWidgets('downloaded episode shows the resume progress bar', (tester) async {
     final episode = testMediaItem(
       id: 'resumable_episode',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Halfway There',
       index: 5,

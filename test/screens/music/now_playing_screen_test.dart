@@ -23,7 +23,7 @@ import '../../test_helpers/stub_music_playback_service.dart';
 MediaItem _track({required String id, required String title, required String album, required int year}) {
   return testMediaItem(
     id: id,
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.track,
     title: title,
     parentId: 'album_$id',

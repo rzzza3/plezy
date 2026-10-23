@@ -300,7 +300,7 @@ void main() {
 
 class _NoopClient implements MediaServerClient {
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerCapabilities get capabilities => ServerCapabilities.plex;

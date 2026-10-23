@@ -247,7 +247,7 @@ Future<void> _seedSchema25(File file) async {
     await _seedMusicSession(
       db,
       'local-b',
-      const MediaItem.plex(id: 'track-2', kind: MediaKind.track, serverId: 'plex-machine').toJson(),
+      const MediaItem.silo(id: 'track-2', kind: MediaKind.track, serverId: 'plex-machine').toJson(),
     );
     await _seedMusicSession(
       db,

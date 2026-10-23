@@ -26,7 +26,7 @@ import '../test_helpers/prefs.dart';
 
 const _qualifiedLibrary = MediaLibrary(
   id: 'shared-section',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Movies',
   kind: MediaKind.movie,
   serverId: 'server-a',
@@ -135,7 +135,7 @@ void main() {
         for (var i = 0; i < 60; i++)
           MediaLibrary(
             id: 'section-$i',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             title: 'Library $i',
             kind: MediaKind.movie,
             serverId: 'server-a',
@@ -170,7 +170,7 @@ void main() {
 
   test('reconcileLibraryOrder keeps the sheet order over the current libraries', () {
     MediaLibrary library(String id, {String title = ''}) =>
-        MediaLibrary(id: id, backend: MediaBackend.plex, title: title, kind: MediaKind.movie, serverId: 'server-a');
+        MediaLibrary(id: id, backend: MediaBackend.silo, title: title, kind: MediaKind.movie, serverId: 'server-a');
 
     final reconciled = reconcileLibraryOrder(
       [library('b'), library('gone'), library('a')],
@@ -184,7 +184,7 @@ void main() {
   testWidgets('a reorder after libraries load mid-sheet keeps the new libraries', (tester) async {
     MediaLibrary library(String id) => MediaLibrary(
       id: id,
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       title: 'Library $id',
       kind: MediaKind.movie,
       serverId: 'server-a',

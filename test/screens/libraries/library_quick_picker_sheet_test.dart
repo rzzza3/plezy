@@ -10,7 +10,7 @@ void main() {
     final libraries = [
       const MediaLibrary(
         id: '1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         title: 'Movies',
         kind: MediaKind.movie,
         serverId: 'plex-server',
@@ -55,7 +55,7 @@ void main() {
     final libraries = [
       const MediaLibrary(
         id: '1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         title: 'Movies',
         kind: MediaKind.movie,
         serverId: 'plex-server',

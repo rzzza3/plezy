@@ -324,7 +324,7 @@ PlaybackStateProvider _playbackWithQueue() {
         _episode('watched-episode', title: 'Watched Episode', viewCount: 1),
         testMediaItem(
           id: 'movie',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           title: 'Movie',
           thumbPath: 'https://example.invalid/movie.jpg',
@@ -338,7 +338,7 @@ PlaybackStateProvider _playbackWithQueue() {
 MediaItem _episode(String id, {required String title, int? viewCount}) {
   return testMediaItem(
     id: id,
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     title: title,
     grandparentTitle: 'Show',

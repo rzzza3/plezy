@@ -101,7 +101,7 @@ void main() {
   }
 
   testWidgets('offline play-next paints the downloaded still for a token-free Plex thumb', (tester) async {
-    final episode = _episode(backend: MediaBackend.plex, thumbPath: '/library/metadata/episode-2/thumb/1');
+    final episode = _episode(backend: MediaBackend.silo, thumbPath: '/library/metadata/episode-2/thumb/1');
     final written = (await tester.runAsync(() => downloadThumb(episode)))!;
 
     await pumpOfflinePrompt(tester, episode);
