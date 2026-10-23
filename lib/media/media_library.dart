@@ -3,9 +3,9 @@ import 'ids.dart';
 import 'media_backend.dart';
 import 'media_kind.dart';
 
-/// A top-level browseable section on a server (e.g. a Plex library section).
+/// A top-level browseable section on a server (e.g. a Silo library).
 class MediaLibrary {
-  /// Backend-opaque identifier (e.g. Plex section id like `"5"`).
+  /// Backend-opaque identifier (e.g. a library id).
   final String id;
   final MediaBackend backend;
   final String title;
@@ -25,7 +25,7 @@ class MediaLibrary {
   final bool hidden;
 
   /// True for individually-shared items presented as a virtual library
-  /// (Plex's "shared with me" surface).
+  /// (a "shared with me" surface).
   final bool isShared;
 
   final String? serverId;

@@ -1,9 +1,9 @@
 import 'media_item.dart';
 
-/// A named, ordered list of items grouped on the home screen (Plex `Hub`,
+/// A named, ordered list of items grouped on the home screen (a server hub,
 /// or a Silo home section).
 class MediaHub {
-  /// Backend-opaque hub identifier (e.g. Plex `key`).
+  /// Backend-opaque hub identifier (e.g. a section id).
   final String id;
 
   /// Human-readable hub identifier for analytics and routing — e.g.

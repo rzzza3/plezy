@@ -265,7 +265,7 @@ const countryNames = <String, String>{
 };
 
 /// Reverse index for providers that send a country *name* instead of a code.
-/// Plex Discover returns `Country` child tags such as `United States of
+/// Catalog sources return `Country` tags such as `United States of
 /// America`, so a mapper has to normalize before storing alpha-2.
 ///
 /// Keyed by lowercased name, covering the official ISO form, the short form

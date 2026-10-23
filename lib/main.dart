@@ -1117,7 +1117,7 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
 
     if (exceptions.any(shouldDrop)) return null;
 
-    // Scrub Plex tokens and server URLs from exception messages
+    // Scrub tokens and server URLs from exception messages
     for (final e in exceptions) {
       final value = e.value;
       if (value != null) {

@@ -2,7 +2,7 @@
 /// starting with a digit / non-letter) plus the count of items beginning
 /// with it.
 ///
-/// Plex's `/library/sections/{id}/firstCharacter` endpoint returns these
+/// A per-letter count endpoint would return these
 /// natively (counts let the UI scroll to a cumulative offset). Silo has no
 /// equivalent endpoint, so `LibraryAlphaBarStrategy` synthesises a
 /// 27-letter alphabet with `size: 1` per entry — the bar then acts as a

@@ -6,7 +6,7 @@ import 'media_stream.dart';
 part 'media_part.g.dart';
 
 /// One physical file part of a [MediaVersion]. A movie typically has a single
-/// part; Plex stacks split files (CD1/CD2, `Part 1`/`Part 2`) and some
+/// part; servers stack split files (CD1/CD2, `Part 1`/`Part 2`) and some
 /// DVD/BluRay rips as several parts of one version, which play as one item
 /// timeline (`MediaPartTimeline`).
 @JsonSerializable(includeIfNull: false)
@@ -15,16 +15,16 @@ class MediaPart {
   @JsonKey(fromJson: stringOrEmpty)
   final String id;
 
-  /// Backend-specific path used to construct a direct stream URL — e.g. Plex's
+  /// Backend-specific path used to construct a direct stream URL — e.g. a server's
   /// `/library/parts/123/file.mkv`. The
   /// per-backend client is responsible for prefixing the base URL and
   /// appending auth.
   final String? streamPath;
 
   /// The server-side file path backing this part. The identity signal for
-  /// "same underlying file": Plex represents a multi-episode file
+  /// "same underlying file": a server represents a multi-episode file
   /// (`S02E24-E25.mkv`) as distinct episodes whose parts have *different*
-  /// part ids but the same [file] (#1500). May be absent (e.g. Plex hides
+  /// part ids but the same [file] (#1500). May be absent (e.g. a server hides
   /// paths from restricted users), in which case same-file detection
   /// degrades gracefully.
   final String? file;
@@ -55,7 +55,7 @@ class MediaPart {
 
   Map<String, dynamic> toJson() => _$MediaPartToJson(this);
 
-  /// Defaults to true when fields are absent. Plex sets these only when the
+  /// Defaults to true when fields are absent. Servers set these only when the
   /// metadata request includes `checkFiles=1`.
   bool get isPlayable => accessible != false && exists != false;
 }

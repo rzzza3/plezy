@@ -23,7 +23,7 @@ enum FilterEditorKind {
   text,
 }
 
-/// Unit a numeric field is stored in, as Plex declares it in the field's
+/// Unit a numeric field is stored in, as the server declares it in the field's
 /// `subType`. The editor asks for the unit a person would type and scales.
 enum MediaFilterUnit {
   /// Stored as typed.
@@ -50,7 +50,7 @@ enum MediaFilterUnit {
   };
 }
 
-/// Field types a backend can declare. Plex publishes these in
+/// Field types a backend can declare. Servers publish these in
 /// `/library/sections/{id}/all?includeMeta=1` (`Meta.FieldType`); the legacy
 /// `/filters` listing only distinguishes `string`, `integer` and `boolean`.
 abstract final class MediaFilterType {
@@ -70,9 +70,9 @@ abstract final class MediaFilterField {
   static const contentRating = 'contentRating';
   static const tag = 'tag';
 
-  /// Plex-only: substring match over the item's full file path. Undocumented
+  /// Substring match over the item's full file path. Undocumented
   /// but supported on movie and episode queries; it errors on show queries,
-  /// so the Plex client only offers it for those two kinds.
+  /// so a client offers it only for those two kinds.
   static const file = 'file';
 }
 
@@ -80,7 +80,7 @@ abstract final class MediaFilterField {
 /// backend can actually evaluate for it.
 @JsonSerializable()
 class MediaFilter {
-  /// Wire field name. Plex may qualify it by type (`show.genre`) when the
+  /// Wire field name. A server may qualify it by type (`show.genre`) when the
   /// field belongs to a type other than the one being browsed.
   @JsonKey(defaultValue: '')
   final String filter;
@@ -105,7 +105,7 @@ class MediaFilter {
   final MediaFilterUnit unit;
 
   /// Comparisons this backend supports for this field. Excluded from JSON:
-  /// the legacy Plex `/filters` rows carry no operator vocabulary, so those
+  /// legacy `/filters` rows carry no operator vocabulary, so those
   /// fall back to [defaultOperatorsFor].
   @JsonKey(includeFromJson: false, includeToJson: false)
   final List<LibraryFilterOperator> operators;
@@ -144,7 +144,7 @@ class MediaFilter {
 
   /// Comparisons assumed when the backend declares a field type but no
   /// operator list. Deliberately conservative: only the comparisons every
-  /// supported Plex version evaluates for that type.
+  /// supported server version evaluates for that type.
   static List<LibraryFilterOperator> defaultOperatorsFor(String filterType) {
     return switch (filterType) {
       MediaFilterType.boolean => const [LibraryFilterOperator.is_, LibraryFilterOperator.isNot],
@@ -176,9 +176,9 @@ class MediaFilterValue {
   Map<String, dynamic> toJson() => _$MediaFilterValueToJson(this);
 }
 
-/// Canonical filter identity carried by Plex query/path keys or plain backend ids.
+/// Canonical filter identity carried by query/path keys or plain backend ids.
 ///
-/// Plex hands some value ids out already percent-encoded (`audioLayout` lists
+/// A server can hand some value ids out already percent-encoded (`audioLayout` lists
 /// `5%2E1`, `contentRating` lists `16%2B`). They are decoded here so the id
 /// kept in a clause is the literal value: encoding it a second time on the
 /// wire selects nothing (`audioLayout=5%252E1` → 0 rows, `5.1` → 17).

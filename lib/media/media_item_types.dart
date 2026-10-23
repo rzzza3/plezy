@@ -2,7 +2,7 @@ import 'media_item.dart';
 import 'media_kind.dart';
 
 /// Convenience type-check getters and spoiler helpers on [MediaItem]. These
-/// give consumers a Plex-style fluent API (e.g. `item.isShow`) while keeping
+/// give consumers a fluent API (e.g. `item.isShow`) while keeping
 /// the underlying type backend-neutral.
 extension MediaItemTypes on MediaItem {
   bool get isShow => kind == MediaKind.show;
