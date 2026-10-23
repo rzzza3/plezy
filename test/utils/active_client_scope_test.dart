@@ -23,38 +23,35 @@ void main() {
       expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'other-machine/user-a'), isNull);
     });
   });
-  group('Plex profile scopes', () {
-    final plexServerId = ServerId('plex-machine');
 
+  group('Silo profile scopes', () {
     test('are typed, deterministic, profile-specific, and publicly projected', () {
-      final profileA = buildPlexProfileScopeId(serverId: plexServerId, profileId: 'profile-a');
-      final profileB = buildPlexProfileScopeId(serverId: plexServerId, profileId: 'profile-b');
+      final profileA = SiloProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      final profileB = SiloProfileScopeId(serverId: serverId, profileId: 'profile-b');
 
-      expect(profileA, buildPlexProfileScopeId(serverId: plexServerId, profileId: 'profile-a'));
+      expect(profileA, 'silo:media-machine/profile-a');
+      expect(profileA, SiloProfileScopeId(serverId: serverId, profileId: 'profile-a'));
       expect(profileA, isNot(profileB));
-      expect(profileA.publicServerId, plexServerId);
+      expect(profileA.publicServerId, serverId);
       expect(profileA.profileId, 'profile-a');
-      expect(profileA.cacheServerId, ServerId(profileA));
-      expect(publicPlexServerIdFromScope(profileA), plexServerId);
-      expect(resolveActiveClientScopeId(serverId: plexServerId, cacheServerId: profileA), profileA);
+      expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: profileA), profileA);
     });
 
-    test('encodes profile ids into a Plex profile scope', () {
-      final scope = buildPlexProfileScopeId(serverId: plexServerId, profileId: 'profile/a');
+    test('a scope of another server does not resolve', () {
+      final foreign = SiloProfileScopeId(serverId: ServerId('other-machine'), profileId: 'profile-a');
 
-      expect(scope.profileId, 'profile/a');
-      expect(isPlexProfileScopeId(scope), isTrue);
-      expect(publicPlexServerIdFromScope('plex-machine/user-a'), isNull);
+      expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: foreign), isNull);
     });
 
-    test('rejects malformed persisted server prefixes before getters can throw', () {
-      const malformed = '   /~plex-profile/profile-a';
-
-      final scope = PlexProfileScopeId.tryParse(malformed);
-
-      expect(scope, isNull);
-      expect(publicPlexServerIdFromScope(malformed), isNull);
-      expect(isPlexProfileScopeId(malformed), isFalse);
+    test('rejects malformed persisted scopes before getters can throw', () {
+      for (final malformed in ['silo:', 'silo:/profile-a', 'silo:media-machine/', 'silo:a/b/c', 'media-machine/a']) {
+        expect(SiloProfileScopeId.tryParse(malformed), isNull, reason: malformed);
+        expect(
+          resolveActiveClientScopeId(serverId: serverId, cacheServerId: malformed),
+          isNull,
+          reason: malformed,
+        );
+      }
     });
   });
 }

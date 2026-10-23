@@ -6,7 +6,7 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/services/api_cache.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 class _CacheClient with MediaServerCacheMixin implements MediaServerClient {
@@ -19,7 +19,7 @@ class _CacheClient with MediaServerCacheMixin implements MediaServerClient {
   ServerId get serverId => ServerId('cache-server');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   bool offline = false;
 
@@ -35,13 +35,13 @@ class _CacheClient with MediaServerCacheMixin implements MediaServerClient {
 
 void main() {
   late AppDatabase database;
-  late PlexApiCache cache;
+  late SiloApiCache cache;
   late _CacheClient client;
 
   setUp(() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(database);
-    cache = PlexApiCache.instance;
+    SiloApiCache.initialize(database);
+    cache = SiloApiCache.instance;
     client = _CacheClient(cache);
   });
 

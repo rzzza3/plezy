@@ -6,10 +6,14 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../media/ids.dart';
 import '../media/library_change_event.dart';
-import '../services/library_events/library_event_socket.dart' show LibraryEventConnection;
 import '../utils/app_logger.dart';
 import '../utils/web_socket_connect.dart';
 import 'silo_http.dart';
+
+/// A pending connection: [channel] resolves to an *established* channel or
+/// throws; [cancel] aborts a connect still in flight and releases its
+/// transport, and is a no-op once [channel] has settled.
+typedef LibraryEventConnection = ({Future<WebSocketChannel> channel, void Function() cancel});
 
 const String siloEventsProtocol = 'silo.events.v2';
 const List<String> siloEventChannels = ['user_state', 'catalog'];

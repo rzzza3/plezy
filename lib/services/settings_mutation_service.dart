@@ -4,13 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
-import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../profiles/active_profile_provider.dart';
 import '../providers/companion_remote_provider.dart';
 import '../providers/discover_provider.dart';
 import '../providers/download_provider.dart';
-import '../providers/multi_server_provider.dart';
 import '../utils/platform_detector.dart';
 import 'device_performance.dart';
 import 'discord_rpc_service.dart';
@@ -136,9 +134,6 @@ class SettingsMutationService {
     final locale = settings.read(SettingsService.appLocale);
     await LocaleSettings.setLocale(locale);
     checkCurrent?.call();
-    if (context.mounted) {
-      context.read<MultiServerProvider?>()?.serverManager.updatePlexLanguage(locale.plexLanguageCode);
-    }
   }
 
   static Future<void> _applyCompanionRemoteServer(

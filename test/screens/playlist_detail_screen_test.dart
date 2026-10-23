@@ -27,7 +27,7 @@ import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/playlist_items_loader.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_navigation_helper.dart';
@@ -757,7 +757,7 @@ Future<_PlaylistHarness> _createHarness(List<MediaItem> items, {int? failOnceAt,
   await SettingsService.getInstance();
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(db);
+  SiloApiCache.initialize(db);
 
   final downloadManager = DownloadManagerService(
     database: db,

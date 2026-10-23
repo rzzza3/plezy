@@ -20,35 +20,12 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/plex_auth_service.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
-
-PlexConnection _plexConnection() {
-  return PlexConnection(
-    protocol: 'http',
-    address: '127.0.0.1',
-    port: 32400,
-    uri: 'http://127.0.0.1:32400',
-    local: true,
-    relay: false,
-    ipv6: false,
-  );
-}
-
-PlexServer _plexServer(String id, String name) {
-  return PlexServer(
-    name: name,
-    clientIdentifier: id,
-    accessToken: 'token-$id',
-    connections: [_plexConnection()],
-    owned: true,
-  );
-}
 
 SiloConnection _siloConnection({required String serverId, required String serverName}) {
   return SiloConnection(
@@ -88,7 +65,7 @@ class _SiloServerClient implements MediaServerClient {
 MediaItem _show(ServerId serverId, String ratingKey, String title) {
   return testMediaItem(
     id: ratingKey,
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.show,
     title: title,
     serverId: serverId,
@@ -98,7 +75,7 @@ MediaItem _show(ServerId serverId, String ratingKey, String title) {
 MediaItem _playlist(ServerId serverId, String ratingKey, String title) {
   return testMediaItem(
     id: ratingKey,
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.playlist,
     title: title,
     serverId: serverId,
@@ -132,7 +109,7 @@ void main() {
   setUp(() async {
     resetSharedPreferencesForTest();
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(db);
+    SiloApiCache.initialize(db);
     downloadManager = DownloadManagerService(
       database: db,
       storageService: DownloadStorageService.instance,
@@ -172,7 +149,7 @@ void main() {
   Future<void> pumpScreen(WidgetTester tester, {bool keyboardMode = false}) async {
     downloadProvider.debugSeedState(
       metadata: {
-        'plex-srv:show-1': _show(ServerId('plex-srv'), 'show-1', 'Plex Show'),
+        'other-silo:show-1': _show(ServerId('other-silo'), 'show-1', 'Other Show'),
         'silo-machine:show-2': _show(ServerId('silo-machine'), 'show-2', 'Silo Show'),
         'auth-silo:show-3': _show(ServerId('auth-silo'), 'show-3', 'Auth Show'),
         'unknown-srv:show-4': _show(ServerId('unknown-srv'), 'show-4', 'Unknown Show'),
@@ -215,16 +192,8 @@ void main() {
   String? primaryFocusLabel() => FocusManager.instance.primaryFocus?.debugLabel;
 
   testWidgets('shows server context and active-profile availability for device sync rules', (tester) async {
-    connections.add(
-      PlexAccountConnection(
-        id: 'plex-account',
-        accountToken: 'account-token',
-        clientIdentifier: 'client-id',
-        accountLabel: 'Plex Account',
-        servers: [_plexServer('plex-srv', 'Living Room Plex')],
-        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      ),
-    );
+    // Signed in on this device, but not a server of the active profile.
+    connections.add(_siloConnection(serverId: 'other-silo', serverName: 'Living Room Silo'));
 
     final availableSilo = _siloConnection(serverId: 'silo-machine', serverName: 'Shared Silo');
     connections.add(availableSilo);
@@ -236,15 +205,15 @@ void main() {
     serverManager.debugMarkAuthErrorForTesting(ServerId('auth-silo'));
     multiServerProvider = testMultiServerProvider(serverManager);
 
-    await insertRule(ServerId('plex-srv'), 'show-1');
+    await insertRule(ServerId('other-silo'), 'show-1');
     await insertRule(ServerId('silo-machine'), 'show-2');
     await insertRule(ServerId('auth-silo'), 'show-3');
     await insertRule(ServerId('unknown-srv'), 'show-4');
 
     await pumpScreen(tester);
 
-    expect(find.text('Plex Show'), findsOneWidget);
-    expect(find.text('Server: Living Room Plex • Not available for current profile'), findsOneWidget);
+    expect(find.text('Other Show'), findsOneWidget);
+    expect(find.text('Server: Living Room Silo • Not available for current profile'), findsOneWidget);
     expect(find.text('Silo Show'), findsOneWidget);
     expect(find.text('Server: Shared Silo • Available'), findsOneWidget);
     expect(find.text('Auth Show'), findsOneWidget);

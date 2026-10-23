@@ -7,7 +7,7 @@ import '../media/media_backend.dart';
 
 import 'app_database.dart';
 import '../models/download_models.dart';
-import '../profiles/profile.dart';
+import '../connection/connection.dart';
 import '../utils/active_client_scope.dart';
 
 enum QueueDownloadOutcome {
@@ -172,71 +172,39 @@ extension DownloadDatabaseOperations on AppDatabase {
         .toList(growable: false);
     if (candidates.isEmpty) return const [];
 
-    final localProfileRows = await select(profiles).get();
-    final localProfileIds = localProfileRows.map((row) => row.id).toSet();
-    final connectionRows = await select(connections).get();
-    final connectionIds = connectionRows.map((row) => row.id).toSet();
-    return candidates
-        .where((row) => _isValidDownloadOwner(row, localProfileIds: localProfileIds, connectionIds: connectionIds))
-        .toList(growable: false);
+    final connectionIds = (await select(connections).get()).map((row) => row.id).toSet();
+    return candidates.where((row) => _isValidDownloadOwner(row, connectionIds: connectionIds)).toList(growable: false);
   }
 
-  /// Claim pre-v17 shared download rows for [profileId]. Rows that already
-  /// have any valid owner are left untouched so later profiles do not
-  /// inherit them.
+  /// Claim the ownerless downloads made under [profileId]'s own client scope
+  /// `silo:<server_id>/<profile_id>` — the ones a full logout detached. A
+  /// row made under any other scope stays ownerless, so no profile inherits
+  /// another's downloads.
   ///
   /// Runs on every profile switch — validity context is computed once and
   /// applied in memory instead of a per-download full-table rescan through
   /// `_validDownloadOwnerRows`.
   Future<void> adoptLegacyDownloadsForProfile(String profileId, {bool Function()? isStillActive}) async {
-    if (profileId.isEmpty) return;
+    if (SiloProfileScopeId.tryParse(profileId) == null) return;
     if (isStillActive != null && !isStillActive()) return;
-    final rows = await select(downloadedMedia).get();
+    final rows = await (select(downloadedMedia)..where((t) => t.clientScopeId.equals(profileId))).get();
     if (rows.isEmpty) return;
 
     final owners = await select(downloadOwners).get();
-    final localProfileIds = (await select(profiles).get()).map((row) => row.id).toSet();
-    final connectionRows = await select(connections).get();
-    final connectionIds = connectionRows.map((row) => row.id).toSet();
-    final connectionKindsById = {for (final row in connectionRows) row.id: row.kind};
+    final connectionIds = (await select(connections).get()).map((row) => row.id).toSet();
     final ownedKeys = <String>{
       for (final owner in owners)
-        if (_isValidDownloadOwner(owner, localProfileIds: localProfileIds, connectionIds: connectionIds))
-          owner.globalKey,
+        if (_isValidDownloadOwner(owner, connectionIds: connectionIds)) owner.globalKey,
     };
     for (final row in rows) {
-      if (!ownedKeys.contains(row.globalKey)) {
-        if (isStillActive != null && !isStillActive()) return;
-        final scopeId = row.clientScopeId;
-        final plexScope = PlexProfileScopeId.tryParse(scopeId ?? '');
-        final transferScope = PlexTransferScopeId.tryParse(scopeId ?? '');
-        // A scoped Plex row already identifies the Plezy profile whose token
-        // and cache namespace produced it. Logout first moves preserved rows
-        // through a sanitized transfer namespace so a new profile can adopt
-        // the physical file without inheriting the old profile's watch state.
-        if (plexScope != null && plexScope.profileId != profileId) continue;
-        if (plexScope != null || transferScope != null) {
-          await addDownloadOwner(
-            profileId: profileId,
-            globalKey: row.globalKey,
-            backendId: MediaBackend.plex.id,
-            clientScopeId: scopeId,
-          );
-          continue;
-        }
-
-        // A compound `{machineId}/{userId}` scope belongs to a backend Plezy
-        // no longer ships. Never attach it to another profile.
-        if (scopeId?.startsWith('${row.serverId}/') ?? false) continue;
-
-        final backendId = connectionKindsById[scopeId];
-        await addDownloadOwner(
-          profileId: profileId,
-          globalKey: row.globalKey,
-          backendId: backendId,
-          clientScopeId: scopeId,
-        );
-      }
+      if (ownedKeys.contains(row.globalKey)) continue;
+      if (isStillActive != null && !isStillActive()) return;
+      await addDownloadOwner(
+        profileId: profileId,
+        globalKey: row.globalKey,
+        backendId: MediaBackend.silo.id,
+        clientScopeId: profileId,
+      );
     }
   }
 
@@ -771,14 +739,10 @@ List<String?>? decodeAdditionalPartPaths(String? json) {
 
 String? encodeAdditionalPartPaths(List<String?>? paths) => paths == null || paths.isEmpty ? null : jsonEncode(paths);
 
-bool _isValidDownloadOwner(
-  DownloadOwnerItem owner, {
-  required Set<String> localProfileIds,
-  required Set<String> connectionIds,
-}) {
-  if (localProfileIds.contains(owner.profileId)) return true;
-  final plexHome = parsePlexHomeProfileId(owner.profileId);
-  if (plexHome != null) return connectionIds.contains(plexHome.accountConnectionId);
-  return localProfileIds.isEmpty;
+/// An owner is a Silo profile scope on a server this device is signed in
+/// to. Owners of a signed-out server stay in the table, so their downloads
+/// come back when the same account signs in again.
+bool _isValidDownloadOwner(DownloadOwnerItem owner, {required Set<String> connectionIds}) {
+  final scope = SiloProfileScopeId.tryParse(owner.profileId);
+  return scope != null && connectionIds.contains(SiloConnection.idFor(scope.publicServerId));
 }
-

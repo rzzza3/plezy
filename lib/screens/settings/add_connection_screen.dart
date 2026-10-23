@@ -6,52 +6,31 @@ import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
 import '../../theme/mono_tokens.dart';
-import '../../profiles/profile.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../auth/silo_server_screen.dart';
-import '../profile/borrow_connection_screen.dart';
 
 /// Picker shown when the user taps "Add connection". Silo is the only
 /// backend it offers.
 ///
-/// When [targetProfile] is provided, also offers a "Borrow from another
-/// profile" option that opens [BorrowConnectionScreen] for the target.
-///
 /// Pops with `true` after the underlying flow succeeds so the parent list
 /// refreshes; pops with `null` (the default) when the user backs out.
 class AddConnectionScreen extends StatelessWidget {
-  final Profile? targetProfile;
-
-  const AddConnectionScreen({super.key, this.targetProfile});
+  const AddConnectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final scoped = targetProfile != null;
     final options = <_BackendOption>[
       _BackendOption(
         backend: MediaBackend.silo,
         title: t.silo.connectCard,
-        subtitle: scoped
-            ? t.silo.connectCardSubtitleScoped(name: targetProfile!.displayName)
-            : t.silo.connectCardSubtitle,
-        builder: (_) => SiloServerScreen(targetProfile: targetProfile),
+        subtitle: t.silo.connectCardSubtitle,
+        builder: (_) => const SiloServerScreen(),
       ),
-      if (scoped)
-        _BackendOption(
-          backend: null,
-          title: t.addServer.borrowFromAnotherProfile,
-          subtitle: t.addServer.borrowFromAnotherProfileSubtitle,
-          builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile!),
-        ),
     ];
     final tokensRef = tokens(context);
     return FocusedScrollScaffold(
-      title: Text(
-        scoped
-            ? t.addServer.addConnectionTitleScoped(name: targetProfile!.displayName)
-            : t.addServer.addConnectionTitle,
-      ),
+      title: Text(t.addServer.addConnectionTitle),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.all(16),
@@ -61,9 +40,7 @@ class AddConnectionScreen extends StatelessWidget {
                 if (i > 0) SizedBox(height: tokensRef.groupGap),
                 _BackendCard(
                   borderRadius: groupItemRadii(context, i, options.length),
-                  leading: options[i].backend != null
-                      ? BackendBadge(backend: options[i].backend!, size: 28)
-                      : const AppIcon(Symbols.share_rounded, fill: 1, size: 28),
+                  leading: BackendBadge(backend: options[i].backend, size: 28),
                   title: options[i].title,
                   subtitle: options[i].subtitle,
                   onTap: () async {
@@ -83,8 +60,7 @@ class AddConnectionScreen extends StatelessWidget {
 }
 
 class _BackendOption {
-  /// Null for the borrow option (renders a share icon instead of a badge).
-  final MediaBackend? backend;
+  final MediaBackend backend;
   final String title;
   final String subtitle;
   final WidgetBuilder builder;

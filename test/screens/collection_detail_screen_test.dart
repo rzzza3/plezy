@@ -22,7 +22,7 @@ import 'package:plezy/screens/collection_detail_screen.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -332,7 +332,7 @@ Future<_CollectionHarness> _createHarness(List<MediaItem> items, {int? pageSize}
   await SettingsService.getInstance();
 
   final database = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(database);
+  SiloApiCache.initialize(database);
 
   final downloadManager = DownloadManagerService(
     database: database,

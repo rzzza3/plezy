@@ -36,7 +36,7 @@ import '../navigation/settings_shortcut.dart';
 import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
-import '../profiles/plex_home_service.dart';
+import '../profiles/silo_household_service.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_activation.dart';
 import '../profiles/profile_menu.dart';
@@ -466,7 +466,7 @@ class _MainScreenState extends State<MainScreen>
   /// the splash can await its first settle before navigating here. We just
   /// observe its [ActiveProfileProvider.isBinding] state for the once-only
   /// priming below.
-  PlexHomeService? _plexHomeService;
+  SiloHouseholdService? _households;
   ActiveProfileProvider? _activeProfileForListener;
   String? _lastSeenProfileId;
   // Tracks ActiveProfileProvider.isBinding from the previous notification
@@ -569,13 +569,13 @@ class _MainScreenState extends State<MainScreen>
       // first notification of a session that started with profiles.
       _hadProfiles = activeProfile.profiles.isNotEmpty;
       activeProfile.addListener(_onActiveProfileChanged);
-      _plexHomeService = context.read<PlexHomeService>();
+      _households = context.read<SiloHouseholdService>();
       // `start()` is the live/network entry point: it installs the connection
-      // watch, the refresh timer and an initial `_refreshAll()`. Hydration
-      // already happened from the provider's `create:`, so an offline launch
-      // keeps its cached Plex Home users without reaching the network.
+      // watch and refreshes every uncached household. Hydration already
+      // happened from the provider's `create:`, so an offline launch keeps
+      // its cached profiles without reaching the network.
       // `_handleOfflineStatusChanged` starts it if we come online later.
-      if (!_isOffline) unawaited(_plexHomeService!.start());
+      if (!_isOffline) unawaited(_households!.start());
       final manager = context.read<MultiServerProvider>().serverManager;
       // Read the binder so the Provider's `lazy: false` create has fired for
       // sure. `start()` is idempotent; SetupScreen normally started it already,
@@ -1257,7 +1257,7 @@ class _MainScreenState extends State<MainScreen>
         // Health check first so stale "online" servers get marked offline before
         // we snapshot the offline list for reconnection.
         await serverManager.checkServerHealth();
-        await serverManager.reconnectOfflineServers(forceRediscovery: true);
+        await serverManager.reconnectOfflineServers();
         if (!mounted) return;
         if (shouldRetryActiveProfileBindAfterReconnect(
           hasActiveProfile: activeProfile.active != null,
@@ -1375,11 +1375,11 @@ class _MainScreenState extends State<MainScreen>
 
     // Ensure profile settings are warmed when coming back online
     if (!_isOffline) {
-      // A launch that started offline skipped PlexHomeService's live/network
-      // side, so pick it up now that we have a network. `start()` is idempotent,
-      // so repeated offline/online transitions are free.
-      final plexHome = _plexHomeService ??= context.read<PlexHomeService>();
-      unawaited(plexHome.start());
+      // A launch that started offline skipped SiloHouseholdService's
+      // live/network side, so pick it up now that we have a network. `start()`
+      // is idempotent, so repeated offline/online transitions are free.
+      final households = _households ??= context.read<SiloHouseholdService>();
+      unawaited(households.start());
       unawaited(() async {
         final mp = context.read<MultiServerProvider>();
         final binder = context.read<ActiveProfileBinder>();

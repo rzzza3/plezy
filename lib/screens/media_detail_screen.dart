@@ -30,7 +30,6 @@ import '../media/library_query.dart';
 import '../media/library_change_event.dart';
 import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
-import '../utils/plex_season_display.dart';
 import '../media/media_item.dart';
 import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
@@ -48,7 +47,6 @@ import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/media_quality_labels.dart';
-import '../services/plex_client.dart';
 import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../utils/content_utils.dart';
@@ -1760,23 +1758,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     try {
-      // Plex has a server-side "flatten seasons" preference;
-      // Other backends have no equivalent, so fetch the prefs only when we have
-      // a Plex client and a section id. The library section id came from
-      // Plex as an int but lands in [MediaItem.libraryId] as the string
-      // form (or null on non-Plex items).
-      final sectionId = _metadata.libraryId;
-      final seasonsFuture = client.fetchChildren(_metadata.id);
-      // Prefs are a per-library nicety (Plex "flatten seasons"); a failure here
-      // must never take down the seasons list, so degrade to defaults.
-      final prefsFuture = (client is PlexClient && sectionId != null)
-          ? client.getLibrarySectionPrefs(sectionId).catchError((_) => <String, dynamic>{})
-          : Future.value(<String, dynamic>{});
-
-      final results = await Future.wait([seasonsFuture, prefsFuture]);
+      final seasons = await client.fetchChildren(_metadata.id);
       if (!_canUseDetail) return;
-      final seasons = results.first as List<MediaItem>;
-      final prefs = results[1] as Map<String, dynamic>;
 
       // Preserve serverId for each season.
       final seasonsWithServerId = seasons
@@ -1788,18 +1771,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           )
           .toList();
 
-      // Plex can override the library season mode per show; other backends fall
-      // through to "flatten when there's a single season".
-      bool shouldShowEpisodesDirectly;
-      if (client is PlexClient) {
-        shouldShowEpisodesDirectly = shouldShowPlexEpisodesDirectly(
-          show: _metadata,
-          seasons: seasonsWithServerId,
-          libraryPrefs: prefs,
-        );
-      } else {
-        shouldShowEpisodesDirectly = seasonsWithServerId.length <= 1;
-      }
+      // A show with a single season lists its episodes directly.
+      final shouldShowEpisodesDirectly = seasonsWithServerId.length <= 1;
 
       _updateSeasonTabFocusNodes(seasonsWithServerId.length);
 

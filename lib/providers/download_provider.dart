@@ -291,9 +291,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     await _releaseDownloadsForProfileWhere(profileId, (_) => true);
   }
 
-  /// Preserve physical downloads across a full logout while detaching them
-  /// from profiles that are about to be deleted. The next selected profile
-  /// adopts the ownerless rows through [_loadDownloadOwners].
+  /// Preserve physical downloads across a full logout while detaching their
+  /// owners. A profile that signs in again adopts the rows made under its own
+  /// scope through [_loadDownloadOwners].
   Future<void> detachDownloadsForLogout() async {
     // Invalidate any in-flight profile reload before waiting for it: an old
     // reload may still finish its DB adoption, but cannot repopulate the
@@ -303,7 +303,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _profileGeneration++;
     await _initFuture;
     await _profileScopedReloadFuture;
-    await _downloadManager.preparePlexMetadataForLogoutTransfer();
     await _database.clearAllDownloadOwners();
     _ownedDownloadKeys.clear();
     _syncRules.clear();
@@ -2845,7 +2844,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
       bool isStillActive() => _activeProfileId == profileId && _profileGeneration == generation;
       await _database.adoptLegacyDownloadsForProfile(profileId, isStillActive: isStillActive);
-      await _downloadManager.adoptTransferredPlexMetadataForProfile(profileId, isStillActive: isStillActive);
       if (!isStillActive()) return;
       final ownedKeys = await _database.getDownloadOwnerKeysForProfile(profileId);
       if (!isStillActive()) return;

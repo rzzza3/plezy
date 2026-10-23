@@ -1,12 +1,9 @@
 import '../media/media_backend.dart';
-import '../models/plex/plex_home_user.dart';
-import '../services/plex_auth_service.dart';
 
 /// A media server connection — a unit of authentication the user added.
 ///
-/// A `PlexAccountConnection` carries one Plex account + its discovered servers + an
-/// optional active Home profile. A `SiloConnection` is one Silo server the
-/// person signed in to. Most users only ever add one connection.
+/// A [SiloConnection] is one Silo server the person signed in to. Most users
+/// only ever add one connection.
 sealed class Connection {
   String get id;
   MediaBackend get kind;
@@ -18,13 +15,11 @@ sealed class Connection {
   /// (badges, etc.).
   MediaBackend get backend => kind;
 
-  /// Primary label shown in connection-list UIs. Plex shows the active
-  /// profile/account name; Silo shows the server name.
+  /// Primary label shown in connection-list UIs: the server name.
   String get displayLabel;
 
-  /// Secondary line shown beneath [displayLabel] in connection-list UIs.
-  /// Plex: server count; Silo: `username · origin`. May be null when
-  /// no useful subtitle exists.
+  /// Secondary line shown beneath [displayLabel] in connection-list UIs:
+  /// `username · origin`. May be null when no useful subtitle exists.
   String? get displaySubtitle;
 
   /// Backend-specific config payload, persisted as JSON. Each subclass
@@ -32,126 +27,9 @@ sealed class Connection {
   Map<String, Object?> toConfigJson();
 }
 
-/// A Plex account connection.
-///
-/// Fields here mirror what [PlexAuthService] gathers during PIN OAuth: an
-/// account token (long-lived), the per-device client identifier (so plex.tv
-/// doesn't see a "new device" each launch), and the optional Home user the
-/// user has switched into.
-class PlexAccountConnection extends Connection {
-  @override
-  final String id;
-
-  @override
-  final DateTime createdAt;
-
-  @override
-  final DateTime? lastAuthenticatedAt;
-
-  /// plex.tv account access token.
-  final String accountToken;
-
-  /// Per-device client identifier. Stable across launches.
-  final String clientIdentifier;
-
-  /// Display name shown for this connection (typically the Plex account email
-  /// or username, fallback "Plex").
-  final String accountLabel;
-
-  /// Active Home user, or `null` for the main account.
-  final PlexHomeUser? activeProfile;
-
-  /// Servers discovered for this account (cached). Populated by the auth
-  /// flow and refreshed periodically.
-  final List<PlexServer> servers;
-
-  PlexAccountConnection({
-    required this.id,
-    required this.accountToken,
-    required this.clientIdentifier,
-    required this.accountLabel,
-    this.activeProfile,
-    this.servers = const [],
-    required this.createdAt,
-    this.lastAuthenticatedAt,
-  });
-
-  @override
-  MediaBackend get kind => MediaBackend.plex;
-
-  @override
-  String get displayName => activeProfile != null && activeProfile!.title.isNotEmpty
-      ? '${activeProfile!.title} · $accountLabel'
-      : accountLabel;
-
-  @override
-  String get displayLabel => displayName;
-
-  @override
-  String? get displaySubtitle => servers.length == 1 ? '1 Plex server' : '${servers.length} Plex servers';
-
-  PlexAccountConnection copyWith({
-    String? id,
-    String? accountToken,
-    String? clientIdentifier,
-    String? accountLabel,
-    PlexHomeUser? activeProfile,
-    bool clearActiveProfile = false,
-    List<PlexServer>? servers,
-    DateTime? createdAt,
-    DateTime? lastAuthenticatedAt,
-  }) {
-    return PlexAccountConnection(
-      id: id ?? this.id,
-      accountToken: accountToken ?? this.accountToken,
-      clientIdentifier: clientIdentifier ?? this.clientIdentifier,
-      accountLabel: accountLabel ?? this.accountLabel,
-      activeProfile: clearActiveProfile ? null : (activeProfile ?? this.activeProfile),
-      servers: servers ?? this.servers,
-      createdAt: createdAt ?? this.createdAt,
-      lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
-    );
-  }
-
-  @override
-  Map<String, Object?> toConfigJson() {
-    return {
-      'accountToken': accountToken,
-      'clientIdentifier': clientIdentifier,
-      'accountLabel': accountLabel,
-      'activeProfile': activeProfile?.toJson(),
-      'servers': servers.map((s) => s.toJson()).toList(),
-    };
-  }
-
-  factory PlexAccountConnection.fromConfigJson({
-    required String id,
-    required Map<String, Object?> json,
-    required DateTime createdAt,
-    DateTime? lastAuthenticatedAt,
-  }) {
-    final profileJson = json['activeProfile'];
-    final activeProfile = profileJson is Map<String, dynamic> ? PlexHomeUser.fromJson(profileJson) : null;
-    final serversJson = json['servers'];
-    final servers = serversJson is List
-        ? serversJson.whereType<Map<String, dynamic>>().map(PlexServer.fromJson).toList()
-        : <PlexServer>[];
-    return PlexAccountConnection(
-      id: id,
-      accountToken: json['accountToken'] as String? ?? '',
-      clientIdentifier: json['clientIdentifier'] as String? ?? '',
-      accountLabel: json['accountLabel'] as String? ?? 'Plex',
-      activeProfile: activeProfile,
-      servers: servers,
-      createdAt: createdAt,
-      lastAuthenticatedAt: lastAuthenticatedAt,
-    );
-  }
-}
-
 /// A Silo server the person signed in to. Holds no credential: the tokens and
 /// the selected profile's token live in the server's vault-protected session
-/// slot, and the join row names the profile.
+/// slot.
 class SiloConnection extends Connection {
   @override
   final String id;
@@ -173,14 +51,30 @@ class SiloConnection extends Connection {
   /// The account's username, for display.
   final String username;
 
+  /// `id` from `/api/v2/account/me`. With [serverId] it keys the companion
+  /// remote's shared secret. Empty for connections persisted before S9 until
+  /// the next household read fills it in.
+  final String accountId;
+
   SiloConnection({
     required this.origin,
     required this.serverId,
     required this.serverName,
     required this.username,
+    this.accountId = '',
     required this.createdAt,
     this.lastAuthenticatedAt,
   }) : id = idFor(serverId);
+
+  SiloConnection copyWith({String? username, String? accountId, DateTime? lastAuthenticatedAt}) => SiloConnection(
+    origin: origin,
+    serverId: serverId,
+    serverName: serverName,
+    username: username ?? this.username,
+    accountId: accountId ?? this.accountId,
+    createdAt: createdAt,
+    lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
+  );
 
   /// One account per server per device, like Silo's own per-server slot.
   static String idFor(String serverId) => 'silo:$serverId';
@@ -203,6 +97,7 @@ class SiloConnection extends Connection {
     'serverId': serverId,
     'serverName': serverName,
     'username': username,
+    if (accountId.isNotEmpty) 'accountId': accountId,
   };
 
   /// Null when the row lacks the origin or server id, so the registry drops
@@ -220,6 +115,7 @@ class SiloConnection extends Connection {
       serverId: serverId,
       serverName: json['serverName'] as String? ?? 'Silo',
       username: json['username'] as String? ?? '',
+      accountId: json['accountId'] as String? ?? '',
       createdAt: createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt,
     );

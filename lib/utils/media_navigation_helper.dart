@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
-import '../media/ids.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -9,14 +8,11 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../screens/actor_media_screen.dart';
 import '../screens/collection_detail_screen.dart';
-import '../screens/main_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
 import '../services/settings_service.dart';
-import '../utils/global_key_utils.dart';
 import 'catalog_navigation_helper.dart';
 import 'music_navigation.dart';
-import 'plex_library_section_utils.dart';
 import 'video_player_navigation.dart';
 
 /// Result of media navigation indicating what action was taken
@@ -192,19 +188,6 @@ Future<MediaNavigationResult> navigateToMediaItem(
     continueWatchingAction: continueWatchingAction,
     episodeAction: episodeAction,
   );
-
-  // Handle library section items (shared whole-library entries) — Plex-only;
-  // `PlexMappers` stashes the section path in `raw['key']`.
-  final rawKey = mi.raw?['key'];
-  if (rawKey is String && rawKey.startsWith('/library/sections/')) {
-    final sectionId = plexLibrarySectionIdFromString(rawKey);
-    if (sectionId != null && mi.serverId != null) {
-      final libraryGlobalKey = buildGlobalKey(ServerId(mi.serverId!), '$sectionId');
-      MainScreenFocusScope.of(context, listen: false)?.selectLibrary?.call(libraryGlobalKey);
-      return MediaNavigationResult.librarySelected;
-    }
-    return MediaNavigationResult.unsupported;
-  }
 
   switch (mi.kind) {
     case MediaKind.collection:

@@ -2714,6 +2714,21 @@ class Translations$profiles$en {
 	/// en: 'Signed out of Plex.'
 	String get signedOutPlex => 'Signed out of Plex.';
 
+	/// en: 'Sign out of ${serverName}?'
+	String signOutServerTitle({required Object serverName}) => 'Sign out of ${serverName}?';
+
+	/// en: 'Remove ${serverName} and its profiles from this device? Sign back in anytime.'
+	String signOutServerMessage({required Object serverName}) => 'Remove ${serverName} and its profiles from this device? Sign back in anytime.';
+
+	/// en: 'Also delete downloads'
+	String get signOutDeleteDownloads => 'Also delete downloads';
+
+	/// en: 'Otherwise they stay on this device and come back when you sign back in to this server.'
+	String get signOutServerDeleteDownloadsDescription => 'Otherwise they stay on this device and come back when you sign back in to this server.';
+
+	/// en: 'Signed out of ${serverName}.'
+	String signedOutServer({required Object serverName}) => 'Signed out of ${serverName}.';
+
 	/// en: 'Sign out failed.'
 	String get signOutFailed => 'Sign out failed.';
 
@@ -8431,6 +8446,11 @@ extension on Translations {
 			'profiles.signOutPlexDeleteDownloads' => 'Also delete downloads',
 			'profiles.signOutPlexDeleteDownloadsDescription' => 'Otherwise they stay on this device and come back when you sign back in to this account.',
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
+			'profiles.signOutServerTitle' => ({required Object serverName}) => 'Sign out of ${serverName}?',
+			'profiles.signOutServerMessage' => ({required Object serverName}) => 'Remove ${serverName} and its profiles from this device? Sign back in anytime.',
+			'profiles.signOutDeleteDownloads' => 'Also delete downloads',
+			'profiles.signOutServerDeleteDownloadsDescription' => 'Otherwise they stay on this device and come back when you sign back in to this server.',
+			'profiles.signedOutServer' => ({required Object serverName}) => 'Signed out of ${serverName}.',
 			'profiles.signOutFailed' => 'Sign out failed.',
 			'profiles.sectionTitle' => 'Profiles',
 			'profiles.summarySingle' => 'Add profiles to mix managed users and local identities',
@@ -8587,13 +8607,13 @@ extension on Translations {
 			'errors.failedToVerifyToken' => ({required Object error}) => 'Failed to verify token: ${error}',
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
+			_ => null,
+		} ?? switch (path) {
 			'errors.failedToRate' => 'Couldn\'t update rating',
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
 			'errors.reasonRefused' => 'the server refused the request',
 			'errors.reasonNotFound' => 'the item is no longer on the server',
-			_ => null,
-		} ?? switch (path) {
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
@@ -9101,13 +9121,13 @@ extension on Translations {
 			'watchTogether.makeHostQuestion' => 'Transfer host?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
 			'watchTogether.transfer' => 'Transfer',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
 			'watchTogether.youAreNowHost' => 'You are now the host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
 			'watchTogether.endSession' => 'End Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
@@ -9615,13 +9635,13 @@ extension on Translations {
 			'services.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
 			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
 			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
+			_ => null,
+		} ?? switch (path) {
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
-			_ => null,
-		} ?? switch (path) {
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Reconnect Simkl',
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',

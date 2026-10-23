@@ -7,12 +7,9 @@ import '../connection/connection_registry.dart';
 import '../i18n/strings.g.dart';
 import '../models/companion_remote/remote_command.dart';
 import '../models/companion_remote/remote_session.dart';
-import '../models/plex/plex_home.dart';
-import '../profiles/active_plex_identity.dart';
 import '../profiles/active_profile_provider.dart';
-import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
-import '../profiles/profile_connection_registry.dart';
+import '../profiles/silo_household_service.dart';
 import '../services/companion_remote/companion_remote_peer_service.dart';
 import '../services/companion_remote/lan_discovery_service.dart';
 import '../services/companion_remote/remote_auth_context.dart';
@@ -25,7 +22,6 @@ import '../mixins/disposable_change_notifier_mixin.dart';
 export '../services/companion_remote/lan_discovery_service.dart' show DiscoveredHost;
 
 typedef CommandReceivedCallback = void Function(RemoteCommand command);
-typedef PlexHomeResolver = Future<PlexHome?> Function(String connectionId);
 typedef CompanionRemotePeerServiceFactory = CompanionRemotePeerService Function();
 typedef LanDiscoveryServiceFactory = LanDiscoveryService Function();
 
@@ -93,12 +89,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   String? _cryptoProfileId;
 
   // Profile-scoped services watched so a running host's crypto identity tracks
-  // home-user / connection changes (a removed home user or revoked borrowed
-  // connection must stop controlling an already-broadcasting host).
+  // household / connection changes (a removed profile or signed-out server
+  // must stop controlling an already-broadcasting host).
   ConnectionRegistry? _boundConnections;
   ActiveProfileProvider? _boundActiveProfile;
-  ProfileConnectionRegistry? _boundProfileConnections;
-  PlexHomeService? _boundPlexHome;
   final List<StreamSubscription<void>> _profileServiceSubs = [];
   bool _authRefreshScheduled = false;
 
@@ -137,24 +131,20 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   /// Bind the profile-scoped services whose changes must keep a running host's
-  /// crypto identity current: a removed home user or revoked borrowed
-  /// connection has to stop controlling an already-broadcasting host. Wired
-  /// once when the provider is created; a second call is a no-op.
+  /// crypto identity current: a removed profile or signed-out server has to
+  /// stop controlling an already-broadcasting host. Wired once when the
+  /// provider is created; a second call is a no-op.
   void bindProfileServices({
     required ConnectionRegistry connections,
     required ActiveProfileProvider activeProfile,
-    required ProfileConnectionRegistry profileConnections,
-    required PlexHomeService plexHome,
+    required SiloHouseholdService households,
   }) {
     if (_boundActiveProfile != null) return;
     _boundConnections = connections;
     _boundActiveProfile = activeProfile;
-    _boundProfileConnections = profileConnections;
-    _boundPlexHome = plexHome;
 
-    _profileServiceSubs.add(plexHome.stream.listen((_) => _scheduleAuthContextRefresh()));
+    _profileServiceSubs.add(households.stream.listen((_) => _scheduleAuthContextRefresh()));
     _profileServiceSubs.add(connections.watchConnections().listen((_) => _scheduleAuthContextRefresh()));
-    _profileServiceSubs.add(profileConnections.watchAll().listen((_) => _scheduleAuthContextRefresh()));
     activeProfile.addListener(_scheduleAuthContextRefresh);
   }
 
@@ -174,23 +164,13 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   Future<void> _refreshHostAuthContexts() async {
     final connections = _boundConnections;
     final activeProfile = _boundActiveProfile;
-    final profileConnections = _boundProfileConnections;
-    final plexHome = _boundPlexHome;
-    if (connections == null || activeProfile == null || profileConnections == null || plexHome == null) {
-      return;
-    }
+    if (connections == null || activeProfile == null) return;
     if (!isHostServerRunning) return;
 
     await _serializeLifecycle(() async {
       if (isDisposed || !isHostServerRunning) return;
       final generation = _remoteGeneration;
-      final ok = await _ensureCryptoReadyLocked(
-        null,
-        connections: connections,
-        activeProfile: activeProfile,
-        profileConnections: profileConnections,
-        plexHomeForConnection: plexHome.materializePlexHomeForConnection,
-      );
+      final ok = await _ensureCryptoReadyLocked(connections: connections, activeProfile: activeProfile);
       // Unchanged identities leave the host running (no restart). When they
       // change, the rebuild tore the host down — bring it back so the new set
       // is what's broadcasting. When every identity is gone the host stays
@@ -217,38 +197,20 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   /// active profile. Serialized against host start/stop so a live refresh and
   /// a user-driven start can't interleave.
   /// Returns true if crypto is ready (already initialized or just initialized).
-  Future<bool> ensureCryptoReady(
-    PlexHome? home, {
+  Future<bool> ensureCryptoReady({
     required ConnectionRegistry connections,
     required ActiveProfileProvider activeProfile,
-    required ProfileConnectionRegistry profileConnections,
-    ActivePlexIdentity? identity,
-    PlexAccountConnection? account,
-    PlexHomeResolver? plexHomeForConnection,
     void Function()? checkCurrent,
   }) {
     return _serializeLifecycle(
-      () => _ensureCryptoReadyLocked(
-        home,
-        connections: connections,
-        activeProfile: activeProfile,
-        profileConnections: profileConnections,
-        identity: identity,
-        account: account,
-        plexHomeForConnection: plexHomeForConnection,
-        checkCurrent: checkCurrent,
-      ),
+      () =>
+          _ensureCryptoReadyLocked(connections: connections, activeProfile: activeProfile, checkCurrent: checkCurrent),
     );
   }
 
-  Future<bool> _ensureCryptoReadyLocked(
-    PlexHome? home, {
+  Future<bool> _ensureCryptoReadyLocked({
     required ConnectionRegistry connections,
     required ActiveProfileProvider activeProfile,
-    required ProfileConnectionRegistry profileConnections,
-    ActivePlexIdentity? identity,
-    PlexAccountConnection? account,
-    PlexHomeResolver? plexHomeForConnection,
     void Function()? checkCurrent,
   }) async {
     checkCurrent?.call();
@@ -263,11 +225,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     final nextContexts = await _buildAuthContextsForProfile(
       profile: profile,
       connections: connections,
-      profileConnections: profileConnections,
-      fallbackHome: home,
-      identity: identity,
-      preferredAccount: account,
-      plexHomeForConnection: plexHomeForConnection,
+      activeProfile: activeProfile,
     );
     checkCurrent?.call();
 
@@ -289,103 +247,39 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     return true;
   }
 
+  /// The active profile's one identity: the Silo account it belongs to. Every
+  /// device signed in to the same account on the same server derives the
+  /// same secret, and any of the household's profiles may connect.
   Future<List<RemoteAuthContext>> _buildAuthContextsForProfile({
     required Profile profile,
     required ConnectionRegistry connections,
-    required ProfileConnectionRegistry profileConnections,
-    required PlexHome? fallbackHome,
-    required ActivePlexIdentity? identity,
-    required PlexAccountConnection? preferredAccount,
-    required PlexHomeResolver? plexHomeForConnection,
+    required ActiveProfileProvider activeProfile,
   }) async {
-    final contexts = <RemoteAuthContext>[];
-    final seen = <String>{};
-    final all = await connections.list();
-    final byId = {for (final c in all) c.id: c};
-
-    Future<PlexHome?> resolvePlexHome(PlexAccountConnection account) async {
-      if (fallbackHome != null &&
-          (identity?.account.id == account.id || preferredAccount?.id == account.id || plexHomeForConnection == null)) {
-        return fallbackHome;
-      }
-      return plexHomeForConnection?.call(account.id);
+    final connection = await connections.get(profile.connectionId);
+    if (connection is! SiloConnection) return const [];
+    if (connection.accountId.isEmpty) {
+      appLogger.w('CompanionRemote: Skipping ${connection.serverName} — its account id is not known yet');
+      return const [];
     }
-
-    void addContext(RemoteAuthContext? context) {
-      if (context == null || seen.contains(context.id)) return;
-      contexts.add(context);
-      seen.add(context.id);
-    }
-
-    Future<void> addConnection(Connection connection, {String? userUuid}) async {
-      switch (connection) {
-        case PlexAccountConnection():
-          addContext(
-            await _createPlexAuthContext(
-              account: connection,
-              home: await resolvePlexHome(connection),
-              activeProfile: profile,
-              userUuid: userUuid,
-            ),
-          );
-        case SiloConnection():
-          break;
-      }
-    }
-
-    if (profile.parentConnectionId case final parentId?) {
-      final parent = preferredAccount?.id == parentId
-          ? preferredAccount
-          : (identity?.account.id == parentId ? identity?.account : byId[parentId]);
-      if (parent is PlexAccountConnection) {
-        await addConnection(parent, userUuid: profile.plexHomeUserUuid);
-      }
-    }
-
-    final pcs = await profileConnections.listForProfile(profile.id);
-    for (final pc in pcs) {
-      final connection = byId[pc.connectionId];
-      if (connection == null) continue;
-      await addConnection(connection, userUuid: pc.userIdentifier.isEmpty ? null : pc.userIdentifier);
-    }
-
-    return contexts;
-  }
-
-  Future<RemoteAuthContext?> _createPlexAuthContext({
-    required PlexAccountConnection account,
-    required PlexHome? home,
-    required Profile activeProfile,
-    required String? userUuid,
-  }) async {
-    if (home == null || home.adminUser == null) {
-      appLogger.w('CompanionRemote: Skipping Plex remote identity — no home data for ${account.id}');
-      return null;
-    }
-
     final auth = RemoteAuthService.instance;
-    final homeSecret = await auth.deriveHomeSecretFromHome(home);
-    final resolvedUserUuid = userUuid != null && userUuid.isNotEmpty
-        ? userUuid
-        : (activeProfile.plexHomeUserUuid != null && activeProfile.plexHomeUserUuid!.isNotEmpty
-              ? activeProfile.plexHomeUserUuid!
-              : home.adminUser!.uuid);
-    final allowedUserUuids = {
-      for (final user in home.users)
-        if (user.uuid.isNotEmpty) user.uuid,
-      if (resolvedUserUuid.isNotEmpty) resolvedUserUuid,
+    final homeSecret = await auth.deriveSiloHomeSecret(serverId: connection.serverId, accountId: connection.accountId);
+    final household = activeProfile.householdsByConnection[connection.id];
+    final allowedUserUuids = <String>{
+      ...?household?.profiles.map((member) => member.id),
+      profile.siloProfileId,
     }.toList();
-
-    return RemoteAuthContext(
-      id: auth.computeAuthContextId(homeSecret),
-      backend: account.kind.id,
-      connectionId: account.id,
-      homeSecret: homeSecret,
-      discoveryKey: await auth.deriveDiscoveryKey(homeSecret),
-      clientIdentifier: account.clientIdentifier.isNotEmpty ? account.clientIdentifier : account.id,
-      userUuid: resolvedUserUuid,
-      allowedUserUuids: allowedUserUuids,
-    );
+    return [
+      RemoteAuthContext(
+        id: auth.computeAuthContextId(homeSecret),
+        backend: connection.kind.id,
+        connectionId: connection.id,
+        homeSecret: homeSecret,
+        discoveryKey: await auth.deriveDiscoveryKey(homeSecret),
+        clientIdentifier: connection.id,
+        userUuid: profile.siloProfileId,
+        allowedUserUuids: allowedUserUuids,
+      ),
+    ];
   }
 
   bool _sameAuthContexts(List<RemoteAuthContext> a, List<RemoteAuthContext> b) {
@@ -529,7 +423,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
   /// Fully tear down network/session state and forget derived crypto material.
   /// Used by logout so an app-level provider surviving route replacement does
-  /// not keep broadcasting with the previous Plex Home identity.
+  /// not keep broadcasting with the previous profile's identity.
   Future<void> resetForLogout() {
     final detachedPeers = _invalidateRemoteLifecycle();
     _reconnectAttempts = 0;

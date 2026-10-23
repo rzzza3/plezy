@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../connection/connection.dart';
 import '../../connection/connection_registry.dart';
 import '../../database/app_database.dart';
 import '../../database/download_collection_operations.dart';
@@ -10,11 +11,10 @@ import '../../database/download_operations.dart';
 import '../../i18n/strings.g.dart';
 import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
-import '../../profiles/plex_home_service.dart';
+import '../../media/ids.dart';
 import '../../profiles/profile.dart';
-import '../../profiles/profile_connection_cleanup.dart';
-import '../../profiles/profile_connection_registry.dart';
-import '../../profiles/profile_registry.dart';
+import '../../profiles/profile_activation.dart';
+import '../../profiles/silo_household_service.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/discover_provider.dart';
@@ -23,11 +23,12 @@ import '../../providers/multi_server_provider.dart';
 import '../../providers/playback_state_provider.dart';
 import '../../services/api_cache.dart';
 import '../../services/multi_server_manager.dart';
+import '../../services/silo_client.dart';
 import '../../services/storage_service.dart';
 import '../../services/system_shelf_service.dart';
+import '../../silo/silo_app.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
-import '../../utils/global_key_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../auth_screen.dart';
 
@@ -36,9 +37,7 @@ import '../auth_screen.dart';
 class SessionTeardownScope {
   final ActiveProfileProvider active;
   final ActiveProfileBinder binder;
-  final PlexHomeService plexHome;
-  final ProfileRegistry profileRegistry;
-  final ProfileConnectionRegistry profileConnections;
+  final SiloHouseholdService households;
   final ConnectionRegistry connections;
   final MultiServerProvider multiServer;
   final HiddenLibrariesProvider? hiddenLibraries;
@@ -51,19 +50,10 @@ class SessionTeardownScope {
 
   MultiServerManager get serverManager => multiServer.serverManager;
 
-  ProfileConnectionCleanup get cleanup => ProfileConnectionCleanup(
-    profileConnections: profileConnections,
-    connections: connections,
-    storage: storage,
-    serverManager: serverManager,
-  );
-
   SessionTeardownScope.of(BuildContext context)
     : active = context.read<ActiveProfileProvider>(),
       binder = context.read<ActiveProfileBinder>(),
-      plexHome = context.read<PlexHomeService>(),
-      profileRegistry = context.read<ProfileRegistry>(),
-      profileConnections = context.read<ProfileConnectionRegistry>(),
+      households = context.read<SiloHouseholdService>(),
       connections = context.read<ConnectionRegistry>(),
       multiServer = context.read<MultiServerProvider>(),
       hiddenLibraries = context.read<HiddenLibrariesProvider?>(),
@@ -89,12 +79,11 @@ Future<bool> settleSessionAfterRemoval(
   bool rebindIfActiveKept = false,
   String? endedShelfOwner,
 }) async {
-  final result = await scope.cleanup.resolvePostRemovalState(
-    profileRegistry: scope.profileRegistry,
-    plexHomeUsers: scope.plexHome.current,
-  );
+  final hasConnections = (await scope.connections.list()).whereType<SiloConnection>().isNotEmpty;
+  await scope.active.reloadFromStorage();
+  final profiles = scope.active.profiles;
 
-  if (result.route == PostRemovalRoute.signedOut) {
+  if (!hasConnections || profiles.isEmpty) {
     await scope.active.clearActiveProfile();
     await scope.binder.rebindActive();
     if (scope.navigator.mounted) {
@@ -106,7 +95,7 @@ Future<bool> settleSessionAfterRemoval(
   }
 
   final activeId = scope.storage.getActiveProfileId();
-  final activeStillExists = activeId != null && result.profiles.any((p) => p.id == activeId);
+  final activeStillExists = activeId != null && profiles.any((p) => p.id == activeId);
   if (activeStillExists) {
     if (rebindIfActiveKept) {
       if (endedShelfOwner == activeId) {
@@ -116,11 +105,10 @@ Future<bool> settleSessionAfterRemoval(
       }
     }
   } else {
-    // Auto-activation must not bypass PIN gates ([activate] rejects local
-    // PIN profiles without a pin; protected Plex Home profiles would PIN
-    // prompt at bind time) — skip protected profiles instead.
+    // Auto-activation must not bypass PIN gates — skip protected profiles,
+    // so the picker forces an explicit, PIN-checked choice instead.
     Profile? next;
-    for (final profile in result.profiles) {
+    for (final profile in profiles) {
       if (!profile.isPinProtected) {
         next = profile;
         break;
@@ -130,7 +118,7 @@ Future<bool> settleSessionAfterRemoval(
     // user-initiated so the binder binds it (bypassing the initial-bind
     // defer and any suppressed failed-bind marker).
     if (next != null) scope.binder.markUserInitiatedActivation(next.id);
-    final activated = next != null && await scope.active.activate(next);
+    final activated = next != null && await _enterAndActivate(scope, next);
     if (!activated) {
       await scope.active.clearActiveProfile();
       await scope.binder.rebindActive();
@@ -158,58 +146,13 @@ Future<void> resumeFreshSystemShelf(SessionTeardownScope scope, String profileId
   }
 }
 
-Future<String?> _activeProfileUsingConnection(SessionTeardownScope scope, String connectionId) async {
-  final active = scope.active.active;
-  if (active == null) return null;
-  final usesConnection =
-      active.parentConnectionId == connectionId ||
-      (await scope.profileConnections.listForProfile(active.id)).any((row) => row.connectionId == connectionId);
-  if (!usesConnection || scope.active.activeId != active.id) return null;
-  return active.id;
-}
-
-Future<bool> confirmAndDeleteProfile(
-  BuildContext context, {
-  required Profile profile,
-  required String title,
-  required String message,
-  String? confirmText,
-}) async {
-  final confirmed = await showDeleteConfirmation(context, title: title, message: message, confirmText: confirmText);
-  if (!confirmed || !context.mounted) return false;
-
-  try {
-    await deleteProfile(context, profile);
-    return true;
-  } catch (error, stackTrace) {
-    appLogger.w('Failed to delete profile ${profile.id}', error: error, stackTrace: stackTrace);
-    if (context.mounted) {
-      showErrorSnackBar(context, t.errors.failedToDeleteProfile(displayName: profile.displayName));
-    }
-    return false;
-  }
-}
-
-/// Delete a local profile and everything it owns: downloads, sync rules,
-/// downloads' collection membership, queued watch actions, join rows (pruning
-/// now-unreferenced connections), last-used marker, and user-scoped
-/// prefs.
-Future<void> deleteProfile(BuildContext context, Profile profile) async {
-  final scope = SessionTeardownScope.of(context);
-  final endedOwner = scope.active.activeId == profile.id ? profile.id : null;
-  await withEndedProfileSession(scope, endedOwner, () async {
-    await scope.downloads.deleteDownloadsForProfile(profile.id);
-    await scope.database.deleteSyncRulesForProfile(profile.id);
-    await scope.database.deleteDownloadCollectionsForProfile(profile.id);
-    await scope.database.deleteWatchActionsForProfile(profile.id);
-    await scope.database.deleteMusicSessionForProfile(profile.id);
-    await scope.cleanup.removeAllProfileConnections(profile.id);
-    await scope.profileRegistry.remove(profile.id);
-    await scope.storage.clearProfileLastUsed(profile.id);
-    await scope.storage.clearUserScopedPreferencesForProfile(profile.id);
-
-    await settleSessionAfterRemoval(scope, endedShelfOwner: endedOwner);
-  });
+/// Enter [profile] on its server without a PIN prompt, then activate it.
+Future<bool> _enterAndActivate(SessionTeardownScope scope, Profile profile) async {
+  final connection = scope.active.connectionFor(profile);
+  if (connection == null) return false;
+  final http = await SiloApp.http(origin: Uri.parse(connection.origin), serverId: connection.serverId);
+  final entered = await enterSiloProfile(http: http, profile: profile, promptPin: (_) async => null);
+  return entered == SiloProfileEntryOutcome.entered && await scope.active.activate(profile);
 }
 
 /// Ends [endedOwner]'s system-shelf session (when non-null), runs [body], and
@@ -231,36 +174,28 @@ Future<T> withEndedProfileSession<T>(SessionTeardownScope scope, String? endedOw
   }
 }
 
-/// Sign out of a Plex account after confirmation: the account connection,
-/// its virtual Plex Home profiles, and their borrowed connections are all
-/// removed (#1423). Plex exposes no reliable single-session revoke
-/// endpoint, so the server side is untouched — the user can revoke the
-/// device via plex.tv.
+/// Sign this device out of [connection] after confirmation: the server ends
+/// the session, and the connection and its cached household go. Downloads
+/// its profiles own are kept unless the user opts in to deleting them; kept
+/// rows stay owned by `silo:<server_id>/<profile_id>` scopes, so they come
+/// back when the same account signs in to that server again.
 ///
-/// Downloads the account's profiles own are kept unless the user opts in to
-/// deleting them. Kept downloads retain their ownership rows: Plex Home
-/// profile ids derive from the account and home-user identities, so those
-/// owners become valid again when the same account signs back in, and the
-/// rows' profile-scoped Plex namespace keeps other profiles from adopting
-/// them meanwhile.
-///
-/// Returns true when the sign-out ran, false when cancelled or the account
-/// no longer exists.
-Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String accountConnectionId}) async {
-  final account = await context.read<ConnectionRegistry>().getPlexAccount(accountConnectionId);
-  if (account == null || !context.mounted) return false;
-  final accountServerIds = {for (final server in account.servers) server.clientIdentifier};
-
+/// Returns true when the sign-out ran, false when cancelled.
+Future<bool> confirmAndSignOutSiloServer(BuildContext context, {required SiloConnection connection}) async {
+  final active = context.read<ActiveProfileProvider>();
   final database = context.read<AppDatabase>();
-  final plannedForPrompt = await planPlexAccountConnectionRemoval(
-    account: account,
-    profileConnections: context.read<ProfileConnectionRegistry>(),
-  );
-  final hasDownloads = await _plexAccountRemovalOwnsDownloads(database, plannedForPrompt, accountServerIds);
+  final profileIds = [
+    for (final profile in active.profiles)
+      if (profile.connectionId == connection.id) profile.id,
+  ];
+  var hasDownloads = false;
+  for (final profileId in profileIds) {
+    if ((await database.getDownloadOwnerKeysForProfile(profileId)).isNotEmpty) hasDownloads = true;
+  }
   if (!context.mounted) return false;
 
-  final title = t.profiles.signOutPlexTitle;
-  final message = t.profiles.signOutPlexMessage(displayName: account.displayLabel);
+  final title = t.profiles.signOutServerTitle(serverName: connection.serverName);
+  final message = t.profiles.signOutServerMessage(serverName: connection.serverName);
   final bool deleteDownloads;
   if (hasDownloads) {
     final choice = await showConfirmWithSwitchDialog(
@@ -268,8 +203,8 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
       title: title,
       message: message,
       confirmText: t.profiles.signOut,
-      switchTitle: t.profiles.signOutPlexDeleteDownloads,
-      switchSubtitle: t.profiles.signOutPlexDeleteDownloadsDescription,
+      switchTitle: t.profiles.signOutDeleteDownloads,
+      switchSubtitle: t.profiles.signOutServerDeleteDownloadsDescription,
       isDestructive: true,
     );
     if (choice == null) return false;
@@ -288,41 +223,37 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
 
   final scope = SessionTeardownScope.of(context);
   try {
-    // Re-plan: Plex Home refreshes can add join rows while the dialog is open.
-    final removal = await planPlexAccountConnectionRemoval(
-      account: account,
-      profileConnections: scope.profileConnections,
-    );
-    final endedOwner = await _activeProfileUsingConnection(scope, accountConnectionId);
+    final activeProfile = scope.active.active;
+    final endedOwner = activeProfile != null && activeProfile.connectionId == connection.id ? activeProfile.id : null;
     final navigatedAway = await withEndedProfileSession(scope, endedOwner, () async {
       if (deleteDownloads) {
-        // Physical download cleanup can fail. Finish it while the account and
-        // every ownership join still exist so a retry can resolve the same
-        // plan instead of stranding files without an owner.
-        for (final profileId in removal.removedVirtualProfileIds) {
+        // Physical download cleanup can fail. Finish it while the connection
+        // still exists so a retry resolves the same profiles.
+        for (final profileId in profileIds) {
           await scope.downloads.deleteDownloadsForProfile(profileId);
         }
-        for (final profileId in removal.borrowerProfileIds) {
-          await scope.downloads.releaseDownloadsForProfileServers(profileId, accountServerIds);
-        }
       }
-
-      await scope.cleanup.removePlexAccountConnection(account, plannedRemoval: removal);
-      for (final profileId in removal.removedVirtualProfileIds) {
+      await signOutSiloConnection(connection);
+      await scope.connections.remove(connection.id);
+      final serverId = ServerId.tryParse(connection.serverId);
+      if (serverId != null) {
+        scope.serverManager.removeServer(serverId);
+        await scope.storage.clearLibraryPreferencesForServerEverywhere(serverId);
+      }
+      for (final profileId in profileIds) {
         await scope.database.deleteSyncRulesForProfile(profileId);
         await scope.database.deleteDownloadCollectionsForProfile(profileId);
         await scope.database.deleteWatchActionsForProfile(profileId);
         await scope.database.deleteMusicSessionForProfile(profileId);
       }
-
       return settleSessionAfterRemoval(scope, rebindIfActiveKept: true, endedShelfOwner: endedOwner);
     });
     if (!navigatedAway && context.mounted) {
-      showSuccessSnackBar(context, t.profiles.signedOutPlex);
+      showSuccessSnackBar(context, t.profiles.signedOutServer(serverName: connection.serverName));
     }
     return true;
   } catch (e, st) {
-    appLogger.w('Plex sign-out failed for $accountConnectionId', error: e, stackTrace: st);
+    appLogger.w('Sign-out failed for ${connection.serverName}', error: e, stackTrace: st);
     if (context.mounted) {
       showErrorSnackBar(context, t.profiles.signOutFailed);
     }
@@ -330,29 +261,9 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
   }
 }
 
-/// Whether a sign-out following [removal] could release any download:
-/// everything the account's Plex Home profiles own, plus borrowers'
-/// downloads from the account's servers.
-Future<bool> _plexAccountRemovalOwnsDownloads(
-  AppDatabase database,
-  PlexAccountRemoval removal,
-  Set<String> accountServerIds,
-) async {
-  for (final profileId in removal.removedVirtualProfileIds) {
-    if ((await database.getDownloadOwnerKeysForProfile(profileId)).isNotEmpty) return true;
-  }
-  for (final profileId in removal.borrowerProfileIds) {
-    for (final globalKey in await database.getDownloadOwnerKeysForProfile(profileId)) {
-      final parsed = parseGlobalKey(globalKey);
-      if (parsed != null && accountServerIds.contains(parsed.serverId)) return true;
-    }
-  }
-  return false;
-}
-
-/// Full logout: clear every profile, connection, credential, cached API
-/// row, and user-scoped pref, then reset to [AuthScreen]. The caller
-/// confirms first.
+/// Full logout: sign out of every server and clear every connection,
+/// credential, cached API row, and user-scoped pref, then reset to
+/// [AuthScreen]. The caller confirms first.
 Future<void> logoutAllProfiles(BuildContext context) async {
   final scope = SessionTeardownScope.of(context);
   final companionRemote = context.read<CompanionRemoteProvider>();
@@ -364,7 +275,11 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   }
 
   await companionRemote.resetForLogout();
-  await scope.cleanup.signOutAllSiloConnections();
+  // Every server ends this device's session while the bearer is still here,
+  // before the rows and credentials go.
+  for (final connection in (await scope.connections.list()).whereType<SiloConnection>()) {
+    await signOutSiloConnection(connection);
+  }
   // Credentials go first so nothing below can read them back as the next
   // sign-in's defaults.
   await scope.storage.clearUserData();
@@ -373,17 +288,15 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   // the profiles so the next selected profile can adopt them.
   await scope.downloads.detachDownloadsForLogout();
   scope.multiServer.clearAllConnections();
-  // Drop the profile/connection rows so the next sign-in starts clean and
-  // doesn't bind to stale tokens or orphaned profile rows.
-  await scope.profileConnections.clear();
-  await scope.profileRegistry.clear();
+  // Drop the connection rows and cached households so the next sign-in
+  // starts clean.
   await scope.connections.clear();
-  await scope.plexHome.clearAll();
+  await scope.households.clearAll();
   await scope.storage.clearActiveProfileId();
   await scope.storage.clearAllProfileLastUsed();
   await scope.storage.clearAllUserScopedPreferences();
   // Queued watch actions, sync rules and downloads' collection membership are
-  // keyed by the profiles that just ceased to exist; left behind they'd
+  // keyed by profiles this device no longer signs in to; left behind they'd
   // strand forever (or worse, replay through the next sign-in's clients).
   await scope.database.clearAllWatchActions();
   await scope.database.clearAllSyncRules();

@@ -1,36 +1,37 @@
-import 'dart:convert';
-
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
-import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focusable_button.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/media/library_filter_result.dart';
+import 'package:plezy/media/library_query.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_library.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_sort.dart';
+import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_filter_chip.dart';
 import 'package:plezy/widgets/media_card.dart';
 
-import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/library_tab_scaffold.dart';
+import '../../test_helpers/media_items.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 final _musicLibrary = MediaLibrary(
   id: 'music-library',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Music',
   kind: MediaKind.artist,
   serverId: ServerId('music-server'),
@@ -128,45 +129,15 @@ Future<void> _pumpBrowseTab(WidgetTester tester, _MusicBrowseHarness harness, {M
 }
 
 class _MusicBrowseHarness {
-  final bool failFirstBrowse;
-  final AppDatabase database;
-  var browseRequestCount = 0;
-  var requestCount = 0;
+  late final _MusicBrowseClient client;
   late final MultiServerManager manager;
   late final MultiServerProvider provider;
 
-  _MusicBrowseHarness({this.failFirstBrowse = false}) : database = AppDatabase.forTesting(NativeDatabase.memory()) {
-    PlexApiCache.initialize(database);
-    final client = testPlexClient(
-      serverId: ServerId('music-server'),
-      httpClient: MockClient((request) async {
-        requestCount++;
-        // Filter discovery reads the section endpoint with `includeMeta=1`;
-        // only the item reads count as browse requests.
-        if (request.url.path == '/library/sections/music-library/all' &&
-            request.url.queryParameters['includeMeta'] != '1') {
-          browseRequestCount++;
-          if (failFirstBrowse && browseRequestCount == 1) {
-            return http.Response('gateway timeout', 504);
-          }
-          return http.Response(
-            jsonEncode({
-              'MediaContainer': {
-                'size': 1,
-                'totalSize': 1,
-                'offset': 0,
-                'Metadata': const [
-                  {'ratingKey': 'artist-1', 'type': 'artist', 'title': 'Artist One'},
-                ],
-              },
-            }),
-            200,
-            headers: {'content-type': 'application/json'},
-          );
-        }
-        return http.Response('{}', 200, headers: {'content-type': 'application/json'});
-      }),
-    );
+  int get browseRequestCount => client.browseRequestCount;
+  int get requestCount => client.requestCount;
+
+  _MusicBrowseHarness({bool failFirstBrowse = false}) {
+    client = _MusicBrowseClient(failFirstBrowse: failFirstBrowse);
     manager = MultiServerManager()..debugRegisterClientForTesting(client);
     provider = testMultiServerProvider(manager);
   }
@@ -174,6 +145,75 @@ class _MusicBrowseHarness {
   Future<void> dispose() async {
     provider.dispose();
     manager.dispose();
-    await database.close();
+  }
+}
+
+/// A Silo music server holding one artist. Counts every call, and the item
+/// reads separately as browse requests.
+class _MusicBrowseClient implements MediaServerClient {
+  _MusicBrowseClient({required this.failFirstBrowse});
+
+  final bool failFirstBrowse;
+  var browseRequestCount = 0;
+  var requestCount = 0;
+
+  @override
+  ServerId get serverId => ServerId('music-server');
+
+  @override
+  String get serverName => 'Music Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.silo;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
+
+  @override
+  Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) async {
+    requestCount++;
+    return const [];
+  }
+
+  @override
+  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
+    requestCount++;
+    return LibraryFilterResult.empty;
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchLibraryPagedContent(
+    String libraryId, {
+    required LibraryQuery query,
+    MediaKind? libraryKind,
+    AbortController? abort,
+  }) async {
+    requestCount++;
+    browseRequestCount++;
+    if (failFirstBrowse && browseRequestCount == 1) {
+      throw MediaServerHttpException(type: MediaServerHttpErrorType.unknown, statusCode: 504);
+    }
+    return LibraryPage<MediaItem>(
+      items: [
+        testMediaItem(
+          id: 'artist-1',
+          backend: MediaBackend.silo,
+          kind: MediaKind.artist,
+          title: 'Artist One',
+          libraryId: libraryId,
+          serverId: serverId.value,
+        ),
+      ],
+      totalCount: 1,
+    );
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    requestCount++;
+    return super.noSuchMethod(invocation);
   }
 }

@@ -1,15 +1,12 @@
 import 'dart:async';
 
-import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/services/media_controls_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/plex_client.dart';
 
-import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
 
 void main() {
@@ -172,18 +169,8 @@ void main() {
   });
 
   group('artwork', () {
-    late AppDatabase db;
-    late PlexClient client;
-    setUpAll(() {
-      db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      client = testPlexClient(token: 'secret-token');
-    });
-    tearDownAll(() async {
-      client.close();
-      await db.close();
-    });
-    final movie = testMediaItem(title: 'Movie', thumbPath: '/library/metadata/1/thumb/2');
+    final client = _ArtworkClient();
+    final movie = testMediaItem(backend: MediaBackend.silo, title: 'Movie', thumbPath: '/items/1/images/primary');
 
     List<Map<Object?, Object?>> metadataCalls() => [
       for (final call in calls)
@@ -226,7 +213,12 @@ void main() {
 
       await manager.updateMetadata(metadata: movie, client: client);
       await manager.updateMetadata(
-        metadata: testMediaItem(id: 'item-2', title: 'Next', thumbPath: '/library/metadata/2/thumb/3'),
+        metadata: testMediaItem(
+          id: 'item-2',
+          backend: MediaBackend.silo,
+          title: 'Next',
+          thumbPath: '/items/2/images/primary',
+        ),
         client: client,
       );
       pending.first.complete(Uint8List.fromList([1]));
@@ -248,7 +240,7 @@ void main() {
 
       final published = metadataCalls();
       expect(published, hasLength(1));
-      expect(published.single['artworkUrl'], contains('/library/metadata/1/thumb/2'));
+      expect(published.single['artworkUrl'], contains('/items/1/images/primary'));
     });
   });
 }
@@ -268,4 +260,14 @@ void _expectControlTransition(
     expect(calls[index].method, expectedCalls[index].method);
     expect(calls[index].arguments, expectedCalls[index].controls);
   }
+}
+
+/// Builds artwork URLs that carry a credential, the way a media proxy URL can.
+class _ArtworkClient implements MediaServerClient {
+  @override
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) =>
+      'https://silo.example.com$path?token=secret-token';
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

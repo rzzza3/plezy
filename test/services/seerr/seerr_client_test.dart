@@ -1052,7 +1052,7 @@ void main() {
         '/api/v1/movie/4',
         '/api/v1/tv/4',
       });
-      final expectedLanguage = LocaleSettings.currentLocale.plexLanguageCode;
+      final expectedLanguage = LocaleSettings.currentLocale.serverLanguageCode;
       for (final url in urls) {
         expect(url.queryParameters['language'], expectedLanguage, reason: url.path);
       }

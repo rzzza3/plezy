@@ -23,7 +23,6 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/episode_collection.dart';
-import '../services/plex_client.dart';
 import '../services/silo_client.dart';
 import '../utils/session_identifier.dart';
 import '../database/app_database.dart';
@@ -422,21 +421,6 @@ _PlaybackOpenTiming _playbackOpenTiming({
         : null,
     timelineOffset: streamOffset,
   );
-}
-
-/// Builds a [TrackPreferencePersister] that writes the per-episode stream
-/// selection out to [client], so the [TrackManager] doesn't have to import
-/// [PlexClient] itself. Reports the server's verdict: the PUT throws on a
-/// refusal and returns false when the server answered without storing.
-///
-/// Only the current episode's part is touched — we deliberately do NOT write
-/// the show-wide audio/subtitle language default (#1393): an in-player track
-/// change should not silently rewrite the whole series' Plex prefs. The
-/// explicit path for that lives in the metadata-edit UI.
-TrackPreferencePersister _plexTrackPersister(PlexClient client) {
-  return ({required int partId, required String trackType, required int streamID}) => trackType == 'audio'
-      ? client.selectStreams(partId, audioStreamID: streamID)
-      : client.selectStreams(partId, subtitleStreamID: streamID);
 }
 
 class VideoPlayerScreen extends StatefulWidget {
@@ -2106,16 +2090,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
       // Player streams are wired before open so broadcast first-frame events
       // cannot be dropped. Service init follows immediately after open.
-      // `_loadAdjacentEpisodes` depends on the play queue being in state
-      // (EpisodeNavigationService bails when !isQueueActive), so chain it
-      // after `_ensurePlayQueue`. Both stay fire-and-forget so HTTP latency
-      // is off the critical path; the user can't hit next/previous buttons
-      // until after first frame anyway.
-      unawaited(
-        _ensurePlayQueue().whenComplete(() {
-          if (_ownsPlayerInitializationAttempt(generation, currentPlayer)) _loadAdjacentEpisodes();
-        }),
-      );
+      // `_loadAdjacentEpisodes` stays fire-and-forget so HTTP latency is off
+      // the critical path; the user can't hit next/previous buttons until
+      // after first frame anyway.
+      unawaited(_loadAdjacentEpisodes());
       initPhase = 'initializing playback services';
       await _initializeServices();
       if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;

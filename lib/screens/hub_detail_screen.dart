@@ -15,7 +15,6 @@ import '../utils/app_logger.dart';
 import '../utils/continuation_pagination_coordinator.dart';
 import '../utils/error_message_utils.dart';
 import '../utils/platform_detector.dart';
-import '../utils/plex_library_section_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_card_sliver_layout.dart';
@@ -58,7 +57,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   List<MediaItem> _items = [];
   List<MediaItem> _filteredItems = [];
-  List<MediaSort> _sortOptions = [];
+  late List<MediaSort> _sortOptions;
   MediaSort? _selectedSort;
   bool _isSortDescending = false;
   bool _isLoading = false;
@@ -101,7 +100,9 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     if (widget.hub.more) {
       _loadMoreItems();
     }
-    _loadSorts();
+    // Sorting runs client-side over the loaded items. Hubs name no library
+    // section, so they offer the default sorts.
+    _sortOptions = _getDefaultSortOptions();
     autoFocusFirstItemAfterLoad();
   }
 
@@ -111,45 +112,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     _continuationRetryFocusNode.dispose();
     disposeFocusResources();
     super.dispose();
-  }
-
-  Future<void> _loadSorts() async {
-    List<MediaSort> sorts = const [];
-    try {
-      // Hub ids can have various formats:
-      // - /hubs/sections/1/... (Plex)
-      // - /library/sections/1/all?... (Plex)
-      // - /hubs/home/recentlyAdded?type=2&sectionID=1 (Plex home hubs — id in query)
-      // - home.recent / library.<id>.continue (synthesized hub ids)
-      // - continue_watching / explore:… (aggregated and catalog rows; no server)
-      // Only a Plex library-scoped key names a section whose sort options can
-      // be fetched; every other shape falls back to the default sorts by design.
-      final hubKey = widget.hub.id;
-      final sectionId = plexLibrarySectionIdFromString(hubKey);
-      final serverId = widget.hub.serverId;
-      if (sectionId == null) {
-        appLogger.d('Hub $hubKey has no library section; using default sort options');
-      } else if (serverId == null) {
-        appLogger.w('Hub $hubKey names section $sectionId but has no serverId; using default sort options');
-      } else {
-        final client = context.tryGetMediaClientForServer(ServerId(serverId));
-        sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions('$sectionId');
-        appLogger.d('Loaded ${sorts.length} sorts for section $sectionId');
-      }
-    } catch (e, stackTrace) {
-      appLogger.e('Failed to load sorts', error: e, stackTrace: stackTrace);
-    }
-    if (!mounted) return;
-    // Sorting runs client-side over the loaded items, so offer only the
-    // section sorts it can honor instead of ones that would silently fall
-    // back to title order.
-    final supported = [
-      for (final sort in sorts)
-        if (_comparatorFor(sort.key) != null) sort,
-    ];
-    setState(() {
-      _sortOptions = supported.isNotEmpty ? supported : _getDefaultSortOptions();
-    });
   }
 
   /// Catalog hubs (Explore View All) hold synthesized items with no library
@@ -167,10 +129,8 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     ];
   }
 
-  /// Orders items by the field a sort [key] names — the default sorts' keys
-  /// and the Plex section sort keys alike — or null for a key naming nothing
-  /// the items carry (Plex's resolution, bitrate, random or latest-episode
-  /// sorts), which [_loadSorts] leaves out of the options.
+  /// Orders items by the field a sort [key] names, or null for a key naming
+  /// nothing the items carry.
   static Comparator<MediaItem>? _comparatorFor(String key) {
     Comparator<MediaItem> by(Comparable<Object> Function(MediaItem item) value) =>
         (a, b) => value(a).compareTo(value(b));

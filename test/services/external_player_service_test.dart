@@ -17,12 +17,8 @@ import '../test_helpers/media_items.dart';
 import '../test_helpers/playback_report_fakes.dart';
 
 class _RecordingClient with PlaybackReportRecorder implements MediaServerClient, ScopedMediaServerClient {
-  _RecordingClient({this.backend = MediaBackend.plex, String? scopedServerId})
-    : scopedServerId =
-          scopedServerId ??
-          (backend == MediaBackend.plex
-              ? buildPlexProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a')
-              : SiloProfileScopeId(serverId: ServerId('srv'), profileId: 'user-a'));
+  _RecordingClient({this.marksWatchedOnPlaybackStopped = true, String? scopedServerId})
+    : scopedServerId = scopedServerId ?? SiloProfileScopeId(serverId: ServerId('srv'), profileId: 'user-a');
 
   bool failStart = false;
   bool failStop = false;
@@ -34,18 +30,19 @@ class _RecordingClient with PlaybackReportRecorder implements MediaServerClient,
   ServerId get serverId => ServerId('srv');
 
   @override
-  final MediaBackend backend;
+  MediaBackend get backend => MediaBackend.silo;
   @override
   final String scopedServerId;
 
   @override
   double get watchedThreshold => 0.9;
 
-  // Mirror the real clients: Silo marks played from the stopped report, so
-  // the external-player completion path emits only the local watch event
-  // (#1287); Plex needs the explicit markWatched.
+  // Silo marks played from the stopped report, so the external-player
+  // completion path emits only the local watch event (#1287). A client that
+  // does not ([marksWatchedOnPlaybackStopped] false) needs the explicit
+  // markWatched.
   @override
-  bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.silo;
+  final bool marksWatchedOnPlaybackStopped;
 
   @override
   Future<void> onPlaybackReport(PlaybackReportCall call) async {
@@ -74,7 +71,7 @@ class _RecordingClient with PlaybackReportRecorder implements MediaServerClient,
 MediaItem _item({int? durationMs}) {
   return testMediaItem(
     id: 'item-1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
     serverId: 'srv',
     durationMs: durationMs,
@@ -122,7 +119,7 @@ void main() {
   });
 
   test('Android external progress emits the exact client cache scope', () async {
-    final scope = buildPlexProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a');
+    final scope = SiloProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a');
     final client = _RecordingClient(scopedServerId: scope);
     final events = <WatchStateEvent>[];
     final subscription = WatchStateNotifier().stream
@@ -159,7 +156,7 @@ void main() {
   });
 
   test('Android external progress reports full duration for explicit completion', () async {
-    final client = _RecordingClient();
+    final client = _RecordingClient(marksWatchedOnPlaybackStopped: false);
 
     await ExternalPlayerService.reportAndroidExternalProgressForTesting(
       positionMs: null,
@@ -175,7 +172,7 @@ void main() {
   });
 
   test('Android external completion on Silo marks watched via the stop report, not markWatched (#1287)', () async {
-    final client = _RecordingClient(backend: MediaBackend.silo);
+    final client = _RecordingClient();
 
     await ExternalPlayerService.reportAndroidExternalProgressForTesting(
       positionMs: null,
@@ -200,7 +197,7 @@ void main() {
     ], currentIndex: currentIndex)!;
 
     test('playing out the first file leaves the item at the second, not watched', () async {
-      final client = _RecordingClient();
+      final client = _RecordingClient(marksWatchedOnPlaybackStopped: false);
 
       await ExternalPlayerService.reportAndroidExternalProgressForTesting(
         positionMs: null,
@@ -216,7 +213,7 @@ void main() {
     });
 
     test('the second file reports on the item clock and finishing it finishes the item', () async {
-      final client = _RecordingClient();
+      final client = _RecordingClient(marksWatchedOnPlaybackStopped: false);
 
       await ExternalPlayerService.reportAndroidExternalProgressForTesting(
         positionMs: 600000,

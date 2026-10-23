@@ -104,21 +104,6 @@ class ConnectionRegistry {
     });
   }
 
-  /// All Plex accounts in insertion order. Convenience over
-  /// `(await list()).whereType<PlexAccountConnection>()` — cuts ~3 lines from
-  /// every caller that needs to filter by backend.
-  Future<List<PlexAccountConnection>> listPlexAccounts() async {
-    final all = await list();
-    return all.whereType<PlexAccountConnection>().toList();
-  }
-
-  /// Lookup a [PlexAccountConnection] by id. Returns `null` if no row
-  /// matches OR the row exists but isn't a Plex account.
-  Future<PlexAccountConnection?> getPlexAccount(String id) async {
-    final c = await get(id);
-    return c is PlexAccountConnection ? c : null;
-  }
-
   Future<Connection?> _rowToConnection(ConnectionRow row) async {
     try {
       final json = jsonDecode(row.configJson) as Map<String, dynamic>;
@@ -132,12 +117,8 @@ class ConnectionRegistry {
           ? null
           : DateTime.fromMillisecondsSinceEpoch(row.lastAuthenticatedAt!);
       final Connection? connection = switch (kind) {
-        MediaBackend.plex => PlexAccountConnection.fromConfigJson(
-          id: row.id,
-          json: revealed.config,
-          createdAt: createdAt,
-          lastAuthenticatedAt: lastAuth,
-        ),
+        // Plex rows outlived the schema-27 migration's cleanup.
+        MediaBackend.plex => null,
         MediaBackend.silo => SiloConnection.fromConfigJson(
           json: revealed.config,
           createdAt: createdAt,

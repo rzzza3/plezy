@@ -1,19 +1,15 @@
 import 'dart:async';
 
-import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
-import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/system_shelf_service.dart';
 
-import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
 
 class _ShelfClient implements MediaServerClient {
@@ -29,10 +25,10 @@ class _ShelfClient implements MediaServerClient {
   String get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) {
@@ -49,14 +45,6 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('test/system_shelf');
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-
-  // The real Plex client fixtures used by the updateSources tests construct
-  // their API cache at creation time.
-  setUpAll(() {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(db);
-    addTearDown(db.close);
-  });
 
   tearDown(() {
     messenger.setMockMethodCallHandler(channel, null);
@@ -156,7 +144,7 @@ void main() {
     service.beginProfileSession('owner-a');
     final item = testMediaItem(
       id: 'item-a',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       title: 'Private title',
       summary: 'Private summary',
       thumbPath: '/poster',
@@ -200,7 +188,7 @@ void main() {
 
   MediaItem shelfEpisode({String? parentThumbPath, String? grandparentThumbPath}) => testMediaItem(
     id: 'ep-1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     title: 'Finale',
     grandparentTitle: 'Show',
@@ -268,7 +256,7 @@ void main() {
     }
   });
 
-  test('updateSources publishes Plex descriptors and skips unusable clients', () async {
+  test('updateSources publishes the envelope and hands Top Shelf no Silo credentials', () async {
     final calls = <MethodCall>[];
     messenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
@@ -277,16 +265,7 @@ void main() {
     final service = SystemShelfService.forTesting(channel: channel, isTvosTarget: () => true);
     service.beginProfileSession('owner-a');
 
-    final plex = testPlexClient(
-      serverId: ServerId('plex-1'),
-      serverName: 'Plex Server',
-      baseUrl: 'https://plex.example.com',
-      token: 'plex-token',
-    );
-    final tokenlessPlex = testPlexClient(serverId: ServerId('plex-2'), token: null);
-    final unknownBackend = _ShelfClient();
-
-    expect(await service.syncServerSources('owner-a', [plex, tokenlessPlex, unknownBackend]), isTrue);
+    expect(await service.syncServerSources('owner-a', [_ShelfClient()]), isTrue);
 
     expect(calls.single.method, 'updateSources');
     final envelope = calls.single.arguments as Map;
@@ -295,15 +274,7 @@ void main() {
     expect(envelope['generation'], 1);
     expect(envelope['maxItems'], 20);
     expect(envelope['sectionTitle'], 'Continue Watching');
-    final servers = (envelope['servers'] as List).cast<Map>();
-    expect(servers, hasLength(1));
-    expect(servers[0], {
-      'serverId': 'plex-1',
-      'kind': 'plex',
-      'name': 'Plex Server',
-      'baseUrl': 'https://plex.example.com',
-      'token': 'plex-token',
-    });
+    expect(envelope['servers'], isEmpty);
   });
 
   test('syncServerSources is a no-op off tvOS', () async {
@@ -315,7 +286,7 @@ void main() {
     final service = SystemShelfService.forTesting(channel: channel, isTvosTarget: () => false);
     service.beginProfileSession('owner-a');
 
-    expect(await service.syncServerSources('owner-a', [testPlexClient()]), isFalse);
+    expect(await service.syncServerSources('owner-a', [_ShelfClient()]), isFalse);
     expect(nativeCalls, 0);
   });
 
@@ -328,7 +299,7 @@ void main() {
     final service = SystemShelfService.forTesting(channel: channel, isTvosTarget: () => true);
     service.beginProfileSession('owner-a');
 
-    final pending = service.syncServerSources('owner-a', [testPlexClient()]);
+    final pending = service.syncServerSources('owner-a', [_ShelfClient()]);
     final ended = service.endProfileSession('owner-a');
 
     expect(await pending, isFalse);

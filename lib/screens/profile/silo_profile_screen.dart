@@ -2,17 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../connection/connection.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
-import '../../profiles/active_profile_binder.dart';
-import '../../profiles/active_profile_provider.dart';
-import '../../profiles/profile.dart';
-import '../../profiles/profile_connection.dart';
 import '../../silo/silo_http.dart';
 import '../../silo/silo_profiles.dart';
 import '../../silo/silo_sign_in.dart';
@@ -21,7 +15,6 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../settings/connection_persistence.dart';
 import 'pin_entry_dialog.dart';
-import 'profile_switch_screen.dart';
 
 sealed class _PickerState {
   const _PickerState();
@@ -46,15 +39,13 @@ final class _Picking extends _PickerState {
 }
 
 /// Lists the account's Silo profiles and enters one
-/// (`TvProfileSelectionViewModel.kt:125-393`). Entering binds the server to a
-/// Plezy profile, with the Silo profile id on the join row, then pops with
-/// `true`.
+/// (`TvProfileSelectionViewModel.kt:125-393`). Entering stores the server and
+/// makes the profile the active one, then pops with `true`.
 class SiloProfileScreen extends StatefulWidget {
   final SiloHttp silo;
   final SiloServerIdentity server;
-  final Profile? targetProfile;
 
-  const SiloProfileScreen({super.key, required this.silo, required this.server, this.targetProfile});
+  const SiloProfileScreen({super.key, required this.silo, required this.server});
 
   @override
   State<SiloProfileScreen> createState() => _SiloProfileScreenState();
@@ -123,53 +114,20 @@ class _SiloProfileScreenState extends State<SiloProfileScreen> {
     }
   }
 
-  /// Persists the connection and the join row that names [profile], on the
-  /// target profile, the active one, or a first-run local profile.
+  /// Stores the connection, with the account id the companion remote keys
+  /// on, and activates [profile].
   Future<bool> _bind(SiloHousehold household, SiloProfile profile) async {
-    final activeProfiles = context.read<ActiveProfileProvider>();
-    final binder = context.read<ActiveProfileBinder>();
-    await activeProfiles.initialize();
-    if (!mounted) return false;
-    var bindProfile = widget.targetProfile ?? activeProfiles.active;
-    if (bindProfile == null && activeProfiles.profiles.isNotEmpty) {
-      await Navigator.of(
-        context,
-        rootNavigator: true,
-      ).push<bool>(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen(requireSelection: true)));
-      if (!mounted) return false;
-      bindProfile = activeProfiles.active;
-      if (bindProfile == null) return false;
-    }
     final now = DateTime.now();
-    final firstRunProfile = bindProfile == null
-        ? Profile.local(
-            id: 'local-${const Uuid().v4()}',
-            displayName: profile.name,
-            sortOrder: now.millisecondsSinceEpoch,
-            createdAt: now,
-          )
-        : null;
-    final owner = bindProfile ?? firstRunProfile!;
     final connection = SiloConnection(
       origin: widget.silo.origin.toString(),
       serverId: widget.server.serverId,
       serverName: widget.server.serverName,
       username: household.account.username,
+      accountId: household.account.id,
       createdAt: now,
       lastAuthenticatedAt: now,
     );
-    await persistAndBindConnection(
-      context: context,
-      connection: connection,
-      bindToProfile: ProfileConnection(
-        profileId: owner.id,
-        connectionId: connection.id,
-        userIdentifier: profile.id,
-        tokenAcquiredAt: now,
-      ),
-      firstRunProfile: firstRunProfile,
-    );
-    if (owner.id == activeProfiles.activeId) await binder.rebindIfActive(owner.id);
+    await persistSiloSignIn(context: context, connection: connection, household: household, entered: profile);
     return true;
   }
 

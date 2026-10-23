@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:drift/drift.dart' show ApplyInterceptor, QueryExecutor, QueryInterceptor;
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/media/download_resolution.dart';
@@ -15,20 +15,17 @@ import 'package:plezy/media/media_item_types.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
-import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/download_storage_service.dart';
-import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/offline_mode_source.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/notification_permission.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
-import 'package:plezy/utils/active_client_scope.dart';
 import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/saf_fakes.dart';
@@ -45,7 +42,7 @@ class _ThrowingClient implements MediaServerClient {
   }
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -70,7 +67,7 @@ class _MusicExpansionClient implements MediaServerClient {
   }
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerId get serverId => ServerId('srv');
@@ -92,10 +89,10 @@ class _LibraryStampingClient implements MediaServerClient {
   ServerId get serverId => ServerId('srv');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ApiCache get cache => ApiCache.forBackend(MediaBackend.plex);
+  ApiCache get cache => ApiCache.forBackend(MediaBackend.silo);
 
   @override
   Future<MediaItem> stampLibrary(MediaItem item) async {
@@ -240,57 +237,41 @@ Future<void> _insertProfile(AppDatabase db, String id) => db
     .into(db.profiles)
     .insert(ProfilesCompanion.insert(id: id, kind: 'local', displayName: id, configJson: '{}', createdAt: 0));
 
-Future<void> _insertPlexConnection(AppDatabase db, ServerId serverId) => db
+Future<void> _insertSiloConnection(AppDatabase db, ServerId serverId) => db
     .into(db.connections)
     .insert(
-      ConnectionsCompanion.insert(id: serverId, kind: 'plex', displayName: serverId, configJson: '{}', createdAt: 0),
+      ConnectionsCompanion.insert(
+        id: SiloConnection.idFor(serverId.value),
+        kind: 'silo',
+        displayName: serverId.value,
+        configJson: '{}',
+        createdAt: 0,
+      ),
     );
 
-Map<String, dynamic> _plexMetadata({
+/// Pins a Silo movie snapshot under the profile scope [scope].
+Future<void> _putPinnedSiloMetadata(
+  String scope, {
   required String id,
   required String title,
   required int viewCount,
   required int viewOffset,
-  int? librarySectionID,
-  String? librarySectionTitle,
-}) => {
-  'MediaContainer': {
-    'Metadata': [
-      {
-        'ratingKey': id,
-        'title': title,
-        'type': 'movie',
-        'viewCount': viewCount,
-        'viewOffset': viewOffset,
-        'librarySectionID': ?librarySectionID,
-        'librarySectionTitle': ?librarySectionTitle,
-      },
-    ],
-  },
-};
-
-Future<void> _putPinnedPlexMetadata(
-  PlexProfileScopeId scope, {
-  required String id,
-  required String title,
-  required int viewCount,
-  required int viewOffset,
-  int? librarySectionID,
-  String? librarySectionTitle,
+  String? libraryId,
+  String? libraryTitle,
 }) async {
-  await PlexApiCache.instance.put(
-    scope.cacheServerId,
-    '/library/metadata/$id',
-    _plexMetadata(
+  await SiloApiCache.instance.putItem(
+    ServerId(scope),
+    MediaItem.silo(
       id: id,
+      kind: MediaKind.movie,
       title: title,
       viewCount: viewCount,
-      viewOffset: viewOffset,
-      librarySectionID: librarySectionID,
-      librarySectionTitle: librarySectionTitle,
+      viewOffsetMs: viewOffset,
+      libraryId: libraryId,
+      libraryTitle: libraryTitle,
     ),
   );
-  await PlexApiCache.instance.pinForOffline(scope.cacheServerId, id);
+  await SiloApiCache.instance.pinForOffline(ServerId(scope), id);
 }
 
 class _FakeOfflineModeSource extends ChangeNotifier implements OfflineModeSource {
@@ -320,9 +301,8 @@ void main() {
   setUp(() {
     downloadOwnerSelectGate = _DownloadOwnerSelectGate();
     db = AppDatabase.forTesting(NativeDatabase.memory().interceptWith(downloadOwnerSelectGate));
-    // PlexApiCache is a singleton accessed eagerly inside DownloadManagerService's
+    // SiloApiCache is a singleton accessed eagerly inside DownloadManagerService's
     // constructor; reinitialize per test so each test sees the fresh in-memory DB.
-    PlexApiCache.initialize(db);
     SiloApiCache.initialize(db);
     testClientResolver = null;
     // Local-path tests store SAF content:// URIs; resolution confirms such a
@@ -690,7 +670,7 @@ void main() {
       // download to populate _metadata" case from createSyncRule's docs).
       final target = testMediaItem(
         id: '20',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.collection,
         title: 'My Collection',
         serverId: ServerId('srv'),
@@ -716,7 +696,7 @@ void main() {
 
       final target = testMediaItem(
         id: '30',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         title: 'A Show',
         serverId: ServerId('srv'),
@@ -770,21 +750,21 @@ void main() {
       final items = <String, MediaItem>{
         'srv:exclusive': testMediaItem(
           id: 'exclusive',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.episode,
           title: 'Exclusive',
           serverId: ServerId('srv'),
         ),
         'srv:rule-shared': testMediaItem(
           id: 'rule-shared',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.episode,
           title: 'Rule shared',
           serverId: ServerId('srv'),
         ),
         'srv:profile-shared': testMediaItem(
           id: 'profile-shared',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.episode,
           title: 'Profile shared',
           serverId: ServerId('srv'),
@@ -843,7 +823,7 @@ void main() {
       const downloadKey = 'srv:ep-watched';
       final episode = testMediaItem(
         id: 'ep-watched',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Watched episode',
         serverId: ServerId('srv'),
@@ -950,7 +930,7 @@ void main() {
   group('DownloadProvider — profile-scoped download ownership', () {
     final movie = testMediaItem(
       id: '1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Owned Movie',
       serverId: ServerId('srv'),
@@ -1044,7 +1024,7 @@ void main() {
     test('claiming an existing episode download also loads its show and season', () async {
       final episode = testMediaItem(
         id: 'ep-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Pilot',
         serverId: ServerId('srv'),
@@ -1055,12 +1035,12 @@ void main() {
       final client = _ArtworkFreeScopedClient(
         serverId: ServerId('srv'),
         scopedServerId: 'srv',
-        clientBackend: MediaBackend.plex,
+        clientBackend: MediaBackend.silo,
         fetchItemHandler: (id) async => switch (id) {
-          'show-1' => testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show'),
+          'show-1' => testMediaItem(id: 'show-1', backend: MediaBackend.silo, kind: MediaKind.show, title: 'Show'),
           'season-1' => testMediaItem(
             id: 'season-1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.season,
             title: 'Season 1',
           ),
@@ -1110,14 +1090,14 @@ void main() {
     test('queueDownload expands an album into its tracks via fetchPlayableDescendants', () async {
       final album = testMediaItem(
         id: 'album-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.album,
         title: 'Album',
         serverId: ServerId('srv'),
       );
       MediaItem track(String id) => testMediaItem(
         id: id,
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: id,
         parentId: 'album-1',
@@ -1150,14 +1130,14 @@ void main() {
     test('container queue ownership remains claimed until expansion finishes', () async {
       final album = testMediaItem(
         id: 'album-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.album,
         title: 'Album',
         serverId: ServerId('srv'),
       );
       final track = testMediaItem(
         id: 't1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: 'Track',
         parentId: album.id,
@@ -1189,14 +1169,14 @@ void main() {
     test('profile switch invalidates container expansion before it can claim the new profile', () async {
       final album = testMediaItem(
         id: 'album-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.album,
         title: 'Profile A Album',
         serverId: ServerId('srv'),
       );
       final track = testMediaItem(
         id: 'track-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: 'Profile A Track',
         parentId: album.id,
@@ -1241,7 +1221,7 @@ void main() {
     test('stale queue cleanup does not remove the new profile generation key', () async {
       final album = testMediaItem(
         id: 'album-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.album,
         title: 'Album',
         serverId: ServerId('srv'),
@@ -1284,7 +1264,7 @@ void main() {
     test('deleting an album emits one provider notification for all tracks', () async {
       MediaItem track(String id) => testMediaItem(
         id: id,
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: id,
         parentId: 'album-1',
@@ -1292,7 +1272,7 @@ void main() {
       );
       final album = testMediaItem(
         id: 'album-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.album,
         title: 'Album',
         serverId: ServerId('srv'),
@@ -1429,7 +1409,7 @@ void main() {
     test('album aggregates, downloadedAlbums, and per-album track order come from track downloads', () async {
       MediaItem track(String id, {required int disc, required int number}) => testMediaItem(
         id: id,
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: id,
         parentId: 'album-1',
@@ -1454,7 +1434,7 @@ void main() {
           'srv:t2': track('t2', disc: 1, number: 2),
           'srv:album-1': testMediaItem(
             id: 'album-1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.album,
             title: 'Album',
             parentId: 'artist-1',
@@ -1473,11 +1453,11 @@ void main() {
     });
 
     test('containers with the same native id on two servers stay separate', () async {
-      // Plex hands out server-local rating keys, so two visible servers
+      // Item ids are server-local, so two visible servers
       // routinely disagree about what item 42 is.
       MediaItem episode(String server, String id) => testMediaItem(
         id: id,
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: id,
         parentId: 'season-1',
@@ -1488,7 +1468,7 @@ void main() {
       );
       MediaItem albumTrack(String server, String id) => testMediaItem(
         id: id,
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: id,
         parentId: 'album-1',
@@ -1573,11 +1553,12 @@ void main() {
           const globalKey = 'srv:profile-switch';
           const itemId = 'profile-switch';
           final serverId = ServerId('srv');
-          final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-          final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-          await _insertPlexConnection(db, serverId);
-          await _insertProfile(db, 'profile-a');
-          await _insertProfile(db, 'profile-b');
+          // A Silo profile id is its own client scope.
+          const scopeA = 'silo:srv/profile-a';
+          const scopeB = 'silo:srv/profile-b';
+          await _insertSiloConnection(db, serverId);
+          await _insertProfile(db, scopeA);
+          await _insertProfile(db, scopeB);
           await db.insertDownload(
             serverId: serverId,
             clientScopeId: scopeA,
@@ -1587,23 +1568,23 @@ void main() {
             status: status.index,
           );
           await db.addDownloadOwner(
-            profileId: 'profile-a',
+            profileId: scopeA,
             globalKey: globalKey,
-            backendId: MediaBackend.plex.id,
+            backendId: MediaBackend.silo.id,
             clientScopeId: scopeA,
           );
           await db.addDownloadOwner(
-            profileId: 'profile-b',
+            profileId: scopeB,
             globalKey: globalKey,
-            backendId: MediaBackend.plex.id,
+            backendId: MediaBackend.silo.id,
             clientScopeId: scopeB,
           );
-          await _putPinnedPlexMetadata(scopeA, id: itemId, title: 'Profile A cache', viewCount: 0, viewOffset: 1000);
-          await _putPinnedPlexMetadata(scopeB, id: itemId, title: 'Profile B cache', viewCount: 1, viewOffset: 0);
+          await _putPinnedSiloMetadata(scopeA, id: itemId, title: 'Profile A cache', viewCount: 0, viewOffset: 1000);
+          await _putPinnedSiloMetadata(scopeB, id: itemId, title: 'Profile B cache', viewCount: 1, viewOffset: 0);
           final provider = DownloadProvider.forTesting(
             downloadManager: downloadManager,
             database: db,
-            activeProfileId: 'profile-a',
+            activeProfileId: scopeA,
           );
           addTearDown(provider.dispose);
           await provider.ensureInitialized();
@@ -1616,17 +1597,17 @@ void main() {
           final deletion = operation(provider, globalKey);
           await downloadOwnerSelectGate.started;
 
-          provider.setActiveProfileId('profile-b');
+          provider.setActiveProfileId(scopeB);
           await provider.debugWaitForProfileScopedReload();
           downloadOwnerSelectGate.release();
           await deletion;
 
-          expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
-          expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {globalKey});
+          expect(await db.getDownloadOwnerKeysForProfile(scopeA), isEmpty);
+          expect(await db.getDownloadOwnerKeysForProfile(scopeB), {globalKey});
           expect(provider.downloads.keys, [globalKey]);
           expect(provider.getMetadata(globalKey)?.title, 'Profile B cache');
-          expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, itemId))?.title, 'Profile B cache');
-          expect(await PlexApiCache.instance.isPinned(scopeB.cacheServerId, '/library/metadata/$itemId'), isTrue);
+          expect((await SiloApiCache.instance.getMetadata(ServerId(scopeB), itemId))?.title, 'Profile B cache');
+          expect(await SiloApiCache.instance.isPinned(ServerId(scopeB), SiloApiCache.itemEndpoint(itemId)), isTrue);
         },
       );
     }
@@ -1758,9 +1739,9 @@ void main() {
         const globalKey = 'srv:shared-queued';
         const itemId = 'shared-queued';
         final serverId = ServerId('srv');
-        final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-        final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-        await _insertPlexConnection(db, serverId);
+        const scopeA = 'silo:srv/profile-a';
+        const scopeB = 'silo:srv/profile-b';
+        await _insertSiloConnection(db, serverId);
         await _insertProfile(db, 'profile-a');
         await _insertProfile(db, 'profile-b');
         await db.insertDownload(
@@ -1775,22 +1756,22 @@ void main() {
         await db.addDownloadOwner(
           profileId: 'profile-a',
           globalKey: globalKey,
-          backendId: MediaBackend.plex.id,
+          backendId: MediaBackend.silo.id,
           clientScopeId: scopeA,
         );
         await db.addDownloadOwner(
           profileId: 'profile-b',
           globalKey: globalKey,
-          backendId: MediaBackend.plex.id,
+          backendId: MediaBackend.silo.id,
           clientScopeId: scopeB,
         );
-        await _putPinnedPlexMetadata(scopeB, id: itemId, title: 'Profile B snapshot', viewCount: 0, viewOffset: 0);
+        await _putPinnedSiloMetadata(scopeB, id: itemId, title: 'Profile B snapshot', viewCount: 0, viewOffset: 0);
 
         final itemB = movie.copyWith(id: itemId, title: 'Profile B snapshot');
         final clientB = _ScopedTestClient(
           serverId: serverId,
           scopedServerId: scopeB,
-          clientBackend: MediaBackend.plex,
+          clientBackend: MediaBackend.silo,
           fetchItemHandler: (_) async => itemB,
         );
         final resolvedScopes = <String?>[];
@@ -1856,9 +1837,9 @@ void main() {
     test('deleting one owner does not migrate a completed shared physical row', () async {
       const globalKey = 'srv:shared-completed';
       final serverId = ServerId('srv');
-      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-      await _insertPlexConnection(db, serverId);
+      const scopeA = 'silo:srv/profile-a';
+      const scopeB = 'silo:srv/profile-b';
+      await _insertSiloConnection(db, serverId);
       await _insertProfile(db, 'profile-a');
       await _insertProfile(db, 'profile-b');
       await db.insertDownload(
@@ -1872,13 +1853,13 @@ void main() {
       await db.addDownloadOwner(
         profileId: 'profile-a',
         globalKey: globalKey,
-        backendId: MediaBackend.plex.id,
+        backendId: MediaBackend.silo.id,
         clientScopeId: scopeA,
       );
       await db.addDownloadOwner(
         profileId: 'profile-b',
         globalKey: globalKey,
-        backendId: MediaBackend.plex.id,
+        backendId: MediaBackend.silo.id,
         clientScopeId: scopeB,
       );
       final provider = DownloadProvider.forTesting(
@@ -2313,7 +2294,7 @@ void main() {
       await provider.ensureInitialized();
       final item = testMediaItem(
         id: '1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Movie',
         serverId: ServerId('srv'),
@@ -2524,247 +2505,13 @@ void main() {
     });
   });
 
-  group('DownloadProvider — scoped Plex metadata ownership', () {
-    const key = 'srv:123';
+  group('DownloadProvider — scoped metadata ownership', () {
     final serverId = ServerId('srv');
 
-    Future<void> seedPhysicalDownload({required Iterable<String> owners}) async {
-      await _insertPlexConnection(db, serverId);
-      for (final owner in owners) {
-        await _insertProfile(db, owner);
-      }
-      await db.insertDownload(
-        serverId: serverId,
-        clientScopeId: buildPlexProfileScopeId(serverId: serverId, profileId: owners.first),
-        ratingKey: '123',
-        globalKey: key,
-        type: 'movie',
-        status: DownloadStatus.completed.index,
-      );
-      for (final owner in owners) {
-        await db.addDownloadOwner(profileId: owner, globalKey: key);
-      }
-    }
-
-    Future<void> waitForProfileReload(DownloadProvider provider, String profileId, bool Function() isSettled) async {
-      final settled = Completer<void>();
-      void listener() {
-        if (isSettled() && !settled.isCompleted) settled.complete();
-      }
-
-      provider.addListener(listener);
-      provider.setActiveProfileId(profileId);
-      await settled.future.timeout(const Duration(seconds: 2));
-      provider.removeListener(listener);
-    }
-
-    test('offline profile switches select only exact Plex owner snapshots and preserve one physical row', () async {
-      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
-      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-      await _putPinnedPlexMetadata(scopeA, id: '123', title: 'Profile A snapshot', viewCount: 0, viewOffset: 12000);
-      await _putPinnedPlexMetadata(scopeB, id: '123', title: 'Profile B snapshot', viewCount: 1, viewOffset: 0);
-
-      final provider = DownloadProvider.forTesting(
-        downloadManager: downloadManager,
-        database: db,
-        activeProfileId: 'profile-a',
-      );
-      addTearDown(provider.dispose);
-      await provider.ensureInitialized();
-      provider.debugSeedState(
-        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
-        ownedDownloadKeys: {key},
-      );
-      await provider.refreshMetadataFromCache();
-
-      expect(provider.getMetadata(key)?.title, 'Profile A snapshot');
-      expect(provider.getMetadata(key)?.viewOffsetMs, 12000);
-
-      await waitForProfileReload(provider, 'profile-b', () => provider.getMetadata(key)?.title == 'Profile B snapshot');
-      expect(provider.getMetadata(key)?.isWatched, isTrue);
-
-      await waitForProfileReload(provider, 'profile-a', () => provider.getMetadata(key)?.title == 'Profile A snapshot');
-      expect(provider.getMetadata(key)?.isWatched, isFalse);
-      expect(await db.getDownloadedMedia(key), isNotNull);
-      expect(await db.getValidDownloadOwnersForKey(key), hasLength(2));
-      expect(await PlexApiCache.instance.isPinned(scopeA.cacheServerId, '/library/metadata/123'), isTrue);
-      expect(await PlexApiCache.instance.isPinned(scopeB.cacheServerId, '/library/metadata/123'), isTrue);
-      expect((await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'))?.title, 'Profile A snapshot');
-      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Profile B snapshot');
-    });
-
-    test('full logout transfers Plex metadata to the next profile without carrying private state', () async {
-      await seedPhysicalDownload(owners: const ['profile-a', 'profile-old-co-owner']);
-      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-      final transferScope = buildPlexTransferScopeId(serverId);
-      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-      final oldCoOwnerScope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-old-co-owner');
-      await _putPinnedPlexMetadata(
-        oldCoOwnerScope,
-        id: '123',
-        title: 'Preserved download',
-        viewCount: 1,
-        viewOffset: 12000,
-      );
-
-      final provider = DownloadProvider.forTesting(
-        downloadManager: downloadManager,
-        database: db,
-        activeProfileId: 'profile-a',
-      );
-      addTearDown(provider.dispose);
-      await provider.ensureInitialized();
-
-      await provider.detachDownloadsForLogout();
-
-      expect((await db.getDownloadedMedia(key))?.clientScopeId, transferScope);
-      expect(await db.hasDownloadOwner(key), isFalse);
-      expect(await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'), isNull);
-      expect(await PlexApiCache.instance.getMetadata(oldCoOwnerScope.cacheServerId, '123'), isNull);
-      final transferred = await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, '123');
-      expect(transferred?.title, 'Preserved download');
-      expect(transferred?.viewCount, isNull);
-      expect(transferred?.viewOffsetMs, isNull);
-
-      await db.delete(db.profiles).go();
-      await db.delete(db.connections).go();
-      await _insertProfile(db, 'profile-b');
-      await _insertPlexConnection(db, serverId);
-
-      final adoptedProvider = DownloadProvider.forTesting(
-        downloadManager: downloadManager,
-        database: db,
-        activeProfileId: 'profile-b',
-      );
-      addTearDown(adoptedProvider.dispose);
-      await adoptedProvider.ensureInitialized();
-
-      final adoptedRow = await db.getDownloadedMedia(key);
-      final adoptedOwner = await db.getDownloadOwner(profileId: 'profile-b', globalKey: key);
-      expect(adoptedRow?.clientScopeId, scopeB);
-      expect(adoptedOwner?.clientScopeId, scopeB);
-      expect(adoptedOwner?.backend, MediaBackend.plex.id);
-      expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, '123'), isNull);
-      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Preserved download');
-      expect(adoptedProvider.getMetadata(key)?.viewCount, isNull);
-      expect(adoptedProvider.getMetadata(key)?.viewOffsetMs, isNull);
-    });
-
-    test('logout recovers legacy Plex ownership when row and owner scopes are absent', () async {
-      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
-      await db.updateDownloadedMediaClientScope(key, null);
-      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-      final transferScope = buildPlexTransferScopeId(serverId);
-      await _putPinnedPlexMetadata(scopeB, id: '123', title: 'Legacy owner snapshot', viewCount: 1, viewOffset: 4000);
-
-      await downloadManager.preparePlexMetadataForLogoutTransfer();
-      expect(await db.hasDownloadOwner(key), isTrue);
-      expect((await db.getDownloadedMedia(key))?.clientScopeId, transferScope);
-      final transferred = await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, '123');
-      expect(transferred?.title, 'Legacy owner snapshot');
-      expect(transferred?.viewCount, isNull);
-      expect(transferred?.viewOffsetMs, isNull);
-    });
-
-    test('missing active Plex owner scope clears the prior profile snapshot without bare fallback', () async {
-      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
-      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-      await _putPinnedPlexMetadata(scopeA, id: '123', title: 'Profile A snapshot', viewCount: 0, viewOffset: 12000);
-      await PlexApiCache.instance.put(
-        serverId,
-        '/library/metadata/123',
-        _plexMetadata(id: '123', title: 'Legacy bare snapshot', viewCount: 1, viewOffset: 0),
-      );
-      await PlexApiCache.instance.pinForOffline(serverId, '123');
-
-      final provider = DownloadProvider.forTesting(
-        downloadManager: downloadManager,
-        database: db,
-        activeProfileId: 'profile-a',
-      );
-      addTearDown(provider.dispose);
-      await provider.ensureInitialized();
-      provider.debugSeedState(
-        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
-        ownedDownloadKeys: {key},
-      );
-      await provider.refreshMetadataFromCache();
-      expect(provider.getMetadata(key)?.title, 'Profile A snapshot');
-
-      await waitForProfileReload(provider, 'profile-b', () => provider.getMetadata(key) == null);
-      await provider.refreshMetadataFromCache();
-
-      expect(provider.getMetadata(key), isNull);
-      expect(await db.getDownloadedMedia(key), isNotNull);
-    });
-
-    test('a download kept through Plex sign-out stays with its Plex Home user until the account returns', () async {
-      const accountId = 'plex-account';
-      final homeProfileId = plexHomeProfileId(accountConnectionId: accountId, homeUserUuid: 'aaaaaaaaaaaaaaaa');
-      final homeScope = buildPlexProfileScopeId(serverId: serverId, profileId: homeProfileId);
-      Future<void> addAccount() => db
-          .into(db.connections)
-          .insert(
-            ConnectionsCompanion.insert(
-              id: accountId,
-              kind: 'plex',
-              displayName: 'Plex',
-              configJson: jsonEncode({
-                'servers': [
-                  {'clientIdentifier': serverId.value},
-                ],
-              }),
-              createdAt: 0,
-            ),
-          );
-      await addAccount();
-      await _insertProfile(db, 'profile-b');
-      await db.insertDownload(
-        serverId: serverId,
-        clientScopeId: homeScope,
-        ratingKey: '123',
-        globalKey: key,
-        type: 'movie',
-        status: DownloadStatus.completed.index,
-      );
-      await db.addDownloadOwner(
-        profileId: homeProfileId,
-        globalKey: key,
-        backendId: MediaBackend.plex.id,
-        clientScopeId: homeScope,
-      );
-      await _putPinnedPlexMetadata(homeScope, id: '123', title: 'Kept download', viewCount: 1, viewOffset: 0);
-
-      // Signing out while keeping downloads removes the account, not the
-      // download's owner row or pinned snapshot.
-      await (db.delete(db.connections)..where((t) => t.id.equals(accountId))).go();
-
-      final provider = DownloadProvider.forTesting(
-        downloadManager: downloadManager,
-        database: db,
-        activeProfileId: 'profile-b',
-      );
-      addTearDown(provider.dispose);
-      await provider.ensureInitialized();
-      provider.debugSeedState(
-        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
-        ownedDownloadKeys: const {},
-      );
-      await provider.refreshMetadataFromCache();
-      expect(provider.downloads, isEmpty);
-      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), isEmpty);
-
-      await addAccount();
-      await waitForProfileReload(provider, homeProfileId, () => provider.getMetadata(key)?.title == 'Kept download');
-      expect(provider.downloads.keys, [key]);
-      expect(provider.getMetadata(key)?.isWatched, isTrue);
-    });
-
     test('a missing episode leaf does not evict parents loaded for a downloaded sibling', () async {
-      await _insertPlexConnection(db, serverId);
-      await _insertProfile(db, 'profile-a');
-      final scope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      const scope = 'silo:srv/profile-a';
+      await _insertSiloConnection(db, serverId);
+      await _insertProfile(db, scope);
       for (final id in ['ep-1', 'ep-2']) {
         await db.insertDownload(
           serverId: serverId,
@@ -2776,35 +2523,37 @@ void main() {
           grandparentRatingKey: 'show-1',
           status: DownloadStatus.completed.index,
         );
-        await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:$id');
+        await db.addDownloadOwner(profileId: scope, globalKey: 'srv:$id');
       }
 
-      Future<void> putPinned(String id, Map<String, Object?> metadata) async {
-        await PlexApiCache.instance.put(scope.cacheServerId, '/library/metadata/$id', {
-          'MediaContainer': {
-            'Metadata': [metadata],
-          },
-        });
-        await PlexApiCache.instance.pinForOffline(scope.cacheServerId, id);
+      Future<void> putPinned(MediaItem item) async {
+        await SiloApiCache.instance.putItem(ServerId(scope), item);
+        await SiloApiCache.instance.pinForOffline(ServerId(scope), item.id);
       }
 
-      await putPinned('show-1', {'ratingKey': 'show-1', 'type': 'show', 'title': 'Shared Show'});
-      await putPinned('season-1', {
-        'ratingKey': 'season-1',
-        'type': 'season',
-        'title': 'Season 1',
-        'parentRatingKey': 'show-1',
-      });
-      await putPinned('ep-1', {
-        'ratingKey': 'ep-1',
-        'type': 'episode',
-        'title': 'Available Episode',
-        'parentRatingKey': 'season-1',
-        'grandparentRatingKey': 'show-1',
-      });
+      await putPinned(const MediaItem.silo(id: 'show-1', kind: MediaKind.show, title: 'Shared Show', serverId: 'srv'));
+      await putPinned(
+        const MediaItem.silo(
+          id: 'season-1',
+          kind: MediaKind.season,
+          title: 'Season 1',
+          parentId: 'show-1',
+          serverId: 'srv',
+        ),
+      );
+      await putPinned(
+        const MediaItem.silo(
+          id: 'ep-1',
+          kind: MediaKind.episode,
+          title: 'Available Episode',
+          parentId: 'season-1',
+          grandparentId: 'show-1',
+          serverId: 'srv',
+        ),
+      );
       final missingEpisode = testMediaItem(
         id: 'ep-2',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Missing Episode',
         serverId: serverId,
@@ -2814,7 +2563,7 @@ void main() {
       final provider = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: scope,
       );
       addTearDown(provider.dispose);
       await provider.ensureInitialized();
@@ -2834,105 +2583,6 @@ void main() {
       expect(provider.getMetadata('srv:show-1')?.title, 'Shared Show');
       expect(provider.getMetadata('srv:season-1')?.title, 'Season 1');
     });
-    test('scoped watch writeback mutates only the active Plex owner row despite co-ownership', () async {
-      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
-      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-      await _putPinnedPlexMetadata(scopeA, id: '123', title: 'Profile A snapshot', viewCount: 0, viewOffset: 12000);
-      await _putPinnedPlexMetadata(scopeB, id: '123', title: 'Profile B snapshot', viewCount: 0, viewOffset: 34000);
-      final activeClient = _ScopedTestClient(
-        serverId: serverId,
-        scopedServerId: scopeA,
-        clientBackend: MediaBackend.plex,
-      );
-      testClientResolver = (resolvedServerId, {clientScopeId}) => resolvedServerId == serverId ? activeClient : null;
-
-      final provider = DownloadProvider.forTesting(
-        downloadManager: downloadManager,
-        database: db,
-        activeProfileId: 'profile-a',
-      );
-      addTearDown(provider.dispose);
-      await provider.ensureInitialized();
-      provider.debugSeedState(
-        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
-        ownedDownloadKeys: {key},
-      );
-      await provider.refreshMetadataFromCache();
-      final item = provider.getMetadata(key)!;
-
-      WatchStateNotifier().notifyWatched(item: item, cacheServerId: scopeA);
-      await provider.debugWaitForWatchStateWrites();
-
-      expect((await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'))?.isWatched, isTrue);
-      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.isWatched, isFalse);
-
-      WatchStateNotifier().notifyWatched(item: item, cacheServerId: scopeB);
-      await provider.debugWaitForWatchStateWrites();
-
-      expect((await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'))?.isWatched, isTrue);
-      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.isWatched, isFalse);
-    });
-
-    test('claim and owner release pin and delete metadata per Plex owner reference', () async {
-      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
-      await db.removeDownloadOwner(profileId: 'profile-b', globalKey: key);
-      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-      await _putPinnedPlexMetadata(scopeA, id: '123', title: 'Profile A snapshot', viewCount: 0, viewOffset: 12000);
-      final profileBItem = testMediaItem(
-        id: '123',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        title: 'Profile B snapshot',
-        serverId: serverId,
-        viewCount: 1,
-      );
-      final clientB = _ScopedTestClient(
-        serverId: serverId,
-        scopedServerId: scopeB,
-        clientBackend: MediaBackend.plex,
-        fetchItemHandler: (id) async {
-          await PlexApiCache.instance.put(
-            scopeB.cacheServerId,
-            '/library/metadata/$id',
-            _plexMetadata(id: id, title: 'Profile B snapshot', viewCount: 1, viewOffset: 0),
-          );
-          return profileBItem;
-        },
-      );
-      testClientResolver = (resolvedServerId, {clientScopeId}) =>
-          resolvedServerId == serverId && (clientScopeId == null || clientScopeId == scopeB) ? clientB : null;
-
-      final provider = DownloadProvider.forTesting(
-        downloadManager: downloadManager,
-        database: db,
-        activeProfileId: 'profile-b',
-      );
-      addTearDown(provider.dispose);
-      await provider.ensureInitialized();
-      provider.debugSeedState(
-        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
-        ownedDownloadKeys: const {},
-      );
-
-      expect(await provider.queueDownload(profileBItem, clientB), 1);
-      expect(await db.getValidDownloadOwnersForKey(key), hasLength(2));
-      expect(await db.getAllDownloadedMetadata(), hasLength(1));
-      expect(await PlexApiCache.instance.isPinned(scopeA.cacheServerId, '/library/metadata/123'), isTrue);
-      expect(await PlexApiCache.instance.isPinned(scopeB.cacheServerId, '/library/metadata/123'), isTrue);
-
-      await provider.deleteDownloadsForProfile('profile-a');
-      expect(await db.getValidDownloadOwnersForKey(key), hasLength(1));
-      expect(await db.getDownloadedMedia(key), isNotNull);
-      expect(await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'), isNull);
-      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Profile B snapshot');
-
-      await provider.deleteDownload(key);
-      expect(await db.getValidDownloadOwnersForKey(key), isEmpty);
-      expect(await db.getDownloadedMedia(key), isNull);
-      expect(await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'), isNull);
-    });
 
     test('auto-delete protects only the exact active global key', () async {
       await _insertProfile(db, 'profile-a');
@@ -2948,7 +2598,7 @@ void main() {
       }
       final itemA = testMediaItem(
         id: '123',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'A watched',
         serverId: 'A',
@@ -2991,7 +2641,7 @@ void main() {
       }
       final itemA = testMediaItem(
         id: '123',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'A watched',
         serverId: 'A',
@@ -3026,7 +2676,7 @@ void main() {
       await _insertProfile(db, 'profile-a');
       final finished = testMediaItem(
         id: 'finished',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Finished',
         serverId: 'srv',
@@ -3035,7 +2685,7 @@ void main() {
       );
       final resumable = testMediaItem(
         id: 'resumable',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Resumable',
         serverId: 'srv',
@@ -3090,7 +2740,7 @@ void main() {
 
       final item = testMediaItem(
         id: '42',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Movie',
         serverId: ServerId('srv'),
@@ -3116,7 +2766,7 @@ void main() {
 
       final item = testMediaItem(
         id: '42',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Movie',
         serverId: ServerId('srv'),
@@ -3142,7 +2792,7 @@ void main() {
 
       final show = testMediaItem(
         id: 'show-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.show,
         serverId: ServerId('srv'),
         leafCount: 3,
@@ -3150,7 +2800,7 @@ void main() {
       );
       final season1 = testMediaItem(
         id: 'season-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.season,
         parentId: 'show-1',
         serverId: ServerId('srv'),
@@ -3159,7 +2809,7 @@ void main() {
       );
       final episode1 = testMediaItem(
         id: 'episode-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         parentId: 'season-1',
         grandparentId: 'show-1',
@@ -3222,7 +2872,7 @@ void main() {
 
       final episode1 = testMediaItem(
         id: 'episode-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         parentId: 'season-1',
         grandparentId: 'show-1',
@@ -3272,7 +2922,7 @@ void main() {
       );
       final episode = testMediaItem(
         id: 'episode-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         parentId: 'season-1',
         grandparentId: 'show-1',
@@ -3354,7 +3004,7 @@ void main() {
       String? serverName,
     }) => testMediaItem(
       id: id,
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode $id',
       parentId: seasonId,
@@ -3385,7 +3035,7 @@ void main() {
           'srv:e2': episode('e2'),
           'srv:m1': testMediaItem(
             id: 'm1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.movie,
             serverId: ServerId('srv'),
           ),
@@ -3408,7 +3058,7 @@ void main() {
           'srv:e1': episode('e1'),
           'srv:show-1': testMediaItem(
             id: 'show-1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.show,
             title: 'Show 1',
             libraryId: 'lib-9',
@@ -3608,7 +3258,7 @@ void main() {
           'srv:e3': episode('e3', seasonId: 'season-2', seasonIndex: 2, index: 1),
           'srv:m1': testMediaItem(
             id: 'm1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.movie,
             serverId: ServerId('srv'),
           ),
@@ -3646,7 +3296,7 @@ void main() {
           'srv:other': episode('other', showId: 'show-2'),
           'srv:season-1': testMediaItem(
             id: 'season-1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.season,
             title: 'Stored Season Title',
             index: 1,
@@ -3681,7 +3331,7 @@ void main() {
           'srv:e2': episode('e2', index: 2, libraryId: 'lib-9', libraryTitle: 'Shows'),
           'srv:show-1': testMediaItem(
             id: 'show-1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.show,
             title: 'Show 1',
             leafCount: 24,
@@ -3712,14 +3362,14 @@ void main() {
           'srv:e2': episode('e2', index: 2, libraryId: 'lib-9', libraryTitle: 'Shows'),
           'srv:m1': testMediaItem(
             id: 'm1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.movie,
             libraryId: 'lib-3',
             libraryTitle: 'Movies',
             serverId: ServerId('srv'),
           ),
           // Pre-v23 row: no library stamped — falls back to the server name.
-          'srv:e3': episode('e3', showId: 'show-2', serverName: 'My Plex'),
+          'srv:e3': episode('e3', showId: 'show-2', serverName: 'My Silo'),
         },
       );
 
@@ -3727,7 +3377,7 @@ void main() {
       expect(libraries, hasLength(3));
       expect(
         libraries.map((l) => (l.serverId, l.libraryId, l.title)),
-        unorderedEquals([('srv', 'lib-3', 'Movies'), ('srv', 'lib-9', 'Shows'), ('srv', null, 'My Plex')]),
+        unorderedEquals([('srv', 'lib-3', 'Movies'), ('srv', 'lib-9', 'Shows'), ('srv', null, 'My Silo')]),
       );
       p.dispose();
     });
@@ -3735,7 +3385,7 @@ void main() {
     test('hydration merges stamped library identity into metadata that lacks it', () async {
       const globalKey = 'srv:movie-1';
       final serverId = ServerId('srv');
-      await _insertPlexConnection(db, serverId);
+      await _insertSiloConnection(db, serverId);
       await db.insertDownload(
         serverId: serverId,
         ratingKey: 'movie-1',
@@ -3745,15 +3395,14 @@ void main() {
         libraryId: 'lib-7',
         libraryTitle: 'Movies',
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
-      final scope = buildPlexProfileScopeId(serverId: serverId, profileId: 'test-profile');
-      await _putPinnedPlexMetadata(scope, id: 'movie-1', title: 'Hydrated Movie', viewCount: 0, viewOffset: 0);
+      const scope = 'silo:srv/test-profile';
+      await db.addDownloadOwner(profileId: scope, globalKey: globalKey);
+      await _putPinnedSiloMetadata(scope, id: 'movie-1', title: 'Hydrated Movie', viewCount: 0, viewOffset: 0);
       // A live client resolves the backend so hydration can find the pinned row.
-      testClientResolver = (id, {clientScopeId}) => id == serverId
-          ? _ScopedTestClient(serverId: serverId, scopedServerId: 'srv', clientBackend: MediaBackend.plex)
-          : null;
+      testClientResolver = (id, {clientScopeId}) =>
+          id == serverId ? _ScopedTestClient(serverId: serverId, scopedServerId: scope) : null;
 
-      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db, activeProfileId: scope);
       await p.ensureInitialized();
       // forTesting skips the persisted-downloads load; seed the row state and
       // drive the same hydration path refreshMetadataFromCache uses.
@@ -3776,7 +3425,7 @@ void main() {
     test('hydration does not override library identity the metadata already has', () async {
       const globalKey = 'srv:movie-1';
       final serverId = ServerId('srv');
-      await _insertPlexConnection(db, serverId);
+      await _insertSiloConnection(db, serverId);
       await db.insertDownload(
         serverId: serverId,
         ratingKey: 'movie-1',
@@ -3786,23 +3435,22 @@ void main() {
         libraryId: 'lib-stale',
         libraryTitle: 'Stale Library',
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
-      final scope = buildPlexProfileScopeId(serverId: serverId, profileId: 'test-profile');
+      const scope = 'silo:srv/test-profile';
+      await db.addDownloadOwner(profileId: scope, globalKey: globalKey);
       // The pinned item carries fresher library identity than the row's stamp.
-      await _putPinnedPlexMetadata(
+      await _putPinnedSiloMetadata(
         scope,
         id: 'movie-1',
         title: 'Hydrated Movie',
         viewCount: 0,
         viewOffset: 0,
-        librarySectionID: 42,
-        librarySectionTitle: 'Fresh Library',
+        libraryId: '42',
+        libraryTitle: 'Fresh Library',
       );
-      testClientResolver = (id, {clientScopeId}) => id == serverId
-          ? _ScopedTestClient(serverId: serverId, scopedServerId: 'srv', clientBackend: MediaBackend.plex)
-          : null;
+      testClientResolver = (id, {clientScopeId}) =>
+          id == serverId ? _ScopedTestClient(serverId: serverId, scopedServerId: scope) : null;
 
-      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db, activeProfileId: scope);
       await p.ensureInitialized();
       p.debugSeedState(
         downloads: {globalKey: const DownloadProgress(globalKey: globalKey, status: DownloadStatus.completed)},
@@ -3831,7 +3479,7 @@ void main() {
       final stamped = await p.queueDownload(
         testMediaItem(
           id: '1',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           title: 'Stamped',
           serverId: ServerId('srv'),
@@ -3848,7 +3496,7 @@ void main() {
       final unstamped = await p.queueDownload(
         testMediaItem(
           id: '2',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           title: 'Unstamped',
           serverId: ServerId('srv'),
@@ -3880,7 +3528,7 @@ void main() {
       final queued = await p.queueDownload(
         testMediaItem(
           id: '1',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           title: 'Offline',
           serverId: ServerId('srv'),
@@ -3972,7 +3620,7 @@ void main() {
         metadata: {
           key: testMediaItem(
             id: '42',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.episode,
             title: 'Ep 42',
             serverId: ServerId('srv'),
@@ -4118,7 +3766,7 @@ void main() {
 
       final season = testMediaItem(
         id: '7',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.season,
         title: 'Season 7',
         serverId: ServerId('srv'),
@@ -4141,7 +3789,7 @@ void main() {
       // targetMetadata). The rollback must not delete it on queue failure.
       final preexisting = testMediaItem(
         id: '7',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.season,
         title: 'Original Title',
         serverId: ServerId('srv'),
@@ -4150,7 +3798,7 @@ void main() {
 
       final season = testMediaItem(
         id: '7',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.season,
         title: 'New Title',
         serverId: ServerId('srv'),
@@ -4171,7 +3819,7 @@ void main() {
   group('DownloadProvider — background download prerequisites', () {
     final movie = testMediaItem(
       id: '1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Queued Movie',
       serverId: ServerId('srv'),

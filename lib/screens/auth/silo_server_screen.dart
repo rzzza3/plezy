@@ -7,7 +7,6 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
-import '../../profiles/profile.dart';
 import '../../silo/silo_app.dart';
 import '../../silo/silo_http.dart';
 import '../../silo/silo_server_probe.dart';
@@ -36,9 +35,7 @@ final class _Probing extends _ServerStep {
 /// (`TvServerSetupViewModel.kt:178-337`). Pops with `true` once a profile on
 /// the server is bound to a Plezy profile.
 class SiloServerScreen extends StatefulWidget {
-  final Profile? targetProfile;
-
-  const SiloServerScreen({super.key, this.targetProfile});
+  const SiloServerScreen({super.key});
 
   @override
   State<SiloServerScreen> createState() => _SiloServerScreenState();
@@ -82,9 +79,7 @@ class _SiloServerScreenState extends State<SiloServerScreen> with ControllerDisp
     setState(() => _step = const _Editing());
     final signedIn = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (_) => SiloLoginScreen(origin: result.origin, targetProfile: widget.targetProfile),
-      ),
+      MaterialPageRoute(builder: (_) => SiloLoginScreen(origin: result.origin)),
     );
     if (signedIn == true && mounted) Navigator.of(context).pop(true);
   }

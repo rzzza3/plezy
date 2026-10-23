@@ -10,8 +10,7 @@ import '../focus/key_event_utils.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../profiles/active_profile_provider.dart';
-import '../profiles/plex_home_service.dart';
-import '../profiles/profile_connection_registry.dart';
+import '../profiles/silo_household_service.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/companion_remote_provider.dart';
 import '../providers/discover_provider.dart';
@@ -252,14 +251,13 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
               ChangeNotifierProvider(
                 create: (context) {
                   final provider = CompanionRemoteProvider();
-                  // Keep a running host's crypto identity live: a home user
-                  // removed or a borrowed connection revoked mid-session must
-                  // stop controlling the broadcast.
+                  // Keep a running host's crypto identity live: a profile
+                  // removed or a server signed out mid-session must stop
+                  // controlling the broadcast.
                   provider.bindProfileServices(
                     connections: context.read<ConnectionRegistry>(),
                     activeProfile: context.read<ActiveProfileProvider>(),
-                    profileConnections: context.read<ProfileConnectionRegistry>(),
-                    plexHome: context.read<PlexHomeService>(),
+                    households: context.read<SiloHouseholdService>(),
                   );
                   return provider;
                 },

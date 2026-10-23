@@ -7,14 +7,14 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/utils/smart_deletion_handler.dart';
 import 'package:provider/provider.dart';
 
 void main() {
   testWidgets('completion before the first dialog frame removes the exact pending route', (tester) async {
     final database = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(database);
+    SiloApiCache.initialize(database);
     final manager = DownloadManagerService(
       database: database,
       storageService: DownloadStorageService.instance,

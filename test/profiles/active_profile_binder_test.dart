@@ -20,7 +20,7 @@ import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -369,7 +369,7 @@ void main() {
       );
       DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Test'));
       addTearDown(() => DeviceIdentityService.debugOverride(null));
-      PlexApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       binder.dispose();
       multiServerProvider.dispose();
       controlled = _ControlledConnectManager();

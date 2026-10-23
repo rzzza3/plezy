@@ -719,8 +719,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return TrackManager(
       player: forPlayer,
       isActive: () => mounted && player == forPlayer,
-      // Plex writes track changes immediately.
-      persistTrackPreference: mediaClient is PlexClient ? _plexTrackPersister(mediaClient) : null,
       metadata: metadata,
       mediaInfo: _currentMediaInfo,
       preferredAudioTrack: preferredAudioTrack,

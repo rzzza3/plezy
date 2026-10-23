@@ -24,8 +24,7 @@ import '../utils/watch_state_notifier.dart';
 /// uses the three `/Sessions/Playing*` endpoints.
 ///
 /// Local watched state flips as soon as the position crosses the client's
-/// [MediaServerClient.watchedThreshold] (per-server pref on Plex, fixed 90% on
-/// MediaBrowser). The *server-side* mark is a separate decision: each backend
+/// [MediaServerClient.watchedThreshold] (fixed 90% on Silo). The *server-side* mark is a separate decision: each backend
 /// already marks an item played from a threshold crossing it observes in the
 /// reports this tracker sends, so an explicit mark is issued only for sessions
 /// that gave it no such crossing (#1287, #1740).

@@ -1,14 +1,11 @@
 import '../test_helpers/paged_fakes.dart';
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:plezy/services/playback_launch_observer.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
@@ -23,10 +20,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
-import 'package:plezy/models/plex/plex_home_user.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
-import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
@@ -38,9 +32,8 @@ import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/silo_api_cache.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -49,10 +42,8 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/file_info_bottom_sheet.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:provider/provider.dart';
-import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
-import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_stack.dart';
 import '../test_helpers/stub_music_playback_service.dart';
@@ -62,9 +53,8 @@ void main() {
     final destination = FocusNode();
     addTearDown(destination.dispose);
     var selected = false;
-    final menuKey = await _pumpPlexMovieMenu(
+    final menuKey = await _pumpMovieMenu(
       tester,
-      const [],
       wrapMenu: (menu) => FocusableWrapper(focusNode: destination, onSelect: () => selected = true, child: menu),
     );
     destination.requestFocus();
@@ -87,9 +77,8 @@ void main() {
     addTearDown(nextProfile.dispose);
     addTearDown(showOwner.dispose);
     String? selected;
-    final menuKey = await _pumpPlexMovieMenu(
+    final menuKey = await _pumpMovieMenu(
       tester,
-      const [],
       wrapMenu: (menu) => ValueListenableBuilder<bool>(
         valueListenable: showOwner,
         builder: (_, visible, _) => Column(
@@ -132,41 +121,7 @@ void main() {
 
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('isAdminActionAllowedForMediaItem', () {
-    test('blocks non-admin Plex Home users on Plex items', () {
-      final profile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: false));
-
-      expect(
-        isAdminActionAllowedForMediaItem(isOwnerOrAdmin: true, itemBackend: MediaBackend.plex, activeProfile: profile),
-        isFalse,
-      );
-    });
-
-    test('does not apply Plex Home role to Silo items', () {
-      final profile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: false));
-
-      expect(
-        isAdminActionAllowedForMediaItem(isOwnerOrAdmin: true, itemBackend: MediaBackend.silo, activeProfile: profile),
-        isTrue,
-      );
-    });
-
-    test('allows Plex admin Home users on Plex items', () {
-      final profile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: true));
-
-      expect(
-        isAdminActionAllowedForMediaItem(isOwnerOrAdmin: true, itemBackend: MediaBackend.plex, activeProfile: profile),
-        isTrue,
-      );
-    });
-  });
-
   group('isMediaDeletionAllowed', () {
-    test('Plex keeps its account-level gate', () {
-      expect(isMediaDeletionAllowed(itemBackend: MediaBackend.plex, isAdminActionAllowed: true), isTrue);
-      expect(isMediaDeletionAllowed(itemBackend: MediaBackend.plex, isAdminActionAllowed: false), isFalse);
-    });
-
     test('Silo offers no deletion, even to an administrator', () {
       expect(isMediaDeletionAllowed(itemBackend: MediaBackend.silo, isAdminActionAllowed: true), isFalse);
     });
@@ -480,45 +435,6 @@ void main() {
       expect(find.byType(SnackBar), findsOneWidget);
     });
 
-    testWidgets('playlist picker filters playlists by title', (tester) async {
-      final playlists = [
-        for (var i = 0; i < 10; i++) (id: '$i', title: 'Alpha $i'),
-        (id: 'gamma', title: 'Gamma Nights'),
-      ];
-      final menuKey = await _pumpPlexMovieMenu(tester, playlists);
-
-      await _openPlaylistPicker(tester, menuKey);
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      textField.controller!.text = 'gamma';
-      textField.onChanged!('gamma');
-      await tester.pumpAndSettle();
-
-      expect(find.text('Gamma Nights'), findsOneWidget);
-      expect(find.text('Alpha 0'), findsNothing);
-      expect(find.text(t.common.createNew), findsOneWidget);
-    });
-
-    testWidgets('playlist picker wires TV focus, D-pad down, and back', (tester) async {
-      final playlists = [for (var i = 0; i < 10; i++) (id: '$i', title: 'Playlist $i')];
-      final menuKey = await _pumpPlexMovieMenu(tester, playlists);
-
-      await _openPlaylistPicker(tester, menuKey);
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.focusNode!.hasFocus, isTrue);
-
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
-      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
-      await tester.pump();
-      expect(Focus.of(tester.element(find.text(t.common.createNew))).hasFocus, isTrue);
-
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
-      await tester.pumpAndSettle();
-
-      expect(find.text(t.playlists.selectPlaylist), findsNothing);
-      expect(find.text('picker target'), findsOneWidget);
-    });
-
     testWidgets('the music menu gives Instant Mix an icon it shares with no sibling row', (tester) async {
       final track = testMediaItem(
         id: 'track-1',
@@ -761,7 +677,11 @@ void main() {
   group('watchlist entry', () {
     testWidgets('cold open offers Add and adds to the single capable source', (tester) async {
       final source = _MenuWatchlistSource(CatalogSourceId.trakt, 'Trakt', resolveTo: const CatalogItemIds(imdb: 'tt1'));
-      final harness = await _pumpWatchlistMenu(tester, sources: [source], guids: ['imdb://tt1']);
+      final harness = await _pumpWatchlistMenu(
+        tester,
+        sources: [source],
+        ids: const ExternalIds(imdb: 'tt1'),
+      );
 
       harness.menuKey.currentState!.showContextMenu(tester.element(find.text('watchlist target')));
       await tester.pumpAndSettle();
@@ -818,7 +738,7 @@ void main() {
 
     testWidgets('reports when the tapped item matches no watchlist', (tester) async {
       final source = _MenuWatchlistSource(CatalogSourceId.trakt, 'Trakt', resolveTo: const CatalogItemIds(imdb: 'tt1'));
-      // The metadata answer carries no Guid entries: no external ids.
+      // The item carries no external ids.
       final harness = await _pumpWatchlistMenu(tester, sources: [source]);
 
       harness.menuKey.currentState!.showContextMenu(tester.element(find.text('watchlist target')));
@@ -864,9 +784,9 @@ void main() {
   });
 }
 
-Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
-  WidgetTester tester,
-  List<({String id, String title})> playlists, {
+/// Pumps a Silo movie's context menu, optionally wrapped by [wrapMenu].
+Future<GlobalKey<MediaContextMenuState>> _pumpMovieMenu(
+  WidgetTester tester, {
   Widget Function(Widget menu)? wrapMenu,
 }) async {
   LocaleSettings.setLocaleSync(AppLocale.en);
@@ -874,42 +794,8 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
   addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(db);
-  final client = testPlexClient(
-    config: PlexConfig(
-      baseUrl: 'https://plex.example.com',
-      token: 'token',
-      clientIdentifier: 'client-id',
-      product: 'Plezy',
-      version: '1',
-    ),
-    serverId: ServerId('plex-1'),
-    httpClient: MockClient((request) async {
-      if (request.url.path != '/playlists') return http.Response('not found', 404);
-      return http.Response(
-        jsonEncode({
-          'MediaContainer': {
-            'size': playlists.length,
-            'totalSize': playlists.length,
-            'Metadata': [
-              for (final playlist in playlists)
-                {
-                  'ratingKey': playlist.id,
-                  'key': '/playlists/${playlist.id}/items',
-                  'type': 'playlist',
-                  'playlistType': 'video',
-                  'title': playlist.title,
-                  'smart': false,
-                },
-            ],
-          },
-        }),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }),
-  );
-  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  SiloApiCache.initialize(db);
+  final manager = MultiServerManager()..debugRegisterClientForTesting(_RecordingClient());
   final multiServerProvider = testMultiServerProvider(manager);
   final stack = await ProfileStack.create(db: db, withStorage: false);
   addTearDown(() async {
@@ -922,10 +808,10 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
   final menuKey = GlobalKey<MediaContextMenuState>();
   final item = testMediaItem(
     id: 'movie-1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
     title: 'Movie',
-    serverId: 'plex-1',
+    serverId: 'srv-1',
   );
   final menu = MediaContextMenu(
     key: menuKey,
@@ -999,16 +885,6 @@ Future<GlobalKey<MediaContextMenuState>> _pumpItemMenu(
 Future<void> _openMenu(WidgetTester tester, GlobalKey<MediaContextMenuState> menuKey) async {
   menuKey.currentState!.showContextMenu(tester.element(find.text('delete target')));
   await tester.pumpAndSettle();
-}
-
-Future<void> _openPlaylistPicker(WidgetTester tester, GlobalKey<MediaContextMenuState> menuKey) async {
-  menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text(t.common.addTo));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text(t.playlists.playlist));
-  await tester.pumpAndSettle();
-  expect(find.text(t.playlists.selectPlaylist), findsOneWidget);
 }
 
 class _AudioPlaylistClient implements MediaServerClient {
@@ -1284,24 +1160,6 @@ Future<void> _selectSiblingMusicMenuAction(
   await tester.pumpAndSettle();
 }
 
-PlexHomeUser _homeUser({required bool admin}) {
-  return PlexHomeUser(
-    id: 0,
-    uuid: 'home-user',
-    title: 'Home User',
-    username: null,
-    email: null,
-    friendlyName: null,
-    thumb: 'https://plex.tv/users/home-user/avatar',
-    hasPassword: false,
-    restricted: false,
-    updatedAt: null,
-    admin: admin,
-    guest: false,
-    protected: false,
-  );
-}
-
 class _MenuWatchlistSource implements CatalogSource {
   _MenuWatchlistSource(this.id, this.displayName, {this.resolveTo});
 
@@ -1351,10 +1209,26 @@ class _WatchlistSourcesProvider extends CatalogSourcesProvider {
   List<CatalogSource> get connectedSources => sources;
 }
 
+/// A Silo client on `srv-1` that answers the external-id fetch with [ids].
 class _SeedIdsClient implements MediaServerClient {
   _SeedIdsClient(this.ids);
 
   final ExternalIds ids;
+
+  @override
+  ServerId get serverId => ServerId('srv-1');
+
+  @override
+  String? get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.silo;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
+
+  @override
+  void close() {}
 
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async => ids;
@@ -1363,40 +1237,22 @@ class _SeedIdsClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// Pumps a Plex movie's context menu with [sources] connected as catalog
-/// sources. The Plex MockClient answers the external-id metadata fetch with
-/// [guids] (empty: the item carries no external ids).
+/// Pumps a Silo movie's context menu with [sources] connected as catalog
+/// sources. The client answers the external-id fetch with [ids] (default:
+/// the item carries no external ids).
 Future<({GlobalKey<MediaContextMenuState> menuKey, MediaItem item, CatalogSourcesProvider catalogSources})>
-_pumpWatchlistMenu(WidgetTester tester, {required List<CatalogSource> sources, List<String> guids = const []}) async {
+_pumpWatchlistMenu(
+  WidgetTester tester, {
+  required List<CatalogSource> sources,
+  ExternalIds ids = const ExternalIds(),
+}) async {
   LocaleSettings.setLocaleSync(AppLocale.en);
   TvDetectionService.debugSetAppleTVOverride(true);
   addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(db);
-  final client = testPlexClient(
-    serverId: ServerId('plex-1'),
-    httpClient: MockClient((request) async {
-      if (request.url.path == '/library/metadata/movie-1') {
-        return jsonResponse({
-          'MediaContainer': {
-            'Metadata': [
-              {
-                'ratingKey': 'movie-1',
-                'type': 'movie',
-                'title': 'Movie',
-                if (guids.isNotEmpty)
-                  'Guid': [
-                    for (final guid in guids) {'id': guid},
-                  ],
-              },
-            ],
-          },
-        });
-      }
-      return http.Response('not found', 404);
-    }),
-  );
+  SiloApiCache.initialize(db);
+  final client = _SeedIdsClient(ids);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServerProvider = testMultiServerProvider(manager);
   final offlineMode = OfflineModeProvider(manager);
@@ -1412,7 +1268,13 @@ _pumpWatchlistMenu(WidgetTester tester, {required List<CatalogSource> sources, L
   });
 
   final menuKey = GlobalKey<MediaContextMenuState>();
-  final item = testMediaItem(id: 'movie-1', kind: MediaKind.movie, title: 'Movie', serverId: 'plex-1');
+  final item = testMediaItem(
+    id: 'movie-1',
+    backend: MediaBackend.silo,
+    kind: MediaKind.movie,
+    title: 'Movie',
+    serverId: 'srv-1',
+  );
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(

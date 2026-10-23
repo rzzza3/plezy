@@ -342,8 +342,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           title: t.connections.addConnection,
           subtitle: subtitle,
           onTap: () {
-            final active = context.read<ActiveProfileProvider>().active;
-            Navigator.push(context, MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: active)));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const AddConnectionScreen()));
           },
         ),
         _buildProfilesTile(context),

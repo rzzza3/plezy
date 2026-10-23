@@ -462,11 +462,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           );
           return burned ? sourceStreamId : null;
         },
-        onPausedKeepalive: mediaClient is PlexClient && effectivePlayMethod == 'Transcode'
-            ? () => mediaClient.pingTranscodeSession(_playbackTranscodeSessionId)
-            : null,
         onScrobbled: () async {
-          // Other episodes of a Plex multi-episode file share this item's
+          // Other episodes of a multi-episode file share this item's
           // part — watching the file watched them too (#1500). Reusing
           // markWatchedFromPlaybackStop keeps the local watched-event
           // emission and the double-scrobble guard (#1287); the

@@ -5,8 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
-import 'package:plezy/services/credential_vault.dart';
-import 'package:plezy/services/plex_auth_service.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -17,35 +15,6 @@ SiloConnection _silo({String serverId = 'srv-1', int createdAtMs = 1_000_000}) {
     serverName: 'Home',
     username: 'edde',
     createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMs),
-  );
-}
-
-PlexAccountConnection _plex({String id = 'plex-1'}) {
-  return PlexAccountConnection(
-    id: id,
-    accountToken: 'tok-$id',
-    clientIdentifier: 'cid-$id',
-    accountLabel: 'me@example.com',
-    servers: [
-      PlexServer(
-        name: 'Server $id',
-        clientIdentifier: 'server-$id',
-        accessToken: 'server-token-$id',
-        connections: [
-          PlexConnection(
-            protocol: 'https',
-            address: 'plex.example.com',
-            port: 443,
-            uri: 'https://plex.example.com',
-            local: false,
-            relay: false,
-            ipv6: false,
-          ),
-        ],
-        owned: true,
-      ),
-    ],
-    createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
   );
 }
 
@@ -75,19 +44,6 @@ void main() {
       expect(list.first.id, 'silo:a');
     });
 
-    test('upsert preserves type discriminator (Plex vs Silo)', () async {
-      await registry.upsert(_plex(id: 'p'));
-      await registry.upsert(_silo(serverId: 's'));
-
-      final plex = await registry.get('p');
-      final silo = await registry.get('silo:s');
-      expect(plex, isA<PlexAccountConnection>());
-      expect(silo, isA<SiloConnection>());
-
-      expect((plex as PlexAccountConnection).accountToken, 'tok-p');
-      expect((silo as SiloConnection).origin, 'https://silo.local');
-    });
-
     test('a Silo row stores origin and server id, and no credential', () async {
       await registry.upsert(
         SiloConnection(
@@ -115,6 +71,17 @@ void main() {
       });
     });
 
+    test('a Silo row persists the account id only once it is known', () async {
+      await registry.upsert(_silo(serverId: 'a'));
+      final bare = await (db.select(db.connections)..where((table) => table.id.equals('silo:a'))).getSingle();
+      expect(jsonDecode(bare.configJson), isNot(contains('accountId')));
+
+      await registry.upsert(_silo(serverId: 'a').copyWith(accountId: 'acct-1'));
+      final row = await (db.select(db.connections)..where((table) => table.id.equals('silo:a'))).getSingle();
+      expect(jsonDecode(row.configJson)['accountId'], 'acct-1');
+      expect((await registry.get('silo:a') as SiloConnection).accountId, 'acct-1');
+    });
+
     test('a Silo row without a server id is dropped', () async {
       await db
           .into(db.connections)
@@ -132,7 +99,7 @@ void main() {
     });
 
     test('stored rows of a kind Plezy no longer ships are dropped', () async {
-      for (final kind in ['jellyfin', 'emby']) {
+      for (final kind in ['plex', 'jellyfin', 'emby']) {
         await db
             .into(db.connections)
             .insert(
@@ -145,45 +112,11 @@ void main() {
               ),
             );
       }
-      await registry.upsert(_plex(id: 'p'));
+      await registry.upsert(_silo(serverId: 's'));
 
-      expect((await registry.list()).map((c) => c.id).toList(), ['p']);
+      expect((await registry.list()).map((c) => c.id).toList(), ['silo:s']);
+      expect(await registry.get('legacy-plex'), isNull);
       expect(await registry.get('legacy-jellyfin'), isNull);
-    });
-
-    test('upsert encrypts tokens at rest and decrypts on read', () async {
-      await registry.upsert(_plex(id: 'p'));
-
-      final rows = await db.select(db.connections).get();
-      expect(rows.singleWhere((r) => r.id == 'p').configJson, isNot(contains('tok-p')));
-      expect(rows.singleWhere((r) => r.id == 'p').configJson, isNot(contains('server-token-p')));
-
-      expect((await registry.get('p') as PlexAccountConnection).accountToken, 'tok-p');
-      expect((await registry.get('p') as PlexAccountConnection).servers.single.accessToken, 'server-token-p');
-    });
-
-    test('read migrates legacy plaintext Plex server tokens', () async {
-      final plex = _plex(id: 'legacy');
-      final config = plex.toConfigJson();
-      config['accountToken'] = await CredentialVault.protect(plex.accountToken);
-      await db
-          .into(db.connections)
-          .insert(
-            ConnectionsCompanion.insert(
-              id: plex.id,
-              kind: plex.kind.id,
-              displayName: plex.displayName,
-              configJson: jsonEncode(config),
-              createdAt: plex.createdAt.millisecondsSinceEpoch,
-            ),
-          );
-
-      final restored = await registry.get('legacy') as PlexAccountConnection;
-      expect(restored.accountToken, 'tok-legacy');
-      expect(restored.servers.single.accessToken, 'server-token-legacy');
-
-      final row = await (db.select(db.connections)..where((t) => t.id.equals('legacy'))).getSingle();
-      expect(row.configJson, isNot(contains('server-token-legacy')));
     });
 
     test('remove deletes a row', () async {

@@ -106,17 +106,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       if (preference != null) _sessionSubtitlePreference = preference;
     }
 
-    // Snapshot the backend client before subtitle selection can cross an
-    // async boundary or the profile-scoped context can disappear.
-    final serverId = _currentMetadata.serverId;
-    final isPlexBacked = _currentMetadata.backend == MediaBackend.plex;
-    PlexClient? streamSelectClient;
-    if (isPlexBacked && serverId != null) {
-      try {
-        streamSelectClient = context.getPlexClientForServer(ServerId(serverId));
-      } catch (_) {}
-    }
-
     if (newSubtitleChoice != null && newMediaIndex == null && newPreset == null && newAudioStreamId == null) {
       try {
         final selected = await _selectSourceSubtitleLocally(
@@ -171,35 +160,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     try {
       if (isVersionChange) {
         await saveMediaVersionPreferenceFor(_currentMetadata, index: effectiveMediaIndex, versions: _availableVersions);
-        if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
-      }
-
-      // Writing the part's stream selection is persistence, not delivery —
-      // the reload carries the audio id and the subtitle intent itself. So it
-      // answers to the same setting the in-player track handlers gate on,
-      // instead of promising remembered selections the user switched off.
-      if (isPlexBacked && (isSubtitleChange || isAudioChange) && await TrackManager.shouldPersistTrackSelections()) {
-        final partId = _currentMediaInfo?.partId;
-        if (streamSelectClient == null || partId == null) {
-          throw PlaybackException(
-            t.messages.streamSelectionUnavailable,
-            reason: PlaybackFailureReason.invalidPlaybackData,
-          );
-        }
-        final saved = await streamSelectClient.selectStreams(
-          partId,
-          audioStreamID: isAudioChange ? effectiveAudioStreamId : null,
-          // Plex's wire API uses 0 for Off. Keep that convention at this
-          // backend boundary so it cannot collide with other backends' source ids.
-          subtitleStreamID: isSubtitleChange
-              ? newSubtitleChoice.isOff
-                    ? 0
-                    : newSubtitleChoice.sourceStreamId
-              : null,
-        );
-        if (!saved) {
-          throw PlaybackException(t.messages.streamSelectionFailed);
-        }
         if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
       }
 

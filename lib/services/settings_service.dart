@@ -1,5 +1,4 @@
 import 'dart:convert';
-import '../media/ids.dart';
 import '../media/playback_rate.dart';
 import '../media/media_version_preference.dart';
 import 'dart:io';
@@ -983,14 +982,6 @@ class SettingsService extends BaseSharedPreferencesService {
     encode: (v) => json.encode(v.map((p) => p.toJson()).toList()),
     decode: _decodeMpvPresets,
   );
-
-  static IntPref watchedThresholdPref(ServerId serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
-
-  /// Library section the user last picked as a DVR recording target, keyed by
-  /// subscription type (movie/show) so the two don't clobber each other.
-  /// 0 = unset (only explicit picks are written; the server template default
-  /// keeps applying until the user chooses).
-  static IntPref dvrTargetSectionPref(ServerId serverId, int type) => IntPref('dvr_target_section_${type}_$serverId');
 
   /// Per-service "scrobble to this tracker" toggle. Trakt's second toggle
   /// ([enableTraktWatchedSync]) has no counterpart on the other services and

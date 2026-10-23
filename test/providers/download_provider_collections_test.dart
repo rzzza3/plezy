@@ -13,7 +13,7 @@ import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/media_items.dart';
@@ -83,7 +83,7 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(db);
+    SiloApiCache.initialize(db);
     downloadManager = DownloadManagerService(
       database: db,
       storageService: DownloadStorageService.instance,

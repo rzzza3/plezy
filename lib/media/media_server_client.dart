@@ -163,12 +163,10 @@ abstract class MediaServerClient {
   /// Backend-aware paginated content fetch.
   ///
   /// Pagination lives on [LibraryQuery.offset] / [LibraryQuery.limit].
-  /// [libraryKind] lets a backend disambiguate what a library holds. Plex
-  /// ignores it (the section id already pins the type).
+  /// [libraryKind] lets a backend disambiguate what a library holds.
   ///
   /// The library UI builds a neutral [LibraryQuery] at the call boundary via
-  /// `libraryQueryFromSelection`, and the Plex client translates it back to
-  /// wire params via [PlexLibraryQueryTranslator].
+  /// `libraryQueryFromSelection`.
   Future<LibraryPage<MediaItem>> fetchLibraryPagedContent(
     String libraryId, {
     required LibraryQuery query,

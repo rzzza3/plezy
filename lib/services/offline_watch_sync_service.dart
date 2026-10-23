@@ -18,8 +18,6 @@ import '../utils/global_key_utils.dart';
 import 'offline_mode_source.dart';
 import '../utils/watch_state_notifier.dart';
 import 'multi_server_manager.dart';
-import 'plex_client.dart';
-import 'settings_service.dart';
 import 'trackers/tracker_coordinator.dart';
 import 'watch_state_resolver.dart';
 
@@ -68,21 +66,8 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   /// Callback to refresh download provider metadata after sync
   VoidCallback? onWatchStatesRefreshed;
 
-  /// Get watched threshold for a server. Cascades:
-  /// 1. Plex's fetched server prefs (`/:/prefs`)
-  /// 2. MediaBrowser's fixed [MediaServerClient.watchedThreshold] (0.9)
-  /// 3. Cached value in SettingsService (mirrored by PlexClient.fetchServerPrefs)
-  /// 4. Default 90%
-  double getWatchedThreshold(ServerId serverId) {
-    final client = _serverManager.getClient(serverId);
-    if (client is PlexClient && client.serverPrefs.isNotEmpty) {
-      return client.watchedThreshold;
-    }
-    // No client bound (offline) or Plex prefs not loaded yet — use the
-    // mirror written on the last successful prefs fetch.
-    final cached = SettingsService.instanceOrNull?.read(SettingsService.watchedThresholdPref(serverId)) ?? 90;
-    return cached / 100.0;
-  }
+  /// Watched threshold for a server: the bound client's, or 90% offline.
+  double getWatchedThreshold(ServerId serverId) => _serverManager.getClient(serverId)?.watchedThreshold ?? 0.9;
 
   /// Minimum interval between syncs.
   /// Mobile: no throttle (always sync on resume for cross-device updates)
@@ -547,10 +532,6 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
     if (activeScopeId != null) return activeScopeId;
     final download = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), itemId));
     final downloadedScope = resolveActiveClientScopeId(serverId: serverId, cacheServerId: download?.clientScopeId);
-    final profileId = _activeProfileId;
-    if (downloadedScope != null && isPlexProfileScopeId(downloadedScope) && profileId != null && profileId.isNotEmpty) {
-      return buildPlexProfileScopeId(serverId: serverId, profileId: profileId);
-    }
     return downloadedScope;
   }
 

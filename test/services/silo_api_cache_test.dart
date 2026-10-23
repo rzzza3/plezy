@@ -6,7 +6,6 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/api_cache.dart';
-import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 
@@ -36,7 +35,7 @@ void main() {
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(db);
+    SiloApiCache.initialize(db);
     SiloApiCache.initialize(db);
     cache = SiloApiCache.instance;
   });
@@ -87,12 +86,8 @@ void main() {
     expect(pinned['srv:episode-tvdb-344961-1-1']?.viewOffsetMs, 60000);
   });
 
-  test('a Plex row under the same key prefix never decodes as a Silo item', () async {
-    await PlexApiCache.instance.put(scopeA, SiloApiCache.itemEndpoint('x'), {
-      'backend': 'plex',
-      'id': 'x',
-      'kind': 'movie',
-    });
+  test('a legacy Plex row under the same key prefix never decodes as a Silo item', () async {
+    await cache.put(scopeA, SiloApiCache.itemEndpoint('x'), {'backend': 'plex', 'id': 'x', 'kind': 'movie'});
     await cache.pinForOffline(scopeA, 'x');
 
     expect(await cache.getMetadata(scopeA, 'x'), isNull);

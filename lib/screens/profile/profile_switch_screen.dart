@@ -13,8 +13,6 @@ import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_activation.dart';
 import '../../profiles/profile_avatar.dart';
-import '../../profiles/profile_connection.dart';
-import '../../profiles/profile_merge.dart';
 import '../../services/app_exit_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../widgets/app_icon.dart';
@@ -24,17 +22,13 @@ import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/profile_switching_overlay.dart';
 import '../libraries/state_messages.dart';
-import 'add_local_profile_screen.dart';
-import 'pin_entry_dialog.dart';
+import '../settings/add_connection_screen.dart';
 import 'profile_teardown.dart';
-import 'profile_detail_screen.dart';
 
-/// Flat picker showing every [Profile] in the system — Plex Home users
-/// auto-surfaced from connected accounts, plus user-created locals.
+/// Flat picker showing the profiles of every signed-in Silo server.
 ///
 /// Each tile shows avatar, name, an Active badge for the current profile,
-/// and one backend chip per connection bound to the profile (parent Plex
-/// account + any borrowed connections for Plex Home users).
+/// and the server the profile belongs to.
 class ProfileSwitchScreen extends StatefulWidget {
   final bool requireSelection;
 
@@ -108,11 +102,11 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                     borderRadius: 100,
                     useBackgroundFocus: true,
                     descendantsAreFocusable: false,
-                    onSelect: _switching ? null : _addLocalProfile,
+                    onSelect: _switching ? null : _addServer,
                     child: OutlinedButton.icon(
-                      onPressed: _switching ? null : _addLocalProfile,
-                      icon: const AppIcon(Symbols.person_add_rounded, fill: 1),
-                      label: Text(t.profiles.addPlezyProfile),
+                      onPressed: _switching ? null : _addServer,
+                      icon: const AppIcon(Symbols.add_link_rounded, fill: 1),
+                      label: Text(t.connections.addConnection),
                     ),
                   ),
                 ),
@@ -203,17 +197,13 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
           final profileFocusNode = _profileFocusNode(profile);
           final menuFocusNode = _profileMenuFocusNode(profile);
           final menuKey = _profileMenuKey(profile);
-          // All tile actions are disabled while a switch is binding: the
+          // Tile actions are disabled while a switch is binding: the
           // overlay's barrier blocks pointers but not DPAD key events, and a
-          // Manage/Delete flow racing the in-flight switch corrupts state
-          // (e.g. a delete confirmation left open when the switch settles).
+          // sign-out racing the in-flight switch corrupts state.
           final actionsEnabled = !widget.requireSelection && !_switching;
-          final onManage = actionsEnabled ? () => _manageProfile(profile) : null;
-          final onDelete = profile.isLocal && actionsEnabled ? () => _deleteProfile(profile) : null;
-          final onSignOut = profile.isPlexHome && profile.parentConnectionId != null && actionsEnabled
-              ? () => _signOutPlexAccount(profile)
-              : null;
-          final hasMenu = onManage != null || onDelete != null || onSignOut != null;
+          final connection = activeProvider.connectionFor(profile);
+          final onSignOut = actionsEnabled && connection != null ? () => _signOutServer(connection) : null;
+          final hasMenu = onSignOut != null;
 
           return Padding(
             key: ValueKey(profile.id),
@@ -242,11 +232,6 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                   chips: _chipsFor(profile, activeProvider),
                   onTap: () => _switchTo(profile),
                   onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
-                  // Manage available for any profile — adding/removing
-                  // borrowed connections is supported on plex_home too. Delete
-                  // stays local-only (Plex Home users are owned by Plex).
-                  onManage: onManage,
-                  onDelete: onDelete,
                   onSignOut: onSignOut,
                   menuFocusNode: menuFocusNode,
                   menuKey: menuKey,
@@ -266,116 +251,19 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     );
   }
 
-  /// Gate Manage/Delete on a non-active, PIN-protected local profile behind
-  /// its PIN: without this the picker menu bypasses the lock entirely
-  /// ([ProfileDetailScreen] exposes rename, PIN removal, and connection
-  /// edits). The active profile already proved its PIN at switch time, and
-  /// Plex Home profiles keep their server-side PIN flow. Loops on wrong
-  /// entries with the same shake-on-error pattern as activation — see
-  /// [showPinEntryDialog].
-  Future<bool> _verifyPinForProfileAction(Profile profile) async {
-    if (!profile.isLocal || !profile.isPinProtected) return true;
-    if (profile.id == context.read<ActiveProfileProvider>().activeId) return true;
-    String? errorMessage;
-    while (true) {
-      if (!mounted) return false;
-      final pin = await showPinEntryDialog(context, profile.displayName, errorMessage: errorMessage);
-      if (!mounted || pin == null) return false;
-      if (verifyProfilePin(profile, pin)) return true;
-      errorMessage = t.profiles.incorrectPinTryAgain;
-    }
-  }
-
-  Future<void> _manageProfile(Profile profile) async {
-    if (!await _verifyPinForProfileAction(profile)) return;
-    if (!mounted) return;
-    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileDetailScreen(profile: profile)));
-  }
-
-  /// Drop the parent Plex account [profile] hangs off — same effect as
-  /// "Forget account" elsewhere in Plex apps. The shared teardown flow
-  /// removes the account, its virtual Plex Home profiles, and their
-  /// borrowed connections, then routes to auth when nothing selectable
-  /// remains (#1423).
-  Future<void> _signOutPlexAccount(Profile profile) async {
-    final parentId = profile.parentConnectionId;
-    if (parentId == null) return;
-    await confirmAndSignOutPlexAccount(context, accountConnectionId: parentId);
-  }
-
-  Future<void> _deleteProfile(Profile profile) async {
-    if (!await _verifyPinForProfileAction(profile)) return;
-    if (!mounted) return;
-    await confirmAndDeleteProfile(
-      context,
-      profile: profile,
-      title: t.profiles.deleteThisProfileTitle,
-      message: t.profiles.deleteThisProfileMessage(displayName: profile.displayName),
-    );
+  /// Sign this device out of the server [connection], which takes every
+  /// profile it lists off the picker.
+  Future<void> _signOutServer(SiloConnection connection) async {
+    await confirmAndSignOutSiloServer(context, connection: connection);
   }
 
   List<_ChipData> _chipsFor(Profile profile, ActiveProfileProvider activeProvider) {
-    final chips = <_ChipData>[];
-    // Plex Home profiles implicitly own their parent Plex connection (no
-    // join-table row), so prepend it before any borrowed connections. The
-    // profile *is* the Home user there, so its own name identifies the user
-    // half of the label.
-    if (profile.isPlexHome) {
-      final parentId = profile.parentConnectionId;
-      if (parentId != null) {
-        final conn = activeProvider.connectionsById[parentId];
-        if (conn != null) chips.add(_chipFor(conn, user: profile.displayName));
-      }
-    }
-    final pcs = visibleProfileConnections(
-      profile,
-      activeProvider.connectionsByProfile[profile.id] ?? const <ProfileConnection>[],
-    );
-    for (final pc in pcs) {
-      final conn = activeProvider.connectionsById[pc.connectionId];
-      if (conn != null) chips.add(_chipFor(conn, user: _plexHomeUserName(activeProvider, conn, pc.userIdentifier)));
-    }
-    return chips;
+    final connection = activeProvider.connectionFor(profile);
+    return [if (connection != null) _ChipData(backend: connection.backend, label: connection.displayLabel)];
   }
 
-  /// A Plex account connection labels itself with the account owner's name,
-  /// which under a profile tile reads as the profile being signed in as that
-  /// person — wrong for a Plex Home user, and wrong again for a local profile
-  /// that borrowed a Home user out of someone else's account.
-  ///
-  /// Both halves of that relation go through a single translated string so a
-  /// locale can order them itself; several put the account first (`ja`, `ko`,
-  /// `tr`, `zh`). [user] is null only when the Home cache cannot resolve the
-  /// connection's uuid yet, which falls back to naming the account alone.
-  _ChipData _chipFor(Connection conn, {required String? user}) {
-    return _ChipData(
-      backend: conn.backend,
-      label: switch (conn) {
-        PlexAccountConnection(:final accountLabel) when user != null => t.profiles.plexAccountUserChip(
-          user: user,
-          account: accountLabel,
-        ),
-        PlexAccountConnection(:final accountLabel) => t.profiles.plexAccountChip(account: accountLabel),
-        _ => conn.displayLabel,
-      },
-    );
-  }
-
-  /// Home user behind a borrowed Plex connection, or null when the live cache
-  /// has no match for [userIdentifier] (not loaded yet, or the row predates
-  /// the account's current Home membership).
-  String? _plexHomeUserName(ActiveProfileProvider activeProvider, Connection conn, String userIdentifier) {
-    if (conn is! PlexAccountConnection || userIdentifier.isEmpty) return null;
-    final users = activeProvider.plexHomeByConnectionId[conn.id];
-    if (users == null) return null;
-    for (final user in users) {
-      if (user.uuid == userIdentifier) return user.displayName;
-    }
-    return null;
-  }
-
-  Future<void> _addLocalProfile() async {
-    await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => const AddLocalProfileScreen()));
+  Future<void> _addServer() async {
+    await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => const AddConnectionScreen()));
   }
 
   Future<void> _switchTo(Profile profile) async {
@@ -410,8 +298,6 @@ class _ProfileTile extends StatelessWidget {
   final List<_ChipData> chips;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
-  final VoidCallback? onManage;
-  final VoidCallback? onDelete;
   final VoidCallback? onSignOut;
   final FocusNode menuFocusNode;
   final GlobalKey<AppMenuButtonState<_TileAction>> menuKey;
@@ -425,8 +311,6 @@ class _ProfileTile extends StatelessWidget {
     required this.chips,
     required this.onTap,
     this.onLongPress,
-    this.onManage,
-    this.onDelete,
     this.onSignOut,
     required this.menuFocusNode,
     required this.menuKey,
@@ -436,7 +320,7 @@ class _ProfileTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasMenu = onManage != null || onDelete != null || onSignOut != null;
+    final hasMenu = onSignOut != null;
     return InkWell(
       canRequestFocus: false,
       onTap: isActive ? null : onTap,
@@ -482,11 +366,7 @@ class _ProfileTile extends StatelessWidget {
                 focusNode: menuFocusNode,
                 onNavigateLeft: onMenuNavigateLeft,
                 onSelected: _handleAction,
-                actions: [
-                  if (onManage != null) _TileAction.manage,
-                  if (onDelete != null) _TileAction.delete,
-                  if (onSignOut != null) _TileAction.signOut,
-                ],
+                actions: const [_TileAction.signOut],
               )
             else if (!isActive)
               const Padding(padding: .only(left: 8), child: AppIcon(Symbols.chevron_right_rounded, fill: 1)),
@@ -499,15 +379,8 @@ class _ProfileTile extends StatelessWidget {
   void _handleAction(_TileAction action) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       switch (action) {
-        case _TileAction.manage:
-          onManage?.call();
-          break;
-        case _TileAction.delete:
-          onDelete?.call();
-          break;
         case _TileAction.signOut:
           onSignOut?.call();
-          break;
       }
     });
   }
@@ -546,14 +419,12 @@ class _ProfileActionsButton extends StatelessWidget {
 extension _TileActionLabel on _TileAction {
   String get label {
     return switch (this) {
-      _TileAction.manage => t.profiles.manage,
-      _TileAction.delete => t.profiles.delete,
       _TileAction.signOut => t.profiles.signOut,
     };
   }
 }
 
-enum _TileAction { manage, delete, signOut }
+enum _TileAction { signOut }
 
 class _ConnectionChips extends StatelessWidget {
   final List<_ChipData> chips;
@@ -579,9 +450,9 @@ class _ConnectionChips extends StatelessWidget {
             children: [
               BackendBadge(backend: c.backend, size: 12),
               const SizedBox(width: 5),
-              // Account labels are often an email address, and an entry in a
-              // Wrap gets unbounded main-axis space — without this the row
-              // overflows the tile instead of ellipsizing.
+              // An entry in a Wrap gets unbounded main-axis space — without
+              // this a long server name overflows the tile instead of
+              // ellipsizing.
               Flexible(
                 child: Text(
                   c.label,

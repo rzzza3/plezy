@@ -27,10 +27,9 @@ import 'package:plezy/services/download_artwork_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/downloaded_video_source.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
@@ -372,66 +371,9 @@ void main() {
   });
 
   group('lookupMetadata', () {
-    test('cold Plex hydration finds a server inside its persisted account configuration', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      addTearDown(db.close);
-      final serverId = ServerId('plex-machine');
-      final scope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-      await db
-          .into(db.connections)
-          .insert(
-            ConnectionsCompanion.insert(
-              id: 'plex-account-uuid',
-              kind: 'plex',
-              displayName: 'Plex account',
-              configJson: jsonEncode({
-                'servers': [
-                  {'clientIdentifier': serverId},
-                ],
-              }),
-              createdAt: 0,
-            ),
-          );
-      await db.insertDownload(
-        serverId: serverId,
-        clientScopeId: serverId,
-        ratingKey: 'item-1',
-        globalKey: 'plex-machine:item-1',
-        type: 'movie',
-        status: DownloadStatus.completed.index,
-      );
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'plex-machine:item-1');
-      await PlexApiCache.instance.put(scope.cacheServerId, '/library/metadata/item-1', {
-        'MediaContainer': {
-          'Metadata': [
-            {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Offline Plex'},
-          ],
-        },
-      });
-      await PlexApiCache.instance.pinForOffline(scope.cacheServerId, 'item-1');
-      final manager = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (_, {clientScopeId}) => null,
-      );
-
-      final all = await manager.getAllPinnedMetadata(activeProfileId: 'profile-b');
-      final item = await manager.lookupMetadata(
-        serverId,
-        'item-1',
-        preferActiveScope: true,
-        activeProfileId: 'profile-b',
-      );
-
-      expect(all.items['plex-machine:item-1']?.title, 'Offline Plex');
-      expect(all.scopesByServer, {'plex-machine': scope.cacheServerId});
-      expect(item?.title, 'Offline Plex');
-    });
-
     test('cold Silo hydration reads the Silo profile each Plezy profile is bound to', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       SiloApiCache.initialize(db);
       addTearDown(db.close);
       final serverId = ServerId('silo-srv');
@@ -496,59 +438,15 @@ void main() {
       expect(kid.items, isEmpty, reason: 'another Silo profile never reads this one');
     });
 
-    test('active Plex lookup selects the exact profile namespace without bare fallback', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      addTearDown(db.close);
-      final serverId = ServerId('plex-machine');
-      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-      Map<String, Object?> metadata(String title) => {
-        'MediaContainer': {
-          'Metadata': [
-            {'ratingKey': 'item-1', 'type': 'movie', 'title': title},
-          ],
-        },
-      };
-      await PlexApiCache.instance.put(scopeA.cacheServerId, '/library/metadata/item-1', metadata('Profile A'));
-      await PlexApiCache.instance.put(scopeB.cacheServerId, '/library/metadata/item-1', metadata('Profile B'));
-      await PlexApiCache.instance.put(serverId, '/library/metadata/item-1', metadata('Legacy bare'));
-      final manager = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (resolvedServerId, {clientScopeId}) =>
-            _ArtworkRepairClient(serverId: ServerId(resolvedServerId), items: const {}),
-      );
-
-      final item = await manager.lookupMetadata(
-        serverId,
-        'item-1',
-        preferActiveScope: true,
-        activeProfileId: 'profile-a',
-      );
-      final missing = await manager.lookupMetadata(
-        serverId,
-        'item-1',
-        preferActiveScope: true,
-        activeProfileId: 'profile-missing',
-      );
-
-      expect(item?.title, 'Profile A');
-      expect(missing, isNull);
-    });
-
     test('SAF recovery resolves show year from cached show metadata', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       addTearDown(db.close);
 
-      await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/show-1', {
-        'MediaContainer': {
-          'Metadata': [
-            {'ratingKey': 'show-1', 'type': 'show', 'title': 'The Show', 'year': 2008},
-          ],
-        },
-      });
+      await SiloApiCache.instance.putItem(
+        ServerId('srv-1'),
+        const MediaItem.silo(id: 'show-1', kind: MediaKind.show, title: 'The Show', year: 2008),
+      );
 
       final manager = DownloadManagerService(
         database: db,
@@ -558,7 +456,7 @@ void main() {
       final year = await manager.debugResolveSafRecoveryShowYear(
         testMediaItem(
           id: 'ep-1',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.episode,
           serverId: ServerId('srv-1'),
           title: 'Episode from 2010',
@@ -571,189 +469,6 @@ void main() {
       );
 
       expect(year, 2008);
-    });
-
-    test('interrupted Plex logout transfer recovers from the physical row transfer scope', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      addTearDown(db.close);
-      final serverId = ServerId('plex-machine');
-      final profileScope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-      final transferScope = buildPlexTransferScopeId(serverId);
-      await db.insertDownload(
-        serverId: serverId,
-        clientScopeId: profileScope,
-        ratingKey: 'item-1',
-        globalKey: 'plex-machine:item-1',
-        type: 'movie',
-        status: DownloadStatus.completed.index,
-      );
-      await db.addDownloadOwner(
-        profileId: 'profile-a',
-        globalKey: 'plex-machine:item-1',
-        backendId: MediaBackend.plex.id,
-        clientScopeId: profileScope,
-      );
-      await PlexApiCache.instance.put(profileScope.cacheServerId, '/library/metadata/item-1', {
-        'MediaContainer': {
-          'Metadata': [
-            {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Recovered transfer'},
-          ],
-        },
-      });
-      await PlexApiCache.instance.pinForOffline(profileScope.cacheServerId, 'item-1');
-      final manager = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (_, {clientScopeId}) => null,
-      );
-
-      await manager.preparePlexMetadataForLogoutTransfer();
-
-      expect((await db.getDownloadedMedia('plex-machine:item-1'))?.clientScopeId, transferScope);
-      expect(
-        (await db.getDownloadOwner(profileId: 'profile-a', globalKey: 'plex-machine:item-1'))?.clientScopeId,
-        profileScope,
-      );
-      expect(
-        (await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'))?.title,
-        'Recovered transfer',
-      );
-
-      await manager.adoptTransferredPlexMetadataForProfile('profile-a');
-
-      final recoveredOwner = await db.getDownloadOwner(profileId: 'profile-a', globalKey: 'plex-machine:item-1');
-      expect((await db.getDownloadedMedia('plex-machine:item-1'))?.clientScopeId, profileScope);
-      expect(recoveredOwner?.backend, MediaBackend.plex.id);
-      expect(recoveredOwner?.clientScopeId, profileScope);
-      expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'), isNull);
-      expect(
-        (await PlexApiCache.instance.getMetadata(profileScope.cacheServerId, 'item-1'))?.title,
-        'Recovered transfer',
-      );
-    });
-
-    test('missing Plex leaf survives full logout and rehydrates after replacement adoption', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      addTearDown(db.close);
-      final serverId = ServerId('plex-machine');
-      const globalKey = 'plex-machine:item-1';
-      final originalScope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
-      final transferScope = buildPlexTransferScopeId(serverId);
-      final destinationScope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
-      for (final profileId in const ['profile-a', 'profile-b']) {
-        await db
-            .into(db.profiles)
-            .insert(
-              ProfilesCompanion.insert(
-                id: profileId,
-                kind: 'local',
-                displayName: profileId,
-                configJson: '{}',
-                createdAt: 0,
-              ),
-            );
-      }
-      await db.insertDownload(
-        serverId: serverId,
-        clientScopeId: originalScope,
-        ratingKey: 'item-1',
-        globalKey: globalKey,
-        type: 'movie',
-        status: DownloadStatus.completed.index,
-        mediaIndex: 2,
-        mediaSourceId: 'source-a',
-      );
-      await db.updateDownloadProgress(globalKey, 100, 900, 900);
-      await db.updateVideoFilePath(globalKey, 'downloads/plex-machine/item-1/video.mp4');
-      await db.addToQueue(mediaGlobalKey: globalKey, priority: 7, downloadSubtitles: false, downloadArtwork: true);
-      await db.addDownloadOwner(
-        profileId: 'profile-a',
-        globalKey: globalKey,
-        backendId: MediaBackend.plex.id,
-        clientScopeId: originalScope,
-      );
-      final before = (await db.getDownloadedMedia(globalKey))!;
-      final queueBefore = (await db.select(db.downloadQueue).get()).single;
-      expect(await PlexApiCache.instance.getMetadata(originalScope.cacheServerId, 'item-1'), isNull);
-
-      final transferManager = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (_, {clientScopeId}) => null,
-      );
-      await transferManager.preparePlexMetadataForLogoutTransfer();
-
-      expect((await db.getDownloadedMedia(globalKey))?.clientScopeId, transferScope);
-      expect((await db.getDownloadOwner(profileId: 'profile-a', globalKey: globalKey))?.clientScopeId, originalScope);
-      expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'), isNull);
-
-      await db.clearAllDownloadOwners();
-      expect(await db.getValidDownloadOwnersForKey(globalKey), isEmpty);
-      await db.adoptLegacyDownloadsForProfile('profile-b');
-      await transferManager.adoptTransferredPlexMetadataForProfile('profile-b');
-
-      final adopted = (await db.getDownloadedMedia(globalKey))!;
-      final adoptedOwner = await db.getDownloadOwner(profileId: 'profile-b', globalKey: globalKey);
-      final queueAfter = (await db.select(db.downloadQueue).get()).single;
-      expect(adopted.clientScopeId, destinationScope);
-      expect(adoptedOwner?.backend, MediaBackend.plex.id);
-      expect(adoptedOwner?.clientScopeId, destinationScope);
-      expect(adopted.status, before.status);
-      expect(adopted.progress, before.progress);
-      expect(adopted.downloadedBytes, before.downloadedBytes);
-      expect(adopted.totalBytes, before.totalBytes);
-      expect(adopted.videoFilePath, before.videoFilePath);
-      expect(adopted.downloadedAt, before.downloadedAt);
-      expect(adopted.mediaIndex, before.mediaIndex);
-      expect(adopted.mediaSourceId, before.mediaSourceId);
-      expect(queueAfter.mediaGlobalKey, queueBefore.mediaGlobalKey);
-      expect(queueAfter.priority, queueBefore.priority);
-      expect(queueAfter.addedAt, queueBefore.addedAt);
-      expect(queueAfter.downloadSubtitles, queueBefore.downloadSubtitles);
-      expect(queueAfter.downloadArtwork, queueBefore.downloadArtwork);
-      expect(await PlexApiCache.instance.getMetadata(destinationScope.cacheServerId, 'item-1'), isNull);
-
-      final hydratedMetadata = testMediaItem(
-        id: 'item-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: serverId,
-        title: 'Rehydrated for profile B',
-      );
-      final client = _DirectCachePlexClient(
-        serverId: serverId,
-        scopedServerId: destinationScope,
-        metadata: hydratedMetadata,
-      );
-      final hydrationManager = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (resolvedServerId, {clientScopeId}) {
-          if (resolvedServerId != serverId.toString()) return null;
-          if (clientScopeId != null && clientScopeId != destinationScope) return null;
-          return client;
-        },
-      );
-
-      final hydrated = await hydrationManager.fetchAndPinMetadata(
-        serverId,
-        'item-1',
-        preferActiveScope: true,
-        activeProfileId: 'profile-b',
-      );
-
-      expect(hydrated?.title, 'Rehydrated for profile B');
-      expect(
-        (await PlexApiCache.instance.getMetadata(destinationScope.cacheServerId, 'item-1'))?.title,
-        'Rehydrated for profile B',
-      );
-      expect(
-        (await PlexApiCache.instance.getAllPinnedMetadata(cacheServerIds: {destinationScope.cacheServerId})).keys,
-        [globalKey],
-      );
-      expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'), isNull);
     });
 
     test('artwork repair fetches full parent metadata and backfills thumb path', () async {
@@ -774,7 +489,7 @@ void main() {
       final storage = DownloadStorageService.instance;
       await storage.initialize(settings);
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       addTearDown(db.close);
 
       await db
@@ -790,37 +505,38 @@ void main() {
               status: DownloadStatus.completed.index,
             ),
           );
-      await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/ep-1', {
-        'MediaContainer': {
-          'Metadata': [
-            {
-              'ratingKey': 'ep-1',
-              'type': 'episode',
-              'title': 'Episode',
-              'thumb': '/ep-thumb',
-              'parentRatingKey': 'season-1',
-              'parentTitle': 'Season 1',
-              'parentIndex': 1,
-              'grandparentRatingKey': 'show-1',
-              'grandparentTitle': 'Show',
-            },
-          ],
-        },
-      });
-      await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/show-1', {
-        'MediaContainer': {
-          'Metadata': [
-            {'ratingKey': 'show-1', 'type': 'show', 'title': 'Show', 'thumb': '/show-thumb'},
-          ],
-        },
-      });
+      await SiloApiCache.instance.putItem(
+        ServerId('srv'),
+        testMediaItem(
+          id: 'ep-1',
+          backend: MediaBackend.silo,
+          kind: MediaKind.episode,
+          title: 'Episode',
+          thumbPath: '/ep-thumb',
+          parentId: 'season-1',
+          parentTitle: 'Season 1',
+          parentIndex: 1,
+          grandparentId: 'show-1',
+          grandparentTitle: 'Show',
+        ),
+      );
+      await SiloApiCache.instance.putItem(
+        ServerId('srv'),
+        testMediaItem(
+          id: 'show-1',
+          backend: MediaBackend.silo,
+          kind: MediaKind.show,
+          title: 'Show',
+          thumbPath: '/show-thumb',
+        ),
+      );
 
       final client = _ArtworkRepairClient(
         serverId: ServerId('srv'),
         items: {
           'show-1': testMediaItem(
             id: 'show-1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.show,
             serverId: ServerId('srv'),
             title: 'Show',
@@ -1435,7 +1151,7 @@ void main() {
       final lateClient = _SupplementaryClient(
         metadata: testMediaItem(
           id: 'late-1',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           serverId: ServerId('late'),
           title: 'Late Movie',
@@ -1706,7 +1422,7 @@ void main() {
       final storage = DownloadStorageService.instance;
       await storage.initialize(settings);
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       addTearDown(db.close);
 
       final videoPath = p.join(tmpRoot.path, 'support', 'downloads', 'srv', 'item-1', 'video.mkv');
@@ -1757,14 +1473,14 @@ void main() {
       final storage = DownloadStorageService.instance;
       await storage.initialize(settings);
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       addTearDown(db.close);
 
       final serverId = ServerId('srv');
       Future<String> seedTrack(String id, String title, int index) async {
         final metadata = testMediaItem(
           id: id,
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.track,
           serverId: serverId,
           title: title,
@@ -1774,20 +1490,7 @@ void main() {
         );
         final audioPath = await storage.getTrackAudioPath(metadata, 'mp3');
         await File(audioPath).writeAsString('audio');
-        await PlexApiCache.instance.put(serverId, '/library/metadata/$id', {
-          'MediaContainer': {
-            'Metadata': [
-              {
-                'ratingKey': id,
-                'type': 'track',
-                'title': title,
-                'grandparentTitle': 'Artist',
-                'parentTitle': 'Album',
-                'index': index,
-              },
-            ],
-          },
-        });
+        await SiloApiCache.instance.putItem(serverId, metadata);
         await db.insertDownload(
           serverId: serverId,
           ratingKey: id,
@@ -3188,7 +2891,7 @@ void main() {
       PathProviderPlatform.instance = FakePathProvider(tmpRoot);
       final storage = DownloadStorageService.forTestingSaf('content://downloads');
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       addTearDown(() async {
         await db.close();
         DownloadStorageService.resetForTesting();
@@ -3199,19 +2902,13 @@ void main() {
 
       final movie = testMediaItem(
         id: 'movie-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         serverId: ServerId('srv'),
         title: 'Movie',
         year: 2000,
       );
-      await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/movie-1', {
-        'MediaContainer': {
-          'Metadata': [
-            {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie', 'year': 2000},
-          ],
-        },
-      });
+      await SiloApiCache.instance.putItem(ServerId('srv'), movie);
       await db.insertDownload(
         serverId: ServerId('srv'),
         ratingKey: 'movie-1',
@@ -3276,7 +2973,7 @@ Future<_SupplementaryFixture> _createSupplementaryFixture({String? thumbPath, bo
     storage: storage,
     metadata: testMediaItem(
       id: 'item-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       serverId: ServerId('srv'),
       title: 'Movie',
@@ -3284,13 +2981,7 @@ Future<_SupplementaryFixture> _createSupplementaryFixture({String? thumbPath, bo
     ),
   );
   fixture.initializeCaches();
-  await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/item-1', {
-    'MediaContainer': {
-      'Metadata': [
-        {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Movie', 'thumb': ?thumbPath},
-      ],
-    },
-  });
+  await SiloApiCache.instance.putItem(ServerId('srv'), fixture.metadata);
   addTearDown(fixture.dispose);
   return fixture;
 }
@@ -3353,7 +3044,7 @@ class _SupplementaryFixture {
   final MediaItem metadata;
 
   void initializeCaches() {
-    PlexApiCache.initialize(db);
+    SiloApiCache.initialize(db);
   }
 
   Future<void> reopenDatabase() async {
@@ -3385,7 +3076,7 @@ class _SupplementaryClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<MediaItem?> fetchItem(String id) async => id == metadata.id ? metadata : null;
@@ -3456,12 +3147,12 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
   }
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(db);
+  SiloApiCache.initialize(db);
   final serverId = ServerId('srv');
   const globalKey = 'srv:episode-1';
   final episode = testMediaItem(
     id: 'episode-1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     serverId: serverId,
     title: 'Pilot',
@@ -3472,29 +3163,18 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
     index: 1,
   );
 
-  await PlexApiCache.instance.put(serverId, '/library/metadata/episode-1', {
-    'MediaContainer': {
-      'Metadata': [
-        {
-          'ratingKey': 'episode-1',
-          'type': 'episode',
-          'title': 'Pilot',
-          'parentRatingKey': 'season-1',
-          'parentIndex': 1,
-          'grandparentRatingKey': 'show-1',
-          'grandparentTitle': 'Show',
-          'index': 1,
-        },
-      ],
-    },
-  });
-  await PlexApiCache.instance.put(serverId, '/library/metadata/show-1', {
-    'MediaContainer': {
-      'Metadata': [
-        {'ratingKey': 'show-1', 'type': 'show', 'title': 'Show', 'year': 2000},
-      ],
-    },
-  });
+  await SiloApiCache.instance.putItem(serverId, episode);
+  await SiloApiCache.instance.putItem(
+    serverId,
+    testMediaItem(
+      id: 'show-1',
+      backend: MediaBackend.silo,
+      kind: MediaKind.show,
+      serverId: serverId,
+      title: 'Show',
+      year: 2000,
+    ),
+  );
 
   await db.insertDownload(
     serverId: serverId,
@@ -3539,7 +3219,7 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
     await Future<void>.delayed(Duration.zero);
     return _DeletionResult(
       rowDeleted: await db.getDownloadedMedia(globalKey) == null,
-      cacheDeleted: await PlexApiCache.instance.getMetadata(serverId, 'episode-1') == null,
+      cacheDeleted: await SiloApiCache.instance.getMetadata(serverId, 'episode-1') == null,
       videoDeleted: saf ? !safStorage.existsSync(safVideoUri) : !await File(filesystemVideoPath).exists(),
       thumbnailDeleted: !await thumbnail.exists(),
       subtitlesDeleted: !await subtitles.exists(),
@@ -3576,13 +3256,13 @@ Future<_ContainerDeletionResult> _runContainerDeletion({
   if (!saf) await storage.initialize(await SettingsService.getInstance());
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(db);
+  SiloApiCache.initialize(db);
   final serverId = ServerId('srv');
   final id = '${kind.id}-1';
   final globalKey = 'srv:$id';
   final metadata = testMediaItem(
     id: id,
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: kind,
     serverId: serverId,
     title: kind == MediaKind.movie ? 'Movie' : (kind == MediaKind.show ? 'Show' : 'Season 1'),
@@ -3591,19 +3271,7 @@ Future<_ContainerDeletionResult> _runContainerDeletion({
     grandparentTitle: kind == MediaKind.season ? 'Show' : null,
     index: kind == MediaKind.season ? 1 : null,
   );
-  await PlexApiCache.instance.put(serverId, '/library/metadata/$id', {
-    'MediaContainer': {
-      'Metadata': [
-        {
-          'ratingKey': id,
-          'type': kind.id,
-          'title': metadata.title,
-          'year': 2000,
-          if (kind == MediaKind.season) ...{'parentRatingKey': 'show-1', 'grandparentTitle': 'Show', 'index': 1},
-        },
-      ],
-    },
-  });
+  await SiloApiCache.instance.putItem(serverId, metadata);
   await db.insertDownload(
     serverId: serverId,
     ratingKey: id,
@@ -3652,7 +3320,7 @@ Future<_ContainerDeletionResult> _runContainerDeletion({
     await manager.deleteDownload(globalKey);
     return _ContainerDeletionResult(
       rowDeleted: await db.getDownloadedMedia(globalKey) == null,
-      cacheDeleted: await PlexApiCache.instance.getMetadata(serverId, id) == null,
+      cacheDeleted: await SiloApiCache.instance.getMetadata(serverId, id) == null,
       directoryDeleted: saf ? !safStorage.existsSync('content://target') : !await filesystemDirectory!.exists(),
       ownVideoDeleted: saf
           ? !safStorage.existsSync(_FakeSafStorage.containerVideoUri)
@@ -3686,11 +3354,11 @@ Future<bool> _runSameTitleMovieDeletion({required bool saf, required bool legacy
   final storage = saf ? DownloadStorageService.forTestingSaf('content://downloads') : DownloadStorageService.instance;
   if (!saf) await storage.initialize(await SettingsService.getInstance());
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(db);
+  SiloApiCache.initialize(db);
 
   MediaItem movie(String serverId) => testMediaItem(
     id: 'movie-1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
     serverId: ServerId(serverId),
     title: 'Movie',
@@ -3701,13 +3369,7 @@ Future<bool> _runSameTitleMovieDeletion({required bool saf, required bool legacy
   final safStorage = _FakeSafStorage();
   final storedPaths = <String, String>{};
   for (final copy in [first, second]) {
-    await PlexApiCache.instance.put(ServerId(copy.serverId!), '/library/metadata/movie-1', {
-      'MediaContainer': {
-        'Metadata': [
-          {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie', 'year': 2000},
-        ],
-      },
-    });
+    await SiloApiCache.instance.putItem(ServerId(copy.serverId!), copy);
     await db.insertDownload(
       serverId: ServerId(copy.serverId!),
       ratingKey: 'movie-1',
@@ -3774,19 +3436,16 @@ Future<({bool thumbRetained, int networkFetches})> _runChapterThumbnailDeletion(
   final storage = DownloadStorageService.instance;
   await storage.initialize(await SettingsService.getInstance());
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(db);
+  SiloApiCache.initialize(db);
 
   final serverId = ServerId('srv');
   const globalKey = 'srv:item-1';
   const sharedThumb = '/library/parts/1/indexes/sd/1000';
 
-  await PlexApiCache.instance.put(serverId, '/library/metadata/item-1', {
-    'MediaContainer': {
-      'Metadata': [
-        {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Movie'},
-      ],
-    },
-  });
+  await SiloApiCache.instance.putItem(
+    serverId,
+    testMediaItem(id: 'item-1', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Movie'),
+  );
   await db.insertDownload(
     serverId: serverId,
     ratingKey: 'item-1',
@@ -3861,18 +3520,22 @@ Future<({bool thumbRetained, int networkFetches})> _runSeasonBatchChapterThumbna
   final storage = DownloadStorageService.instance;
   await storage.initialize(await SettingsService.getInstance());
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(db);
+  SiloApiCache.initialize(db);
 
   final serverId = ServerId('srv');
   const thumb = '/library/parts/1/indexes/sd/1000';
 
-  await PlexApiCache.instance.put(serverId, '/library/metadata/season-1', {
-    'MediaContainer': {
-      'Metadata': [
-        {'ratingKey': 'season-1', 'type': 'season', 'title': 'Season 1', 'parentRatingKey': 'show-1', 'index': 1},
-      ],
-    },
-  });
+  await SiloApiCache.instance.putItem(
+    serverId,
+    testMediaItem(
+      id: 'season-1',
+      backend: MediaBackend.silo,
+      kind: MediaKind.season,
+      title: 'Season 1',
+      parentId: 'show-1',
+      index: 1,
+    ),
+  );
   await db.insertDownload(
     serverId: serverId,
     ratingKey: 'season-1',
@@ -3952,7 +3615,7 @@ class _ChapterExtrasClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<PlaybackExtras> fetchPlaybackExtras(
@@ -4263,7 +3926,7 @@ class _ArtworkRepairClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<MediaItem?> fetchItem(String id) async {
@@ -4274,40 +3937,6 @@ class _ArtworkRepairClient implements MediaServerClient {
   @override
   List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) {
     return buildArtworkSpecs(item, (path) => 'https://example.test$path');
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _DirectCachePlexClient implements MediaServerClient, ScopedMediaServerClient {
-  _DirectCachePlexClient({required this.serverId, required this.scopedServerId, required this.metadata});
-
-  @override
-  final ServerId serverId;
-
-  @override
-  final String scopedServerId;
-
-  final MediaItem metadata;
-
-  @override
-  String? get serverName => 'Server';
-
-  @override
-  MediaBackend get backend => MediaBackend.plex;
-
-  @override
-  Future<MediaItem?> fetchItem(String id) async {
-    if (id != metadata.id) return null;
-    await PlexApiCache.instance.put(ServerId(scopedServerId), '/library/metadata/$id', {
-      'MediaContainer': {
-        'Metadata': [
-          {'ratingKey': metadata.id, 'type': metadata.kind.id, 'title': metadata.title},
-        ],
-      },
-    });
-    return metadata;
   }
 
   @override

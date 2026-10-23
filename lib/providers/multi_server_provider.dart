@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
-import '../services/plex_client.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/multi_server_manager.dart';
 import '../utils/app_logger.dart';
@@ -129,13 +128,6 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     return _serverManager.getClient(serverId);
   }
 
-  /// Get the [PlexClient] for a server, or `null` if the server isn't Plex
-  /// (or not registered). Use for Plex-only flows that don't yet have a
-  /// backend-neutral equivalent.
-  PlexClient? getPlexClientForServer(ServerId serverId) {
-    return _serverManager.getPlexClient(serverId);
-  }
-
   /// Get all online server IDs (visibility-filtered).
   List<String> get onlineServerIds => _visible(_serverManager.onlineServerIds);
 
@@ -143,7 +135,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   List<String> get serverIds => _visible(_serverManager.serverIds);
 
   /// Server ids the active profile is expected to have, including unreachable
-  /// Plex servers that have no live client yet.
+  /// servers that have no live client yet.
   List<String> get expectedServerIds {
     final expected = _expectedVisibleServerIds;
     if (expected != null) return expected.toList(growable: false);
@@ -160,11 +152,6 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   /// Check if any servers are connected
   bool get hasConnectedServers => onlineServerCount > 0;
-
-  /// Whether at least one online server is a Plex server. Used to gate
-  /// Plex-only chrome (server-activities popover, conflict-resolution
-  /// helpers) so it doesn't render against a MediaBrowser-only profile.
-  bool get hasOnlinePlexServers => onlineServerIds.any((id) => _serverManager.getPlexClient(ServerId(id)) != null);
 
   /// Visibility-filtered server ids whose latest probe rejected the token
   /// (HTTP 401 — expired or revoked). UI uses this to show a "Sign in again"

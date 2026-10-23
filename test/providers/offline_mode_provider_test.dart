@@ -1,17 +1,11 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
-import 'package:plezy/connection/connection.dart';
-import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/providers/offline_mode_provider.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/plex_auth_service.dart';
 
-import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
@@ -106,14 +100,8 @@ void main() {
       ('access-denied', (m, id) => m.debugMarkAccessDeniedForTesting(id)),
     ]) {
       test('$label-only visible servers do not collapse to generic offline', () async {
-        final db = AppDatabase.forTesting(NativeDatabase.memory());
-        addTearDown(db.close);
-        PlexApiCache.initialize(db);
         final manager = MultiServerManager();
-        final client = testPlexClient(
-          serverId: ServerId('refused-server'),
-          httpClient: MockClient((_) async => http.Response('', 401)),
-        );
+        final client = _FakeClient(ServerId('refused-server'));
         manager.debugRegisterClientForTesting(client, online: false);
         final multi = testMultiServerProvider(manager);
         final p = OfflineModeProvider(manager, multiServerProvider: multi);
@@ -136,14 +124,14 @@ void main() {
       final multi = testMultiServerProvider(manager);
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
       await p.initialize();
-      manager.updateServerStatus(ServerId('plex-server'), false);
+      manager.updateServerStatus(ServerId('silo-server'), false);
       await Future<void>.delayed(Duration.zero);
       expect(p.isOffline, isFalse);
 
       var notifications = 0;
       p.addListener(() => notifications++);
 
-      multi.setExpectedVisibleServerIds({'plex-server'});
+      multi.setExpectedVisibleServerIds({'silo-server'});
       multi.setVisibleServerIds(<String>{});
       await Future<void>.delayed(Duration.zero);
 
@@ -182,25 +170,6 @@ void main() {
       manager.dispose();
     });
 
-    test('Plex auth errors without live clients stay out of generic offline', () async {
-      final manager = MultiServerManager();
-      final multi = testMultiServerProvider(manager);
-      final p = OfflineModeProvider(manager, multiServerProvider: multi);
-      await p.initialize();
-
-      multi.setExpectedVisibleServerIds({'plex-server'});
-      manager.markPlexConnectionAuthError(_plexConnection(), profileId: 'profile-a');
-      await Future<void>.delayed(Duration.zero);
-
-      expect(multi.authErrorServerIds, ['plex-server']);
-      expect(multi.authErrorServers.single.displayName, 'Plex');
-      expect(p.isOffline, isFalse);
-
-      p.dispose();
-      multi.dispose();
-      manager.dispose();
-    });
-
     group('connectivity transitions', () {
       test('regaining any network notifies even while servers stay unreachable', () async {
         final manager = MultiServerManager();
@@ -208,8 +177,8 @@ void main() {
         final p = OfflineModeProvider(manager, multiServerProvider: multi);
         // Settle visibility with nothing reachable, so offline is owned by
         // `noServerConnection` rather than the network flag or startup warmup.
-        multi.setExpectedVisibleServerIds({'plex-server'});
-        multi.setVisibleServerIds({'plex-server'});
+        multi.setExpectedVisibleServerIds({'silo-server'});
+        multi.setVisibleServerIds({'silo-server'});
         await Future<void>.delayed(Duration.zero);
         p.applyConnectivityResults(const [ConnectivityResult.none]);
         expect(p.hasNetworkConnection, isFalse);
@@ -310,31 +279,21 @@ void main() {
   });
 }
 
-PlexAccountConnection _plexConnection() {
-  return PlexAccountConnection(
-    id: 'plex-account',
-    accountToken: 'account-token',
-    clientIdentifier: 'client-id',
-    accountLabel: 'Plex Account',
-    servers: [
-      PlexServer(
-        name: 'Plex',
-        clientIdentifier: 'plex-server',
-        accessToken: 'server-token',
-        connections: [
-          PlexConnection(
-            protocol: 'https',
-            address: 'plex.example',
-            port: 32400,
-            uri: 'https://plex.example:32400',
-            local: true,
-            relay: false,
-            ipv6: false,
-          ),
-        ],
-        owned: true,
-      ),
-    ],
-    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-  );
+class _FakeClient implements MediaServerClient {
+  _FakeClient(this.serverId);
+
+  @override
+  final ServerId serverId;
+
+  @override
+  String? get serverName => 'Silo';
+
+  @override
+  MediaBackend get backend => MediaBackend.silo;
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

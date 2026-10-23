@@ -27,8 +27,6 @@ import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../providers/catalog_sources_provider.dart';
-import '../profiles/active_profile_provider.dart';
-import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
@@ -163,16 +161,6 @@ List<_MenuAction> _syncDownloadMenuActions({
     else
       _MenuAction(value: downloadValue, icon: Symbols.download_rounded, label: t.downloads.downloadNow),
   ];
-}
-
-bool isAdminActionAllowedForMediaItem({
-  required bool isOwnerOrAdmin,
-  required MediaBackend? itemBackend,
-  required Profile? activeProfile,
-}) {
-  final blockedByPlexHomeRole =
-      itemBackend == MediaBackend.plex && activeProfile != null && activeProfile.isPlexHome && !activeProfile.plexAdmin;
-  return isOwnerOrAdmin && !blockedByPlexHomeRole;
 }
 
 /// Whether "Delete from server" may be offered for an item.
@@ -407,18 +395,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       return _MenuContext.downloadsFolder(mediaItem);
     }
 
-    // Check if user has admin privileges. Plex uses the server-owned flag
-    // (folded with the active Plex Home profile's admin bit, when
-    // applicable).
+    // Silo exposes no server admin actions to the app.
+    const isAdmin = false;
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-    final activeProfile = context.read<ActiveProfileProvider>().active;
-    final isOwnerOrAdmin =
-        _itemServerId != null && multiServerProvider.serverManager.isOwnerOrAdmin(ServerId(_itemServerId!));
-    final isAdmin = isAdminActionAllowedForMediaItem(
-      isOwnerOrAdmin: isOwnerOrAdmin,
-      itemBackend: itemBackend,
-      activeProfile: activeProfile,
-    );
 
     // Backend capabilities gate menu items so we don't expose actions the
     // active server cannot perform.
