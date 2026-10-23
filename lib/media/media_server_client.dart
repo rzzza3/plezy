@@ -557,11 +557,8 @@ abstract class MediaServerClient {
 
   /// Delete a collection from the server. The collection is passed as a
   /// [MediaItem] (kind == [MediaKind.collection]) so the implementation can
-  /// read [MediaItem.libraryId] for backends that need it (Plex).
+  /// read [MediaItem.libraryId] if it needs it.
   Future<bool> deleteCollection(MediaItem collection);
-
-  /// Permanently delete [item] from the library.
-  Future<bool> deleteMediaItem(MediaItem item);
 
   /// File info (codec / resolution / bitrate / file path) for [item].
   /// Plex round-trips `/library/metadata/{id}` for the full set; other backends

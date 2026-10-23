@@ -117,8 +117,6 @@ class ConnectionRegistry {
           ? null
           : DateTime.fromMillisecondsSinceEpoch(row.lastAuthenticatedAt!);
       final Connection? connection = switch (kind) {
-        // Plex rows outlived the schema-27 migration's cleanup.
-        MediaBackend.plex => null,
         MediaBackend.silo => SiloConnection.fromConfigJson(
           json: revealed.config,
           createdAt: createdAt,

@@ -60,8 +60,6 @@ class _LibraryCollectionsTabState extends PaginatedCardGridTabState<MediaItem, L
     return loaded.isNotEmpty && loaded.every(_isMusicCollection);
   }
 
-  // Plex collection rows are library-scoped, so their container kind is a
-  // safe fallback. Other backends' collections must opt in per item.
-  bool _isMusicCollection(MediaItem item) =>
-      item.kind.isMusic || (item is PlexMediaItem && widget.library.kind.isMusic);
+  // Collections must opt in per item.
+  bool _isMusicCollection(MediaItem item) => item.kind.isMusic;
 }

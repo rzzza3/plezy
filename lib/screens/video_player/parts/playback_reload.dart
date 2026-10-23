@@ -231,12 +231,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // external file as an embedded target and sent an already-loaded track switch to the server.
       targetIsExternalFile:
           targetSourceStreamId != null &&
-          (_currentMediaInfo?.subtitleTracks.any(
-                (track) =>
-                    track.id == targetSourceStreamId &&
-                    (track.isExternalFile ||
-                        (_currentMetadata.backend == MediaBackend.plex && (track.key?.isNotEmpty ?? false))),
-              ) ??
+          (_currentMediaInfo?.subtitleTracks.any((track) => track.id == targetSourceStreamId && track.isExternalFile) ??
               false),
     )) {
       return false;

@@ -1,6 +1,5 @@
 // ignore_for_file: prefer_initializing_formals
 
-import 'dart:convert';
 import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io';
@@ -703,9 +702,6 @@ class DownloadManagerService {
   /// Resolve which backend the cache row for [serverId] uses. Reads the
   /// `Connections` table directly so the lookup works even when the server
   /// is currently offline (the connection persists across launches).
-  ///
-  /// A Plex server has no row of its own: it lives in the `servers` list of
-  /// its account's persisted config.
   Future<MediaBackend?> _backendForServer(ServerId serverId) async {
     // Prefer a live client — `MediaServerClient.backend` is in memory.
     final live = _getClient(serverId);
@@ -714,31 +710,9 @@ class DownloadManagerService {
       _database.connections,
     )..where((t) => t.id.isIn([serverId.value, SiloConnection.idFor(serverId)]))).get();
     for (final connection in rows) {
-      final backend = switch (connection.kind) {
-        'plex' => MediaBackend.plex,
-        'silo' => MediaBackend.silo,
-        _ => null,
-      };
-      if (backend != null) return backend;
+      if (connection.kind == MediaBackend.silo.id) return MediaBackend.silo;
     }
-    if (await _hasPlexAccountForServer(serverId)) return MediaBackend.plex;
     return null;
-  }
-
-  Future<bool> _hasPlexAccountForServer(ServerId serverId) async {
-    final accounts = await (_database.select(_database.connections)..where((t) => t.kind.equals('plex'))).get();
-    for (final account in accounts) {
-      try {
-        final config = jsonDecode(account.configJson);
-        if (config is! Map<String, dynamic>) continue;
-        final servers = config['servers'];
-        if (servers is! List) continue;
-        if (servers.any((server) => server is Map && server['clientIdentifier'] == serverId.value)) return true;
-      } on FormatException {
-        // Ignore malformed persisted accounts.
-      }
-    }
-    return false;
   }
 
   /// Backend-aware metadata lookup. Dispatches to the right `getMetadata`
@@ -748,8 +722,8 @@ class DownloadManagerService {
   /// When [_backendForServer] can't resolve the backend (no live client and
   /// no `connections` row — happens when a server has been removed but old
   /// download rows still reference it), fan out to every registered backend
-  /// cache instead of silently defaulting to Plex. Otherwise Silo
-  /// items would render with blank metadata after a connection is severed.
+  /// cache. Otherwise items would render with blank metadata after a
+  /// connection is severed.
   Future<MediaItem?> _lookupMetadata(ServerId serverId, String itemId, {String? clientScopeId}) async {
     final backend = await _backendForServer(serverId);
     final live = _getClient(serverId, clientScopeId: clientScopeId);

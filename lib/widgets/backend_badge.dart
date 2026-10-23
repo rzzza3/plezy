@@ -22,7 +22,6 @@ class BackendBadge extends StatelessWidget {
         IconTheme.of(context).color ??
         Theme.of(context).colorScheme.onSurface;
     final asset = switch (backend) {
-      MediaBackend.plex => 'assets/plex_chevron.svg',
       MediaBackend.silo => 'assets/silo_mark.svg',
     };
     return SvgPicture.asset(

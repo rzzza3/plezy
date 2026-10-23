@@ -19,7 +19,6 @@ import '../services/playlist_items_loader.dart';
 import '../services/watch_actions.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
 import '../utils/content_utils.dart';
-import '../utils/delete_impact.dart';
 import '../utils/download_utils.dart';
 import '../utils/focus_utils.dart';
 import '../utils/global_key_utils.dart';
@@ -43,7 +42,6 @@ import '../screens/music/album_detail_screen.dart';
 import '../screens/music/artist_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
-import '../utils/deletion_notifier.dart';
 import '../widgets/app_menu.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/overlay_sheet.dart';
@@ -71,13 +69,11 @@ class _MenuContext {
   final MediaPlaylist? playlist;
   final MediaServerClient? mediaClient;
   final CatalogSourcesProvider? catalogSources;
-  final bool isAdmin;
   final bool canTranscode;
   final bool itemServerOnline;
   final bool canRemoveFromContinueWatching;
   final bool showWatchlistEntry;
   final bool watchlistRemoveOffered;
-  final bool canDeleteFromServer;
 
   /// A downloads folder (see [MediaContextMenu.isOffline]).
   final bool isDownloadsFolder;
@@ -87,13 +83,11 @@ class _MenuContext {
     required this.playlist,
     required this.mediaClient,
     required this.catalogSources,
-    required this.isAdmin,
     required this.canTranscode,
     required this.itemServerOnline,
     required this.canRemoveFromContinueWatching,
     required this.showWatchlistEntry,
     required this.watchlistRemoveOffered,
-    required this.canDeleteFromServer,
   }) : isDownloadsFolder = false;
 
   /// A downloads folder's entries act on local downloads, so none of the
@@ -102,26 +96,17 @@ class _MenuContext {
     : playlist = null,
       mediaClient = null,
       catalogSources = null,
-      isAdmin = false,
       canTranscode = false,
       itemServerOnline = false,
       canRemoveFromContinueWatching = false,
       showWatchlistEntry = false,
       watchlistRemoveOffered = false,
-      canDeleteFromServer = false,
       isDownloadsFolder = true;
 
   bool get isPlaylist => playlist != null;
   MediaKind? get mediaKind => mediaItem?.kind;
   bool get isCollection => mediaKind == MediaKind.collection;
   MediaBackend? get itemBackend => mediaItem?.backend ?? playlist?.backend;
-
-  /// Backend-aware gate: a few menu items remain Plex-only because the
-  /// server-side feature has no MediaBrowser equivalent (match/unmatch).
-  /// No fallback: items without a backend marker show only neutral actions —
-  /// dispatching a Plex-only action against an unknown-backend item could
-  /// crash or hit the wrong server.
-  bool get isPlex => itemBackend == MediaBackend.plex;
 }
 
 /// Whether the picked entry navigated away, in which case the menu must not
@@ -162,17 +147,6 @@ List<_MenuAction> _syncDownloadMenuActions({
       _MenuAction(value: downloadValue, icon: Symbols.download_rounded, label: t.downloads.downloadNow),
   ];
 }
-
-/// Whether "Delete from server" may be offered for an item.
-///
-/// Whether the server lets this user delete an item of [itemBackend]. Plex
-/// has no per-item permission on the wire, so it keeps the account-level
-/// owner/admin gate; Silo offers no deletion.
-bool isMediaDeletionAllowed({required MediaBackend? itemBackend, required bool isAdminActionAllowed}) =>
-    switch (itemBackend) {
-      MediaBackend.plex => isAdminActionAllowed,
-      MediaBackend.silo || null => false,
-    };
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
@@ -390,13 +364,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final mediaItem = _mediaItem;
     final playlist = _playlist;
     final mediaKind = mediaItem?.kind;
-    final itemBackend = mediaItem?.backend ?? playlist?.backend;
     if (widget.isOffline && mediaItem != null && mediaKind == MediaKind.collection) {
       return _MenuContext.downloadsFolder(mediaItem);
     }
 
-    // Silo exposes no server admin actions to the app.
-    const isAdmin = false;
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
 
     // Backend capabilities gate menu items so we don't expose actions the
@@ -443,25 +414,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     }
 
-    final isDeletableKind =
-        mediaKind == MediaKind.episode ||
-        mediaKind == MediaKind.movie ||
-        mediaKind == MediaKind.show ||
-        mediaKind == MediaKind.season;
-    final canDeleteFromServer =
-        isDeletableKind && isMediaDeletionAllowed(itemBackend: itemBackend, isAdminActionAllowed: isAdmin);
     return _MenuContext(
       mediaItem: mediaItem,
       playlist: playlist,
       mediaClient: mediaClient,
       catalogSources: catalogSources,
-      isAdmin: isAdmin,
       canTranscode: canTranscode,
       itemServerOnline: itemServerOnline,
       canRemoveFromContinueWatching: canRemoveFromContinueWatching,
       showWatchlistEntry: showWatchlistEntry,
       watchlistRemoveOffered: watchlistRemoveOffered,
-      canDeleteFromServer: canDeleteFromServer,
     );
   }
 
@@ -540,15 +502,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (widget.isInContinueWatching && isVideoKind)
         _MenuAction(value: 'details', icon: Symbols.info_rounded, label: t.mediaMenu.viewDetails),
       if (isVideoKind) _MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate),
-      // Remove from Collection (only when viewing items within a collection).
-      // Plex-only — uses `removeFromCollection` API; MediaBrowser collection
-      // membership APIs aren't wired here yet.
-      if (menu.isPlex && widget.collectionId != null)
-        _MenuAction(
-          value: 'remove_from_collection',
-          icon: Symbols.delete_outline_rounded,
-          label: t.collections.removeFromCollection,
-        ),
       if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.season) &&
           itemSeriesKey != null &&
           !widget.isInContinueWatching &&
@@ -655,28 +608,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           value: 'toggle_watchlist',
           icon: menu.watchlistRemoveOffered ? Symbols.bookmark_remove_rounded : Symbols.bookmark_add_rounded,
           label: menu.watchlistRemoveOffered ? t.explore.removeFromWatchlist : t.explore.addToWatchlist,
-        ),
-      // Add to... (for episodes, movies, shows, and seasons). Plex-only —
-      // uses `buildMetadataUri` + `addToPlaylist` / `addToCollection`. The
-      // MediaBrowser item-add APIs are different and not wired here yet.
-      if (menu.isPlex && mediaItem.isVideoContent)
-        _MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo),
-      // Delete media item (for episodes, movies, shows, and seasons). Routed
-      // through `MediaServerClient.deleteMediaItem`, which every backend
-      // implements (DELETE /library/metadata/{id} for Plex and
-      // DELETE /Items/{id} for MediaBrowser servers); the kind and permission checks were
-      // resolved together in [_resolveMenuContext].
-      //
-      // The label names the kind. One shared "Delete from server" string for
-      // an episode, a season and a whole show is what let #1781 happen: the
-      // reporter hit the show-level entry believing it acted on the episode
-      // he had highlighted.
-      if (menu.canDeleteFromServer)
-        _MenuAction(
-          value: 'delete_media',
-          icon: Symbols.delete_forever_rounded,
-          label: _deleteMenuLabel(mediaKind),
-          destructive: true,
         ),
     ];
   }
@@ -824,9 +755,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         break;
       case 'add_to':
         await _showAddToSubmenu(context);
-        break;
-      case 'delete_media':
-        await _handleDeleteMediaItem(context, mediaItem.kind);
         break;
       case 'music_play':
         await _handleMusicPlay(context);
@@ -1626,13 +1554,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _ => '',
   };
 
-  String _deleteMenuLabel(MediaKind? kind) => switch (kind) {
-    MediaKind.season => t.mediaMenu.deleteSeasonFromServer,
-    MediaKind.show => t.mediaMenu.deleteShowFromServer,
-    MediaKind.movie => t.mediaMenu.deleteMovieFromServer,
-    _ => t.mediaMenu.deleteEpisodeFromServer,
-  };
-
   Future<void> _handleManageSyncRule(BuildContext context) => manageSyncRule(
     context,
     downloadProvider: context.read<DownloadProvider>(),
@@ -1669,119 +1590,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     globalKey: _itemSyncRuleKey(context),
     displayTitle: _itemDisplayTitle(),
   );
-
-  /// Handle delete media item action.
-  ///
-  /// Permanently removes the item and its files from the server. Everything
-  /// before the DELETE exists to make the blast radius legible: the dialog
-  /// names the exact target, states the kind, and — for a single playable
-  /// item — reports what the server will actually destroy. When that cannot
-  /// be established, the dialog says so instead of implying single-file
-  /// scope (#1781).
-  Future<void> _handleDeleteMediaItem(BuildContext context, MediaKind? mediaKind) async {
-    final item = _mediaItem!;
-    final client = _getMediaClientForItem();
-
-    // Shows and seasons are known-broad by definition; probing their parts
-    // would be a per-episode fan-out to restate what the copy already says.
-    final probesImpact = mediaKind == MediaKind.episode || mediaKind == MediaKind.movie;
-    DeleteImpact? impact;
-    if (probesImpact) {
-      showLoadingDialog(context);
-      try {
-        impact = await resolveDeleteImpact(item: item, client: client);
-      } finally {
-        // The spinner traps system back and nothing else pushes during the
-        // probe, so it is still the top route here. A `Navigator.canPop`
-        // guard would only test "is anything poppable", which is true of the
-        // screen underneath — exactly the route that must not close.
-        if (context.mounted) Navigator.pop(context);
-      }
-      if (!context.mounted) return;
-    }
-
-    final confirmed = await showDeleteConfirmation(
-      context,
-      title: _deleteDialogTitle(mediaKind),
-      message: t.mediaMenu.confirmDeleteTarget(title: formatMediaTargetLabel(item)),
-      warning: _deleteWarning(item, mediaKind, impact),
-      confirmText: impact != null && impact.isUnverified ? t.mediaMenu.deleteAnyway : _deleteConfirmLabel(mediaKind),
-    );
-
-    if (!confirmed || !context.mounted) return;
-
-    try {
-      final success = await client.deleteMediaItem(item);
-
-      if (context.mounted) {
-        if (success) {
-          showSuccessSnackBar(context, t.mediaMenu.mediaDeletedSuccessfully);
-          // Broadcast deletion event for cross-screen propagation
-          DeletionNotifier().notifyDeletedItem(item: item);
-          // Siblings sharing the deleted file died with it server-side. Without
-          // their own events their rows linger until a full refresh.
-          for (final sibling in impact?.sharedWith ?? const <MediaItem>[]) {
-            DeletionNotifier().notifyDeletedItem(item: sibling);
-          }
-          // Backward-compatible list refresh for screens that are not DeletionAware yet
-          _notifyListRefresh();
-        } else {
-          showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
-        }
-      }
-    } catch (e) {
-      appLogger.e(t.mediaMenu.mediaFailedToDelete, error: e);
-      if (context.mounted) {
-        showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
-      }
-    }
-  }
-
-  String _deleteDialogTitle(MediaKind? kind) => switch (kind) {
-    MediaKind.season => t.mediaMenu.deleteSeasonTitle,
-    MediaKind.show => t.mediaMenu.deleteShowTitle,
-    MediaKind.movie => t.mediaMenu.deleteMovieTitle,
-    _ => t.mediaMenu.deleteEpisodeTitle,
-  };
-
-  String _deleteConfirmLabel(MediaKind? kind) => switch (kind) {
-    MediaKind.season => t.mediaMenu.deleteSeasonConfirm,
-    MediaKind.show => t.mediaMenu.deleteShowConfirm,
-    MediaKind.movie => t.mediaMenu.deleteMovieConfirm,
-    _ => t.mediaMenu.deleteEpisodeConfirm,
-  };
-
-  /// The danger block under the confirmation message, or null when the delete
-  /// is verified to remove exactly the named item.
-  String? _deleteWarning(MediaItem item, MediaKind? kind, DeleteImpact? impact) {
-    if (kind == MediaKind.show || kind == MediaKind.season) {
-      // leafCount is the episode total; a season falls back to its direct
-      // children. Neither is guaranteed, so keep the countless sentence.
-      final episodes = item.leafCount ?? (kind == MediaKind.season ? item.childCount : null);
-      return episodes != null && episodes > 0
-          ? t.mediaMenu.deleteEpisodeCountWarning(n: episodes)
-          : t.mediaMenu.deleteMultipleWarning;
-    }
-
-    if (impact == null) return null;
-
-    if (impact.isUnverified) {
-      return switch (impact.reason) {
-        DeleteImpactUnverifiedReason.noFileInfo => t.mediaMenu.deleteScopeUnverifiedNoFileInfo,
-        _ => t.mediaMenu.deleteScopeUnverifiedProbeFailed,
-      };
-    }
-
-    if (!impact.isBroad) return null;
-
-    final lines = <String>[];
-    if (impact.files.length > 1) lines.add(t.mediaMenu.deleteMultiPartWarning(n: impact.files.length));
-    if (impact.sharedWith.isNotEmpty) {
-      lines.add(t.mediaMenu.deleteSharedFileHeading(n: impact.sharedWith.length));
-      lines.addAll(impact.sharedWith.map((sibling) => '\u2022 ${formatMediaTargetLabel(sibling)}'));
-    }
-    return lines.join('\n');
-  }
 
   @override
   Widget build(BuildContext context) {

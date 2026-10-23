@@ -551,7 +551,6 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
   }
 
   String _backendLabel(MediaBackend backend) => switch (backend) {
-    MediaBackend.plex => 'Plex',
     MediaBackend.silo => 'Silo',
   };
 }

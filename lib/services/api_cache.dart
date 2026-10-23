@@ -84,7 +84,7 @@ abstract class ApiCache {
   /// Pick the cache for [backend]. Plex is the legacy default — covers items
   /// predating the Connections table where the backend can't be resolved.
   static ApiCache forBackend(MediaBackend? backend) {
-    final picked = _byBackend[backend ?? MediaBackend.plex] ?? _byBackend[MediaBackend.plex];
+    final picked = _byBackend[backend ?? MediaBackend.silo];
     if (picked == null) {
       throw StateError('No ApiCache registered for backend $backend');
     }

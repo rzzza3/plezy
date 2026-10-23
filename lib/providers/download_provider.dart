@@ -2,7 +2,6 @@ import 'dart:async';
 import '../media/ids.dart';
 import 'package:flutter/foundation.dart';
 import '../i18n/strings.g.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/downloads_collection_grouping.dart';
 import '../media/media_item_merge.dart';
@@ -776,14 +775,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     containerIdOf: (meta) => meta.grandparentId,
     containerKind: MediaKind.show,
     synthesize: (meta, showRatingKey) {
-      // Fallback: synthesize from episode metadata (missing year, summary)
-      // Only Plex consumers read `raw['key']` (library-section + folder
-      // navigation), so we synthesize the Plex URI for Plex shows. Silo
-      // items carry no raw payload.
-      final synthesizedRaw = switch (meta.backend) {
-        MediaBackend.plex => <String, dynamic>{'key': '/library/metadata/$showRatingKey'},
-        MediaBackend.silo => null,
-      };
+      // Fallback: synthesize from episode metadata (missing year, summary).
       return MediaItem(
         id: showRatingKey,
         backend: meta.backend,
@@ -792,7 +784,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         thumbPath: meta.grandparentThumbPath,
         artPath: meta.grandparentArtPath,
         serverId: meta.serverId,
-        raw: synthesizedRaw,
       );
     },
     // Counts and library identity come from the downloaded episodes, not the

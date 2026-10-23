@@ -643,7 +643,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// [_cardKeys]. Playlist entries can repeat a media id, so the playlist item
   /// id wins when the backend exposes one.
   String _itemKeyId(MediaItem item) => switch (item) {
-    PlexMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
+    SiloMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
     _ => item.id,
   };
 

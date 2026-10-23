@@ -1240,7 +1240,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     if (!scoresOnly) {
       if (metadata.year != null) addTextChip('${metadata.year}', 0);
-      if (metadata case PlexMediaItem(:final editionTitle?)) addTextChip(editionTitle, 3);
       if (metadata.contentRating != null) addTextChip(formatContentRating(metadata.contentRating!), 2);
       if (metadata.durationMs != null) addTextChip(formatDurationTextual(metadata.durationMs!), 1);
       for (final label in buildMediaQualityLabels(metadata)) {
@@ -4774,18 +4773,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   MediaItem? _getPrimaryTrailer() {
     if (_extras == null || _extras!.isEmpty) return null;
 
-    // If there's a trailerKey (Plex `primaryExtraKey`), try to find that specific trailer
-    final metadata = _metadata;
-    if (metadata case PlexMediaItem(:final trailerKey?)) {
-      // Extract rating key from trailerKey (e.g., "/library/metadata/52601" -> "52601")
-      final primaryKey = trailerKey.split('/').last;
-      try {
-        return _extras!.firstWhere((extra) => extra.id == primaryKey);
-      } catch (_) {
-        // Primary key not found, fall through to find any trailer
-      }
-    }
-
     try {
       return _extras!.firstWhere(_isTrailerExtra);
     } catch (_) {
@@ -4795,9 +4782,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   bool _isTrailerExtra(MediaItem extra) {
-    if (extra case PlexMediaItem(:final subtype?)) {
-      return subtype.toLowerCase() == 'trailer';
-    }
     final raw = extra.raw;
     final extraType = raw?['ExtraType'] as String?;
     final type = raw?['Type'] as String?;
