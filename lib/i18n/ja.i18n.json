@@ -183,8 +183,6 @@
     "defaultQualityTitle": "デフォルト画質",
     "cellularQualityTitle": "モバイルデータ通信時のデフォルト画質",
     "cellularQualitySameAsDefault": "デフォルト画質と同じ",
-    "directPlayCoveredQuality": "小さい動画をオリジナル画質で再生",
-    "directPlayCoveredQualityDescription": "画質制限内の動画はトランスコードせずにダイレクト再生します",
     "videoCodecs": "ビデオコーデック",
     "videoCodecsDescription": "チェックを外したコーデックはサーバーがトランスコードします",
     "videoCodecsAlwaysAccepted": "常に許可",

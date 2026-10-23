@@ -290,8 +290,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Качество по умолчанию';
 	@override String get cellularQualityTitle => 'Качество по умолчанию в мобильной сети';
 	@override String get cellularQualitySameAsDefault => 'Как качество по умолчанию';
-	@override String get directPlayCoveredQuality => 'Воспроизводить меньшие видео в исходном качестве';
-	@override String get directPlayCoveredQualityDescription => 'Воспроизводить напрямую видео, уже укладывающиеся в ограничение качества, вместо их транскодирования';
 	@override String get videoCodecs => 'Видеокодеки';
 	@override String get videoCodecsDescription => 'Кодеки без отметки транскодирует сервер';
 	@override String get videoCodecsAlwaysAccepted => 'Принимается всегда';
@@ -2766,8 +2764,6 @@ extension on TranslationsRu {
 			'settings.defaultQualityTitle' => 'Качество по умолчанию',
 			'settings.cellularQualityTitle' => 'Качество по умолчанию в мобильной сети',
 			'settings.cellularQualitySameAsDefault' => 'Как качество по умолчанию',
-			'settings.directPlayCoveredQuality' => 'Воспроизводить меньшие видео в исходном качестве',
-			'settings.directPlayCoveredQualityDescription' => 'Воспроизводить напрямую видео, уже укладывающиеся в ограничение качества, вместо их транскодирования',
 			'settings.videoCodecs' => 'Видеокодеки',
 			'settings.videoCodecsDescription' => 'Кодеки без отметки транскодирует сервер',
 			'settings.videoCodecsAlwaysAccepted' => 'Принимается всегда',
@@ -3109,10 +3105,10 @@ extension on TranslationsRu {
 			'fileInfo.duration' => 'Длительность',
 			'fileInfo.previewThumbnails' => 'Миниатюры превью',
 			'fileInfo.previewIndex' => 'Индекс превью',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Длина пакета',
 			'fileInfo.filePresent' => 'Файл присутствует',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Доступен для чтения сервером',
 			'fileInfo.streamPath' => 'Путь потока',
 			'fileInfo.optimizedForStreaming' => 'Оптимизировано для потоковой передачи',
@@ -3623,10 +3619,10 @@ extension on TranslationsRu {
 			'explore.stats.favorited' => ({required Object n}) => '${n} в избранном',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} бросили',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n, one: '${n} комментарий', few: '${n} комментария', many: '${n} комментариев', other: '${n} комментариев', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} голосов',
 			'explore.stats.watching' => ({required Object n}) => '${n} смотрят',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} завершили',
 			'explore.stats.onHold' => ({required Object n}) => '${n} отложили',
 			'explore.stats.dropped' => ({required Object n}) => '${n} бросили',
@@ -4137,10 +4133,10 @@ extension on TranslationsRu {
 			'externalPlayer.useExternalPlayerDescription' => 'Открывать видео в другом приложении',
 			'externalPlayer.selectPlayer' => 'Выбрать плеер',
 			'externalPlayer.customPlayers' => 'Свои плееры',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Системный по умолчанию',
 			'externalPlayer.addCustomPlayer' => 'Добавить свой плеер',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Название плеера',
 			'externalPlayer.playerNameHint' => 'Мой плеер',
 			'externalPlayer.playerCommand' => 'Команда',

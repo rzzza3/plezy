@@ -469,7 +469,7 @@ class TrackManager {
     if (streamID != null) {
       appLogger.d('Matched audio to streamID $streamID');
     } else {
-      appLogger.e('Could not match audio track to any Plex track');
+      appLogger.e('Could not match audio track to any server track');
     }
 
     await _saveTrackPreferences(partId: partId, trackType: 'audio', streamID: streamID);
@@ -499,7 +499,7 @@ class TrackManager {
       if (streamID != null) {
         appLogger.d('Matched subtitle to streamID $streamID');
       } else {
-        appLogger.e('Could not match subtitle track to any Plex track');
+        appLogger.e('Could not match subtitle track to any server track');
       }
     }
 

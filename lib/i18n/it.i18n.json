@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Qualità predefinita",
     "cellularQualityTitle": "Qualità predefinita sulla rete mobile",
     "cellularQualitySameAsDefault": "Come la qualità predefinita",
-    "directPlayCoveredQuality": "Riproduci i video più piccoli in qualità originale",
-    "directPlayCoveredQualityDescription": "Riproduci direttamente i video già entro il limite di qualità invece di transcodificarli",
     "videoCodecs": "Codec video",
     "videoCodecsDescription": "Il server transcodifica i codec non selezionati",
     "videoCodecsAlwaysAccepted": "Sempre accettato",

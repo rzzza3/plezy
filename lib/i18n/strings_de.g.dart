@@ -290,8 +290,6 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Standardqualität';
 	@override String get cellularQualityTitle => 'Standardqualität im Mobilfunknetz';
 	@override String get cellularQualitySameAsDefault => 'Wie Standardqualität';
-	@override String get directPlayCoveredQuality => 'Kleinere Videos in Originalqualität abspielen';
-	@override String get directPlayCoveredQualityDescription => 'Videos, die bereits innerhalb des Qualitätslimits liegen, per Direct Play abspielen, statt sie zu transkodieren';
 	@override String get videoCodecs => 'Video-Codecs';
 	@override String get videoCodecsDescription => 'Nicht ausgewählte Codecs transkodiert der Server';
 	@override String get videoCodecsAlwaysAccepted => 'Immer akzeptiert';
@@ -2750,8 +2748,6 @@ extension on TranslationsDe {
 			'settings.defaultQualityTitle' => 'Standardqualität',
 			'settings.cellularQualityTitle' => 'Standardqualität im Mobilfunknetz',
 			'settings.cellularQualitySameAsDefault' => 'Wie Standardqualität',
-			'settings.directPlayCoveredQuality' => 'Kleinere Videos in Originalqualität abspielen',
-			'settings.directPlayCoveredQualityDescription' => 'Videos, die bereits innerhalb des Qualitätslimits liegen, per Direct Play abspielen, statt sie zu transkodieren',
 			'settings.videoCodecs' => 'Video-Codecs',
 			'settings.videoCodecsDescription' => 'Nicht ausgewählte Codecs transkodiert der Server',
 			'settings.videoCodecsAlwaysAccepted' => 'Immer akzeptiert',
@@ -3093,10 +3089,10 @@ extension on TranslationsDe {
 			'fileInfo.duration' => 'Dauer',
 			'fileInfo.previewThumbnails' => 'Vorschaubilder',
 			'fileInfo.previewIndex' => 'Vorschau-Index',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Paketlänge',
 			'fileInfo.filePresent' => 'Datei vorhanden',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Vom Server lesbar',
 			'fileInfo.streamPath' => 'Stream-Pfad',
 			'fileInfo.optimizedForStreaming' => 'Für Streaming optimiert',
@@ -3607,10 +3603,10 @@ extension on TranslationsDe {
 			'explore.stats.favorited' => ({required Object n}) => '${n} Favoriten',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} haben es abgebrochen',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: '${n} Kommentar', other: '${n} Kommentare', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} Stimmen',
 			'explore.stats.watching' => ({required Object n}) => '${n} schauen es gerade',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} abgeschlossen',
 			'explore.stats.onHold' => ({required Object n}) => '${n} pausiert',
 			'explore.stats.dropped' => ({required Object n}) => '${n} abgebrochen',
@@ -4121,10 +4117,10 @@ extension on TranslationsDe {
 			'externalPlayer.useExternalPlayerDescription' => 'Videos in einer anderen App öffnen',
 			'externalPlayer.selectPlayer' => 'Player auswählen',
 			'externalPlayer.customPlayers' => 'Benutzerdefinierte Player',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Systemstandard',
 			'externalPlayer.addCustomPlayer' => 'Benutzerdefinierten Player hinzufügen',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Playername',
 			'externalPlayer.playerNameHint' => 'Mein Player',
 			'externalPlayer.playerCommand' => 'Befehl',

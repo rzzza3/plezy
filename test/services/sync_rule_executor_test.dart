@@ -527,7 +527,7 @@ class _ShowCollectionClient implements MediaServerClient {
   MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   bool get isOfflineMode => false;
@@ -578,7 +578,7 @@ class _PlayableDescendantsClient implements MediaServerClient {
   MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   bool get isOfflineMode => false;
@@ -652,7 +652,7 @@ class _CollectionPagingClient implements MediaServerClient {
   MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   bool get isOfflineMode => false;

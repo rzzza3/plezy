@@ -113,7 +113,7 @@ class MediaControlsManager {
   /// Reads [url] through the shared artwork cache, which also keeps the token
   /// out of its own metadata.
   static Future<Uint8List?> _loadArtworkFromCache(String url) async {
-    final response = await PlexImageCacheManager.instance.getFileStream(url).firstWhere((r) => r is FileInfo);
+    final response = await ArtworkCacheManager.instance.getFileStream(url).firstWhere((r) => r is FileInfo);
     return (response as FileInfo).file.readAsBytes();
   }
 

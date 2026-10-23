@@ -183,8 +183,6 @@
     "defaultQualityTitle": "默认画质",
     "cellularQualityTitle": "移动网络默认画质",
     "cellularQualitySameAsDefault": "与默认画质相同",
-    "directPlayCoveredQuality": "以原始画质播放较小视频",
-    "directPlayCoveredQualityDescription": "已在画质限制内的视频直接播放，而非转码",
     "videoCodecs": "视频编解码器",
     "videoCodecsDescription": "未勾选的编解码器将由服务器转码",
     "videoCodecsAlwaysAccepted": "始终接受",

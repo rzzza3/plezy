@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Качество по умолчанию",
     "cellularQualityTitle": "Качество по умолчанию в мобильной сети",
     "cellularQualitySameAsDefault": "Как качество по умолчанию",
-    "directPlayCoveredQuality": "Воспроизводить меньшие видео в исходном качестве",
-    "directPlayCoveredQualityDescription": "Воспроизводить напрямую видео, уже укладывающиеся в ограничение качества, вместо их транскодирования",
     "videoCodecs": "Видеокодеки",
     "videoCodecsDescription": "Кодеки без отметки транскодирует сервер",
     "videoCodecsAlwaysAccepted": "Принимается всегда",

@@ -930,7 +930,6 @@ class DataAggregationService {
     required Set<String> serverIds,
     List<String> titles = const [],
     int? year,
-    String? plexGuid,
     ExternalSeasonRef? season,
   }) async {
     final clients = _clientsFor(serverIds);
@@ -948,8 +947,7 @@ class DataAggregationService {
     final fetched = await _fanOut<MediaItem>(
       clients,
       failureMessage: (serverId) => 'External-id lookup failed on $serverId',
-      fetch: (_, client) =>
-          client.findByExternalIds(ids, kind: kind, titles: titles, year: year, plexGuid: plexGuid, season: season),
+      fetch: (_, client) => client.findByExternalIds(ids, kind: kind, titles: titles, year: year, season: season),
     );
     unqueriedServerIds.addAll(fetched.unqueriedServerIds);
     return (

@@ -303,7 +303,7 @@ class _NoopClient implements MediaServerClient {
   MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   ServerId get serverId => ServerId('server-1');

@@ -1,6 +1,6 @@
 part of '../video_controls.dart';
 
-extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
+extension _SiloVideoControlsNavigationMethods on _SiloVideoControlsState {
   Widget _buildDesktopControlsListener() {
     final playbackState = context.watch<PlaybackStateProvider>();
     final trackControlsState = _buildTrackControlsState(

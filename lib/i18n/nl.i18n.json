@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Standaardkwaliteit",
     "cellularQualityTitle": "Standaardkwaliteit bij mobiele data",
     "cellularQualitySameAsDefault": "Zelfde als standaardkwaliteit",
-    "directPlayCoveredQuality": "Kleinere video's op originele kwaliteit afspelen",
-    "directPlayCoveredQualityDescription": "Speel video's die al binnen de kwaliteitslimiet vallen direct af in plaats van ze te transcoderen",
     "videoCodecs": "Videocodecs",
     "videoCodecsDescription": "Niet-aangevinkte codecs worden door de server getranscodeerd",
     "videoCodecsAlwaysAccepted": "Altijd geaccepteerd",

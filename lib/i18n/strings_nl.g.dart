@@ -290,8 +290,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Standaardkwaliteit';
 	@override String get cellularQualityTitle => 'Standaardkwaliteit bij mobiele data';
 	@override String get cellularQualitySameAsDefault => 'Zelfde als standaardkwaliteit';
-	@override String get directPlayCoveredQuality => 'Kleinere video\'s op originele kwaliteit afspelen';
-	@override String get directPlayCoveredQualityDescription => 'Speel video\'s die al binnen de kwaliteitslimiet vallen direct af in plaats van ze te transcoderen';
 	@override String get videoCodecs => 'Videocodecs';
 	@override String get videoCodecsDescription => 'Niet-aangevinkte codecs worden door de server getranscodeerd';
 	@override String get videoCodecsAlwaysAccepted => 'Altijd geaccepteerd';
@@ -2750,8 +2748,6 @@ extension on TranslationsNl {
 			'settings.defaultQualityTitle' => 'Standaardkwaliteit',
 			'settings.cellularQualityTitle' => 'Standaardkwaliteit bij mobiele data',
 			'settings.cellularQualitySameAsDefault' => 'Zelfde als standaardkwaliteit',
-			'settings.directPlayCoveredQuality' => 'Kleinere video\'s op originele kwaliteit afspelen',
-			'settings.directPlayCoveredQualityDescription' => 'Speel video\'s die al binnen de kwaliteitslimiet vallen direct af in plaats van ze te transcoderen',
 			'settings.videoCodecs' => 'Videocodecs',
 			'settings.videoCodecsDescription' => 'Niet-aangevinkte codecs worden door de server getranscodeerd',
 			'settings.videoCodecsAlwaysAccepted' => 'Altijd geaccepteerd',
@@ -3093,10 +3089,10 @@ extension on TranslationsNl {
 			'fileInfo.duration' => 'Duur',
 			'fileInfo.previewThumbnails' => 'Preview-miniaturen',
 			'fileInfo.previewIndex' => 'Preview-index',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Pakketlengte',
 			'fileInfo.filePresent' => 'Bestand aanwezig',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Leesbaar door server',
 			'fileInfo.streamPath' => 'Streampad',
 			'fileInfo.optimizedForStreaming' => 'Geoptimaliseerd voor streaming',
@@ -3607,10 +3603,10 @@ extension on TranslationsNl {
 			'explore.stats.favorited' => ({required Object n}) => '${n} favorieten',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} is ermee gestopt',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${n} reactie', other: '${n} reacties', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} stemmen',
 			'explore.stats.watching' => ({required Object n}) => '${n} kijken ernaar',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} afgerond',
 			'explore.stats.onHold' => ({required Object n}) => '${n} op pauze',
 			'explore.stats.dropped' => ({required Object n}) => '${n} gestopt',
@@ -4121,10 +4117,10 @@ extension on TranslationsNl {
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een andere app',
 			'externalPlayer.selectPlayer' => 'Speler selecteren',
 			'externalPlayer.customPlayers' => 'Aangepaste spelers',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Systeemstandaard',
 			'externalPlayer.addCustomPlayer' => 'Aangepaste speler toevoegen',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Spelernaam',
 			'externalPlayer.playerNameHint' => 'Mijn speler',
 			'externalPlayer.playerCommand' => 'Commando',

@@ -290,8 +290,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Standardkvalitet';
 	@override String get cellularQualityTitle => 'Standardkvalitet på mobildata';
 	@override String get cellularQualitySameAsDefault => 'Samma som standardkvalitet';
-	@override String get directPlayCoveredQuality => 'Spela mindre videor i originalkvalitet';
-	@override String get directPlayCoveredQualityDescription => 'Direktspela videor som redan ligger inom kvalitetsgränsen i stället för att transkoda dem';
 	@override String get videoCodecs => 'Videokodekar';
 	@override String get videoCodecsDescription => 'Kodekar utan bock transkodas av servern';
 	@override String get videoCodecsAlwaysAccepted => 'Accepteras alltid';
@@ -2750,8 +2748,6 @@ extension on TranslationsSv {
 			'settings.defaultQualityTitle' => 'Standardkvalitet',
 			'settings.cellularQualityTitle' => 'Standardkvalitet på mobildata',
 			'settings.cellularQualitySameAsDefault' => 'Samma som standardkvalitet',
-			'settings.directPlayCoveredQuality' => 'Spela mindre videor i originalkvalitet',
-			'settings.directPlayCoveredQualityDescription' => 'Direktspela videor som redan ligger inom kvalitetsgränsen i stället för att transkoda dem',
 			'settings.videoCodecs' => 'Videokodekar',
 			'settings.videoCodecsDescription' => 'Kodekar utan bock transkodas av servern',
 			'settings.videoCodecsAlwaysAccepted' => 'Accepteras alltid',
@@ -3093,10 +3089,10 @@ extension on TranslationsSv {
 			'fileInfo.duration' => 'Varaktighet',
 			'fileInfo.previewThumbnails' => 'Förhandsgranskningsminiatyrer',
 			'fileInfo.previewIndex' => 'Förhandsgranskningsindex',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Paketlängd',
 			'fileInfo.filePresent' => 'Fil finns',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Läsbar av servern',
 			'fileInfo.streamPath' => 'Strömsökväg',
 			'fileInfo.optimizedForStreaming' => 'Optimerad för streaming',
@@ -3607,10 +3603,10 @@ extension on TranslationsSv {
 			'explore.stats.favorited' => ({required Object n}) => '${n} favoriter',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} hoppade av',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: '${n} kommentar', other: '${n} kommentarer', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} röster',
 			'explore.stats.watching' => ({required Object n}) => '${n} tittar på den',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} avslutade',
 			'explore.stats.onHold' => ({required Object n}) => '${n} på paus',
 			'explore.stats.dropped' => ({required Object n}) => '${n} hoppade av',
@@ -4121,10 +4117,10 @@ extension on TranslationsSv {
 			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en annan app',
 			'externalPlayer.selectPlayer' => 'Välj spelare',
 			'externalPlayer.customPlayers' => 'Anpassade spelare',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Systemstandard',
 			'externalPlayer.addCustomPlayer' => 'Lägg till anpassad spelare',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Spelarnamn',
 			'externalPlayer.playerNameHint' => 'Min spelare',
 			'externalPlayer.playerCommand' => 'Kommando',

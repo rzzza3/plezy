@@ -290,8 +290,6 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Качество по подразбиране';
 	@override String get cellularQualityTitle => 'Качество по подразбиране при мобилни данни';
 	@override String get cellularQualitySameAsDefault => 'Същото като качеството по подразбиране';
-	@override String get directPlayCoveredQuality => 'Пускай по-малките видеа в оригинално качество';
-	@override String get directPlayCoveredQualityDescription => 'Възпроизвеждай директно видеата, които вече са в рамките на лимита за качество, вместо да ги транскодираш';
 	@override String get videoCodecs => 'Видео кодеци';
 	@override String get videoCodecsDescription => 'Сървърът транскодира кодеците без отметка';
 	@override String get videoCodecsAlwaysAccepted => 'Винаги се приема';
@@ -2750,8 +2748,6 @@ extension on TranslationsBg {
 			'settings.defaultQualityTitle' => 'Качество по подразбиране',
 			'settings.cellularQualityTitle' => 'Качество по подразбиране при мобилни данни',
 			'settings.cellularQualitySameAsDefault' => 'Същото като качеството по подразбиране',
-			'settings.directPlayCoveredQuality' => 'Пускай по-малките видеа в оригинално качество',
-			'settings.directPlayCoveredQualityDescription' => 'Възпроизвеждай директно видеата, които вече са в рамките на лимита за качество, вместо да ги транскодираш',
 			'settings.videoCodecs' => 'Видео кодеци',
 			'settings.videoCodecsDescription' => 'Сървърът транскодира кодеците без отметка',
 			'settings.videoCodecsAlwaysAccepted' => 'Винаги се приема',
@@ -3093,10 +3089,10 @@ extension on TranslationsBg {
 			'fileInfo.duration' => 'Продължителност',
 			'fileInfo.previewThumbnails' => 'Миниатюри за преглед',
 			'fileInfo.previewIndex' => 'Индекс на прегледа',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Дължина на пакета',
 			'fileInfo.filePresent' => 'Файлът е наличен',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Четим от сървъра',
 			'fileInfo.streamPath' => 'Път на потока',
 			'fileInfo.optimizedForStreaming' => 'Оптимизирано за стрийминг',
@@ -3607,10 +3603,10 @@ extension on TranslationsBg {
 			'explore.stats.favorited' => ({required Object n}) => '${n} в любими',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} го изоставиха',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: '${n} коментар', other: '${n} коментара', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} гласа',
 			'explore.stats.watching' => ({required Object n}) => '${n} го гледат',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} завършили',
 			'explore.stats.onHold' => ({required Object n}) => '${n} на пауза',
 			'explore.stats.dropped' => ({required Object n}) => '${n} изоставили',
@@ -4121,10 +4117,10 @@ extension on TranslationsBg {
 			'externalPlayer.useExternalPlayerDescription' => 'Отваряй видеата в друго приложение',
 			'externalPlayer.selectPlayer' => 'Избери плейър',
 			'externalPlayer.customPlayers' => 'Потребителски плейъри',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Системен по подразбиране',
 			'externalPlayer.addCustomPlayer' => 'Добави потребителски плейър',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Име на плейъра',
 			'externalPlayer.playerNameHint' => 'Моят плеър',
 			'externalPlayer.playerCommand' => 'Команда',

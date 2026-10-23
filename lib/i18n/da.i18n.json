@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Standardkvalitet",
     "cellularQualityTitle": "Standardkvalitet på mobildata",
     "cellularQualitySameAsDefault": "Samme som standardkvalitet",
-    "directPlayCoveredQuality": "Afspil mindre videoer i original kvalitet",
-    "directPlayCoveredQualityDescription": "Afspil videoer, der allerede er inden for kvalitetsgrænsen, direkte i stedet for at transkode dem",
     "videoCodecs": "Videocodecs",
     "videoCodecsDescription": "Codecs uden flueben transkodes af serveren",
     "videoCodecsAlwaysAccepted": "Accepteres altid",

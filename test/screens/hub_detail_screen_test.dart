@@ -406,7 +406,7 @@ class _PagedHubClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<LibraryPage<MediaItem>> fetchMoreHubItemsPage(

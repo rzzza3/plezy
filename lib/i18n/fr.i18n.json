@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Qualité par défaut",
     "cellularQualityTitle": "Qualité par défaut sur les données mobiles",
     "cellularQualitySameAsDefault": "Identique à la qualité par défaut",
-    "directPlayCoveredQuality": "Lire les vidéos plus petites en qualité originale",
-    "directPlayCoveredQualityDescription": "Lire directement les vidéos déjà dans la limite de qualité au lieu de les transcoder",
     "videoCodecs": "Codecs vidéo",
     "videoCodecsDescription": "Le serveur transcode les codecs non cochés",
     "videoCodecsAlwaysAccepted": "Toujours accepté",

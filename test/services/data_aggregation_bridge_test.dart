@@ -287,7 +287,6 @@ class _ScriptedClient implements MediaServerClient {
     required MediaKind kind,
     List<String> titles = const [],
     int? year,
-    String? plexGuid,
     ExternalSeasonRef? season,
   }) async {
     lookups++;

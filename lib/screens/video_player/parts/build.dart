@@ -262,7 +262,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     return Video(
                       player: player!,
                       hasFirstFrame: _firstFrame.uiReady,
-                      controls: (context) => PlexVideoControls(
+                      controls: (context) => SiloVideoControls(
                         player: player!,
                         volumeController: _volumeController!,
                         metadata: _currentMetadata,

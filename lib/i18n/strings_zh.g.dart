@@ -290,8 +290,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get defaultQualityTitle => '默认画质';
 	@override String get cellularQualityTitle => '移动网络默认画质';
 	@override String get cellularQualitySameAsDefault => '与默认画质相同';
-	@override String get directPlayCoveredQuality => '以原始画质播放较小视频';
-	@override String get directPlayCoveredQualityDescription => '已在画质限制内的视频直接播放，而非转码';
 	@override String get videoCodecs => '视频编解码器';
 	@override String get videoCodecsDescription => '未勾选的编解码器将由服务器转码';
 	@override String get videoCodecsAlwaysAccepted => '始终接受';
@@ -2742,8 +2740,6 @@ extension on TranslationsZh {
 			'settings.defaultQualityTitle' => '默认画质',
 			'settings.cellularQualityTitle' => '移动网络默认画质',
 			'settings.cellularQualitySameAsDefault' => '与默认画质相同',
-			'settings.directPlayCoveredQuality' => '以原始画质播放较小视频',
-			'settings.directPlayCoveredQualityDescription' => '已在画质限制内的视频直接播放，而非转码',
 			'settings.videoCodecs' => '视频编解码器',
 			'settings.videoCodecsDescription' => '未勾选的编解码器将由服务器转码',
 			'settings.videoCodecsAlwaysAccepted' => '始终接受',
@@ -3085,10 +3081,10 @@ extension on TranslationsZh {
 			'fileInfo.duration' => '时长',
 			'fileInfo.previewThumbnails' => '预览缩略图',
 			'fileInfo.previewIndex' => '预览索引',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => '数据包长度',
 			'fileInfo.filePresent' => '文件存在',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => '服务器可读',
 			'fileInfo.streamPath' => '流路径',
 			'fileInfo.optimizedForStreaming' => '已针对流式传输优化',
@@ -3599,10 +3595,10 @@ extension on TranslationsZh {
 			'explore.stats.favorited' => ({required Object n}) => '${n} 人收藏',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} 弃番',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '${n} 条评论', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} 票',
 			'explore.stats.watching' => ({required Object n}) => '${n} 人正在观看',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} 人已看完',
 			'explore.stats.onHold' => ({required Object n}) => '${n} 人搁置',
 			'explore.stats.dropped' => ({required Object n}) => '${n} 人弃番',
@@ -4113,10 +4109,10 @@ extension on TranslationsZh {
 			'externalPlayer.useExternalPlayerDescription' => '在其他应用中打开视频',
 			'externalPlayer.selectPlayer' => '选择播放器',
 			'externalPlayer.customPlayers' => '自定义播放器',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => '系统默认',
 			'externalPlayer.addCustomPlayer' => '添加自定义播放器',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => '播放器名称',
 			'externalPlayer.playerNameHint' => '我的播放器',
 			'externalPlayer.playerCommand' => '命令',

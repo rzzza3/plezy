@@ -200,7 +200,7 @@ void main() {
 
   // The whole point of moving the countdown to a ValueListenable: the digit
   // updates without the parent being rebuilt. Previously a 1 Hz timer called a
-  // root setState on the player screen, which re-created PlexVideoControls
+  // root setState on the player screen, which re-created SiloVideoControls
   // (~50 props) and rebuilt the entire chrome once per second.
   testWidgets('play next countdown digit updates without rebuilding the parent', (tester) async {
     PipService().isPipActive.value = false;

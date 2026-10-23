@@ -728,7 +728,7 @@ class _HubClient extends _PagedClient {
   MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   List<MediaHub> hubs = [_recommendationHub('A'), _recommendationHub('B'), _recommendationHub('C')];
   Future<List<MediaHub>>? nextHubs;

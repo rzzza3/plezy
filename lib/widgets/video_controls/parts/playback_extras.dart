@@ -1,6 +1,6 @@
 part of '../video_controls.dart';
 
-extension _PlexVideoControlsPlaybackExtrasMethods on _PlexVideoControlsState {
+extension _SiloVideoControlsPlaybackExtrasMethods on _SiloVideoControlsState {
   Future<void> _loadPlaybackExtras({bool forceRefresh = false}) async {
     final loadKey = widget.metadata.globalKey;
     // Re-entrancy guard is per item: an in-place episode swap may start the

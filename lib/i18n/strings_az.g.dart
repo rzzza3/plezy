@@ -290,8 +290,6 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Defolt keyfiyyət';
 	@override String get cellularQualityTitle => 'Mobil şəbəkədə defolt keyfiyyət';
 	@override String get cellularQualitySameAsDefault => 'Defolt keyfiyyətlə eyni';
-	@override String get directPlayCoveredQuality => 'Kiçik videoları orijinal keyfiyyətdə oynat';
-	@override String get directPlayCoveredQualityDescription => 'Keyfiyyət limitinə uyğun gələn videoları yenidən kodlaşdırmaq əvəzinə birbaşa oynat';
 	@override String get videoCodecs => 'Video kodekləri';
 	@override String get videoCodecsDescription => 'İşarələnməmiş kodekləri server yenidən kodlaşdırır';
 	@override String get videoCodecsAlwaysAccepted => 'Həmişə qəbul edilir';
@@ -2750,8 +2748,6 @@ extension on TranslationsAz {
 			'settings.defaultQualityTitle' => 'Defolt keyfiyyət',
 			'settings.cellularQualityTitle' => 'Mobil şəbəkədə defolt keyfiyyət',
 			'settings.cellularQualitySameAsDefault' => 'Defolt keyfiyyətlə eyni',
-			'settings.directPlayCoveredQuality' => 'Kiçik videoları orijinal keyfiyyətdə oynat',
-			'settings.directPlayCoveredQualityDescription' => 'Keyfiyyət limitinə uyğun gələn videoları yenidən kodlaşdırmaq əvəzinə birbaşa oynat',
 			'settings.videoCodecs' => 'Video kodekləri',
 			'settings.videoCodecsDescription' => 'İşarələnməmiş kodekləri server yenidən kodlaşdırır',
 			'settings.videoCodecsAlwaysAccepted' => 'Həmişə qəbul edilir',
@@ -3093,10 +3089,10 @@ extension on TranslationsAz {
 			'fileInfo.duration' => 'Müddət',
 			'fileInfo.previewThumbnails' => 'Önizləmə miniatürləri',
 			'fileInfo.previewIndex' => 'Önizləmə indeksi',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Paket uzunluğu',
 			'fileInfo.filePresent' => 'Fayl mövcuddur',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Server tərəfindən oxuna bilir',
 			'fileInfo.streamPath' => 'Axın yolu',
 			'fileInfo.optimizedForStreaming' => 'Yayım üçün optimallaşdırılıb',
@@ -3607,10 +3603,10 @@ extension on TranslationsAz {
 			'explore.stats.favorited' => ({required Object n}) => '${n} favorit',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} izləməyi dayandırdı',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('az'))(n, one: '${n} şərh', other: '${n} şərh', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} səs',
 			'explore.stats.watching' => ({required Object n}) => '${n} izləyir',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} tamamladı',
 			'explore.stats.onHold' => ({required Object n}) => '${n} fasilədə',
 			'explore.stats.dropped' => ({required Object n}) => '${n} izləməyi dayandırdı',
@@ -4121,10 +4117,10 @@ extension on TranslationsAz {
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başqa tətbiqdə açın',
 			'externalPlayer.selectPlayer' => 'Oynadıcı seç',
 			'externalPlayer.customPlayers' => 'Xüsusi oynadıcılar',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Sistem defoltu',
 			'externalPlayer.addCustomPlayer' => 'Xüsusi oynadıcı əlavə et',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Oynadıcı adı',
 			'externalPlayer.playerNameHint' => 'Mənim oynadıcım',
 			'externalPlayer.playerCommand' => 'Əmr',

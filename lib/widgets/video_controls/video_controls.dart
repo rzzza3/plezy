@@ -532,7 +532,7 @@ enum PlaybackSourceChangeOutcome { applied, unchanged, busy, unavailable, supers
 
 typedef _EdgeAdjustmentIndicatorState = ({bool visible, MobileEdgeAdjustmentSide? side, double value});
 
-class PlexVideoControls extends StatefulWidget {
+class SiloVideoControls extends StatefulWidget {
   final Player player;
   final VideoVolumeController volumeController;
   final MediaItem metadata;
@@ -643,7 +643,7 @@ class PlexVideoControls extends StatefulWidget {
   @visibleForTesting
   final List<MediaMarker>? initialMarkers;
 
-  const PlexVideoControls({
+  const SiloVideoControls({
     super.key,
     required this.player,
     required this.volumeController,
@@ -700,10 +700,10 @@ class PlexVideoControls extends StatefulWidget {
   });
 
   @override
-  State<PlexVideoControls> createState() => _PlexVideoControlsState();
+  State<SiloVideoControls> createState() => _SiloVideoControlsState();
 }
 
-class _PlexVideoControlsState extends State<PlexVideoControls>
+class _SiloVideoControlsState extends State<SiloVideoControls>
     with WindowListener, ListenableBindingsMixin, MountedSetStateMixin {
   bool get _showControls => widget.chromeController.controlsVisible;
   bool get _hasRenderedFirstFrame => widget.hasFirstFrame?.value ?? true;
@@ -989,7 +989,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   @override
-  void didUpdateWidget(PlexVideoControls oldWidget) {
+  void didUpdateWidget(SiloVideoControls oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.player != widget.player) {
       ++_subtitleVisibilityWriteGeneration;

@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Качество по подразбиране",
     "cellularQualityTitle": "Качество по подразбиране при мобилни данни",
     "cellularQualitySameAsDefault": "Същото като качеството по подразбиране",
-    "directPlayCoveredQuality": "Пускай по-малките видеа в оригинално качество",
-    "directPlayCoveredQualityDescription": "Възпроизвеждай директно видеата, които вече са в рамките на лимита за качество, вместо да ги транскодираш",
     "videoCodecs": "Видео кодеци",
     "videoCodecsDescription": "Сървърът транскодира кодеците без отметка",
     "videoCodecsAlwaysAccepted": "Винаги се приема",

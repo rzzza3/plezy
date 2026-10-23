@@ -2,7 +2,7 @@ part of '../video_controls.dart';
 
 final Expando<LatestAsyncWrite<String>> _subtitleVisibilityWrites = Expando<LatestAsyncWrite<String>>();
 
-extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
+extension _SiloVideoControlsTrackMethods on _SiloVideoControlsState {
   void _toggleSubtitles() {
     // Restoring always works: backends without a renderer-level visibility
     // switch hide subtitles by deselecting them, so the current track reads

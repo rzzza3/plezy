@@ -291,8 +291,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get defaultQualityTitle => '預設畫質';
 	@override String get cellularQualityTitle => '行動網路上的預設畫質';
 	@override String get cellularQualitySameAsDefault => '與預設畫質相同';
-	@override String get directPlayCoveredQuality => '以原始畫質播放較小影片';
-	@override String get directPlayCoveredQualityDescription => '已在畫質限制內的影片直接播放，而非轉碼';
 	@override String get videoCodecs => '影片編解碼器';
 	@override String get videoCodecsDescription => '未勾選的編解碼器將由伺服器轉碼';
 	@override String get videoCodecsAlwaysAccepted => '一律接受';
@@ -2743,8 +2741,6 @@ extension on TranslationsZhHant {
 			'settings.defaultQualityTitle' => '預設畫質',
 			'settings.cellularQualityTitle' => '行動網路上的預設畫質',
 			'settings.cellularQualitySameAsDefault' => '與預設畫質相同',
-			'settings.directPlayCoveredQuality' => '以原始畫質播放較小影片',
-			'settings.directPlayCoveredQualityDescription' => '已在畫質限制內的影片直接播放，而非轉碼',
 			'settings.videoCodecs' => '影片編解碼器',
 			'settings.videoCodecsDescription' => '未勾選的編解碼器將由伺服器轉碼',
 			'settings.videoCodecsAlwaysAccepted' => '一律接受',
@@ -3086,10 +3082,10 @@ extension on TranslationsZhHant {
 			'fileInfo.duration' => '長度',
 			'fileInfo.previewThumbnails' => '預覽縮圖',
 			'fileInfo.previewIndex' => '預覽索引',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => '封包長度',
 			'fileInfo.filePresent' => '檔案存在',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => '伺服器可讀取',
 			'fileInfo.streamPath' => '串流路徑',
 			'fileInfo.optimizedForStreaming' => '已最佳化串流播放',
@@ -3600,10 +3596,10 @@ extension on TranslationsZhHant {
 			'explore.stats.favorited' => ({required Object n}) => '${n} 人收藏',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} 的人棄番',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '${n} 則留言', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} 票',
 			'explore.stats.watching' => ({required Object n}) => '${n} 人正在觀看',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} 人已看完',
 			'explore.stats.onHold' => ({required Object n}) => '${n} 人擱置中',
 			'explore.stats.dropped' => ({required Object n}) => '${n} 人棄番',
@@ -4114,10 +4110,10 @@ extension on TranslationsZhHant {
 			'externalPlayer.useExternalPlayerDescription' => '在其他應用程式中開啟影片',
 			'externalPlayer.selectPlayer' => '選擇播放器',
 			'externalPlayer.customPlayers' => '自訂播放器',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => '系統預設',
 			'externalPlayer.addCustomPlayer' => '新增自訂播放器',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => '播放器名稱',
 			'externalPlayer.playerNameHint' => '我的播放器',
 			'externalPlayer.playerCommand' => '執行命令',

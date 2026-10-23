@@ -290,8 +290,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Alapértelmezett minőség';
 	@override String get cellularQualityTitle => 'Alapértelmezett minőség mobilhálózaton';
 	@override String get cellularQualitySameAsDefault => 'Ugyanaz, mint az alapértelmezett minőség';
-	@override String get directPlayCoveredQuality => 'Kisebb videók lejátszása eredeti minőségben';
-	@override String get directPlayCoveredQualityDescription => 'A minőségi korláton belüli videók közvetlen lejátszása átkódolás helyett';
 	@override String get videoCodecs => 'Videokodekek';
 	@override String get videoCodecsDescription => 'A nem bejelölt kodekeket a szerver átkódolja';
 	@override String get videoCodecsAlwaysAccepted => 'Mindig elfogadva';
@@ -2750,8 +2748,6 @@ extension on TranslationsHu {
 			'settings.defaultQualityTitle' => 'Alapértelmezett minőség',
 			'settings.cellularQualityTitle' => 'Alapértelmezett minőség mobilhálózaton',
 			'settings.cellularQualitySameAsDefault' => 'Ugyanaz, mint az alapértelmezett minőség',
-			'settings.directPlayCoveredQuality' => 'Kisebb videók lejátszása eredeti minőségben',
-			'settings.directPlayCoveredQualityDescription' => 'A minőségi korláton belüli videók közvetlen lejátszása átkódolás helyett',
 			'settings.videoCodecs' => 'Videokodekek',
 			'settings.videoCodecsDescription' => 'A nem bejelölt kodekeket a szerver átkódolja',
 			'settings.videoCodecsAlwaysAccepted' => 'Mindig elfogadva',
@@ -3093,10 +3089,10 @@ extension on TranslationsHu {
 			'fileInfo.duration' => 'Időtartam',
 			'fileInfo.previewThumbnails' => 'Előnézeti miniatűrök',
 			'fileInfo.previewIndex' => 'Előnézeti index',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Csomaghossz',
 			'fileInfo.filePresent' => 'Fájl jelen van',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'A szerver számára olvasható',
 			'fileInfo.streamPath' => 'Adatfolyam útvonala',
 			'fileInfo.optimizedForStreaming' => 'Adatfolyam-továbbításra optimalizálva',
@@ -3607,10 +3603,10 @@ extension on TranslationsHu {
 			'explore.stats.favorited' => ({required Object n}) => '${n} kedvenc',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} felhagyott vele',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${n} hozzászólás', other: '${n} hozzászólás', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} szavazat',
 			'explore.stats.watching' => ({required Object n}) => '${n} nézi',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} befejezte',
 			'explore.stats.onHold' => ({required Object n}) => '${n} szünetelteti',
 			'explore.stats.dropped' => ({required Object n}) => '${n} felhagyott vele',
@@ -4121,10 +4117,10 @@ extension on TranslationsHu {
 			'externalPlayer.useExternalPlayerDescription' => 'Videók megnyitása egy másik alkalmazásban',
 			'externalPlayer.selectPlayer' => 'Lejátszó kiválasztása',
 			'externalPlayer.customPlayers' => 'Egyéni lejátszók',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Rendszer alapértelmezése',
 			'externalPlayer.addCustomPlayer' => 'Egyéni lejátszó hozzáadása',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Lejátszó neve',
 			'externalPlayer.playerNameHint' => 'Saját lejátszó',
 			'externalPlayer.playerCommand' => 'Parancs',

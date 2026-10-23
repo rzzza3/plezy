@@ -290,8 +290,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Әдепкі сапа';
 	@override String get cellularQualityTitle => 'Мобильді желідегі әдепкі сапа';
 	@override String get cellularQualitySameAsDefault => 'Әдепкі сапамен бірдей';
-	@override String get directPlayCoveredQuality => 'Кіші видеоларды түпнұсқа сапада ойнату';
-	@override String get directPlayCoveredQualityDescription => 'Сапа шегіне сәйкес келетін видеоларды транскодтаудың орнына тікелей ойнату';
 	@override String get videoCodecs => 'Бейне кодектері';
 	@override String get videoCodecsDescription => 'Белгіленбеген кодектерді сервер транскодтайды';
 	@override String get videoCodecsAlwaysAccepted => 'Әрқашан қабылданады';
@@ -2750,8 +2748,6 @@ extension on TranslationsKk {
 			'settings.defaultQualityTitle' => 'Әдепкі сапа',
 			'settings.cellularQualityTitle' => 'Мобильді желідегі әдепкі сапа',
 			'settings.cellularQualitySameAsDefault' => 'Әдепкі сапамен бірдей',
-			'settings.directPlayCoveredQuality' => 'Кіші видеоларды түпнұсқа сапада ойнату',
-			'settings.directPlayCoveredQualityDescription' => 'Сапа шегіне сәйкес келетін видеоларды транскодтаудың орнына тікелей ойнату',
 			'settings.videoCodecs' => 'Бейне кодектері',
 			'settings.videoCodecsDescription' => 'Белгіленбеген кодектерді сервер транскодтайды',
 			'settings.videoCodecsAlwaysAccepted' => 'Әрқашан қабылданады',
@@ -3093,10 +3089,10 @@ extension on TranslationsKk {
 			'fileInfo.duration' => 'Уақыты',
 			'fileInfo.previewThumbnails' => 'Алдын ала қарау суреттері',
 			'fileInfo.previewIndex' => 'Алдын ала қарау индексі',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Пакет ұзындығы',
 			'fileInfo.filePresent' => 'Файл бар',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Сервер оқи алады',
 			'fileInfo.streamPath' => 'Ағын жолы',
 			'fileInfo.optimizedForStreaming' => 'Ағынды беру үшін оңтайландырылған',
@@ -3607,10 +3603,10 @@ extension on TranslationsKk {
 			'explore.stats.favorited' => ({required Object n}) => '${n} таңдаулы',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} тастап кетті',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} пікір', other: '${n} пікір', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} дауыс',
 			'explore.stats.watching' => ({required Object n}) => '${n} қарап жатыр',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} аяқтады',
 			'explore.stats.onHold' => ({required Object n}) => '${n} кейінге қалдырды',
 			'explore.stats.dropped' => ({required Object n}) => '${n} тастады',
@@ -4121,10 +4117,10 @@ extension on TranslationsKk {
 			'externalPlayer.useExternalPlayerDescription' => 'Видеоларды басқа қолданбада ашу',
 			'externalPlayer.selectPlayer' => 'Ойнатқышты таңдау',
 			'externalPlayer.customPlayers' => 'Арнайы ойнатқыштар',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Жүйелік әдепкі',
 			'externalPlayer.addCustomPlayer' => 'Арнайы ойнатқыш қосу',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Ойнатқыш атауы',
 			'externalPlayer.playerNameHint' => 'Менің ойнатқышым',
 			'externalPlayer.playerCommand' => 'Пәрмен',

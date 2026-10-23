@@ -88,23 +88,6 @@ class ServerCapabilities {
     this.libraryChangeEvents = false,
   });
 
-  /// Defaults for a fully-featured Plex server.
-  static const ServerCapabilities plex = ServerCapabilities(
-    liveTv: true,
-    liveTvDvr: true,
-    videoTranscoding: true,
-    richHubs: true,
-    numericUserRating: true,
-    userFavorites: false,
-    continueWatchingRemoval: true,
-    externalSubtitleSearch: true,
-    richMetadataEdit: true,
-    scrubThumbnails: true,
-    folderGrouping: true,
-    instantMix: true,
-    libraryChangeEvents: true,
-  );
-
   /// Defaults for a Silo server. A flag turns on in the step that implements
   /// it on `SiloClient`, so no screen offers a feature the client cannot
   /// serve yet. Silo has no wire for live TV, DVR, folders, instant mixes,

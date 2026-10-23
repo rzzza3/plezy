@@ -290,8 +290,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'デフォルト画質';
 	@override String get cellularQualityTitle => 'モバイルデータ通信時のデフォルト画質';
 	@override String get cellularQualitySameAsDefault => 'デフォルト画質と同じ';
-	@override String get directPlayCoveredQuality => '小さい動画をオリジナル画質で再生';
-	@override String get directPlayCoveredQualityDescription => '画質制限内の動画はトランスコードせずにダイレクト再生します';
 	@override String get videoCodecs => 'ビデオコーデック';
 	@override String get videoCodecsDescription => 'チェックを外したコーデックはサーバーがトランスコードします';
 	@override String get videoCodecsAlwaysAccepted => '常に許可';
@@ -2742,8 +2740,6 @@ extension on TranslationsJa {
 			'settings.defaultQualityTitle' => 'デフォルト画質',
 			'settings.cellularQualityTitle' => 'モバイルデータ通信時のデフォルト画質',
 			'settings.cellularQualitySameAsDefault' => 'デフォルト画質と同じ',
-			'settings.directPlayCoveredQuality' => '小さい動画をオリジナル画質で再生',
-			'settings.directPlayCoveredQualityDescription' => '画質制限内の動画はトランスコードせずにダイレクト再生します',
 			'settings.videoCodecs' => 'ビデオコーデック',
 			'settings.videoCodecsDescription' => 'チェックを外したコーデックはサーバーがトランスコードします',
 			'settings.videoCodecsAlwaysAccepted' => '常に許可',
@@ -3085,10 +3081,10 @@ extension on TranslationsJa {
 			'fileInfo.duration' => '長さ',
 			'fileInfo.previewThumbnails' => 'プレビューサムネイル',
 			'fileInfo.previewIndex' => 'プレビューインデックス',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'パケット長',
 			'fileInfo.filePresent' => 'ファイルあり',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'サーバーから読み取り可能',
 			'fileInfo.streamPath' => 'ストリームパス',
 			'fileInfo.optimizedForStreaming' => 'ストリーミング最適化',
@@ -3599,10 +3595,10 @@ extension on TranslationsJa {
 			'explore.stats.favorited' => ({required Object n}) => 'お気に入り ${n}件',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent}が視聴中止',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: 'コメント ${n}件', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '投票 ${n}件',
 			'explore.stats.watching' => ({required Object n}) => '${n}人が視聴中',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n}人が視聴済み',
 			'explore.stats.onHold' => ({required Object n}) => '${n}人が保留中',
 			'explore.stats.dropped' => ({required Object n}) => '${n}人が視聴中止',
@@ -4113,10 +4109,10 @@ extension on TranslationsJa {
 			'externalPlayer.useExternalPlayerDescription' => '動画を別のアプリで開きます',
 			'externalPlayer.selectPlayer' => 'プレーヤーを選択',
 			'externalPlayer.customPlayers' => 'カスタムプレーヤー',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'システム既定',
 			'externalPlayer.addCustomPlayer' => 'カスタムプレーヤーを追加',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'プレーヤー名',
 			'externalPlayer.playerNameHint' => 'マイプレーヤー',
 			'externalPlayer.playerCommand' => 'コマンド',

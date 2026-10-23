@@ -636,11 +636,6 @@ abstract class MediaServerClient {
   /// first title only, since for a sequel the catalog year is the season's,
   /// not the show's.
   ///
-  /// [plexGuid] is a Plex-only escape hatch: a `plex://show/…` guid the caller
-  /// already holds, which the local server *can* filter on exactly. It is
-  /// never resolved over the network — only Plex Discover catalog items carry
-  /// one, in their own rating key. Other backends ignore it.
-  ///
   /// [season] gates the results: when the entry maps to season 2+ of a longer
   /// series, a candidate is only kept if the server actually has that season.
   /// Implementations MUST gate only on [ExternalSeasonRef.agreedSeason] — the
@@ -649,8 +644,7 @@ abstract class MediaServerClient {
   /// on a guess.
   ///
   /// Returns null when this backend cannot execute the supplied query (for
-  /// example, some backends need external ids and a title, whereas Plex can
-  /// query a Plex guid or legacy-agent id without titles). Unsupported kinds
+  /// example, when it needs external ids and a title). Unsupported kinds
   /// also return null. An empty list means a supported lookup completed and
   /// found no match. Failures and cancellation throw rather than supplying
   /// negative membership evidence. Used to match external catalog items
@@ -660,7 +654,6 @@ abstract class MediaServerClient {
     required MediaKind kind,
     List<String> titles = const [],
     int? year,
-    String? plexGuid,
     ExternalSeasonRef? season,
   });
 

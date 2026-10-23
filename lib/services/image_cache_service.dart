@@ -32,17 +32,17 @@ Future<void> closeArtworkHttpClientGracefully({Duration drainTimeout = const Dur
 /// Artwork rails are the widest fan-out in the app, so the wrapper below keeps
 /// it bounded — weak TV devices must not decode a whole rail at once — while
 /// the shared platform client supplies the connection pool it fans out over.
-class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
-  static final PlexImageCacheManager instance = PlexImageCacheManager._();
+class ArtworkCacheManager extends ce_cache.DefaultCacheManager {
+  static final ArtworkCacheManager instance = ArtworkCacheManager._();
 
-  PlexImageCacheManager._()
+  ArtworkCacheManager._()
     : this.forTesting(
         httpClientFactory: () => _SharedHttpClient(_artworkHttpClient.inner, _artworkRequestLimiter),
         cacheDirectoryProvider: getApplicationCacheDirectory,
       );
 
   @visibleForTesting
-  PlexImageCacheManager.forTesting({
+  ArtworkCacheManager.forTesting({
     required http.Client Function() httpClientFactory,
     required ce_cache.CacheDirectoryProvider cacheDirectoryProvider,
   }) : super(
@@ -91,10 +91,10 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
 }
 
 /// Query parameters that carry a media-server credential in artwork URLs,
-/// e.g. Plex's `X-Plex-Token`. Plex's photo
-/// transcoder URLs also nest one inside their percent-encoded `url=` value.
+/// including one nested inside a percent-encoded `url=` value. Silo sends
+/// its credential in a header; this guards any server that does not.
 final _artworkCredentialParam = RegExp(
-  r'((?:X-Plex-Token|api_key|ApiKey)(?:=|%3D|%253D))[^&#%]+',
+  r'((?:access_token|api_key|ApiKey)(?:=|%3D|%253D))[^&#%]+',
   caseSensitive: false,
 );
 
@@ -103,7 +103,7 @@ final _artworkCredentialParam = RegExp(
 String redactArtworkUrl(String url) => url.replaceAllMapped(_artworkCredentialParam, (match) => match[1]!);
 
 /// Request header carrying the credentialed URL from
-/// [PlexImageCacheManager.getFileStream] to [_ArtworkCredentialInterceptor].
+/// [ArtworkCacheManager.getFileStream] to [_ArtworkCredentialInterceptor].
 /// Never sent: the interceptor removes it.
 const _credentialedUrlHeader = 'x-plezy-credentialed-url';
 

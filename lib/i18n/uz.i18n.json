@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Standart sifat",
     "cellularQualityTitle": "Mobil tarmoqda standart sifat",
     "cellularQualitySameAsDefault": "Standart sifat bilan bir xil",
-    "directPlayCoveredQuality": "Kichik videolarni asl sifatda ijro etish",
-    "directPlayCoveredQualityDescription": "Sifat chegarasiga kiruvchi videolarni qayta kodlash oʻrniga toʻgʻridan-toʻgʻri ijro etish",
     "videoCodecs": "Video kodeklar",
     "videoCodecsDescription": "Belgilanmagan kodeklarni server qayta kodlaydi",
     "videoCodecsAlwaysAccepted": "Har doim qabul qilinadi",

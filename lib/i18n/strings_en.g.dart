@@ -587,12 +587,6 @@ class Translations$settings$en {
 	/// en: 'Same as Default Quality'
 	String get cellularQualitySameAsDefault => 'Same as Default Quality';
 
-	/// en: 'Play Smaller Videos at Original Quality'
-	String get directPlayCoveredQuality => 'Play Smaller Videos at Original Quality';
-
-	/// en: 'Direct play videos already within the quality limit instead of transcoding them'
-	String get directPlayCoveredQualityDescription => 'Direct play videos already within the quality limit instead of transcoding them';
-
 	/// en: 'Video Codecs'
 	String get videoCodecs => 'Video Codecs';
 
@@ -6523,8 +6517,6 @@ extension on Translations {
 			'settings.defaultQualityTitle' => 'Default Quality',
 			'settings.cellularQualityTitle' => 'Default Quality on Cellular',
 			'settings.cellularQualitySameAsDefault' => 'Same as Default Quality',
-			'settings.directPlayCoveredQuality' => 'Play Smaller Videos at Original Quality',
-			'settings.directPlayCoveredQualityDescription' => 'Direct play videos already within the quality limit instead of transcoding them',
 			'settings.videoCodecs' => 'Video Codecs',
 			'settings.videoCodecsDescription' => 'Unchecked codecs are transcoded by the server',
 			'settings.videoCodecsAlwaysAccepted' => 'Always accepted',
@@ -6866,10 +6858,10 @@ extension on Translations {
 			'fileInfo.matchScore' => 'Match Score',
 			'fileInfo.externalDelivery' => 'Can Be Served Separately',
 			'fileInfo.sidecarPath' => 'Sidecar Path',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceStream' => 'Copied From',
 			'fileInfo.temporary' => 'Temporary',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
@@ -7380,10 +7372,10 @@ extension on Translations {
 			'explore.status.upcoming' => 'Upcoming',
 			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
 			'explore.cast' => 'Cast',
-			_ => null,
-		} ?? switch (path) {
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
+			_ => null,
+		} ?? switch (path) {
 			'explore.removeFromWatchlist' => 'Remove from Watchlist',
 			'explore.addedToWatchlist' => 'Added to watchlist',
 			'explore.removedFromWatchlist' => 'Removed from watchlist',
@@ -7894,10 +7886,10 @@ extension on Translations {
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',

@@ -290,8 +290,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Varsayılan Kalite';
 	@override String get cellularQualityTitle => 'Hücresel Veride Varsayılan Kalite';
 	@override String get cellularQualitySameAsDefault => 'Varsayılan Kaliteyle Aynı';
-	@override String get directPlayCoveredQuality => 'Küçük Videoları Orijinal Kalitede Oynat';
-	@override String get directPlayCoveredQualityDescription => 'Kalite sınırı içindeki videoları kod dönüştürme yerine doğrudan oynat';
 	@override String get videoCodecs => 'Video codec\'leri';
 	@override String get videoCodecsDescription => 'İşaretlenmemiş codec\'lerin kodunu sunucu dönüştürür';
 	@override String get videoCodecsAlwaysAccepted => 'Her zaman kabul edilir';
@@ -2750,8 +2748,6 @@ extension on TranslationsTr {
 			'settings.defaultQualityTitle' => 'Varsayılan Kalite',
 			'settings.cellularQualityTitle' => 'Hücresel Veride Varsayılan Kalite',
 			'settings.cellularQualitySameAsDefault' => 'Varsayılan Kaliteyle Aynı',
-			'settings.directPlayCoveredQuality' => 'Küçük Videoları Orijinal Kalitede Oynat',
-			'settings.directPlayCoveredQualityDescription' => 'Kalite sınırı içindeki videoları kod dönüştürme yerine doğrudan oynat',
 			'settings.videoCodecs' => 'Video codec\'leri',
 			'settings.videoCodecsDescription' => 'İşaretlenmemiş codec\'lerin kodunu sunucu dönüştürür',
 			'settings.videoCodecsAlwaysAccepted' => 'Her zaman kabul edilir',
@@ -3093,10 +3089,10 @@ extension on TranslationsTr {
 			'fileInfo.duration' => 'Süre',
 			'fileInfo.previewThumbnails' => 'Önizleme Küçük Resimleri',
 			'fileInfo.previewIndex' => 'Önizleme Dizini',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Paket Uzunluğu',
 			'fileInfo.filePresent' => 'Dosya Mevcut',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Sunucu Tarafından Okunabilir',
 			'fileInfo.streamPath' => 'Akış Yolu',
 			'fileInfo.optimizedForStreaming' => 'Akış İçin Optimize Edilmiş',
@@ -3607,10 +3603,10 @@ extension on TranslationsTr {
 			'explore.stats.favorited' => ({required Object n}) => '${n} favori',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} bıraktı',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '${n} yorum', other: '${n} yorum', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} oy',
 			'explore.stats.watching' => ({required Object n}) => '${n} izliyor',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} tamamladı',
 			'explore.stats.onHold' => ({required Object n}) => '${n} bekletiyor',
 			'explore.stats.dropped' => ({required Object n}) => '${n} bıraktı',
@@ -4121,10 +4117,10 @@ extension on TranslationsTr {
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başka bir uygulamada açın',
 			'externalPlayer.selectPlayer' => 'Oynatıcı Seç',
 			'externalPlayer.customPlayers' => 'Özel Oynatıcılar',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Sistem Varsayılanı',
 			'externalPlayer.addCustomPlayer' => 'Özel Oynatıcı Ekle',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Oynatıcı Adı',
 			'externalPlayer.playerNameHint' => 'Oynatıcım',
 			'externalPlayer.playerCommand' => 'Komut',

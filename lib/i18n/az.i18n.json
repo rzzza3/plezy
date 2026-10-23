@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Defolt keyfiyyət",
     "cellularQualityTitle": "Mobil şəbəkədə defolt keyfiyyət",
     "cellularQualitySameAsDefault": "Defolt keyfiyyətlə eyni",
-    "directPlayCoveredQuality": "Kiçik videoları orijinal keyfiyyətdə oynat",
-    "directPlayCoveredQualityDescription": "Keyfiyyət limitinə uyğun gələn videoları yenidən kodlaşdırmaq əvəzinə birbaşa oynat",
     "videoCodecs": "Video kodekləri",
     "videoCodecsDescription": "İşarələnməmiş kodekləri server yenidən kodlaşdırır",
     "videoCodecsAlwaysAccepted": "Həmişə qəbul edilir",

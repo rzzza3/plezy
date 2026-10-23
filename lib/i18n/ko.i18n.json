@@ -183,8 +183,6 @@
     "defaultQualityTitle": "기본 화질",
     "cellularQualityTitle": "셀룰러에서 기본 화질",
     "cellularQualitySameAsDefault": "기본 화질과 동일",
-    "directPlayCoveredQuality": "작은 동영상을 원본 화질로 재생",
-    "directPlayCoveredQualityDescription": "화질 제한 내의 동영상은 트랜스코딩하지 않고 Direct Play합니다",
     "videoCodecs": "비디오 코덱",
     "videoCodecsDescription": "선택 해제한 코덱은 서버가 트랜스코딩합니다",
     "videoCodecsAlwaysAccepted": "항상 허용",

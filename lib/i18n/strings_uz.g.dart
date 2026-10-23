@@ -290,8 +290,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Standart sifat';
 	@override String get cellularQualityTitle => 'Mobil tarmoqda standart sifat';
 	@override String get cellularQualitySameAsDefault => 'Standart sifat bilan bir xil';
-	@override String get directPlayCoveredQuality => 'Kichik videolarni asl sifatda ijro etish';
-	@override String get directPlayCoveredQualityDescription => 'Sifat chegarasiga kiruvchi videolarni qayta kodlash oʻrniga toʻgʻridan-toʻgʻri ijro etish';
 	@override String get videoCodecs => 'Video kodeklar';
 	@override String get videoCodecsDescription => 'Belgilanmagan kodeklarni server qayta kodlaydi';
 	@override String get videoCodecsAlwaysAccepted => 'Har doim qabul qilinadi';
@@ -2750,8 +2748,6 @@ extension on TranslationsUz {
 			'settings.defaultQualityTitle' => 'Standart sifat',
 			'settings.cellularQualityTitle' => 'Mobil tarmoqda standart sifat',
 			'settings.cellularQualitySameAsDefault' => 'Standart sifat bilan bir xil',
-			'settings.directPlayCoveredQuality' => 'Kichik videolarni asl sifatda ijro etish',
-			'settings.directPlayCoveredQualityDescription' => 'Sifat chegarasiga kiruvchi videolarni qayta kodlash oʻrniga toʻgʻridan-toʻgʻri ijro etish',
 			'settings.videoCodecs' => 'Video kodeklar',
 			'settings.videoCodecsDescription' => 'Belgilanmagan kodeklarni server qayta kodlaydi',
 			'settings.videoCodecsAlwaysAccepted' => 'Har doim qabul qilinadi',
@@ -3093,10 +3089,10 @@ extension on TranslationsUz {
 			'fileInfo.duration' => 'Davomiyligi',
 			'fileInfo.previewThumbnails' => 'Oldindan koʻrish eskizlari',
 			'fileInfo.previewIndex' => 'Oldindan koʻrish indeksi',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Paket uzunligi',
 			'fileInfo.filePresent' => 'Fayl mavjud',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Server tomonidan oʻqiladigan',
 			'fileInfo.streamPath' => 'Oqim yoʻli',
 			'fileInfo.optimizedForStreaming' => 'Oqimli uzatish uchun optimallashtirilgan',
@@ -3607,10 +3603,10 @@ extension on TranslationsUz {
 			'explore.stats.favorited' => ({required Object n}) => '${n} ta tanlangan',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} tomosha qilishni toʻxtatgan',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: '${n} ta izoh', other: '${n} ta izoh', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} ta ovoz',
 			'explore.stats.watching' => ({required Object n}) => '${n} kishi tomosha qilmoqda',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} kishi yakunlagan',
 			'explore.stats.onHold' => ({required Object n}) => '${n} kishi toʻxtatib turibdi',
 			'explore.stats.dropped' => ({required Object n}) => '${n} kishi toʻxtatgan',
@@ -4121,10 +4117,10 @@ extension on TranslationsUz {
 			'externalPlayer.useExternalPlayerDescription' => 'Videolarni boshqa ilovada ochish',
 			'externalPlayer.selectPlayer' => 'Pleyerni tanlash',
 			'externalPlayer.customPlayers' => 'Maxsus pleyerlar',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Tizim standarti',
 			'externalPlayer.addCustomPlayer' => 'Maxsus pleyer qoʻshish',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Pleyer nomi',
 			'externalPlayer.playerNameHint' => 'Mening pleyerim',
 			'externalPlayer.playerCommand' => 'Buyruq',

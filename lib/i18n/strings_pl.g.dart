@@ -290,8 +290,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Domyślna jakość';
 	@override String get cellularQualityTitle => 'Domyślna jakość w sieci komórkowej';
 	@override String get cellularQualitySameAsDefault => 'Taka sama jak domyślna jakość';
-	@override String get directPlayCoveredQuality => 'Odtwarzaj mniejsze wideo w oryginalnej jakości';
-	@override String get directPlayCoveredQualityDescription => 'Odtwarzaj bezpośrednio wideo mieszczące się już w limicie jakości zamiast je transkodować';
 	@override String get videoCodecs => 'Kodeki wideo';
 	@override String get videoCodecsDescription => 'Niezaznaczone kodeki są transkodowane przez serwer';
 	@override String get videoCodecsAlwaysAccepted => 'Zawsze akceptowany';
@@ -2766,8 +2764,6 @@ extension on TranslationsPl {
 			'settings.defaultQualityTitle' => 'Domyślna jakość',
 			'settings.cellularQualityTitle' => 'Domyślna jakość w sieci komórkowej',
 			'settings.cellularQualitySameAsDefault' => 'Taka sama jak domyślna jakość',
-			'settings.directPlayCoveredQuality' => 'Odtwarzaj mniejsze wideo w oryginalnej jakości',
-			'settings.directPlayCoveredQualityDescription' => 'Odtwarzaj bezpośrednio wideo mieszczące się już w limicie jakości zamiast je transkodować',
 			'settings.videoCodecs' => 'Kodeki wideo',
 			'settings.videoCodecsDescription' => 'Niezaznaczone kodeki są transkodowane przez serwer',
 			'settings.videoCodecsAlwaysAccepted' => 'Zawsze akceptowany',
@@ -3109,10 +3105,10 @@ extension on TranslationsPl {
 			'fileInfo.duration' => 'Czas trwania',
 			'fileInfo.previewThumbnails' => 'Miniatury podglądu',
 			'fileInfo.previewIndex' => 'Indeks podglądu',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Długość pakietu',
 			'fileInfo.filePresent' => 'Plik obecny',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Czytelny dla serwera',
 			'fileInfo.streamPath' => 'Ścieżka strumienia',
 			'fileInfo.optimizedForStreaming' => 'Zoptymalizowane do strumieniowania',
@@ -3623,10 +3619,10 @@ extension on TranslationsPl {
 			'explore.stats.favorited' => ({required Object n}) => '${n} w ulubionych',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} porzuciło',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pl'))(n, one: '${n} komentarz', few: '${n} komentarze', many: '${n} komentarzy', other: '${n} komentarza', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '${n} głosów',
 			'explore.stats.watching' => ({required Object n}) => '${n} ogląda',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} ukończyło',
 			'explore.stats.onHold' => ({required Object n}) => '${n} wstrzymało',
 			'explore.stats.dropped' => ({required Object n}) => '${n} porzuciło',
@@ -4137,10 +4133,10 @@ extension on TranslationsPl {
 			'externalPlayer.useExternalPlayerDescription' => 'Otwieraj wideo w innej aplikacji',
 			'externalPlayer.selectPlayer' => 'Wybierz odtwarzacz',
 			'externalPlayer.customPlayers' => 'Niestandardowe odtwarzacze',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => 'Domyślny systemowy',
 			'externalPlayer.addCustomPlayer' => 'Dodaj niestandardowy odtwarzacz',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Nazwa odtwarzacza',
 			'externalPlayer.playerNameHint' => 'Mój odtwarzacz',
 			'externalPlayer.playerCommand' => 'Polecenie',

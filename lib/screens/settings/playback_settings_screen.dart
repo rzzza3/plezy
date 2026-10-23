@@ -122,7 +122,6 @@ class PlaybackSettingsScreen extends StatelessWidget {
                 // mirroring cellularQualityPreset's nullable "same as default"
                 // pattern; needs local/remote connection detection in the
                 // failover client.
-                _directPlayCoveredQualityTile(),
                 // Desktop has no hardware-decode probe, so this is where a
                 // machine too weak for a codec says so (#2443).
                 if (PlatformDetector.isDesktopOS()) _videoCodecsTile(),
@@ -666,15 +665,6 @@ class PlaybackSettingsScreen extends StatelessWidget {
         (p) => DialogOption<TranscodeQualityPreset?>(value: p, title: qualityPresetLabel(p)),
       ),
     ],
-  );
-
-  // Plex-only effect: MediaBrowser servers make the equivalent
-  // direct-play-vs-transcode call server-side (#2152, #2193).
-  Widget _directPlayCoveredQualityTile() => SettingSwitchTile(
-    pref: SettingsService.directPlayCoveredQuality,
-    icon: Symbols.bolt_rounded,
-    title: t.settings.directPlayCoveredQuality,
-    subtitle: t.settings.directPlayCoveredQualityDescription,
   );
 
   Widget _videoCodecsTile() => SettingChecklistTile(

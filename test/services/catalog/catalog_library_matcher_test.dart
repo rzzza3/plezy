@@ -21,9 +21,8 @@ class _LookupCall {
   final ExternalIds ids;
   final List<String> titles;
   final int? year;
-  final String? plexGuid;
 
-  const _LookupCall({required this.ids, required this.titles, required this.year, required this.plexGuid});
+  const _LookupCall({required this.ids, required this.titles, required this.year});
 }
 
 class _FakeDataAggregationService extends DataAggregationService {
@@ -39,10 +38,9 @@ class _FakeDataAggregationService extends DataAggregationService {
     required Set<String> serverIds,
     List<String> titles = const [],
     int? year,
-    String? plexGuid,
     ExternalSeasonRef? season,
   }) async {
-    calls.add(_LookupCall(ids: ids, titles: List.of(titles), year: year, plexGuid: plexGuid));
+    calls.add(_LookupCall(ids: ids, titles: List.of(titles), year: year));
     return responses.removeAt(0);
   }
 }
@@ -85,7 +83,6 @@ class _LookupClient implements MediaServerClient {
     required MediaKind kind,
     List<String> titles = const [],
     int? year,
-    String? plexGuid,
     ExternalSeasonRef? season,
   }) async {
     calls++;
@@ -253,14 +250,14 @@ void main() {
       source: CatalogSourceId.trakt,
       kind: MediaKind.movie,
       title: 'Night on the Galactic Railroad',
-      ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8'),
+      ids: CatalogItemIds(slug: '5d776b59ad5437001f79c6f8'),
     );
     const enriched = CatalogItem(
       source: CatalogSourceId.trakt,
       kind: MediaKind.movie,
       title: 'Night on the Galactic Railroad',
       originalTitle: '銀河鉄道の夜',
-      ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8', tmdb: 34523),
+      ids: CatalogItemIds(slug: '5d776b59ad5437001f79c6f8', tmdb: 34523),
     );
 
     expect((await harness.matcher.match(bare)).items, [bareCopy]);
@@ -682,14 +679,14 @@ void main() {
       source: CatalogSourceId.trakt,
       kind: MediaKind.show,
       title: "Frieren: Beyond Journey's End",
-      ids: CatalogItemIds(plex: '631cc', tvdb: 424536),
+      ids: CatalogItemIds(slug: '631cc', tvdb: 424536),
     );
     const enriched = CatalogItem(
       source: CatalogSourceId.trakt,
       kind: MediaKind.show,
       title: "Frieren: Beyond Journey's End",
       originalTitle: '葬送のフリーレン',
-      ids: CatalogItemIds(plex: '631cc', tvdb: 424536),
+      ids: CatalogItemIds(slug: '631cc', tvdb: 424536),
     );
 
     expect((await harness.matcher.match(bare)).items, isEmpty);
@@ -734,13 +731,13 @@ void main() {
       source: CatalogSourceId.trakt,
       kind: MediaKind.movie,
       title: 'Night on the Galactic Railroad',
-      ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8'),
+      ids: CatalogItemIds(slug: '5d776b59ad5437001f79c6f8'),
     );
     const enriched = CatalogItem(
       source: CatalogSourceId.trakt,
       kind: MediaKind.movie,
       title: 'Night on the Galactic Railroad',
-      ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8', imdb: 'tt0089445', tmdb: 34523),
+      ids: CatalogItemIds(slug: '5d776b59ad5437001f79c6f8', imdb: 'tt0089445', tmdb: 34523),
     );
 
     expect(bare.entryIdentityKey, enriched.entryIdentityKey);

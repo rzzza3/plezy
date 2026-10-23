@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Calidad predeterminada",
     "cellularQualityTitle": "Calidad predeterminada en datos móviles",
     "cellularQualitySameAsDefault": "Igual que la calidad predeterminada",
-    "directPlayCoveredQuality": "Reproducir videos más pequeños en calidad original",
-    "directPlayCoveredQualityDescription": "Reproducir directamente los videos que ya están dentro del límite de calidad en lugar de transcodificarlos",
     "videoCodecs": "Códecs de video",
     "videoCodecsDescription": "El servidor transcodifica los códecs no marcados",
     "videoCodecsAlwaysAccepted": "Siempre aceptado",

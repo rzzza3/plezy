@@ -121,7 +121,7 @@ void main() {
       await tester.pumpWidget(shell(const SizedBox.expand(), desktop: desktop));
       await tester.pump();
 
-      final controls = PlexVideoControls(
+      final controls = SiloVideoControls(
         player: player,
         volumeController: volume,
         metadata: testMediaItem(id: 'auto-hide'),

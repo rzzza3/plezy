@@ -1,6 +1,6 @@
 part of '../video_controls.dart';
 
-extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
+extension _SiloVideoControlsKeyEventMethods on _SiloVideoControlsState {
   Future<void> _initKeyboardService() async {
     _keyboardService = await KeyboardShortcutsService.getInstance();
   }

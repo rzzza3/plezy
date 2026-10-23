@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Domyślna jakość",
     "cellularQualityTitle": "Domyślna jakość w sieci komórkowej",
     "cellularQualitySameAsDefault": "Taka sama jak domyślna jakość",
-    "directPlayCoveredQuality": "Odtwarzaj mniejsze wideo w oryginalnej jakości",
-    "directPlayCoveredQualityDescription": "Odtwarzaj bezpośrednio wideo mieszczące się już w limicie jakości zamiast je transkodować",
     "videoCodecs": "Kodeki wideo",
     "videoCodecsDescription": "Niezaznaczone kodeki są transkodowane przez serwer",
     "videoCodecsAlwaysAccepted": "Zawsze akceptowany",

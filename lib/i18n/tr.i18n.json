@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Varsayılan Kalite",
     "cellularQualityTitle": "Hücresel Veride Varsayılan Kalite",
     "cellularQualitySameAsDefault": "Varsayılan Kaliteyle Aynı",
-    "directPlayCoveredQuality": "Küçük Videoları Orijinal Kalitede Oynat",
-    "directPlayCoveredQualityDescription": "Kalite sınırı içindeki videoları kod dönüştürme yerine doğrudan oynat",
     "videoCodecs": "Video codec'leri",
     "videoCodecsDescription": "İşaretlenmemiş codec'lerin kodunu sunucu dönüştürür",
     "videoCodecsAlwaysAccepted": "Her zaman kabul edilir",

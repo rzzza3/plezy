@@ -166,7 +166,7 @@ class _FakeDiscographyClient implements MediaServerClient {
   MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<ArtistDiscographyGroup>> fetchArtistDiscography(MediaItem artist) async {

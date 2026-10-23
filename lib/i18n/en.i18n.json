@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Default Quality",
     "cellularQualityTitle": "Default Quality on Cellular",
     "cellularQualitySameAsDefault": "Same as Default Quality",
-    "directPlayCoveredQuality": "Play Smaller Videos at Original Quality",
-    "directPlayCoveredQualityDescription": "Direct play videos already within the quality limit instead of transcoding them",
     "videoCodecs": "Video Codecs",
     "videoCodecsDescription": "Unchecked codecs are transcoded by the server",
     "videoCodecsAlwaysAccepted": "Always accepted",

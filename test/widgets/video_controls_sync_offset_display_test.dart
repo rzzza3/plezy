@@ -89,7 +89,7 @@ void main() {
             body: SizedBox(
               width: 800,
               height: 600,
-              child: PlexVideoControls(
+              child: SiloVideoControls(
                 player: player,
                 volumeController: volume,
                 metadata: metadata,

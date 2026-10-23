@@ -17,7 +17,6 @@ enum CatalogAirStatus { airing, ended, canceled, upcoming }
 /// servers. A superset of [ExternalIds] that also carries provider-native
 /// ids (Plex rating key, Trakt id/slug, MAL, AniList, and Simkl).
 class CatalogItemIds {
-  final String? plex;
   final int? trakt;
   final String? slug;
   final int? mal;
@@ -27,17 +26,7 @@ class CatalogItemIds {
   final int? tmdb;
   final int? tvdb;
 
-  const CatalogItemIds({
-    this.plex,
-    this.trakt,
-    this.slug,
-    this.mal,
-    this.anilist,
-    this.simkl,
-    this.imdb,
-    this.tmdb,
-    this.tvdb,
-  });
+  const CatalogItemIds({this.trakt, this.slug, this.mal, this.anilist, this.simkl, this.imdb, this.tmdb, this.tvdb});
 
   factory CatalogItemIds.fromExternal(ExternalIds ids) =>
       CatalogItemIds(imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb);
@@ -49,7 +38,6 @@ class CatalogItemIds {
       mal != null ||
       anilist != null ||
       simkl != null ||
-      plex != null ||
       trakt != null ||
       slug != null;
 
@@ -62,7 +50,6 @@ class CatalogItemIds {
     if (mal != null) return 'mal:$mal';
     if (anilist != null) return 'anilist:$anilist';
     if (simkl != null) return 'simkl:$simkl';
-    if (plex != null) return 'plex:$plex';
     if (trakt != null) return 'trakt:$trakt';
     if (slug != null) return 'slug:$slug';
     return null;
@@ -85,7 +72,6 @@ class CatalogItemIds {
     if (anilist != null) return 'anilist:$anilist';
     if (simkl != null) return 'simkl:$simkl';
     if (trakt != null) return 'trakt:$trakt';
-    if (plex != null) return 'plex:$plex';
     if (slug != null) return 'slug:$slug';
     return canonicalKey;
   }
@@ -100,7 +86,6 @@ class CatalogItemIds {
     if (mal != null) 'mal:$mal',
     if (anilist != null) 'anilist:$anilist',
     if (simkl != null) 'simkl:$simkl',
-    if (plex != null) 'plex:$plex',
     if (trakt != null) 'trakt:$trakt',
     if (slug != null) 'slug:$slug',
   ];
@@ -110,7 +95,6 @@ class CatalogItemIds {
   /// Union of both id sets, preferring this one per key. A row entry and a
   /// detail body routinely carry different subsets of the same identity.
   CatalogItemIds mergedWith(CatalogItemIds other) => CatalogItemIds(
-    plex: plex ?? other.plex,
     trakt: trakt ?? other.trakt,
     slug: slug ?? other.slug,
     mal: mal ?? other.mal,
@@ -122,7 +106,6 @@ class CatalogItemIds {
   );
 
   Map<String, Object?> toJson() => {
-    if (plex != null) 'plex': plex,
     if (trakt != null) 'trakt': trakt,
     if (slug != null) 'slug': slug,
     if (mal != null) 'mal': mal,
@@ -134,7 +117,6 @@ class CatalogItemIds {
   };
 
   factory CatalogItemIds.fromJson(Map<String, Object?> json) => CatalogItemIds(
-    plex: json['plex'] as String?,
     trakt: json['trakt'] as int?,
     slug: json['slug'] as String?,
     mal: json['mal'] as int?,

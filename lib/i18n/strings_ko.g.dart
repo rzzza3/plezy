@@ -290,8 +290,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get defaultQualityTitle => '기본 화질';
 	@override String get cellularQualityTitle => '셀룰러에서 기본 화질';
 	@override String get cellularQualitySameAsDefault => '기본 화질과 동일';
-	@override String get directPlayCoveredQuality => '작은 동영상을 원본 화질로 재생';
-	@override String get directPlayCoveredQualityDescription => '화질 제한 내의 동영상은 트랜스코딩하지 않고 Direct Play합니다';
 	@override String get videoCodecs => '비디오 코덱';
 	@override String get videoCodecsDescription => '선택 해제한 코덱은 서버가 트랜스코딩합니다';
 	@override String get videoCodecsAlwaysAccepted => '항상 허용';
@@ -2742,8 +2740,6 @@ extension on TranslationsKo {
 			'settings.defaultQualityTitle' => '기본 화질',
 			'settings.cellularQualityTitle' => '셀룰러에서 기본 화질',
 			'settings.cellularQualitySameAsDefault' => '기본 화질과 동일',
-			'settings.directPlayCoveredQuality' => '작은 동영상을 원본 화질로 재생',
-			'settings.directPlayCoveredQualityDescription' => '화질 제한 내의 동영상은 트랜스코딩하지 않고 Direct Play합니다',
 			'settings.videoCodecs' => '비디오 코덱',
 			'settings.videoCodecsDescription' => '선택 해제한 코덱은 서버가 트랜스코딩합니다',
 			'settings.videoCodecsAlwaysAccepted' => '항상 허용',
@@ -3085,10 +3081,10 @@ extension on TranslationsKo {
 			'fileInfo.duration' => '재생 시간',
 			'fileInfo.previewThumbnails' => '미리보기 썸네일',
 			'fileInfo.previewIndex' => '미리보기 인덱스',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.packetLength' => '패킷 길이',
 			'fileInfo.filePresent' => '파일 있음',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.fileReadable' => '서버에서 읽기 가능',
 			'fileInfo.streamPath' => '스트림 경로',
 			'fileInfo.optimizedForStreaming' => '스트리밍 최적화',
@@ -3599,10 +3595,10 @@ extension on TranslationsKo {
 			'explore.stats.favorited' => ({required Object n}) => '즐겨찾기 ${n}명',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} 하차',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '댓글 ${n}개', ), 
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.votes' => ({required Object n}) => '투표 ${n}개',
 			'explore.stats.watching' => ({required Object n}) => '시청 중 ${n}명',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '완료 ${n}명',
 			'explore.stats.onHold' => ({required Object n}) => '보류 ${n}명',
 			'explore.stats.dropped' => ({required Object n}) => '하차 ${n}명',
@@ -4113,10 +4109,10 @@ extension on TranslationsKo {
 			'externalPlayer.useExternalPlayerDescription' => '동영상을 다른 앱에서 열기',
 			'externalPlayer.selectPlayer' => '플레이어 선택',
 			'externalPlayer.customPlayers' => '사용자 정의 플레이어',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.systemDefault' => '시스템 기본값',
 			'externalPlayer.addCustomPlayer' => '사용자 정의 플레이어 추가',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => '플레이어 이름',
 			'externalPlayer.playerNameHint' => '내 플레이어',
 			'externalPlayer.playerCommand' => '명령어',

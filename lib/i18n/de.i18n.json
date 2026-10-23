@@ -183,8 +183,6 @@
     "defaultQualityTitle": "Standardqualität",
     "cellularQualityTitle": "Standardqualität im Mobilfunknetz",
     "cellularQualitySameAsDefault": "Wie Standardqualität",
-    "directPlayCoveredQuality": "Kleinere Videos in Originalqualität abspielen",
-    "directPlayCoveredQualityDescription": "Videos, die bereits innerhalb des Qualitätslimits liegen, per Direct Play abspielen, statt sie zu transkodieren",
     "videoCodecs": "Video-Codecs",
     "videoCodecsDescription": "Nicht ausgewählte Codecs transkodiert der Server",
     "videoCodecsAlwaysAccepted": "Immer akzeptiert",

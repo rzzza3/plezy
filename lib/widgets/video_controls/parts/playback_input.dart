@@ -1,6 +1,6 @@
 part of '../video_controls.dart';
 
-extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
+extension _SiloVideoControlsPlaybackInputMethods on _SiloVideoControlsState {
   static const Duration _touchTapSuppressionPadding = Duration(milliseconds: 80);
 
   void _onRateChanged(double newRate) {
