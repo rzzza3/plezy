@@ -48,13 +48,11 @@ enum _EpisodeQueueAvailability { active, unavailable, failed }
 /// - Navigating between episodes while preserving track selections
 /// - Supporting both sequential and shuffle playback modes
 ///
-/// Plex normally enters with its server-side `/playQueues` queue. If that
-/// setup failed for an episode, the client-side full-series path other
-/// backends use is the fallback. Playlist and collection queues may contain
-/// movies; once membership is verified, they use the same adjacency path.
+/// Episodes use a client-side full-series queue. Playlist and collection
+/// queues may contain movies; once membership is verified, they use the same
+/// adjacency path.
 class EpisodeNavigationService {
-  /// Cached client-side episode lists, keyed by `seriesId`. Populated for
-  /// non-Plex backends and when Plex's server-side queue is unavailable. Fetched once
+  /// Cached client-side episode lists, keyed by `seriesId`. Fetched once
   /// per series; subsequent navigation within the show reuses the cache.
   ///
   /// Bounded by [_seriesCacheCapacity] LRU-style: each entry holds up to
@@ -76,7 +74,7 @@ class EpisodeNavigationService {
   /// collection queue.
   ///
   /// [playedPartId] is the backend part id actually being played, when
-  /// known — it lets the queue skip sibling entries of a Plex
+  /// known — it lets the queue skip sibling entries of a
   /// multi-episode file (#1500).
   Future<AdjacentEpisodes> loadAdjacentEpisodes({
     required BuildContext context,
@@ -91,8 +89,8 @@ class EpisodeNavigationService {
       final serverManager = context.read<MultiServerProvider>().serverManager;
       final playbackState = context.read<PlaybackStateProvider>();
 
-      // Preserve a server-side Plex queue when available. Otherwise build a
-      // full-series local queue before resolving adjacency.
+      // Preserve a queue the item belongs to. Otherwise build a full-series
+      // local queue before resolving adjacency.
       final availability = await _ensureLocalEpisodeQueue(serverManager, playbackState, metadata);
 
       if (availability == _EpisodeQueueAvailability.unavailable) {
@@ -131,9 +129,7 @@ class EpisodeNavigationService {
   /// A queue the item already belongs to (launcher-seeded shuffle, playlist,
   /// collection, or an earlier series build) is preserved for both movies and
   /// episodes. Otherwise an episode's full backend series list is published,
-  /// anchored at the current episode. For Plex this series build is the
-  /// fallback when `/playQueues` was unavailable; for other backends it is
-  /// the normal episode path.
+  /// anchored at the current episode.
   Future<_EpisodeQueueAvailability> _ensureLocalEpisodeQueue(
     MultiServerManager serverManager,
     PlaybackStateProvider playbackState,

@@ -11,11 +11,11 @@ import '../utils/language_codes.dart';
 import '../utils/subtitle_forced_semantics.dart';
 import 'subtitle_preference.dart';
 
-// These functions match MPV tracks to Plex tracks by properties (language,
+// These functions match MPV tracks to server tracks by properties (language,
 // codec, title, etc.) instead of list index, since the two may be ordered
 // differently.
 
-/// Score how well an MPV subtitle track matches a Plex subtitle track.
+/// Score how well an MPV subtitle track matches a server subtitle track.
 /// Language (+10 / +1 exact) and codec (+5) carry the most weight; title,
 /// forced flag, and identical ordinal position (only when [ordinalMatches]
 /// is true) add smaller nudges.
@@ -46,7 +46,7 @@ int _scoreSubtitleMatch(SubtitleTrack mpvTrack, MediaSubtitleTrack plexTrack, {r
   return score;
 }
 
-/// Score how well an MPV audio track matches a Plex audio track.
+/// Score how well an MPV audio track matches a server audio track.
 /// Language (+10 / +1 exact) and codec (+5) dominate; channel count (+3),
 /// title match (+2), and identical ordinal position ([ordinalMatches], +1)
 /// act as tiebreakers.
@@ -181,7 +181,7 @@ T? _findUniqueBestLowMetadataMatch<T extends Object>(
   return bestIsUnique ? bestMatch : null;
 }
 
-/// Find the MPV subtitle track that matches a Plex subtitle track
+/// Find the MPV subtitle track that matches a server subtitle track
 SubtitleTrack? findMpvTrackForPlexSubtitle(
   MediaSubtitleTrack plexTrack,
   List<SubtitleTrack> mpvTracks, {
@@ -222,7 +222,7 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
   final plexOrdinal = containerPlexTracks?.indexOf(plexTrack) ?? -1;
 
   for (final mpvTrack in mpvTracks) {
-    // A container sidecar's subtitle tracks map to internal Plex streams.
+    // A container sidecar's subtitle tracks map to internal server streams.
     if (!plexTrack.isExternal && mpvTrack.isExternal && !mpvTrack.isContainer) continue;
 
     final ordinalMatches =
@@ -230,7 +230,7 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
 
     // A container track has no stable native ID. Its source-container ordinal
     // is authoritative; a metadata-identical earlier track is not a match.
-    // Narrower than the guard in [findPlexTrackForMpvSubtitle]: a Plex stream
+    // Narrower than the guard in [findPlexTrackForMpvSubtitle]: a server stream
     // carrying no container ordinal still falls back to metadata scoring.
     if (mpvTrack.isContainer && plexOrdinal >= 0 && !ordinalMatches) continue;
 
@@ -263,7 +263,7 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
   );
 }
 
-/// Find the Plex subtitle track that matches an MPV subtitle track
+/// Find the server subtitle track that matches an MPV subtitle track
 MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
   SubtitleTrack mpvTrack,
   List<MediaSubtitleTrack> plexTracks, {
@@ -278,7 +278,7 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
     }
   }
 
-  // A standalone keyed subtitle maps back only by its stable Plex key.
+  // A standalone keyed subtitle maps back only by its stable server key.
   // Container sidecars may continue to the source-container matcher below.
   if (mpvTrack.isExternal && mpvTrack.uri != null) {
     for (final plexTrack in plexTracks) {
@@ -325,7 +325,7 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
   }
 
   // Prefer metadata matches, with container order as the symmetric fallback
-  // needed to persist a metadata-free native track back to its Plex stream.
+  // needed to persist a metadata-free native track back to its server stream.
   if (bestScore >= 10 || bestMatchUsesContainerOrdinal) return bestMatch;
 
   final mpvTracks = allMpvTracks;
@@ -520,7 +520,7 @@ T? _findBestScoredAudioMatch<T>(
   return bestScore >= 10 ? bestMatch : null;
 }
 
-/// Find the MPV audio track that matches a Plex audio track
+/// Find the MPV audio track that matches a server audio track
 AudioTrack? findMpvTrackForPlexAudio(
   MediaAudioTrack plexTrack,
   List<AudioTrack> mpvTracks, {
@@ -531,7 +531,7 @@ AudioTrack? findMpvTrackForPlexAudio(
   score: (mpvTrack, ordinalMatches) => _scoreAudioMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches),
 );
 
-/// Find the Plex audio track that matches an MPV audio track
+/// Find the server audio track that matches an MPV audio track
 MediaAudioTrack? findPlexTrackForMpvAudio(
   AudioTrack mpvTrack,
   List<MediaAudioTrack> plexTracks, {
@@ -622,7 +622,7 @@ const Map<String, List<String>> _audioCodecAliases = {
 };
 
 /// Check if two codec strings match: case-insensitively equal, or the MPV
-/// codec's [aliases] row lists the Plex codec.
+/// codec's [aliases] row lists the server codec.
 bool _codecsMatch(String? mpvCodec, String? plexCodec, Map<String, List<String>> aliases) {
   if (mpvCodec == null || plexCodec == null) return false;
 
@@ -645,7 +645,7 @@ int _titleScore(String? mpvTitle, String? plexTitle, String? plexDisplayTitle) {
 
   final mpvNorm = mpvTitle.toLowerCase().trim();
 
-  // Check exact match with either Plex title
+  // Check exact match with either server title
   if (plexTitle != null && plexTitle.toLowerCase().trim() == mpvNorm) return 3;
   if (plexDisplayTitle != null && plexDisplayTitle.toLowerCase().trim() == mpvNorm) return 3;
 
@@ -1068,7 +1068,7 @@ class TrackSelectionService {
         appLogger.d('Subtitle intent declined: $intent');
     }
 
-    // Priority 2: Trust the server's selected track. Plex computes this from
+    // Priority 2: Trust the server's selected track. The server computes this from
     // account/show/per-item prefs.
     final info = plexMediaInfo;
     if (info != null) {
@@ -1173,7 +1173,7 @@ class TrackSelectionService {
       await audioMutation;
       if (!canMutatePlayer()) return false;
 
-      // Save to Plex if this was user's navigation preference (Priority 1)
+      // Save to the server if this was user's navigation preference (Priority 1)
       if (audioResult.priority == TrackSelectionPriority.navigation && onAudioTrackChanged != null) {
         onAudioTrackChanged(selectedAudioTrack);
       }
@@ -1199,7 +1199,7 @@ class TrackSelectionService {
       await subtitleMutation;
       if (!canMutatePlayer()) return false;
 
-      // Save to Plex if this was user's navigation preference (Priority 1)
+      // Save to the server if this was user's navigation preference (Priority 1)
       if (subtitleResult.priority == TrackSelectionPriority.navigation && onSubtitleTrackChanged != null) {
         onSubtitleTrackChanged(selectedSubtitleTrack);
       }

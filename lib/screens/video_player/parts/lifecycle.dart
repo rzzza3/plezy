@@ -251,7 +251,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     // returning before the restore runs would let it advance over a released
     // player. The restore puts it back once the item has reopened.
     _episode.autoPlayTimer?.cancel();
-    // Stop the heartbeat timer first: its paused tick also pings any Plex
+    // Stop the heartbeat timer first: its paused tick also pings any
     // transcode session, which would keep that alive past the stop report.
     // Start the stopped report before releasing the native stream — the same
     // ordering as the live background path and the reload flow, because

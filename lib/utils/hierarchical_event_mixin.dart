@@ -7,7 +7,7 @@ import '../media/ids.dart';
 /// affect a specific item or any of its parents in the hierarchy. This mixin
 /// provides common matching logic for such events.
 mixin HierarchicalEventMixin {
-  /// The id of the affected item (Plex ratingKey, …).
+  /// The id of the affected item (Silo content id, …).
   String get itemId;
 
   String get globalKey;

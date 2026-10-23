@@ -197,7 +197,7 @@ class PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapM
               ClipRRect(
                 borderRadius: const BorderRadius.all(Radius.circular(6)),
                 child: OptimizedMediaImage(
-                  // Backend-neutral lookup so non-Plex items render via their own
+                  // Backend-neutral lookup so items render via their own
                   // image transcoder; null falls through to the placeholder below.
                   client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
                   imagePath: posterUrl,

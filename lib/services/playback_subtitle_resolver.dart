@@ -12,7 +12,7 @@ import 'track_selection_service.dart';
 /// A source-catalog subtitle choice.
 ///
 /// Keeping "off" distinct from a numeric stream id prevents backend wire
-/// conventions (notably Plex's `0`) from colliding with real stream ids.
+/// conventions (such as a `0` for off) from colliding with real stream ids.
 final class PlaybackSourceSubtitleChoice {
   final bool isOff;
   final int? sourceStreamId;
@@ -364,7 +364,7 @@ class PlaybackSubtitleResolver {
 
   /// Resolve a server source row to a track already loaded by the player.
   /// Standalone sidecars match only by their stable URL key (or current source
-  /// identity), while a container sidecar uses normal Plex/native metadata
+  /// identity), while a container sidecar uses normal server/native metadata
   /// matching across the subtitle tracks extracted from that container.
   static SubtitleTrack? nativeTrackForSource({
     required MediaSubtitleTrack sourceTrack,

@@ -87,7 +87,7 @@ class TrackControlsState {
   final MediaItem? metadata;
   final SubtitleDownloadedCallback? onSubtitleDownloaded;
 
-  /// Whether OpenSubtitles search is reachable for this server. The Plex
+  /// Whether OpenSubtitles search is reachable for this server. The
   /// server proxies the OpenSubtitles plugin; other backends don't expose an
   /// equivalent. The track sheet hides the "Search subtitles" tile when
   /// this is false.

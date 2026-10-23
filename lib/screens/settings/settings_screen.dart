@@ -351,9 +351,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildProfilesTile(BuildContext context) {
-    // ActiveProfileProvider already merges local rows with virtual Plex
-    // Home profiles — counting only the local DB rows made every Plex Home
-    // household read as a single profile here. `context.select` keeps
+    // ActiveProfileProvider lists every signed-in server's Silo profiles.
+    // `context.select` keeps
     // rebuilds scoped to actual count/name changes (a StreamBuilder here
     // was also re-created on every settings rebuild).
     final count = context.select<ActiveProfileProvider, int>((p) => p.profiles.length);

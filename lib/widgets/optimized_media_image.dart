@@ -453,7 +453,7 @@ class OptimizedMediaImage extends StatelessWidget {
 /// `CachedNetworkImage` instead decodes under `ResizeImagePolicy.exact`, which
 /// pins the logo to whatever ratio those two bounds happen to have.
 ///
-/// Plex serves logos as fitting transcodes (`minSize=0&upscale=0`), so the
+/// A server can serve logos as fitting transcodes (`minSize=0&upscale=0`), so the
 /// image comes back inside the requested box with aspect intact (a 4313×1035
 /// logo asked for at 1200×360 comes back 1200×288). `exact` ignores the
 /// source ratio and decodes to whatever ratio the two bounds happen to have:

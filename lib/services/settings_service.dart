@@ -85,15 +85,14 @@ enum EpisodeAction { play, details }
 /// How Specials (season 0) are placed in the episode watch order — the
 /// sequence auto-advance, offline next/prev, and "download next N" walk.
 enum SpecialsOrdering {
-  /// Follow the backend's own ordering: Plex builds its server-side show
-  /// queue from `/allLeaves` (aired order, Specials interleaved); other
-  /// backends' episode order is preserved as returned. Client-side selections
+  /// Follow the backend's own ordering: the episode order is preserved as
+  /// returned. Client-side selections
   /// with no server order (offline queue, downloads, offline OnDeck) fall back
   /// to Specials-last.
   respectServer,
 
   /// Interleave Specials between regular episodes by air date on every
-  /// surface (#1416), the way Plex's own play queue orders a show.
+  /// surface (#1416), the way server play queues order a show.
   airDate,
 
   /// Specials strictly after the regular seasons on every surface (#1952).
@@ -743,8 +742,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Where Specials (season 0) land in the episode watch order (#1416/#1952).
   /// Consumed by [sortEpisodesByWatchOrder] (offline next/prev, download/sync
-  /// "next N", offline OnDeck, Plex fallback queue) and by the Plex show
-  /// play-queue source URI.
+  /// "next N", offline OnDeck, the local episode queue).
   static const specialsOrdering = EnumPref<SpecialsOrdering>(
     'specials_ordering',
     values: SpecialsOrdering.values,
@@ -766,7 +764,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: NavigationTabId.discover,
   );
 
-  /// Whether the Explore tab (Plex Discover / tracker catalog rows) is shown
+  /// Whether the Explore tab (tracker catalog rows) is shown
   /// at all. UI-only: catalog sources stay connected so watchlist surfaces
   /// keep working while the tab is hidden.
   static const showExploreTab = BoolPref('show_explore_tab', defaultValue: true);

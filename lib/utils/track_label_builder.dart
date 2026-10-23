@@ -119,7 +119,7 @@ String _metadataToken(String value) => value.trim().toUpperCase().replaceAll(Reg
 
 /// Whether a track title declares the stream forced ("FR Forced [ASS]",
 /// "French (Forced)"). Whole-token match, so "unforced" does not qualify.
-/// Plex itself treats such streams as forced even when the API flag is false.
+/// Servers themselves treat such streams as forced even when the API flag is false.
 bool titleSaysForced(String? value) => _metadataToken(value ?? '').split('_').contains('FORCED');
 
 class TrackLabelBuilder {

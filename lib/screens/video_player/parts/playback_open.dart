@@ -191,7 +191,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
   /// A shuffled queue opts out of resume when the user asked for it (#2303):
   /// every item opens at 0:00, including episodes reached through
-  /// auto-advance and Plex server-side window refetches. Explicit requests
+  /// auto-advance. Explicit requests
   /// still win, so callers only ask when no request is in play.
   bool _opensShuffledFromBeginning(SettingsService settings) =>
       mounted &&
@@ -1119,7 +1119,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     if (beforeTrackSetup != null && !await beforeTrackSetup()) return false;
 
-    // Track manager: owns track selection and Plex immediate stream writes.
+    // Track manager: owns track selection and immediate stream writes.
     final trackManager = _buildTrackManager(
       forPlayer: currentPlayer,
       metadata: metadata,

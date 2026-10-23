@@ -9,7 +9,7 @@ import 'base_library_tab.dart';
 import 'paginated_card_grid_tab.dart';
 
 /// Collections tab for library screen.
-/// Plex scopes collections to the library.
+/// Collections are scoped to the library.
 class LibraryCollectionsTab extends BaseLibraryTab<MediaItem> {
   const LibraryCollectionsTab({
     super.key,

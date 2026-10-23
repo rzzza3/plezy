@@ -169,7 +169,7 @@ class SpuriousEofRecovery {
       return false;
     }
 
-    // A server stop (a Plex admin stop) ends the transfer too, so the buffer
+    // A server stop (an admin stop) ends the transfer too, so the buffer
     // running dry is that stop taking effect, not a network fault to heal:
     // an automatic rebuild would open a new session nobody asked for. Park;
     // a viewer play/seek still retries.

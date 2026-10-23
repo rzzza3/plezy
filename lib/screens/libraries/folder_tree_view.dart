@@ -64,7 +64,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
   }
 
   /// Folders/items returned by the backend's folder API and mapped to neutral
-  /// [MediaItem]s. Plex folder URLs survive in [MediaItem.raw]['key'].
+  /// [MediaItem]s. Folder URLs survive in [MediaItem.raw]['key'].
   List<MediaItem> _rootFolders = [];
   final Map<String, List<MediaItem>> _childrenCache = {};
   final Set<String> _expandedFolders = {};
@@ -78,7 +78,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
   int _loadEpoch = 0;
 
   /// Stable expand/cache key for an expandable row: the backend folder key
-  /// where one exists (Plex `/folder` rows), the item id otherwise.
+  /// where one exists (`/folder` rows), the item id otherwise.
   String? _folderIdentity(MediaItem item) {
     if (!_isExpandable(item)) return null;
     return item.backendFolderKey ?? item.id;
@@ -348,7 +348,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
           final isFirstRootItem = index == 0;
 
           return FolderTreeItem(
-            // Path alone isn't unique enough as identity (the same Plex item
+            // Path alone isn't unique enough as identity (the same item
             // can appear under two folders), so combine it with the item id.
             key: ValueKey('${entry.path}:${item.id}'),
             item: item,

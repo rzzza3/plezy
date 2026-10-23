@@ -43,10 +43,10 @@ typedef _QueueOwnership = ({String profileId, int generation});
 /// Use [all] to download everything, or [unwatched] with an optional maxCount.
 enum DownloadFilter { all, unwatched }
 
-/// Holds Plex thumb path reference for downloaded artwork.
+/// Holds the server thumb path reference for downloaded artwork.
 /// The actual file path is computed from the hash of serverId + thumb path.
 class DownloadedArtwork {
-  /// The Plex thumb path (e.g., /library/metadata/12345/thumb/1234567890)
+  /// The server thumb path
   final String? thumbPath;
 
   const DownloadedArtwork({this.thumbPath});
@@ -163,7 +163,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Inject the offline-mode source so queueing paths can short-circuit when
-  /// the device has no Plex connectivity. Sync-rule execution receives a
+  /// the device has no server connectivity. Sync-rule execution receives a
   /// snapshot of this state when invoked, keeping this provider as the owner.
   void setOfflineSource(OfflineModeSource? source) {
     if (!identical(_offlineSource, source)) {
@@ -533,8 +533,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) return (metadata: null, networkFilled: false, stale: false);
 
-    // MediaBrowser bulk keys are compound-scoped (`machine/user:item`); Plex
-    // keys are public. Try the exact profile namespace first, then the public
+    // Silo bulk keys are profile-scoped (`silo:<server>/<profile>:item`);
+    // try the exact profile namespace first, then the public
     // key, then the per-item lookup (which also finds cached-but-unpinned rows).
     final clientScopeId = pinned.scopesByServer[parsed.serverId];
     var cached =
@@ -1890,8 +1890,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Queue every track under an album/artist. Expansion is one
   /// recursive-leaves call ([MediaServerClient.fetchPlayableDescendants]) on
-  /// every backend — Plex branches album→/children, while MediaBrowser retries
-  /// tag-only artists by album-artist credit.
+  /// the server, which also covers tag-only artists by album-artist credit.
   Future<int> _queueMusicContainerDownload(
     MediaItem container,
     MediaServerClient client,

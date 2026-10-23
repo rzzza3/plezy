@@ -10,7 +10,7 @@ import 'anime_lists_mapping_store.dart';
 import 'fribb_mapping_store.dart';
 import 'future_coalescer.dart';
 
-/// Paired ID output: always-present Plex external IDs (tvdb/imdb/tmdb) plus
+/// Paired ID output: always-present server external IDs (tvdb/imdb/tmdb) plus
 /// optional Fribb-sourced anime IDs (mal/anilist/simkl). Simkl uses [external]
 /// directly for non-anime titles; MAL/AniList no-op when [anime] is null.
 class TrackerIds {
@@ -65,7 +65,7 @@ class TrackerRatingContext {
 /// show-level external IDs. Anime-Lists XML is used when available to
 /// disambiguate same-season split-cour episode ranges by AniDB id.
 ///
-/// A HAMA-matched Plex library supplies an AniDB id and nothing else. That is
+/// An AniDB-keyed library supplies an AniDB id and nothing else. That is
 /// Fribb's own primary key, so it resolves an anime directly — but Anime-Lists
 /// maps tvdb/tmdb episode coordinates onto AniDB rather than the reverse, so
 /// those items get no episode mapping and fall back to the show's own
@@ -101,7 +101,7 @@ class TrackerIdResolver {
   static bool _returnTrue() => true;
 
   /// Fetch external IDs for an item via the neutral
-  /// [MediaServerClient.fetchExternalIds] surface — Plex hits
+  /// [MediaServerClient.fetchExternalIds] surface — the client reads
   /// `/library/metadata/{id}?includeGuids=1`.
   Future<ExternalIds> _fetchExternalIds(String itemId) =>
       _externalIdLoads.run(itemId, () => _client.fetchExternalIds(itemId));
@@ -255,8 +255,8 @@ class TrackerIdResolver {
 
   /// The AniDB id to look Fribb up by, or null when it cannot be trusted.
   ///
-  /// Only Plex's HAMA agent supplies one, and only in its plain `anidb` mode:
-  /// one AniDB entry per Plex show, its episodes in season 1 and its specials
+  /// Only an AniDB-keyed library supplies one, and only in its plain `anidb` mode:
+  /// one AniDB entry per show, its episodes in season 1 and its specials
   /// in season 0. A higher season means the library is numbered by TVDB
   /// instead — HAMA warns about that itself — so the guid's entry does not
   /// describe what is playing and the tvdb/tmdb/imdb ladder must handle it.
@@ -344,7 +344,7 @@ class TrackerIdResolver {
 
   /// Pick the best row for a show lookup. When Fribb has multiple rows
   /// sharing the same show-level external ID (split-cour anime), prefer the
-  /// one whose `season.tvdb` or `season.tmdb` matches the Plex episode's
+  /// one whose `season.tvdb` or `season.tmdb` matches the library episode's
   /// season; otherwise prefer regular TV/ONA rows.
   FribbMappingRow? _pickShowRow(
     List<FribbMappingRow> rows, {

@@ -19,7 +19,7 @@ class RatingInfo {
 /// The brand badge for an attributed source key.
 ///
 /// Rotten Tomatoes picks fresh/rotten and upright/spilled by the 60% threshold
-/// the tomatometer itself uses — the same state Plex encodes in
+/// the tomatometer itself uses — the same state a server encodes in
 /// `image.rating.ripe` / `.rotten`.
 ///
 /// Returns null for keys with no brand badge (`critic`, `audience`, `simkl`,
@@ -46,7 +46,7 @@ String? ratingSourceLabel(String source) => switch (source) {
   'imdb' => t.common.ratingSource.imdb,
   'tmdb' => t.common.ratingSource.tmdb,
   'rottenTomatoes' => t.common.ratingSource.rottenTomatoes,
-  // Plex splits Rotten Tomatoes into its two panels, so both the provenance
+  // A server can split Rotten Tomatoes into its two panels, so both the provenance
   // and the critic/audience distinction survive.
   'rottenTomatoesCritic' => t.common.ratingSource.rottenTomatoesCritic,
   'rottenTomatoesAudience' => t.common.ratingSource.rottenTomatoesAudience,

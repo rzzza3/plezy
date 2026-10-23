@@ -7,7 +7,7 @@ import '../../media/library_first_character.dart';
 import 'alpha_jump_helper.dart';
 
 /// Phone-optimized draggable scroll handle that appears on scroll and shows
-/// a letter bubble when dragged. Designed to match the Plex app's scroll
+/// a letter bubble when dragged. Designed to match a mobile media app's scroll
 /// indicator behavior.
 ///
 /// Desktop/tablet/TV should use [AlphaJumpBar] instead.

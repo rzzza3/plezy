@@ -393,7 +393,7 @@ class DiscordRPCService {
   }
 
   /// The image Discord shows: series poster for episodes (falling back to the
-  /// episode thumb), album art for tracks — never the artist portrait Plex
+  /// episode thumb), album art for tracks — never the artist portrait a server
   /// puts in `grandparentThumb` — and the item's own poster otherwise.
   String? _presenceThumbPath(MediaItem metadata) {
     if (metadata.kind == MediaKind.track) return metadata.thumbPath;

@@ -8,7 +8,7 @@ import '../media/media_source_info.dart';
 /// One frame of scrub-bar preview imagery, produced by a
 /// [ScrubPreviewSource] for a given timestamp.
 ///
-/// Plex's BIF returns standalone JPEG bytes per timestamp. Sprite-sheet
+/// A BIF returns standalone JPEG bytes per timestamp. Sprite-sheet
 /// sources return a sheet plus the row/column of the right tile. The tooltip sizes itself to [aspectRatio] so the frame
 /// renders without letterboxing or cropping.
 sealed class ScrubFrame {
@@ -19,7 +19,7 @@ sealed class ScrubFrame {
   double get aspectRatio;
 }
 
-/// Plex BIF: standalone JPEG bytes ready for [Image.memory].
+/// BIF: standalone JPEG bytes ready for [Image.memory].
 class BytesScrubFrame extends ScrubFrame {
   final Uint8List bytes;
   @override
@@ -51,7 +51,7 @@ class SheetScrubFrame extends ScrubFrame {
 }
 
 /// Backend-neutral source of [ScrubFrame]s for the timeline tooltip.
-/// Plex implements via BIF bytes.
+/// A backend can implement via BIF bytes.
 abstract class ScrubPreviewSource {
   bool get isAvailable;
   ScrubFrame? getFrame(Duration time);

@@ -345,7 +345,7 @@ Future<void> runInitialProfilePrompt({
     // a dead end. Mirror the boot guard — prune orphans and route to auth
     // when nothing selectable remains.
     if (activeProfile.active == null && activeProfile.profiles.isEmpty) {
-      // Offline, "unresolvable" may just be an unreachable plex.tv — don't
+      // Offline, "unresolvable" may just be an unreachable server — don't
       // kick the user to auth over it.
       if (!isOfflineMode && await hasConnections() && isMounted()) {
         appLogger.w('MainScreen: connections exist but no profiles resolved — settling session');
@@ -355,7 +355,7 @@ Future<void> runInitialProfilePrompt({
     }
 
     // Always prompt when there's no active profile but profiles exist
-    // (fresh sign-in with multiple Plex Home users): otherwise the binder
+    // (fresh sign-in to a household with several profiles): otherwise the binder
     // has no profile to bind, and the user lands on an empty screen with
     // no way back to the picker.
     final hasNoActive = activeProfile.active == null && activeProfile.profiles.isNotEmpty;
@@ -416,7 +416,7 @@ class _MainScreenState extends State<MainScreen>
 
   /// Startup routed here explicitly offline. Keep the offline shell until a
   /// visible server actually connects; provider warmup can be optimistic when
-  /// failed Plex servers have no live client yet.
+  /// failed servers have no live client yet.
   bool _offlineUntilConnected = false;
 
   /// Prevents double-pushing the profile selection screen
@@ -490,8 +490,8 @@ class _MainScreenState extends State<MainScreen>
   /// fresh resume for rows the queue drain skipped while it was away.
   final Set<String> _resumeCoveredServerIds = {};
 
-  /// Listener that fires when [ActiveProfileBinder] settles (Plex *and*
-  /// Silo both bound). Drives the once-per-launch priming of
+  /// Listener that fires when [ActiveProfileBinder] settles (the active
+  /// profile's server bound). Drives the once-per-launch priming of
   /// LibrariesProvider + watch sync + tab fullRefresh — wiring this off
   /// the first online-server emission instead would prime before
   /// Silo gets added, leaving its libraries out of the navbar.
@@ -615,8 +615,8 @@ class _MainScreenState extends State<MainScreen>
   /// [SetupScreen] path used to do all this before navigating to
   /// MainScreen; with the binder taking over for the connect, we hook
   /// into [ActiveProfileProvider.isBinding] (for the once-only priming,
-  /// which must wait for *all* connections — Plex *and* Silo — to
-  /// land so the navbar shows libraries from both backends) and
+  /// which must wait for the binder to land so the navbar shows the
+  /// server's libraries) and
   /// [MultiServerManager.statusStream] (for download resume, which
   /// re-fires whenever a server comes online that the last resume didn't
   /// cover, so rows skipped while their server was offline get drained).
@@ -629,9 +629,8 @@ class _MainScreenState extends State<MainScreen>
     void primeServicesOnBindingSettle({bool fromTimeout = false}) {
       if (_startupServicesPrimed || !mounted) return;
       // Wait for the binder to finish — `_rebind` only flips `isBinding`
-      // false after both `_bindPlexHome` AND `_bindJoinRows` (where
-      // Silo gets added) complete. Priming on the first Plex status
-      // emit instead would load libraries before Silo is registered.
+      // false once the profile's server is registered. Priming on the first
+      // status emit instead would load libraries before it is.
       //
       // The `fromTimeout` escape hatch lets the [_startupSettleTimeout]
       // bypass this gate if the binder has somehow not flipped the flag
@@ -664,8 +663,8 @@ class _MainScreenState extends State<MainScreen>
       _resumeQueuedDownloadsForServers(onlineClients.keys.toSet(), onlineClients.values.firstOrNull);
     }
 
-    // Listen for binding-settle so the once-only priming runs after both
-    // Plex and Silo are wired up.
+    // Listen for binding-settle so the once-only priming runs after the
+    // server is wired up.
     _bindingSettleListener = () => primeServicesOnBindingSettle();
     activeProfile.addListener(_bindingSettleListener!);
 

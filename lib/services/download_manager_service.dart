@@ -819,7 +819,7 @@ class DownloadManagerService {
           progressBar: true,
         );
 
-    // Protect native writes even while Flutter is suspended. Plex servers can
+    // Protect native writes even while Flutter is suspended. Servers can
     // also reject concurrent media downloads.
     await FileDownloader().configure(
       globalConfig: [(Config.checkAvailableSpace, true), (Config.holdingQueue, (1, 1, 1))],
@@ -2681,7 +2681,7 @@ class DownloadManagerService {
   /// otherwise auto-retry if retries remain.
   ///
   /// A native failure's description is never user copy, only diagnostics for
-  /// the log. For an HTTP failure it is the server's raw response body (a Plex
+  /// the log. For an HTTP failure it is the server's raw response body (a server
   /// refusal names a paid plan, #2510); otherwise it is the platform's own
   /// English exception text, which can name the host or, for Android's
   /// catch-all, quote the request URL with its token. An HTTP body is also
@@ -3708,7 +3708,7 @@ class DownloadManagerService {
 
   /// Get chapter thumb paths from cached metadata, or null when the cache
   /// cannot answer. Backend-aware: routes through the resolved
-  /// [MediaServerClient] so Plex items return their
+  /// [MediaServerClient] so items return their
   /// `/library/parts/.../indexes/sd/...` paths. Every shape hashes
   /// through [DownloadStorageService] the same way.
   ///
@@ -4387,7 +4387,7 @@ class DownloadManagerService {
       }
       await _deleteAdditionalPartFiles(record);
 
-      // thumbPath is a server-side API path (Plex /library/metadata/.../thumb,
+      // thumbPath is a server-side API path (e.g. an item thumb,
       // a Silo artwork URL), not a local file path —
       // resolve it via getArtworkPathFromThumb
       if (deleteThumb && record.thumbPath != null) {
@@ -4404,7 +4404,7 @@ class DownloadManagerService {
 
   /// Whether [storedPath], a file [record] recorded, is also another
   /// download's file. Paths used to be built from titles alone, so two items
-  /// with the same title (two libraries, or the same movie on Plex and
+  /// with the same title (two libraries, or the same movie on two servers and
   /// Silo) could end up on one file; it stays while another row plays it.
   Future<bool> _isVideoPathSharedWithOtherDownload(DownloadedMediaItem record, String storedPath) async {
     final shared = await _database.isVideoFilePathRecordedByOtherDownload(

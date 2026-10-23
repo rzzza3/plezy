@@ -11,12 +11,10 @@ import '../utils/isolate_helper.dart';
 /// Backend-agnostic key-value cache for API responses.
 ///
 /// Stores raw JSON keyed by `serverId:endpoint` in the shared `ApiCache`
-/// Drift table. `serverId` values are globally unique across connected
-/// backends, so Plex and Silo entries never collide despite sharing
-/// the same table.
+/// Drift table. Silo scopes are globally unique, so entries never collide.
 ///
-/// Plex- and Silo-specific helpers (item-id pinning, metadata parsing)
-/// live on subclasses [PlexApiCache] / [SiloApiCache], which also
+/// Silo-specific helpers (item-id pinning, metadata parsing) live on the
+/// subclass [SiloApiCache], which also
 /// implement the abstract [getMetadata] / [pinForOffline] / [deleteForItem]
 /// methods so callers can dispatch via [forBackend] instead of switching on
 /// the backend type at every call site.
@@ -81,8 +79,8 @@ abstract class ApiCache {
     }
   }
 
-  /// Pick the cache for [backend]. Plex is the legacy default — covers items
-  /// predating the Connections table where the backend can't be resolved.
+  /// Pick the cache for [backend]. A missing backend reads as Silo — covers
+  /// rows whose backend can't be resolved.
   static ApiCache forBackend(MediaBackend? backend) {
     final picked = _byBackend[backend ?? MediaBackend.silo];
     if (picked == null) {
@@ -183,7 +181,7 @@ abstract class ApiCache {
   /// Pull pinned rows for [serverId] and extract the first capture group of
   /// [keyPattern] from each `cacheKey`. Returns the unique set of captured
   /// ids — backend subclasses use this to enumerate their pinned items
-  /// (Plex ratingKeys, Silo content ids).
+  /// (Silo content ids).
   Future<Set<String>> extractPinnedIds(ServerId serverId, RegExp keyPattern) async {
     final rows = await (_db.select(
       _db.apiCache,
@@ -229,7 +227,7 @@ abstract class ApiCache {
   /// [itemId] so reloads (`getMetadata` / `getAllPinnedMetadata`) reflect the
   /// state without having to refetch from the server. No-op when the row
   /// isn't cached. Backend subclasses know which JSON fields to mutate
-  /// (Plex `viewCount`).
+  /// (`viewCount`).
   ///
   /// Optional positional progress fields ([viewOffsetMs], [lastViewedAt],
   /// [viewedLeafCount]) let the offline-watch-sync service mirror richer
@@ -240,10 +238,8 @@ abstract class ApiCache {
   ///
   /// **Drift discipline:** the inputs are backend-neutral but the JSON
   /// shape + units are not. Adding a new watch-state input here means
-  /// updating every concrete impl ([PlexApiCache.applyWatchState],
-  /// [SiloApiCache.applyWatchState]) — each stores its own JSON shape. The
-  /// mutations are too short (~3 lines per backend) for a shared adapter to
-  /// be a net win, so they live duplicated by design.
+  /// updating every concrete impl ([SiloApiCache.applyWatchState]) — each
+  /// stores its own JSON shape.
   Future<void> applyWatchState({
     required ServerId serverId,
     required String itemId,

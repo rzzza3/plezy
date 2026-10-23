@@ -224,11 +224,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           burnedSourceStreamId != null &&
           _sidecarForSourceStreamId(burnSession, burnedSourceStreamId) != null,
       targetIsOff: choice.isOff,
-      // "A file the client fetches for itself", which backends may mark differently: Plex
-      // never sets `isExternalFile` and instead gives a real external
-      // subtitle a `/library/streams/{id}` key - the same test `_selectedInternalSubtitleForHls`
-      // uses to decide what it must not burn. Reading only `isExternalFile` classified every Plex
-      // external file as an embedded target and sent an already-loaded track switch to the server.
+      // "A file the client fetches for itself": an already-loaded external
+      // track switches locally instead of asking the server.
       targetIsExternalFile:
           targetSourceStreamId != null &&
           (_currentMediaInfo?.subtitleTracks.any((track) => track.id == targetSourceStreamId && track.isExternalFile) ??
@@ -507,7 +504,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         // Local resume lookup can overlap the old stop, but source resolution
-        // below must not: Plex can use that stop to terminate any new
+        // below must not: a server can use that stop to terminate any new
         // transcode sharing this playback session identifier.
         final stoppedProgressFuture = _sendStoppedProgressOnce();
 

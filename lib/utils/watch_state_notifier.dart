@@ -44,7 +44,7 @@ enum WatchStateChangeType { watched, unwatched, progressUpdate, removedFromConti
 
 /// Event representing a watch state change with parent chain for hierarchical invalidation
 class WatchStateEvent with HierarchicalEventMixin {
-  /// The id of the item that changed (Plex ratingKey, …).
+  /// The id of the item that changed (Silo content id, …).
   @override
   final String itemId;
 
@@ -79,7 +79,7 @@ class WatchStateEvent with HierarchicalEventMixin {
   final bool? isNowWatched;
 
   /// Library section this item belongs to — used for per-tracker library
-  /// filtering. Null when emitted without full metadata. Plex sends a
+  /// filtering. Null when emitted without full metadata. A server can send a
   /// numeric id; ids round-trip as strings.
   final String? librarySectionID;
 

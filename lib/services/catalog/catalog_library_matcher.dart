@@ -66,7 +66,7 @@ class CatalogLibraryMatcher {
     // Namespace by source too: MAL and AniList can share a MAL id while
     // carrying different titles. The id forms and the title candidates join
     // the key because a detail load can enrich an item with external ids its
-    // row form lacked (#1715: Plex rows carry only a rating key) or additional
+    // row form lacked (#1715: some rows carry no ids) or additional
     // lookup titles; the richer lookup must not be short-circuited by the
     // poorer form's cached negative.
     final key = '${item.source.name}/${item.entryIdentityKey}/${item.ids.allKeys.join(',')}/${titles.join('\u0000')}';

@@ -17,7 +17,7 @@ import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
 
-/// Mobile video controls layout for Plex video player
+/// Mobile video controls layout for the video player
 ///
 /// Displays a full-screen overlay with:
 /// - Top bar: Back button, title, and track/chapter controls

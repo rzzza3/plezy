@@ -9,7 +9,7 @@ import '../../media/library_first_character.dart';
 /// have items are included, supporting non-Latin scripts (Korean, Japanese,
 /// Cyrillic, etc.).
 ///
-/// Plex's `/firstCharacter` endpoint returns characters in Unicode codepoint
+/// A per-letter count endpoint returns characters in Unicode codepoint
 /// order, which doesn't match the content endpoint's ICU locale-aware sort.
 /// We re-sort using ICU collation so cumulative indices are correct.
 class AlphaJumpHelper {

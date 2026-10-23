@@ -9,7 +9,7 @@ import 'track_selection_service.dart';
 /// the same selection ladder the player runs ([TrackSelectionService]) over
 /// the same [MediaSourceInfo] playback consumes. Two ladder inputs are
 /// genuinely unknowable here — a manual choice carried from a previous
-/// episode, and a Plex transcode decision — everything else is the real thing.
+/// episode, and a transcode decision — everything else is the real thing.
 class PlaybackTrackPreview {
   /// The source's audio and subtitle rows, as the player will see them.
   final MediaSourceInfo source;

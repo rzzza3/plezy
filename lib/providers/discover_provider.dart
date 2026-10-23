@@ -221,7 +221,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Whether the profile binder is still wiring servers. No full pass or
   /// Continue Watching refresh fetches while it runs: a profile switch mounts
-  /// the new session before the binder rotates the shared Plex clients to the
+  /// the new session before the binder rotates the shared clients to the
   /// new user's token, so a fetch here would return the previous user's rows
   /// (#2599). main_screen primes a load once binding settles. A bind that
   /// starts mid-pass keeps a zero-success pass in the loading state instead
@@ -980,7 +980,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // server item in place, so it must not evict anything here.
     if (event.isDownloadOnly) return;
 
-    // Scoped to the emitting server: backend-native ids (Plex rating keys are
+    // Scoped to the emitting server: backend-native ids (item ids are
     // small sequential integers) routinely collide across servers, and push
     // removals made this an automated event (#1646).
     bool affected(MediaItem item) =>

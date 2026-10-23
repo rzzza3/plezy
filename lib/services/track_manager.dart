@@ -15,8 +15,8 @@ import '../utils/app_logger.dart';
 import '../utils/track_label_builder.dart';
 
 /// Persists a track choice for the current part to the server and reports
-/// whether the server stored it. Plex only: backends that keep no
-/// server-side stream selection leave this null.
+/// whether the server stored it. Backends that keep no server-side stream
+/// selection (Silo) leave this null.
 ///
 /// A server refusal (non-2xx) throws [MediaServerHttpException] with its
 /// status code; transport failures keep their own [MediaServerHttpException]
@@ -36,7 +36,7 @@ class TrackManager {
   /// Returns false once the owning widget is unmounted or disposed.
   final bool Function() isActive;
 
-  /// Writes a track choice to Plex immediately. `null` for backends that keep
+  /// Writes a track choice to the server immediately. `null` for backends that keep
   /// no server-side stream selection and for playback with no server.
   final TrackPreferencePersister? persistTrackPreference;
 

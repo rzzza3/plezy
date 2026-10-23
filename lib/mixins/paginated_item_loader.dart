@@ -222,7 +222,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     totalSize = (totalSize - 1).clamp(0, totalSize);
   }
 
-  /// Refetch the loaded span in place — the sparse-grid equivalent of Plex
+  /// Refetch the loaded span in place — the sparse-grid equivalent of a web client's
   /// Web's `repopulateRange`. The old items stay rendered while the fetch
   /// runs; on success the span is replaced wholesale and [totalSize] adopts
   /// the server's new count, so server-side additions materialize at their

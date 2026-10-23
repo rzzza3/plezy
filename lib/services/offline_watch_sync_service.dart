@@ -33,9 +33,7 @@ typedef _OfflineWatchReplayResult = ({
 });
 
 /// Service for managing offline watch progress and syncing it back to the
-/// owning server. Backend-neutral over [MediaServerClient] — Plex actions
-/// hit `/:/scrobble` and `/:/timeline`, while MediaBrowser actions use their
-/// dialect's played-item route and `/Sessions/Playing*` through the same queue.
+/// owning server, through the neutral [MediaServerClient] surface.
 ///
 /// Handles:
 /// - Queuing progress updates when offline
@@ -97,9 +95,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   /// itself queued (offline). The online path writes straight to the server and
   /// queues nothing, so without this the older progress row survives and
   /// [syncPendingItems] later rewrites the resume position the mark cleared —
-  /// on MediaBrowser that pins the item to Continue Watching for good (#1812).
-  /// Plex is unaffected in practice (PMS discards a replay whose `updated`
-  /// timestamp is stale) but the queue entry is meaningless there too.
+  /// which can pin the item to Continue Watching for good (#1812).
   ///
   /// Progress recorded *after* the mark is a genuine rewatch: it is queued
   /// later, so it is never touched here.
@@ -617,7 +613,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   /// Sync a single action to the server.
   ///
   /// Uses the neutral [MediaServerClient] surface so every backend receives
-  /// the same queued state Plex's `/:/scrobble` and `/:/timeline` do.
+  /// the same queued state.
   Future<_OfflineWatchReplayResult> _syncAction(
     MediaServerClient client,
     OfflineWatchProgressItem action, {
@@ -670,7 +666,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
             try {
               await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
             } catch (e) {
-              // Plex sometimes 5xxs the start when nothing follows; the stop
+              // A server may 5xx the start when nothing follows; the stop
               // call is the one that persists the resume position, so
               // continue.
               appLogger.d('Offline progress: started call failed (continuing)', error: e);
@@ -689,8 +685,8 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
         if (action.shouldMarkWatched) {
           // A backend that persists the played state from the stopped report
-          // needs nothing more. Plex still needs the explicit transport call, but replay must not
-          // emit another semantic event for an action already emitted offline.
+          // needs nothing more. Any other needs the explicit transport call, but replay must
+          // not emit another semantic event for an action already emitted offline.
           if (!client.marksWatchedOnPlaybackStopped) {
             await client.markWatched(item);
             persisted = true;

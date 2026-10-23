@@ -57,7 +57,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       }
     }
     // No fallback to `MediaSubtitleTrack.selected`. That flag is the server's
-    // *request* (Plex `Stream.selected`)
+    // *request* (`selected`)
     // and feeds `TrackSelectionService.selectSubtitleTrack` Priority 2 as an
     // input; it is never a report of what the resolver settled on. Reading it
     // back here ticked rows that were never selected.

@@ -41,7 +41,7 @@ class TimelineSlider extends StatefulWidget {
   final bool enabled;
 
   /// Optional callback that returns a scrub-preview frame for a given timestamp.
-  /// Returns either [BytesScrubFrame] (Plex BIF JPEG bytes) or
+  /// Returns either [BytesScrubFrame] (BIF JPEG bytes) or
   /// [SheetScrubFrame] (sprite-sheet URL + crop). The tooltip renders both.
   final ScrubFrame? Function(Duration time)? thumbnailDataBuilder;
 

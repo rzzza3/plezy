@@ -103,7 +103,7 @@ part 'parts/visibility.dart';
 ///
 /// Direct play exposes embedded tracks in the native player and can attach
 /// arbitrary sidecars itself. A transcode can only deliver a resolved sidecar or
-/// an embedded codec the server can burn into the rendition (Plex
+/// an embedded codec the server can burn into the rendition (the server
 /// `subtitles=burn`), so the codec is the only discriminator here.
 List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
   List<MediaSubtitleTrack> tracks, {

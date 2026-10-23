@@ -8,7 +8,7 @@ import '../../../focus/focus_theme.dart';
 /// The app-wide translucent fill (`useBackgroundFocus`) is tuned for opaque
 /// surfaces; over a scrim on top of a bright frame it disappears (#2383). Over
 /// video the focused control instead becomes a solid disc with the icon
-/// inverted — the treatment the tvOS system player, Netflix and Plex use — so
+/// inverted — the treatment the tvOS system player, and Netflix use — so
 /// it reads at ten feet on any frame. An active control fills amber so that
 /// state survives the inversion.
 ///

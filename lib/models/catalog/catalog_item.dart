@@ -15,7 +15,7 @@ enum CatalogAirStatus { airing, ended, canceled, upcoming }
 
 /// External ids identifying a catalog item across providers and media
 /// servers. A superset of [ExternalIds] that also carries provider-native
-/// ids (Plex rating key, Trakt id/slug, MAL, AniList, and Simkl).
+/// ids (Trakt id/slug, MAL, AniList, and Simkl).
 class CatalogItemIds {
   final int? trakt;
   final String? slug;
@@ -192,7 +192,7 @@ class CatalogItem {
   /// Transparent title treatment (Trakt `images.logo`), for spotlight art.
   final String? logoUrl;
 
-  /// Wide banner art (Plex `banner`), distinct from the 16:9 backdrop.
+  /// Wide banner art (`banner`), distinct from the 16:9 backdrop.
   final String? bannerUrl;
 
   /// Dominant cover colour as `#rrggbb` (AniList `coverImage.color`), for
@@ -279,7 +279,7 @@ class CatalogItem {
   /// social recommendation, so this is a list of people, not a count.
   final List<CatalogRecommender>? recommenders;
 
-  /// Age-appropriateness prose beyond [certification] (Plex Common Sense).
+  /// Age-appropriateness prose beyond [certification] (e.g. Common Sense).
   final String? contentAdvisory;
 
   /// Production budget and box-office revenue in USD.

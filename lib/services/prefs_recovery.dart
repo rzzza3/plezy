@@ -409,7 +409,7 @@ abstract final class PrefsRecovery {
         continue;
       }
 
-      // The legacy Plex slot is an opaque token with no codec to validate
+      // The legacy account-token slot is an opaque token with no codec to validate
       // against; a non-empty string is all we can assert.
       final valid =
           value != null &&
@@ -570,7 +570,7 @@ abstract final class PrefsRecovery {
     }
   }
 
-  /// The legacy Plex slot is an opaque bearer token. Registering it as a token
+  /// The legacy account-token slot is an opaque bearer token. Registering it as a token
   /// also covers its URL-encoded form.
   static bool _registerLegacyPlexToken(String value) {
     LogRedactionManager.registerToken(value);

@@ -63,7 +63,7 @@ class ExternalPlayerService {
   /// Launch an external player with either a pre-resolved [videoUrl] (the
   /// local file of a downloaded copy) or by asking [client] to resolve the
   /// stream for [metadata]. Each backend implements `resolveExternalPlayback`
-  /// for the right URL shape (e.g. Plex part URL) and its external
+  /// for the right URL shape (e.g. a part URL) and its external
   /// subtitle files, which Android players receive through the intent.
   static Future<bool> launch({
     required BuildContext context,
@@ -333,7 +333,7 @@ class ExternalPlayerService {
       viewOffset: position.inMilliseconds,
       duration: duration.inMilliseconds,
       watchedThreshold: client.watchedThreshold,
-      // Plex persists every timeline report independently.
+      // The server persists every playback report independently.
       serverAcknowledged: true,
     );
 
@@ -346,7 +346,6 @@ class ExternalPlayerService {
         // reportPlaybackStopped above marks the item played on backends that
         // support it (Silo); markWatchedFromPlaybackStop then only emits the
         // local watch event there so the watch isn't recorded twice (#1287).
-        // Plex still issues the explicit server call.
         await client.markWatchedFromPlaybackStop(metadata);
         if (!current()) return;
         unawaited(TrackerCoordinator.instance.markWatched(metadata, client));

@@ -61,7 +61,7 @@ class CatalogPage {
 /// implementation must issue no more requests than the separate cast and
 /// related calls it replaces, and [item] must be enriched purely from bodies
 /// it was already fetching. Providers differ — Simkl's detail body already
-/// carries recommendations, while Plex (`/library/metadata/{id}` plus
+/// carries recommendations, while a server (its item detail plus
 /// `/related`) and Seerr (detail plus `/recommendations`) genuinely need two.
 /// Where two calls remain, run them concurrently and isolate their failures:
 /// a failed related call must still yield the enriched item and its cast.

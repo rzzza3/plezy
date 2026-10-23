@@ -286,11 +286,11 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         _related = detail.related;
         _relationEntries = relationEntries;
       });
-      // The row form of a Plex Discover item carries only its rating key;
+      // The row form of a catalog item can carry no external ids;
       // the detail body brings the external ids (#1715). Ask again with the
       // full set whenever enrichment added id forms — not just when the bare
-      // lookup came back empty: the exact `plex://` guid finds only copies in
-      // libraries on the modern agent, while a legacy-agent sibling is
+      // lookup came back empty: one id form can find only copies in
+      // some libraries, while another copy is
       // reachable solely through the imdb/tmdb forms (#1754). Likewise when
       // it added title candidates (Trakt aliases and translations, #2098): a
       // copy filed under a romaji or localized title is reachable only
@@ -334,8 +334,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// Whether the Request action can actually render: the tmdb id may only
   /// arrive with the detail fetch (see [_loadDetail]), so read the enriched
   /// item. Trakt items carry one natively and MAL items get theirs from the
-  /// Fribb mapping at row time, but Plex Discover's hub/search/related
-  /// endpoints ignore includeGuids, so a Plex item's tmdb id only arrives
+  /// Fribb mapping at row time, but some sources'
+  /// row endpoints omit ids, so their tmdb id only arrives
   /// with the detail fetch (issue #1959).
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
@@ -650,9 +650,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   Widget _buildLibraryMatchTile(MediaItem match, int index) {
-    // Plex matches carry their library title; MediaBrowser search-based lookup
-    // only does when the ancestors call succeeded, so fall back to the server
-    // name alone. The subtitle carries whatever else tells two copies apart.
+    // A match carries its library title only when the ancestors call
+    // succeeded, so fall back to the server name alone. The subtitle carries whatever else tells two copies apart.
     final details = [?_libraryMatchQuality(match), ?(match.libraryTitle == null ? null : match.serverName)];
     return FocusableListTile(
       focusNode: _libraryMatchFocusNodes[index],

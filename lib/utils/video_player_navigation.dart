@@ -172,7 +172,7 @@ class VideoPlayerActiveRouteGuard {
 final _inFlightLaunches = <VideoPlayerLaunchIdentity>{};
 
 /// Series (keyed by grandparent) or standalone-item key under
-/// [SettingsService.mediaVersionPreferences], scoped by server — raw Plex
+/// [SettingsService.mediaVersionPreferences], scoped by server — raw
 /// rating keys are small integers that can collide across servers.
 String _mediaVersionPreferenceKey(MediaItem metadata) {
   final serverId = serverIdOrNull(metadata.serverId);
@@ -244,7 +244,7 @@ typedef ResolvedMediaVersionPreference = ({int index, String? sourceId, String? 
 
 /// Resolve the saved preference for [metadata] against its version list.
 ///
-/// When [MediaItem.mediaVersions] is populated (Plex hub/detail fetches) the
+/// When [MediaItem.mediaVersions] is populated (hub/detail fetches) the
 /// index is verified and the matched version's real id is returned. When it
 /// isn't, the stored index and signature pass through with a null sourceId —
 /// an unverified id from a sibling episode would be meaningless downstream,
@@ -317,8 +317,8 @@ Future<bool?> navigateToVideoPlayer(
   final sourceRoute = ModalRoute.of(context);
   final downloadProvider = context.read<DownloadProvider>();
   final launchMusic = launchObserver == null ? null : context.read<MusicPlaybackService>();
-  // Use the manager-routed lookup so non-Plex items don't trip the
-  // Plex-only client. The player branches on the returned type internally.
+  // Use the manager-routed lookup; the player branches on the returned type
+  // internally.
   final manager = context.read<MultiServerProvider>().serverManager;
   final offlineWatchService = context.read<OfflineWatchSyncService>();
   final serverId = serverIdOrNull(metadata.serverId);

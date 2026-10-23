@@ -13,13 +13,13 @@ class MediaStream {
   final String? title;
   final String? displayTitle;
 
-  /// The server's current pick for this user (e.g. Plex `selected`).
-  /// Distinct from [isDefault]: Plex marks the
+  /// The server's current pick for this user (e.g. `selected`).
+  /// Distinct from [isDefault]: a server marks the
   /// container's default track separately, and the player's selection ladder
   /// ranks the two differently.
   final bool selected;
 
-  /// The container's own default flag (e.g. Plex `default`).
+  /// The container's own default flag (e.g. `default`).
   final bool isDefault;
 
   // Audio

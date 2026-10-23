@@ -449,7 +449,7 @@ class VideoPlayerScreen extends StatefulWidget {
 
   /// Audio stream ID to pass to the transcoder when [selectedQualityPreset]
   /// is non-original. When `null`, the playback service picks the `selected`
-  /// Plex audio track (fallback: first).
+  /// server audio track (fallback: first).
   final int? selectedAudioStreamId;
 
   const VideoPlayerScreen({
@@ -953,7 +953,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     readProvider: () => context.read<CompanionRemoteProvider>(),
   );
 
-  /// Backend-neutral lookup. Returns whichever client (Plex or Silo)
+  /// Backend-neutral lookup. Returns whichever client
   /// owns this item. Used by the player initialization path.
   MediaServerClient? _getMediaServerClient(BuildContext context) {
     final id = _currentMetadata.serverId;
@@ -1357,8 +1357,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Defer both operations until after the first frame to avoid calling
       // notifyListeners() during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Keep the queue when this item belongs to it — that covers both
-        // server-side queues (Plex `playQueueItemId`) and client-side
+        // Keep the queue when this item belongs to it — that covers
         // launcher-seeded queues (playlist/collection/shuffled
         // show, with synthetic ids tracked in the provider). For genuine
         // standalone playback (continue-watching, direct episode tap with no
@@ -1636,8 +1635,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Skipped offline (its own branch in _startPlayback).
       if (!_offlineLibraryMode) {
         // Backend-neutral lookup so every backend's items flow through here.
-        // Plex-specific transcoder caching is gated on capabilities below;
-        // Plex returns X-Plex-* identity headers via `streamHeaders`.
         final genericClient = _getMediaServerClient(context);
         if (genericClient == null) {
           throw StateError('No client registered for ${_currentMetadata.serverId}');

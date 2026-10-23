@@ -399,9 +399,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   String? _playbackStatusTarget;
   Timer? _playbackProbeTimer;
 
-  // Scores from the full record a probe fetched, by global key. Plex children
-  // listings carry only the scalar TMDB pair; the item's own fetch adds the
-  // `Rating[]` array (IMDb), so the TV hero shows that for the focused episode
+  // Scores from the full record a probe fetched, by global key. Children
+  // listings can carry fewer scores than the item's own fetch (IMDb), so the TV hero shows that for the focused episode
   // at no extra request (#2539). Outlives probe refreshes: a score does not
   // move with watch state, and clearing it would blank the badge until the
   // re-probe lands.
@@ -817,10 +816,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (!_canUseDetail) return;
     _invalidatePlaybackProbes(refreshItems: true);
     if (widget.isOffline) return;
-    // Backend-neutral. Plex bundles metadata + on-deck in one round-trip
-    // (`?includeOnDeck=1`); other backends' [fetchItemWithOnDeck] return
-    // onDeckEpisode=null and on-deck repopulates from cached lists on
-    // the next navigation.
+    // Backend-neutral. When [fetchItemWithOnDeck] returns
+    // onDeckEpisode=null, on-deck repopulates from cached lists on the next
+    // navigation.
     final mediaClient = _getMediaClientForMetadata(context);
     if (mediaClient == null) return;
     final serverId = _metadata.serverId;
@@ -1183,7 +1181,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// mirroring [FittedMetadataLine]'s policy — instead of wrapping onto a
   /// second run that short heroes clip away entirely: the scores pill sheds
   /// one badge at a time from the end, then quality labels go rightmost-first,
-  /// then the Plex edition, certification, runtime, and finally the year. The
+  /// then the certification, runtime, and finally the year. The
   /// tappable user-rating chip is the strip's only interactive element and is
   /// never dropped.
   ///
@@ -1441,9 +1439,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  /// Returns a
-  /// [MediaServerClient] for non-Plex items too, so image URLs use the
-  /// right server's transcoder.
+  /// Returns the item's [MediaServerClient], so image URLs use the right
+  /// server's transcoder.
   MediaServerClient? _getMediaClientForMetadata(BuildContext context) {
     return getServerBoundMediaClient(context);
   }
@@ -1631,10 +1628,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     try {
-      // Backend-neutral lookup. Plex returns the OnDeck episode bundled in
-      // the same response (`?includeOnDeck=1`); other backends'
-      // [fetchItemWithOnDeck] returns onDeckEpisode=null and the UI
-      // populates resume separately if needed.
+      // Backend-neutral lookup. When [fetchItemWithOnDeck] returns
+      // onDeckEpisode=null the UI populates resume separately if needed.
       final client = getServerBoundMediaClient(context);
       if (client == null) {
         // Truly orphaned item (server gone) — fall back to widget metadata
@@ -1712,8 +1707,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         unawaited(_fetchAllEpisodes());
       }
 
-      // [_loadExtras] and [_loadRelatedHubs] short-circuit for non-Plex
-      // backends; safe to call unconditionally.
+      // [_loadExtras] and [_loadRelatedHubs] short-circuit when the server
+      // has nothing to offer; safe to call unconditionally.
       unawaited(_loadExtras());
       unawaited(_loadRelatedHubs());
     } catch (e) {
@@ -3288,8 +3283,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Handle shuffle play. Routes through [MediaListPlaybackLauncher.forItem]
-  /// so Plex uses its server-side `/playQueues` and other backends build a local
-  /// shuffled queue from `fetchClientSideEpisodeQueue`.
+  /// to build a local shuffled queue from `fetchClientSideEpisodeQueue`.
   Future<void> _handleShufflePlayWithQueue(BuildContext context, MediaItem metadata) async {
     if (!_canUseDetail) return;
     if (widget.isOffline) {

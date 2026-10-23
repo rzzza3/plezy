@@ -45,7 +45,7 @@ class CodecUtils {
     };
   }
 
-  /// Image-based (bitmap) subtitle codecs. Plex burns these into the video
+  /// Image-based (bitmap) subtitle codecs. A server burns these into the video
   /// when the selected output transport cannot carry a bitmap subtitle
   /// rendition.
   static bool isImageSubtitleCodec(String? codec) {
@@ -64,7 +64,7 @@ class CodecUtils {
     };
   }
 
-  /// Subtitle codecs Plex can deliver in a transcode. Text codecs can become
+  /// Subtitle codecs a server can deliver in a transcode. Text codecs can become
   /// segmented HLS WebVTT; image codecs can be burned into the video.
   static bool isTranscodableSubtitleCodec(String? codec) {
     return isTextSubtitleCodec(codec) || isImageSubtitleCodec(codec);

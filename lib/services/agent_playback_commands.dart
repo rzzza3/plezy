@@ -609,7 +609,7 @@ class AgentPlaybackCommands {
       identical(servers.getClientForServer(serverId), client) &&
       identical(client.authenticationSessionId, authentication);
 
-  /// Only library items are targets; live TV channels went with Plex.
+  /// Only library items are targets; there are no live TV channels.
   void _checkTargetKind(Map<String, dynamic> arguments) {
     final kind = arguments['targetKind'] ?? 'item';
     if (kind == 'channel') {

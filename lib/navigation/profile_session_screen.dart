@@ -97,7 +97,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
   }
 
   /// The keyed remount below recreates every session-scoped provider on a
-  /// profile switch, but [ApiCache] is app-global and its Plex rows are
+  /// profile switch, but [ApiCache] is app-global and its rows are
   /// keyed by server only — one home user's cached responses would serve
   /// the next user's session. Clear the volatile rows at the seam itself;
   /// doing it from inside MainScreen can't work, the remount unmounts it

@@ -15,17 +15,17 @@ class ServerCapabilities {
 
   /// Backend has a recording/DVR API wired in this app. Channel listing is
   /// gated by [liveTv]; this flag enables the additional recordings/scheduling
-  /// UI. Plex serves `/media/subscriptions`.
+  /// UI.
   final bool liveTvDvr;
 
   /// Server can transcode video.
   final bool videoTranscoding;
 
-  /// Server provides curated recommendation hubs (Plex Discover, Silo home
+  /// Server provides curated recommendation hubs (Silo home
   /// sections).
   final bool richHubs;
 
-  /// Numeric ratings (Plex 0–10 via [Item.userRating]). Backends without a
+  /// Numeric ratings (0–10 via [Item.userRating]). Backends without a
   /// numeric user rating hide the star sliders.
   final bool numericUserRating;
 
@@ -34,14 +34,14 @@ class ServerCapabilities {
   final bool wholeStarRating;
 
   /// Per-user favorite flag ("heart") on media items. Silo stores it per
-  /// profile; Plex has no equivalent.
+  /// profile.
   final bool userFavorites;
 
   /// Hide an item from Continue Watching without changing watch state or
-  /// playback progress. Plex and Silo expose this directly.
+  /// playback progress. Silo exposes this directly.
   final bool continueWatchingRemoval;
 
-  /// External subtitle search/marketplace (Plex `/library/metadata/{id}/subtitles`).
+  /// External subtitle search/marketplace (Silo `/api/v2/subtitles/search`).
   /// Hides the "Search subtitles" affordance when false.
   final bool externalSubtitleSearch;
 
@@ -49,22 +49,22 @@ class ServerCapabilities {
   final bool richMetadataEdit;
 
   /// Server can supply thumbnails for the player's seek-bar scrub preview.
-  /// Plex serves them as a `.bif` asset, wired through
+  /// A server can serve them as a `.bif` asset, wired through
   /// [ScrubPreviewSource]; the flag gates whether the player attempts the
   /// load at all.
   final bool scrubThumbnails;
 
-  /// Library section exposes a folder hierarchy. Plex uses
+  /// Library section exposes a folder hierarchy. A server may use
   /// `/library/sections/{id}/folders`.
   final bool folderGrouping;
 
   /// Server can build an "instant mix" / radio track list from a seed item.
-  /// Plex: station play queues
+  /// E.g. station play queues
   /// (`POST /playQueues?type=audio&uri=...station...`).
   final bool instantMix;
 
   /// Server pushes library-content change notifications over a websocket the
-  /// app can subscribe to (#1646). Plex: `/:/websockets/notifications`
+  /// app can subscribe to (#1646). Silo: its events socket
   /// timeline entries; Silo: its realtime event stream.
   /// Whether a *specific* server's socket is reachable (reverse proxies may
   /// not upgrade) is a runtime concern handled by [LibraryEventService]'s
@@ -110,7 +110,7 @@ class ServerCapabilities {
   );
 
   /// Every flag here is fixed per backend *kind* except [videoTranscoding],
-  /// which Plex probes per server (`PlexClient.capabilities`) — so that is the
+  /// which a client may probe per server — so that is the
   /// only override this type needs. Widen the parameter list if another flag
   /// ever becomes a runtime probe.
   ServerCapabilities copyWith({bool? videoTranscoding}) {

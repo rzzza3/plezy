@@ -10,7 +10,7 @@ import 'etag_cached_remote_store.dart';
 ///
 /// Lookup tables (tvdb / tmdb tv / tmdb movie / imdb) into a shared list of
 /// rows. A single tvdb_id may map to multiple rows (split-cour anime → one per
-/// season); callers that have a Plex season number should filter by
+/// season); callers that have a library season number should filter by
 /// [FribbMappingRow.tvdbSeason] or [FribbMappingRow.tmdbSeason].
 ///
 /// TMDB gets two tables because it numbers movies and TV series independently:
@@ -28,7 +28,7 @@ class FribbIndex implements RemoteIndex {
 
   /// AniDB id → its (single) row. AniDB is the dataset's own primary key, so
   /// unlike the three catalog indexes this one never resolves to a list.
-  /// Plex's HAMA agent identifies anime by AniDB id and nothing else, which is
+  /// An AniDB-keyed library identifies anime by AniDB id and nothing else, which is
   /// the only way a library item reaches the mapping through it (#1788).
   final Map<int, FribbMappingRow> byAnidb;
 

@@ -171,7 +171,7 @@ class MediaContextMenu extends StatefulWidget {
 
   /// Plays the item's trailer. When non-null a "Play trailer" item is added to
   /// the menu. Only the detail screen passes this (it resolves the trailer from
-  /// Plex extras), so the item never appears on card/browse context menus. This
+  /// server extras), so the item never appears on card/browse context menus. This
   /// keeps the trailer reachable even when the detail row hides its trailer
   /// button to fit a small screen.
   final VoidCallback? onPlayTrailer;
@@ -381,7 +381,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
 
     // Watchlist (movies and shows), backed by the connected catalog sources
-    // (Trakt, Plex, MAL, ...). Whether THIS item resolves in a source needs
+    // (Trakt, MAL, ...). Whether THIS item resolves in a source needs
     // its external ids, which load lazily: the entry defaults to "Add" — an
     // idempotent no-op when the item turns out to be listed already — and
     // only offers "Remove" once cached candidates prove membership, so a
@@ -553,7 +553,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final isMovieOrEpisode = mediaKind == MediaKind.movie || mediaKind == MediaKind.episode;
     // Play Version (for episodes and movies). Hidden when there's
     // nothing to choose: a single source on a backend that can't
-    // transcode (e.g. Plex installs without a working transcoder)
+    // transcode (e.g. a server without a working transcoder)
     // would just bounce straight to playback with default
     // settings, which is what the regular Play action already does.
     // A row's version list, when present, is complete (the
@@ -1344,7 +1344,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Launch playback for collection or playlist.
   ///
   /// Dispatches to the right launcher implementation based on the item's
-  /// backend — Plex uses server-side `/playQueues`.
+  /// backend; queues are built client-side.
   Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
     final playlist = _playlist;
     if (playlist != null && playlist.playlistType == 'audio') {

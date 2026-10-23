@@ -205,7 +205,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   bool get isLiveRefreshBlocked => _innerPosition?.isScrollingNotifier.value ?? false;
 
   /// Server push while this grid is visible: refetch the loaded span in
-  /// place (Plex Web's `repopulateRange`) so new items materialize at their
+  /// place (a web client's `repopulateRange`) so new items materialize at their
   /// sorted positions and metadata updates land, then keep the first visible
   /// item stationary by compensating the scroll offset for any index shift
   /// the merge caused, and carry the D-pad highlight to wherever the focused
@@ -563,7 +563,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _resetTopOfPageState();
     _currentFirstVisibleIndex.value = 0;
 
-    // Plex returns categories from its published filter schema + `/sorts`;
+    // The server returns categories and sorts;
     // other clients map their filter endpoints into the same shape with
     // values pre-cached. All flow through
     // [MediaServerClient.fetchLibraryFiltersWithValues].
@@ -599,8 +599,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       setState(() {
         _filters = loaded.filters;
         _sortOptions = loaded.sorts;
-        // Plex returns no cached values (filters fetched lazily per-category);
-        // assigning the empty map is a no-op for Plex and a real payload for
+        // A backend may return no cached values (filters fetched lazily);
+        // assigning the empty map is a no-op then and a real payload for
         // clients that pre-cache values.
         _filterValues = loaded.cachedValues;
         _selectedFilters = savedFilters;
@@ -710,7 +710,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     });
   }
 
-  /// Initial UI state both Plex and MediaBrowser paths need before fetching:
+  /// Initial UI state needed before fetching:
   /// loading flag set, lists cleared, filter/sort caches reset.
   void _resetTopOfPageState() {
     setState(() {
@@ -855,7 +855,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _ => null,
   };
 
-  /// `libraryType` for sort-option fetches. Plex music sections serve a
+  /// `libraryType` for sort-option fetches. Music libraries can serve a
   /// distinct sort list per type (`?type=9|10` for albums/tracks), so the
   /// active grouping picks the type; every other grouping shares the
   /// library's own list.
@@ -1915,7 +1915,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         _selectedGrouping == browseGroupingArtists ||
         _selectedGrouping == browseGroupingAlbums ||
         _selectedGrouping == browseGroupingTracks;
-    // Clip libraries (MediaBrowser home videos, Plex "Other Videos") hold
+    // Clip libraries (home videos) hold
     // homogeneous 16:9 items, so the flat grid uses wide cells; poster cells
     // would letterbox every card (#2036).
     final isClipLibrary = widget.library.kind == MediaKind.clip;
@@ -2098,7 +2098,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
 /// Combined filter + sort listing loaded for a [MediaLibrary].
 ///
-/// Plex returns categories from `/library/sections/{id}/filters` and sort
+/// The server returns categories and sort
 /// options from `/library/sections/{id}/sorts` separately, with values
 /// fetched lazily per-category via `FiltersBottomSheet`. Silo returns
 /// categories *and* values together via `GET /catalog/filters` (so

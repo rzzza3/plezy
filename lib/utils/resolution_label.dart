@@ -2,7 +2,7 @@
 /// the rest of the app uses (`'4k'`, `'1080'`, `'720'`, `'480'`, or the raw
 /// height for non-standard sizes). Returns `null` when [height] is null.
 ///
-/// Plex hands the label back already in its `Media.videoResolution` field;
+/// A server can hand the label back already in a `videoResolution` field;
 /// backends that only give raw pixel dimensions feed them through
 /// [resolutionLabelFromDimensions] to produce the same shape.
 String? resolutionLabelFromHeight(int? height) {

@@ -1,6 +1,6 @@
 /// Parse a value that may be [int], [num], or [String] to [int].
 /// Used as `@JsonKey(fromJson: flexibleInt)` and in manual `fromJson` factories
-/// to handle Plex API responses where numeric fields may arrive as strings
+/// to handle API responses where numeric fields may arrive as strings
 /// (XML-to-JSON conversion).
 int? flexibleInt(Object? v) => switch (v) {
   final num n => n.toInt(),
@@ -14,7 +14,7 @@ String stringOrEmpty(Object? v) => (v ?? '').toString();
 
 /// Parse a value that may be [bool], [int] (0/1), or [String] ('1'/'true'/'false') to [bool].
 /// Returns `false` for `null` or unrecognised values.
-/// Handles Plex API responses where boolean fields may arrive as integers.
+/// Handles API responses where boolean fields may arrive as integers.
 bool flexibleBool(Object? v) => switch (v) {
   final bool b => b,
   final int n => n == 1,
@@ -41,11 +41,11 @@ double? flexibleDouble(Object? v) => switch (v) {
 
 /// `@JsonKey(readValue:)` adapter — coerces the named field to a String via
 /// `toString()` before the generated cast. Use for required `String` fields
-/// that Plex may return as int in some endpoints.
+/// that a server may return as int in some endpoints.
 Object? readStringField(Map json, String key) => json[key]?.toString();
 
 /// Coerce a value that may be a single Map or a List of Maps into a `List<dynamic>`.
-/// Plex often returns `{"Part": {...}}` for single-part media and
+/// A server can return `{"Part": {...}}` for single-part media and
 /// `{"Part": [{...}, {...}]}` for multi-part — this normalises both shapes.
 /// Returns `null` when the value is `null`.
 List<dynamic>? flexibleList(Object? v) => switch (v) {
@@ -111,10 +111,9 @@ List<String>? flexibleStringList(Object? v) {
 }
 
 /// Coerce a comma-separated String ("en,sv"), a bare String, a List of
-/// Strings, or null into `List<String>?`. Since ~July 2026 the Plex account
-/// API (clients.plex.tv `/api/v2/user` and `/home/users/{uuid}/switch`)
-/// returns the profile language-list fields as CSV strings instead of arrays
-/// (#1488) — this tolerates both shapes. Parts are trimmed and empties
+/// Strings, or null into `List<String>?`. Some APIs return language-list
+/// fields as CSV strings instead of arrays (#1488) — this tolerates both
+/// shapes. Parts are trimmed and empties
 /// dropped; an empty result (or null input) yields `null`. CSV-splitting
 /// sibling of [flexibleStringList], kept separate so that caller's strings
 /// (Fribb IMDb ids) stay verbatim.

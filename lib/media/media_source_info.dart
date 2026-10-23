@@ -11,7 +11,7 @@ class MediaSourceInfo {
   final int? partId;
   final MediaDisplayCriteria? displayCriteria;
 
-  /// Backend-opaque source id for the selected version. Plex uses the
+  /// Backend-opaque source id for the selected version. The backend uses the
   /// authoritative `MediaVersion.id`.
   final String? mediaSourceId;
 
@@ -29,7 +29,7 @@ class MediaSourceInfo {
   final int? defaultSubtitleStreamIndex;
 
   /// Trickplay manifest for the selected source, keyed by tile
-  /// width. Null when the server didn't run trickplay extraction. Plex stays
+  /// width. Null when the server didn't run trickplay extraction. Some backends stay
   /// null here and uses [partId] + the BIF service instead.
   final Map<int, TrickplayInfo>? trickplayByWidth;
 
@@ -396,7 +396,7 @@ class PlaybackExtras {
 
   /// Longest chapter that may become a chapter-derived intro marker.
   ///
-  /// Detected intros (Plex, Intro Skipper) fall well inside two minutes; a
+  /// Detected intros (server markers, Intro Skipper) fall well inside two minutes; a
   /// movie's first chapter titled "Opening Credits" or "Introduction" runs
   /// five to ten minutes of actual picture, and skipping it skips the film
   /// (#2235). Applies only to markers minted here from chapter titles, never

@@ -150,7 +150,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           _effectiveSelectedMediaIndex >= 0 && _effectiveSelectedMediaIndex < _availableVersions.length
           ? _availableVersions[_effectiveSelectedMediaIndex].signature
           : null;
-      // Users who curate per-episode selections server-side (e.g. via Plex Auto
+      // Users who curate per-episode selections server-side (e.g. via an Auto
       // Languages) opt out of carrying tracks across episodes entirely: with no
       // preferences, both audio and subtitles start at the server-selected
       // priority (#1717).

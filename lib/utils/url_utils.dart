@@ -18,7 +18,7 @@ String stripTrailingSlash(String input) {
 /// Null values are omitted and iterable values are emitted as repeated keys.
 ///
 /// Used instead of `Uri.queryParameters` (which emits `+` for spaces) wherever
-/// the server rejects `+` — Plex's transcode endpoints and Seerr's TMDB-backed
+/// the server rejects `+` — some transcode endpoints and Seerr's TMDB-backed
 /// `/search` proxy both do.
 String encodeQueryParameters(Map<String, Object?>? params) {
   if (params == null || params.isEmpty) return '';

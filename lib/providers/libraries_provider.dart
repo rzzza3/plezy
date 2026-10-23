@@ -152,7 +152,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
   /// The loaded library with [globalKey] (see [MediaLibrary.globalKey]), or
   /// null while unloaded or for an unknown key. The zero-request resolver for
-  /// items that carry a library id without its title — Plex search rows that
+  /// items that carry a library id without its title — search rows that
   /// name their section only by `librarySectionKey` (#1970).
   MediaLibrary? libraryByGlobalKey(String globalKey) {
     _ensureLookups();
@@ -170,7 +170,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   /// The library name to attribute [item] with in search results (#1970), or
   /// null when no label should render: the library is unknown, or the owning
   /// server has only one. A missing title is resolved against the loaded
-  /// libraries, which covers Plex rows that carry a section id without its
+  /// libraries, which covers rows that carry a section id without its
   /// title.
   String? libraryLabelFor(MediaItem item) {
     final serverId = item.serverId;
@@ -189,7 +189,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   }
 
   /// Reload libraries when the set of online servers has grown since the last
-  /// load. Servers connect in waves — the owner Plex account, then each
+  /// load. Servers connect in waves — each
   /// borrowed/shared connection, plus slow servers that
   /// reconnect after timing out — and each wave must surface in the sidebar
   /// without a profile re-switch or app restart.
@@ -295,8 +295,8 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     }
 
     try {
-      // Fetch libraries from every connected backend (Plex + Silo).
-      // The aggregation service converts Plex-typed responses to MediaLibrary
+      // Fetch libraries from every connected server.
+      // The aggregation service converts responses to MediaLibrary
       // internally; Silo clients return MediaLibrary natively.
       final result = await _aggregationService!.getMediaLibrariesFromAllServers();
       if (isDisposed) return;

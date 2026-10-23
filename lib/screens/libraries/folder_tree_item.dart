@@ -135,7 +135,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
   }
 
   /// Ad-hoc Play/Shuffle menu for plain folder rows. These map to pseudo
-  /// [MediaItem]s (Plex directories, other backends' folders), so [MediaContextMenu]
+  /// [MediaItem]s (server folders), so [MediaContextMenu]
   /// would offer actions that don't apply to them.
   Future<void> _showFolderMenu() async {
     final entries = <AppMenuEntry<String>>[
