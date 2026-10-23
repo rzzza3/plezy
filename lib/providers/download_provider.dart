@@ -153,7 +153,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   DownloadProvider.forTesting({
     required this._downloadManager,
     required this._database,
-    this._activeProfileId = 'test-profile',
+    this._activeProfileId = 'silo:srv/test-profile',
   }) : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
     _metadataStore = _DownloadMetadataStore(_downloadManager, _database, activeProfileId: _activeProfileId)
       ..addListener(_onMetadataStoreChanged);

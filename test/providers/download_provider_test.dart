@@ -239,7 +239,7 @@ Future<void> _insertProfile(AppDatabase db, String id) => db
 
 Future<void> _insertSiloConnection(AppDatabase db, ServerId serverId) => db
     .into(db.connections)
-    .insert(
+    .insertOnConflictUpdate(
       ConnectionsCompanion.insert(
         id: SiloConnection.idFor(serverId.value),
         kind: 'silo',
@@ -265,6 +265,8 @@ Future<void> _putPinnedSiloMetadata(
       id: id,
       kind: MediaKind.movie,
       title: title,
+      // `silo:<server_id>/<profile_id>`: the snapshot belongs to that server.
+      serverId: scope.substring('silo:'.length, scope.indexOf('/')),
       viewCount: viewCount,
       viewOffsetMs: viewOffset,
       libraryId: libraryId,
@@ -298,9 +300,13 @@ void main() {
   // Swappable per-test resolver behind the constructor-injected closure.
   MediaClientResolver? testClientResolver;
 
-  setUp(() {
+  setUp(() async {
     downloadOwnerSelectGate = _DownloadOwnerSelectGate();
     db = AppDatabase.forTesting(NativeDatabase.memory().interceptWith(downloadOwnerSelectGate));
+    // Owners count only while their profile scope's Silo connection exists.
+    for (final server in ['srv', 'silo-srv']) {
+      await _insertSiloConnection(db, ServerId(server));
+    }
     // SiloApiCache is a singleton accessed eagerly inside DownloadManagerService's
     // constructor; reinitialize per test so each test sees the fresh in-memory DB.
     SiloApiCache.initialize(db);
@@ -390,7 +396,7 @@ void main() {
         type: 'movie',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: globalKey);
 
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
@@ -418,12 +424,12 @@ void main() {
         type: 'movie',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: globalKey);
       await db.insertSyncRule(
-        profileId: 'test-profile',
+        profileId: 'silo:srv/test-profile',
         serverId: ServerId('srv'),
         ratingKey: 'show-a',
-        globalKey: 'test-profile|srv:show-a',
+        globalKey: 'silo:srv/test-profile|srv:show-a',
         targetType: 'show',
         episodeCount: 1,
       );
@@ -436,7 +442,7 @@ void main() {
       var notifications = 0;
       provider.addListener(() => notifications++);
 
-      provider.setActiveProfileId('profile-b');
+      provider.setActiveProfileId('silo:srv/profile-b');
 
       expect(provider.downloads, isEmpty);
       expect(provider.syncRules, isEmpty);
@@ -504,7 +510,7 @@ void main() {
       );
       // Owned by another profile — otherwise legacy adoption claims fully
       // ownerless rows for the active profile during initialization.
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:unowned');
+      await db.addDownloadOwner(profileId: 'silo:srv/profile-b', globalKey: 'srv:unowned');
       await db.insertDownload(
         serverId: ServerId('srv'),
         ratingKey: 'partial',
@@ -544,7 +550,7 @@ void main() {
       expect(p.hasSyncRule(ruleKey), isTrue);
       final rule = p.getSyncRule(ruleKey);
       expect(rule, isNotNull);
-      expect(rule!.profileId, 'test-profile');
+      expect(rule!.profileId, 'silo:srv/test-profile');
       expect(rule.targetType, 'show');
       expect(rule.episodeCount, 5);
       expect(rule.enabled, isTrue);
@@ -652,14 +658,14 @@ void main() {
         type: 'episode',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:episode');
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:episode');
       await db.associateSyncRuleDownload(rule, 'srv:episode');
 
       await p.deleteSyncRule(ruleKey);
 
       expect(await db.getSyncRule(ruleKey), isNull);
       expect(await db.getDownloadedMedia('srv:episode'), isNotNull);
-      expect(await db.getDownloadOwner(profileId: 'test-profile', globalKey: 'srv:episode'), isNotNull);
+      expect(await db.getDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:episode'), isNotNull);
     });
 
     test('deleteSyncRule releases targetMetadata when no download holds it', () async {
@@ -778,11 +784,11 @@ void main() {
           type: 'episode',
           status: DownloadStatus.completed.index,
         );
-        await db.addDownloadOwner(profileId: 'test-profile', globalKey: entry.key);
+        await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: entry.key);
         await db.associateSyncRuleDownload(targetRule, entry.key);
       }
       await db.associateSyncRuleDownload(siblingRule, 'srv:rule-shared');
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:profile-shared');
+      await db.addDownloadOwner(profileId: 'silo:srv/profile-b', globalKey: 'srv:profile-shared');
 
       p.debugSeedState(
         downloads: {
@@ -798,10 +804,10 @@ void main() {
       expect(await db.getSyncRule(siblingKey), isNotNull);
       expect(await db.getDownloadedMedia('srv:exclusive'), isNull);
       expect(await db.getDownloadedMedia('srv:rule-shared'), isNotNull);
-      expect(await db.getDownloadOwner(profileId: 'test-profile', globalKey: 'srv:rule-shared'), isNotNull);
+      expect(await db.getDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:rule-shared'), isNotNull);
       expect(await db.getDownloadedMedia('srv:profile-shared'), isNotNull);
-      expect(await db.getDownloadOwner(profileId: 'test-profile', globalKey: 'srv:profile-shared'), isNull);
-      expect(await db.getDownloadOwner(profileId: 'profile-b', globalKey: 'srv:profile-shared'), isNotNull);
+      expect(await db.getDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:profile-shared'), isNull);
+      expect(await db.getDownloadOwner(profileId: 'silo:srv/profile-b', globalKey: 'srv:profile-shared'), isNotNull);
     });
 
     test('deleteSyncRuleAndDownloads keeps episodes an initialized show rule covers', () async {
@@ -836,7 +842,7 @@ void main() {
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: downloadKey);
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: downloadKey);
       await db.associateSyncRuleDownload(targetRule, downloadKey);
 
       p.debugSeedState(
@@ -896,9 +902,9 @@ void main() {
       expect(
         keys,
         containsAll(<String>{
-          'test-profile|silo-srv:episode-1',
-          'test-profile|silo-srv:season-1',
-          'test-profile|silo-srv:show-1',
+          'silo:srv/test-profile|silo-srv:episode-1',
+          'silo:srv/test-profile|silo-srv:season-1',
+          'silo:srv/test-profile|silo-srv:show-1',
         }),
       );
       expect(keys, hasLength(3));
@@ -909,10 +915,10 @@ void main() {
     test('forTesting load reads pre-existing sync rules from database', () async {
       // Pre-seed the database with a rule before the provider exists.
       await db.insertSyncRule(
-        profileId: 'test-profile',
+        profileId: 'silo:srv/test-profile',
         serverId: ServerId('srv'),
         ratingKey: '99',
-        globalKey: 'test-profile|srv:99',
+        globalKey: 'silo:srv/test-profile|srv:99',
         targetType: 'show',
         episodeCount: 7,
       );
@@ -920,8 +926,8 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      expect(p.hasSyncRule('test-profile|srv:99'), isTrue);
-      expect(p.getSyncRule('test-profile|srv:99')!.episodeCount, 7);
+      expect(p.hasSyncRule('silo:srv/test-profile|srv:99'), isTrue);
+      expect(p.getSyncRule('silo:srv/test-profile|srv:99')!.episodeCount, 7);
 
       p.dispose();
     });
@@ -957,12 +963,12 @@ void main() {
     });
 
     test('download getters only expose active-profile owned physical rows', () async {
-      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:1');
+      await db.addDownloadOwner(profileId: 'silo:srv/profile-a', globalKey: 'srv:1');
 
       final p = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: 'silo:srv/profile-a',
       );
       await p.ensureInitialized();
       p.debugSeedState(
@@ -998,7 +1004,7 @@ void main() {
 
       expect(count, 1);
       expect(p.downloads.keys, ['srv:1']);
-      expect(await db.getDownloadOwnerKeysForProfile('test-profile'), {'srv:1'});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/test-profile'), {'srv:1'});
 
       p.dispose();
     });
@@ -1082,7 +1088,7 @@ void main() {
       expect(count, 1);
       expect(p.downloads.keys, ['srv:1']);
       expect(p.downloads, isNot(contains('1')));
-      expect(await db.getDownloadOwnerKeysForProfile('test-profile'), {'srv:1'});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/test-profile'), {'srv:1'});
 
       p.dispose();
     });
@@ -1122,7 +1128,7 @@ void main() {
 
       expect(count, 2);
       expect(client.fetchPlayableDescendantsCalls, ['album-1']);
-      expect(await db.getDownloadOwnerKeysForProfile('test-profile'), {'srv:t1', 'srv:t2'});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/test-profile'), {'srv:t1', 'srv:t2'});
 
       p.dispose();
     });
@@ -1185,7 +1191,7 @@ void main() {
       final provider = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: 'silo:srv/profile-a',
       );
       addTearDown(provider.dispose);
       await provider.ensureInitialized();
@@ -1203,19 +1209,19 @@ void main() {
       );
       await expansionStarted.future;
 
-      provider.setActiveProfileId('profile-b');
+      provider.setActiveProfileId('silo:srv/profile-b');
       expect(provider.isQueueing(album.globalKey), isFalse);
       releaseExpansion.complete();
 
       expect(await queueFuture, 0);
-      expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
-      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), isEmpty);
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-a'), isEmpty);
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-b'), isEmpty);
       expect(await db.getAllDownloadedMetadata(), isEmpty);
       expect(provider.getMetadata(album.globalKey), isNull);
       expect(provider.getMetadata(track.globalKey), isNull);
       expect(provider.downloads, isEmpty);
       expect(provider.isQueueing(album.globalKey), isFalse);
-      expect(await db.getSyncRules(profileId: 'profile-b'), isEmpty);
+      expect(await db.getSyncRules(profileId: 'silo:srv/profile-b'), isEmpty);
     });
 
     test('stale queue cleanup does not remove the new profile generation key', () async {
@@ -1229,7 +1235,7 @@ void main() {
       final provider = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: 'silo:srv/profile-a',
       );
       addTearDown(provider.dispose);
       await provider.ensureInitialized();
@@ -1242,7 +1248,7 @@ void main() {
       );
       await firstStarted.future;
 
-      provider.setActiveProfileId('profile-b');
+      provider.setActiveProfileId('silo:srv/profile-b');
       final secondStarted = Completer<void>();
       final releaseSecond = Completer<void>();
       final secondQueue = provider.queueDownload(
@@ -1285,7 +1291,7 @@ void main() {
           type: 'track',
           status: DownloadStatus.completed.index,
         );
-        await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:$id');
+        await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:$id');
       }
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
@@ -1323,7 +1329,7 @@ void main() {
           grandparentRatingKey: 'show-1',
           status: DownloadStatus.completed.index,
         );
-        await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:$id');
+        await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:$id');
       }
       // Another show's episode must survive.
       await db.insertDownload(
@@ -1335,7 +1341,7 @@ void main() {
         grandparentRatingKey: 'show-9',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:other-ep');
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:other-ep');
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
       p.debugSeedState(
@@ -1360,9 +1366,9 @@ void main() {
     });
 
     test('profile switch during a show deletion leaves the new profile\'s episodes alone', () async {
-      await _insertProfile(db, 'profile-a');
-      await _insertProfile(db, 'profile-b');
-      for (final (id, owner) in [('ep-a', 'profile-a'), ('ep-b', 'profile-b')]) {
+      await _insertProfile(db, 'silo:srv/profile-a');
+      await _insertProfile(db, 'silo:srv/profile-b');
+      for (final (id, owner) in [('ep-a', 'silo:srv/profile-a'), ('ep-b', 'silo:srv/profile-b')]) {
         await db.insertDownload(
           serverId: ServerId('srv'),
           ratingKey: id,
@@ -1377,7 +1383,7 @@ void main() {
       final p = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: 'silo:srv/profile-a',
       );
       addTearDown(p.dispose);
       await p.ensureInitialized();
@@ -1394,16 +1400,16 @@ void main() {
       downloadOwnerSelectGate.arm('show-1', table: 'downloaded_media');
       final deletion = p.deleteDownload('srv:show-1');
       await downloadOwnerSelectGate.started;
-      p.setActiveProfileId('profile-b');
+      p.setActiveProfileId('silo:srv/profile-b');
       await p.debugWaitForProfileScopedReload();
       expect(p.downloads.keys, ['srv:ep-b']);
       downloadOwnerSelectGate.release();
       await deletion;
 
       expect(await db.getDownloadedMedia('srv:ep-b'), isNotNull);
-      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {'srv:ep-b'});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-b'), {'srv:ep-b'});
       expect(p.downloads.keys, ['srv:ep-b']);
-      expect(await db.getDownloadOwnerKeysForProfile('profile-a'), {'srv:ep-a'});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-a'), {'srv:ep-a'});
     });
 
     test('album aggregates, downloadedAlbums, and per-album track order come from track downloads', () async {
@@ -1523,8 +1529,8 @@ void main() {
     });
 
     test('deleteDownload removes only active-profile ownership when another owner remains', () async {
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:1');
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:1');
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:1');
+      await db.addDownloadOwner(profileId: 'silo:srv/profile-b', globalKey: 'srv:1');
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
       p.debugSeedState(
@@ -1536,8 +1542,8 @@ void main() {
       await p.deleteDownload('srv:1');
 
       expect(p.downloads, isEmpty);
-      expect(await db.getDownloadOwnerKeysForProfile('test-profile'), isEmpty);
-      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {'srv:1'});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/test-profile'), isEmpty);
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-b'), {'srv:1'});
 
       p.dispose();
     });
@@ -1631,14 +1637,14 @@ void main() {
       test('$operationName releases its final owner after a profile switch during physical deletion', () async {
         const deletingKey = 'srv:final-owner';
         const profileBKey = 'srv:profile-b';
-        await db.addDownloadOwner(profileId: 'profile-a', globalKey: deletingKey);
-        await db.addDownloadOwner(profileId: 'profile-b', globalKey: profileBKey);
+        await db.addDownloadOwner(profileId: 'silo:srv/profile-a', globalKey: deletingKey);
+        await db.addDownloadOwner(profileId: 'silo:srv/profile-b', globalKey: profileBKey);
         final gatedManager = _GatedPhysicalDeletionManager(db);
         addTearDown(gatedManager.dispose);
         final provider = DownloadProvider.forTesting(
           downloadManager: gatedManager,
           database: db,
-          activeProfileId: 'profile-a',
+          activeProfileId: 'silo:srv/profile-a',
         );
         addTearDown(provider.dispose);
         await provider.ensureInitialized();
@@ -1649,7 +1655,7 @@ void main() {
           },
           metadata: {
             deletingKey: movie.copyWith(id: 'final-owner', title: 'Profile A cache'),
-            profileBKey: movie.copyWith(id: 'profile-b', title: 'Profile B cache'),
+            profileBKey: movie.copyWith(id: 'silo:srv/profile-b', title: 'Profile B cache'),
           },
           ownedDownloadKeys: {deletingKey},
         );
@@ -1657,16 +1663,16 @@ void main() {
         final deletion = operation(provider, deletingKey);
         await gatedManager.started.future;
 
-        provider.setActiveProfileId('profile-b');
+        provider.setActiveProfileId('silo:srv/profile-b');
         await provider.debugWaitForProfileScopedReload();
         provider.debugSeedState(
-          metadata: {profileBKey: movie.copyWith(id: 'profile-b', title: 'Profile B cache')},
+          metadata: {profileBKey: movie.copyWith(id: 'silo:srv/profile-b', title: 'Profile B cache')},
         );
         gatedManager.release.complete();
         await deletion;
 
-        expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
-        expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {profileBKey});
+        expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-a'), isEmpty);
+        expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-b'), {profileBKey});
         expect(provider.downloads.keys, [profileBKey]);
         expect(provider.getMetadata(profileBKey)?.title, 'Profile B cache');
       });
@@ -1691,7 +1697,7 @@ void main() {
         type: 'movie',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:1');
+      await db.addDownloadOwner(profileId: 'silo:srv/profile-b', globalKey: 'srv:1');
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
       p.debugSeedState(
@@ -1716,7 +1722,7 @@ void main() {
         type: 'movie',
         status: DownloadStatus.queued.index,
       );
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:1');
+      await db.addDownloadOwner(profileId: 'silo:srv/profile-b', globalKey: 'srv:1');
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
       p.debugSeedState(
@@ -1742,8 +1748,8 @@ void main() {
         const scopeA = 'silo:srv/profile-a';
         const scopeB = 'silo:srv/profile-b';
         await _insertSiloConnection(db, serverId);
-        await _insertProfile(db, 'profile-a');
-        await _insertProfile(db, 'profile-b');
+        await _insertProfile(db, 'silo:srv/profile-a');
+        await _insertProfile(db, 'silo:srv/profile-b');
         await db.insertDownload(
           serverId: serverId,
           clientScopeId: scopeA,
@@ -1754,13 +1760,13 @@ void main() {
         );
         await db.addToQueue(mediaGlobalKey: globalKey, priority: 37);
         await db.addDownloadOwner(
-          profileId: 'profile-a',
+          profileId: 'silo:srv/profile-a',
           globalKey: globalKey,
           backendId: MediaBackend.silo.id,
           clientScopeId: scopeA,
         );
         await db.addDownloadOwner(
-          profileId: 'profile-b',
+          profileId: 'silo:srv/profile-b',
           globalKey: globalKey,
           backendId: MediaBackend.silo.id,
           clientScopeId: scopeB,
@@ -1792,7 +1798,7 @@ void main() {
         final provider = DownloadProvider.forTesting(
           downloadManager: scopedManager,
           database: db,
-          activeProfileId: 'profile-b',
+          activeProfileId: 'silo:srv/profile-b',
         );
         addTearDown(provider.dispose);
         await provider.ensureInitialized();
@@ -1802,12 +1808,12 @@ void main() {
           ownedDownloadKeys: {globalKey},
         );
 
-        await provider.releaseDownloadsForProfileServers('profile-a', {'srv'});
+        await provider.releaseDownloadsForProfileServers('silo:srv/profile-a', {'srv'});
 
         final rebound = await db.getDownloadedMedia(globalKey);
         expect(rebound?.clientScopeId, scopeB);
-        expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
-        expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {globalKey});
+        expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-a'), isEmpty);
+        expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-b'), {globalKey});
         expect(provider.isQueued(globalKey), isTrue);
 
         resolvedScopes.clear();
@@ -1840,8 +1846,8 @@ void main() {
       const scopeA = 'silo:srv/profile-a';
       const scopeB = 'silo:srv/profile-b';
       await _insertSiloConnection(db, serverId);
-      await _insertProfile(db, 'profile-a');
-      await _insertProfile(db, 'profile-b');
+      await _insertProfile(db, 'silo:srv/profile-a');
+      await _insertProfile(db, 'silo:srv/profile-b');
       await db.insertDownload(
         serverId: serverId,
         clientScopeId: scopeA,
@@ -1851,13 +1857,13 @@ void main() {
         status: DownloadStatus.completed.index,
       );
       await db.addDownloadOwner(
-        profileId: 'profile-a',
+        profileId: 'silo:srv/profile-a',
         globalKey: globalKey,
         backendId: MediaBackend.silo.id,
         clientScopeId: scopeA,
       );
       await db.addDownloadOwner(
-        profileId: 'profile-b',
+        profileId: 'silo:srv/profile-b',
         globalKey: globalKey,
         backendId: MediaBackend.silo.id,
         clientScopeId: scopeB,
@@ -1865,24 +1871,24 @@ void main() {
       final provider = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-b',
+        activeProfileId: 'silo:srv/profile-b',
       );
       addTearDown(provider.dispose);
       await provider.ensureInitialized();
 
-      await provider.deleteDownloadsForProfile('profile-a');
+      await provider.deleteDownloadsForProfile('silo:srv/profile-a');
 
       final completed = await db.getDownloadedMedia(globalKey);
       expect(completed, isNotNull);
       expect(completed?.clientScopeId, scopeA);
-      expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
-      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {globalKey});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-a'), isEmpty);
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-b'), {globalKey});
     });
 
     test('releaseDownloadsForProfileServers removes only downloads from the removed connection', () async {
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:1');
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:1');
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'other:2');
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:1');
+      await db.addDownloadOwner(profileId: 'silo:srv/profile-b', globalKey: 'srv:1');
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'other:2');
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
       p.debugSeedState(
@@ -1896,20 +1902,20 @@ void main() {
         },
       );
 
-      await p.releaseDownloadsForProfileServers('test-profile', {'srv'});
+      await p.releaseDownloadsForProfileServers('silo:srv/test-profile', {'srv'});
 
-      expect(await db.getDownloadOwnerKeysForProfile('test-profile'), {'other:2'});
-      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {'srv:1'});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/test-profile'), {'other:2'});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-b'), {'srv:1'});
       expect(p.downloads.keys, ['other:2']);
 
       p.dispose();
     });
 
     test('releasing a shared download for the active profile emits one download-only deletion event', () async {
-      await _insertProfile(db, 'test-profile');
-      await _insertProfile(db, 'profile-b');
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:1');
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:1');
+      await _insertProfile(db, 'silo:srv/test-profile');
+      await _insertProfile(db, 'silo:srv/profile-b');
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:1');
+      await db.addDownloadOwner(profileId: 'silo:srv/profile-b', globalKey: 'srv:1');
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       addTearDown(p.dispose);
       await p.ensureInitialized();
@@ -1921,23 +1927,23 @@ void main() {
       final deletionSubscription = DeletionNotifier().stream.listen(deletionEvents.add);
       addTearDown(deletionSubscription.cancel);
 
-      await p.releaseDownloadsForProfileServers('test-profile', {'srv'});
+      await p.releaseDownloadsForProfileServers('silo:srv/test-profile', {'srv'});
       await pumpEventQueue();
 
       // The bytes survive for profile-b, but the active profile can no longer
       // play them: offline surfaces that re-query on DeletionEvent must hear
       // about it exactly as they would for a physical delete.
-      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {'srv:1'});
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-b'), {'srv:1'});
       expect(p.downloads, isEmpty);
       expect(deletionEvents.map((event) => event.globalKey), ['srv:1']);
       expect(deletionEvents.single.isDownloadOnly, isTrue);
     });
 
     test('releasing a shared download on behalf of a non-active profile emits no deletion event', () async {
-      await _insertProfile(db, 'profile-a');
-      await _insertProfile(db, 'test-profile');
-      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:1');
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:1');
+      await _insertProfile(db, 'silo:srv/profile-a');
+      await _insertProfile(db, 'silo:srv/test-profile');
+      await db.addDownloadOwner(profileId: 'silo:srv/profile-a', globalKey: 'srv:1');
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:1');
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       addTearDown(p.dispose);
       await p.ensureInitialized();
@@ -1951,17 +1957,17 @@ void main() {
       final deletionSubscription = DeletionNotifier().stream.listen(deletionEvents.add);
       addTearDown(deletionSubscription.cancel);
 
-      await p.releaseDownloadsForProfileServers('profile-a', {'srv'});
+      await p.releaseDownloadsForProfileServers('silo:srv/profile-a', {'srv'});
       await pumpEventQueue();
 
-      expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/profile-a'), isEmpty);
       expect(p.downloads.keys, ['srv:1']);
       expect(deletionEvents, isEmpty);
     });
 
     test('releasing the sole owner deletes physically and emits exactly one deletion event', () async {
-      await _insertProfile(db, 'test-profile');
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:1');
+      await _insertProfile(db, 'silo:srv/test-profile');
+      await db.addDownloadOwner(profileId: 'silo:srv/test-profile', globalKey: 'srv:1');
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       addTearDown(p.dispose);
       await p.ensureInitialized();
@@ -1973,10 +1979,10 @@ void main() {
       final deletionSubscription = DeletionNotifier().stream.listen(deletionEvents.add);
       addTearDown(deletionSubscription.cancel);
 
-      await p.releaseDownloadsForProfileServers('test-profile', {'srv'});
+      await p.releaseDownloadsForProfileServers('silo:srv/test-profile', {'srv'});
       await pumpEventQueue();
 
-      expect(await db.getDownloadOwnerKeysForProfile('test-profile'), isEmpty);
+      expect(await db.getDownloadOwnerKeysForProfile('silo:srv/test-profile'), isEmpty);
       expect(p.downloads, isEmpty);
       expect(deletionEvents.map((event) => event.globalKey), ['srv:1']);
       expect(deletionEvents.single.isDownloadOnly, isTrue);
@@ -1990,25 +1996,13 @@ void main() {
     Future<void> insertSiloConnection() {
       return db
           .into(db.connections)
-          .insert(
+          .insertOnConflictUpdate(
             ConnectionsCompanion.insert(
               id: 'silo:$siloServer',
               kind: 'silo',
               displayName: 'Shared Silo',
               configJson: '{}',
               createdAt: 0,
-            ),
-          );
-    }
-
-    Future<void> bindSiloProfile(String profileId, String siloProfileId) {
-      return db
-          .into(db.profileConnections)
-          .insert(
-            ProfileConnectionsCompanion.insert(
-              profileId: profileId,
-              connectionId: 'silo:$siloServer',
-              userIdentifier: siloProfileId,
             ),
           );
     }
@@ -2078,12 +2072,16 @@ void main() {
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-1');
+      await db.addDownloadOwner(profileId: scopeOf('user-a'), globalKey: '$siloServer:ep-1');
       testClientResolver = (serverId, {clientScopeId}) => serverId == siloServer
           ? _ScopedTestClient(serverId: ServerId(siloServer), scopedServerId: scopeOf('user-a'))
           : null;
 
-      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      final p = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: scopeOf('user-a'),
+      );
       await p.ensureInitialized();
       p.debugSeedState(
         downloads: {
@@ -2113,7 +2111,7 @@ void main() {
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-1');
+      await db.addDownloadOwner(profileId: scopeOf('user-b'), globalKey: '$siloServer:ep-1');
       testClientResolver = (serverId, {clientScopeId}) {
         if (serverId == siloServer) {
           return _ScopedTestClient(serverId: ServerId(siloServer), scopedServerId: scopeOf('user-b'));
@@ -2121,7 +2119,11 @@ void main() {
         return null;
       };
 
-      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      final p = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: scopeOf('user-b'),
+      );
       await p.ensureInitialized();
       p.debugSeedState(
         downloads: {
@@ -2149,9 +2151,9 @@ void main() {
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-1');
+      await db.addDownloadOwner(profileId: scopeOf('user-b'), globalKey: '$siloServer:ep-1');
       await db.insertWatchAction(
-        profileId: 'test-profile',
+        profileId: scopeOf('user-b'),
         serverId: ServerId(siloServer),
         clientScopeId: scopeOf('user-b'),
         ratingKey: 'ep-1',
@@ -2164,7 +2166,11 @@ void main() {
         return null;
       };
 
-      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      final p = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: scopeOf('user-b'),
+      );
       await p.ensureInitialized();
       p.debugSeedState(
         downloads: {
@@ -2181,7 +2187,6 @@ void main() {
 
     test('cold Silo profile restores its persisted scoped queued watch action', () async {
       await insertSiloConnection();
-      await bindSiloProfile('test-profile', 'user-b');
       await putPinnedItem(scopeOf('user-b'), siloEpisode('ep-1', 'Offline User B Episode'));
       await db.insertDownload(
         serverId: ServerId(siloServer),
@@ -2193,16 +2198,20 @@ void main() {
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-1');
+      await db.addDownloadOwner(profileId: scopeOf('user-b'), globalKey: '$siloServer:ep-1');
       await db.insertWatchAction(
-        profileId: 'test-profile',
+        profileId: scopeOf('user-b'),
         serverId: ServerId(siloServer),
         clientScopeId: scopeOf('user-b'),
         ratingKey: 'ep-1',
         actionType: 'watched',
       );
 
-      final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: scopeOf('user-b'),
+      );
       await provider.ensureInitialized();
       provider.debugSeedState(
         downloads: {
@@ -2218,7 +2227,6 @@ void main() {
 
     test('cold Silo hydration issues a constant number of selects as downloads grow', () async {
       await insertSiloConnection();
-      await bindSiloProfile('test-profile', 'user-b');
       await putPinnedItem(
         scopeOf('user-b'),
         const MediaItem.silo(
@@ -2255,11 +2263,15 @@ void main() {
           grandparentRatingKey: 'show-1',
           status: DownloadStatus.completed.index,
         );
-        await db.addDownloadOwner(profileId: 'test-profile', globalKey: '$siloServer:ep-$index');
+        await db.addDownloadOwner(profileId: scopeOf('user-b'), globalKey: '$siloServer:ep-$index');
       }
 
       Future<int> selectsToHydrate(int episodeCount) async {
-        final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+        final provider = DownloadProvider.forTesting(
+          downloadManager: downloadManager,
+          database: db,
+          activeProfileId: scopeOf('user-b'),
+        );
         await provider.ensureInitialized();
         provider.debugSeedState(
           downloads: {
@@ -2290,7 +2302,11 @@ void main() {
     });
 
     test('offline watch hydration snapshots downloads before database awaits', () async {
-      final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: scopeOf('user-a'),
+      );
       await provider.ensureInitialized();
       final item = testMediaItem(
         id: '1',
@@ -2308,7 +2324,7 @@ void main() {
         metadata: {item.globalKey: item},
       );
       await db.insertWatchAction(
-        profileId: 'test-profile',
+        profileId: scopeOf('user-a'),
         serverId: ServerId('srv'),
         ratingKey: item.id,
         actionType: 'watched',
@@ -2335,8 +2351,8 @@ void main() {
         type: 'movie',
         status: DownloadStatus.completed.index,
       );
-      await db.addDownloadOwner(profileId: 'profile-a', globalKey: '$siloServer:movie-1');
-      await db.addDownloadOwner(profileId: 'profile-b', globalKey: '$siloServer:movie-1');
+      await db.addDownloadOwner(profileId: scopeOf('user-a'), globalKey: '$siloServer:movie-1');
+      await db.addDownloadOwner(profileId: scopeOf('user-b'), globalKey: '$siloServer:movie-1');
 
       final fetchStarted = Completer<void>();
       final releaseFetch = Completer<void>();
@@ -2360,7 +2376,7 @@ void main() {
       final p = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: scopeOf('user-a'),
       );
       await p.ensureInitialized();
       p.debugSeedState(
@@ -2374,7 +2390,7 @@ void main() {
 
       final staleRefresh = p.refreshMetadataFromCache();
       await fetchStarted.future;
-      p.setActiveProfileId('profile-b');
+      p.setActiveProfileId(scopeOf('user-b'));
       activeClient = _ScopedTestClient(
         serverId: ServerId(siloServer),
         scopedServerId: scopeOf('user-b'),
@@ -2412,8 +2428,8 @@ void main() {
       const globalKey = '$siloServer:movie-1';
       final scopeId = scopeOf('user-a');
       await insertSiloConnection();
-      await _insertProfile(db, 'profile-a');
-      await _insertProfile(db, 'profile-b');
+      await _insertProfile(db, scopeOf('user-a'));
+      await _insertProfile(db, scopeOf('user-b'));
       await db.insertDownload(
         serverId: ServerId(siloServer),
         clientScopeId: scopeId,
@@ -2422,7 +2438,7 @@ void main() {
         type: 'movie',
         status: DownloadStatus.completed.index,
       );
-      for (final profileId in ['profile-a', 'profile-b']) {
+      for (final profileId in [scopeOf('user-a'), scopeOf('user-b')]) {
         await db.addDownloadOwner(
           profileId: profileId,
           globalKey: globalKey,
@@ -2438,27 +2454,25 @@ void main() {
       final provider = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: scopeOf('user-a'),
       );
       addTearDown(provider.dispose);
       await provider.ensureInitialized();
 
-      await provider.deleteDownloadsForProfile('profile-a');
+      await provider.deleteDownloadsForProfile(scopeOf('user-a'));
 
-      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {globalKey});
+      expect(await db.getDownloadOwnerKeysForProfile(scopeOf('user-b')), {globalKey});
       expect((await SiloApiCache.instance.getMetadata(ServerId(scopeId), 'movie-1'))?.title, 'Shared offline movie');
 
-      await provider.deleteDownloadsForProfile('profile-b');
+      await provider.deleteDownloadsForProfile(scopeOf('user-b'));
 
       expect(await SiloApiCache.instance.getMetadata(ServerId(scopeId), 'movie-1'), isNull);
     });
 
     test('lookupOfflineMetadata resolves the active profile scope, not the download creator scope', () async {
       await insertSiloConnection();
-      await _insertProfile(db, 'profile-a');
-      await _insertProfile(db, 'profile-b');
-      await bindSiloProfile('profile-a', 'user-a');
-      await bindSiloProfile('profile-b', 'user-b');
+      await _insertProfile(db, scopeOf('user-a'));
+      await _insertProfile(db, scopeOf('user-b'));
       // Shared download physically created under user A's compound scope;
       // metadata cached only in A's namespace.
       await db.insertDownload(
@@ -2469,7 +2483,7 @@ void main() {
         type: 'movie',
         status: DownloadStatus.completed.index,
       );
-      for (final profileId in ['profile-a', 'profile-b']) {
+      for (final profileId in [scopeOf('user-a'), scopeOf('user-b')]) {
         await db.addDownloadOwner(
           profileId: profileId,
           globalKey: '$siloServer:movie-1',
@@ -2485,7 +2499,7 @@ void main() {
       final providerB = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-b',
+        activeProfileId: scopeOf('user-b'),
       );
       addTearDown(providerB.dispose);
       await providerB.ensureInitialized();
@@ -2497,7 +2511,7 @@ void main() {
       final providerA = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: scopeOf('user-a'),
       );
       addTearDown(providerA.dispose);
       await providerA.ensureInitialized();
@@ -2585,7 +2599,7 @@ void main() {
     });
 
     test('auto-delete protects only the exact active global key', () async {
-      await _insertProfile(db, 'profile-a');
+      await _insertProfile(db, 'silo:srv/profile-a');
       for (final server in ['A', 'B']) {
         await db.insertDownload(
           serverId: ServerId(server),
@@ -2594,7 +2608,7 @@ void main() {
           type: 'movie',
           status: DownloadStatus.completed.index,
         );
-        await db.addDownloadOwner(profileId: 'profile-a', globalKey: '$server:123');
+        await db.addDownloadOwner(profileId: 'silo:srv/profile-a', globalKey: '$server:123');
       }
       final itemA = testMediaItem(
         id: '123',
@@ -2608,7 +2622,7 @@ void main() {
       final provider = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: 'silo:srv/profile-a',
       );
       addTearDown(provider.dispose);
       await provider.ensureInitialized();
@@ -2628,7 +2642,7 @@ void main() {
     });
 
     test('auto-delete removes both same-id downloads when there is no active key', () async {
-      await _insertProfile(db, 'profile-a');
+      await _insertProfile(db, 'silo:srv/profile-a');
       for (final server in ['A', 'B']) {
         await db.insertDownload(
           serverId: ServerId(server),
@@ -2637,7 +2651,7 @@ void main() {
           type: 'movie',
           status: DownloadStatus.completed.index,
         );
-        await db.addDownloadOwner(profileId: 'profile-a', globalKey: '$server:123');
+        await db.addDownloadOwner(profileId: 'silo:srv/profile-a', globalKey: '$server:123');
       }
       final itemA = testMediaItem(
         id: '123',
@@ -2651,7 +2665,7 @@ void main() {
       final provider = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: 'silo:srv/profile-a',
       );
       addTearDown(provider.dispose);
       await provider.ensureInitialized();
@@ -2673,7 +2687,7 @@ void main() {
     test('auto-delete keeps watched downloads that still have a resume point', () async {
       // Sync rules and "unwatched only" downloads select watched-but-resumable
       // items, so deleting one here re-queues it on the next rule pass (#2585).
-      await _insertProfile(db, 'profile-a');
+      await _insertProfile(db, 'silo:srv/profile-a');
       final finished = testMediaItem(
         id: 'finished',
         backend: MediaBackend.silo,
@@ -2701,12 +2715,12 @@ void main() {
           type: 'episode',
           status: DownloadStatus.completed.index,
         );
-        await db.addDownloadOwner(profileId: 'profile-a', globalKey: item.globalKey);
+        await db.addDownloadOwner(profileId: 'silo:srv/profile-a', globalKey: item.globalKey);
       }
       final provider = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: 'silo:srv/profile-a',
       );
       addTearDown(provider.dispose);
       await provider.ensureInitialized();
@@ -2858,14 +2872,16 @@ void main() {
 
     test('queued parent and episode overrides survive provider reload', () async {
       await db.insertWatchAction(
-        profileId: 'profile-a',
+        profileId: 'silo:srv/profile-a',
         serverId: ServerId('srv'),
+        clientScopeId: 'silo:srv/profile-a',
         ratingKey: 'show-1',
         actionType: 'watched',
       );
       await db.insertWatchAction(
-        profileId: 'profile-a',
+        profileId: 'silo:srv/profile-a',
         serverId: ServerId('srv'),
+        clientScopeId: 'silo:srv/profile-a',
         ratingKey: 'episode-1',
         actionType: 'unwatched',
       );
@@ -2886,7 +2902,7 @@ void main() {
         final provider = DownloadProvider.forTesting(
           downloadManager: downloadManager,
           database: db,
-          activeProfileId: 'profile-a',
+          activeProfileId: 'silo:srv/profile-a',
         );
         await provider.ensureInitialized();
         provider.debugSeedState(metadata: {episode1.globalKey: episode1, episode2.globalKey: episode2});
@@ -2909,14 +2925,16 @@ void main() {
 
     test('queued overlays are isolated to the active profile', () async {
       await db.insertWatchAction(
-        profileId: 'profile-a',
+        profileId: 'silo:srv/profile-a',
         serverId: ServerId('srv'),
+        clientScopeId: 'silo:srv/profile-a',
         ratingKey: 'show-1',
         actionType: 'watched',
       );
       await db.insertWatchAction(
-        profileId: 'profile-b',
+        profileId: 'silo:srv/profile-b',
         serverId: ServerId('srv'),
+        clientScopeId: 'silo:srv/profile-b',
         ratingKey: 'show-1',
         actionType: 'unwatched',
       );
@@ -2932,7 +2950,7 @@ void main() {
       final p = DownloadProvider.forTesting(
         downloadManager: downloadManager,
         database: db,
-        activeProfileId: 'profile-a',
+        activeProfileId: 'silo:srv/profile-a',
       );
       await p.ensureInitialized();
       p.debugSeedState(metadata: {episode.globalKey: episode});
@@ -2940,7 +2958,7 @@ void main() {
       await p.refreshMetadataFromCache();
       expect(p.getMetadata(episode.globalKey)?.isWatched, isTrue);
 
-      p.setActiveProfileId('profile-b');
+      p.setActiveProfileId('silo:srv/profile-b');
       await p.refreshMetadataFromCache();
       expect(p.getMetadata(episode.globalKey), isNull);
 
@@ -2949,14 +2967,14 @@ void main() {
 
     test('queued overlays are isolated to the active Silo client scope', () async {
       await db.insertWatchAction(
-        profileId: 'test-profile',
+        profileId: 'silo:silo-srv/user-a',
         serverId: ServerId('silo-srv'),
         clientScopeId: 'silo:silo-srv/user-a',
         ratingKey: 'show-1',
         actionType: 'watched',
       );
       await db.insertWatchAction(
-        profileId: 'test-profile',
+        profileId: 'silo:silo-srv/user-b',
         serverId: ServerId('silo-srv'),
         clientScopeId: 'silo:silo-srv/user-b',
         ratingKey: 'show-1',
@@ -2975,7 +2993,11 @@ void main() {
       testClientResolver = (serverId, {clientScopeId}) => serverId == 'silo-srv'
           ? _ScopedTestClient(serverId: ServerId('silo-srv'), scopedServerId: activeScope)
           : null;
-      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      final p = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: activeScope,
+      );
       await p.ensureInitialized();
       p.debugSeedState(metadata: {episode.globalKey: episode});
 
@@ -2983,6 +3005,9 @@ void main() {
       expect(p.getMetadata(episode.globalKey)?.isWatched, isTrue);
 
       activeScope = 'silo:silo-srv/user-b';
+      p.setActiveProfileId(activeScope);
+      await p.debugWaitForProfileScopedReload();
+      p.debugSeedState(metadata: {episode.globalKey: episode});
       await p.refreshMetadataFromCache();
       expect(p.getMetadata(episode.globalKey)?.isWatched, isFalse);
 

@@ -113,7 +113,7 @@ void main() {
     final grouped = provider.groupDownloadsByCollection(provider.downloadedMovies);
     expect([for (final item in grouped) item.id]..sort(), ['dune', 'other']);
     expect([for (final item in provider.downloadedCollectionItems('srv:dune')) item.id], ['dune-1', 'dune-2']);
-    final stored = await db.getDownloadCollections('test-profile');
+    final stored = await db.getDownloadCollections('silo:srv/test-profile');
     expect(stored.single.collectionId, 'dune');
     expect(stored.single.memberIds, ['dune-1', 'dune-2']);
   });
@@ -140,7 +140,7 @@ void main() {
     await sync();
 
     expect([for (final item in provider.downloadedCollectionItems('srv:dune')) item.id], ['dune-1', 'dune-2']);
-    expect((await db.getDownloadCollections('test-profile')).single.memberIds, ['dune-1', 'dune-2']);
+    expect((await db.getDownloadCollections('silo:srv/test-profile')).single.memberIds, ['dune-1', 'dune-2']);
     // The failed pass recorded nothing, so the next connect looks up again.
     client.failure = null;
     await sync();
