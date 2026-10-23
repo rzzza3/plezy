@@ -371,9 +371,8 @@ void main() {
   });
 
   group('lookupMetadata', () {
-    test('cold Silo hydration reads the Silo profile each Plezy profile is bound to', () async {
+    test('cold Silo hydration reads only the active Silo profile scope', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      SiloApiCache.initialize(db);
       SiloApiCache.initialize(db);
       addTearDown(db.close);
       final serverId = ServerId('silo-srv');
@@ -389,17 +388,7 @@ void main() {
               createdAt: 0,
             ),
           );
-      for (final (profile, siloProfile) in [('profile-a', 'admin'), ('profile-b', 'kid')]) {
-        await db
-            .into(db.profileConnections)
-            .insert(
-              ProfileConnectionsCompanion.insert(
-                profileId: profile,
-                connectionId: 'silo:silo-srv',
-                userIdentifier: siloProfile,
-              ),
-            );
-      }
+      final scopeKid = SiloProfileScopeId(serverId: serverId, profileId: 'kid');
       await db.insertDownload(
         serverId: serverId,
         clientScopeId: scopeAdmin,
@@ -408,7 +397,7 @@ void main() {
         type: 'episode',
         status: DownloadStatus.completed.index,
       );
-      for (final profile in ['profile-a', 'profile-b']) {
+      for (final profile in [scopeAdmin, scopeKid]) {
         await db.addDownloadOwner(profileId: profile, globalKey: 'silo-srv:ep-1');
       }
       await SiloApiCache.instance.putItem(
@@ -423,14 +412,9 @@ void main() {
         clientResolver: (_, {clientScopeId}) => null,
       );
 
-      final admin = await manager.getAllPinnedMetadata(activeProfileId: 'profile-a');
-      final item = await manager.lookupMetadata(
-        serverId,
-        'ep-1',
-        preferActiveScope: true,
-        activeProfileId: 'profile-a',
-      );
-      final kid = await manager.getAllPinnedMetadata(activeProfileId: 'profile-b');
+      final admin = await manager.getAllPinnedMetadata(activeProfileId: scopeAdmin);
+      final item = await manager.lookupMetadata(serverId, 'ep-1', preferActiveScope: true, activeProfileId: scopeAdmin);
+      final kid = await manager.getAllPinnedMetadata(activeProfileId: scopeKid);
 
       expect(admin.items['silo-srv:ep-1']?.title, 'Offline Silo');
       expect(admin.scopesByServer, {'silo-srv': scopeAdmin});
@@ -1227,9 +1211,21 @@ void main() {
         status: DownloadStatus.queued.index,
       );
       await fixture.db.addToQueue(mediaGlobalKey: globalKey);
-      for (final (profileId, scopeId) in [('profile-a', 'silo:srv/user-a'), ('profile-b', 'silo:srv/user-b')]) {
+      // Owners count only while their scope's Silo connection exists.
+      await fixture.db
+          .into(fixture.db.connections)
+          .insertOnConflictUpdate(
+            ConnectionsCompanion.insert(
+              id: 'silo:srv',
+              kind: 'silo',
+              displayName: 'srv',
+              configJson: '{}',
+              createdAt: 0,
+            ),
+          );
+      for (final scopeId in ['silo:srv/user-a', 'silo:srv/user-b']) {
         await fixture.db.addDownloadOwner(
-          profileId: profileId,
+          profileId: scopeId,
           globalKey: globalKey,
           backendId: MediaBackend.silo.id,
           clientScopeId: scopeId,

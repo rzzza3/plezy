@@ -280,55 +280,6 @@ void main() {
     });
   });
 
-  testWidgets('Plex section sorts order by their own field and unsupported ones are not offered', (tester) async {
-    MediaItem played(String id, String title, int plays) => testMediaItem(
-      id: id,
-      backend: MediaBackend.silo,
-      kind: MediaKind.movie,
-      title: title,
-      viewCount: plays,
-      serverId: 'server_1',
-      serverName: 'Server',
-    );
-    final items = [played('a', 'Alpha', 1), played('b', 'Bravo', 3), played('c', 'Charlie', 2)];
-    final harness = await _createHarness(items);
-    harness.client.sortOptions = const [
-      MediaSort(key: 'titleSort', descKey: 'titleSort:desc', title: 'Title', defaultDirection: 'asc'),
-      MediaSort(key: 'viewCount', descKey: 'viewCount:desc', title: 'Plays', defaultDirection: 'desc'),
-      MediaSort(key: 'mediaHeight', descKey: 'mediaHeight:desc', title: 'Resolution', defaultDirection: 'desc'),
-    ];
-    await tester.pumpWidget(
-      harness.wrap(
-        HubDetailScreen(
-          hub: MediaHub(
-            id: '/hubs/sections/1/recentlyAdded',
-            title: 'Hub',
-            type: 'movie',
-            items: items,
-            size: items.length,
-            serverId: 'server_1',
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip(t.libraries.sort));
-    await tester.pumpAndSettle();
-    // A sort the loaded items cannot honor would silently order by title.
-    expect(find.text('Resolution'), findsNothing);
-    await tester.tap(find.text('Plays'));
-    await tester.pump();
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-
-    final titles = tester
-        .widgetList<FocusableMediaCard>(find.byType(FocusableMediaCard))
-        .map((card) => (card.item as MediaItem).title)
-        .toList();
-    expect(titles, ['Bravo', 'Charlie', 'Alpha']);
-  });
-
   group('default sort fallback logging', () {
     // Sort options are fetched per Plex library section. Aggregated rows
     // (Continue Watching spans servers) and synthesized hubs name no section,
@@ -377,12 +328,6 @@ void main() {
       await pumpHub(tester, id: 'home.recent', identifier: 'home.recent', serverId: 'server_1');
 
       expect(logOutput.levels.where((level) => level.value >= Level.warning.value), isEmpty);
-    });
-
-    testWidgets('a Plex section hub that lost its serverId still warns', (tester) async {
-      await pumpHub(tester, id: '/hubs/sections/1/recentlyAdded');
-
-      expect(logOutput.levels, contains(Level.warning));
     });
   });
 }

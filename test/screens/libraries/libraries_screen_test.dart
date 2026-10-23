@@ -191,17 +191,18 @@ void main() {
   testWidgets('a tab set change restores the destination library saved tab', (tester) async {
     final preferences = _GatedPreferences({
       'selected_library_key': _libraryA.globalKey,
-      'library_tab_${_libraryA.globalKey}': LibraryTabType.playlists.name,
+      'library_tab_${_libraryA.globalKey}': LibraryTabType.browse.name,
       'library_tab_${_sharedLibrary.globalKey}': LibraryTabType.browse.name,
     });
     final harness = await _Harness.create(preferences, libraryOrder: const [_libraryA, _sharedLibrary]);
     addTearDown(harness.dispose);
 
     await harness.pump(tester);
-    expect(harness.controller(tester).index, LibraryTabType.playlists.index);
+    expect(harness.controller(tester).index, 1);
 
-    // Playlists carries over to index 1 of the two shared tabs; that carry-over
-    // must not overwrite the Browse tab the shared library saved.
+    // Browse (index 1) carries over to index 1 of the shared tabs, Playlists;
+    // that carry-over must not overwrite the Browse tab the shared library
+    // saved.
     (tester.state(find.byType(LibrariesScreen)) as LibraryLoadable).loadLibraryByKey(_sharedLibrary.globalKey);
     await tester.pumpAndSettle();
 

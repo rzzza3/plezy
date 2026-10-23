@@ -1215,8 +1215,8 @@ void main() {
       detailItems: {
         'ep1': episode('ep1', 1, 7.7).copyWith(
           ratings: const [
-            MediaRatingSource(source: 'imdb', value: 7.8),
             MediaRatingSource(source: 'tmdb', value: 7.7),
+            MediaRatingSource(source: 'imdb', value: 7.8),
           ],
         ),
       },

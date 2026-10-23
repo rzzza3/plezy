@@ -548,37 +548,40 @@ void main() {
     });
   });
 
-  test('the silo preset offers hubs, ratings and favorites and none of the features Silo has no wire for', () async {
-    final (client, _) = await _client((_) => jsonResponse({}, 500));
-    final caps = client.capabilities;
+  test(
+    'the silo preset offers hubs, ratings, favorites and subtitle search, and none of the features Silo has no wire for',
+    () async {
+      final (client, _) = await _client((_) => jsonResponse({}, 500));
+      final caps = client.capabilities;
 
-    expect(
-      {
-        'liveTv': caps.liveTv,
-        'liveTvDvr': caps.liveTvDvr,
-        'folderGrouping': caps.folderGrouping,
-        'externalSubtitleSearch': caps.externalSubtitleSearch,
-        'instantMix': caps.instantMix,
-        'richMetadataEdit': caps.richMetadataEdit,
-        'richHubs': caps.richHubs,
-        'numericUserRating': caps.numericUserRating,
-        'wholeStarRating': caps.wholeStarRating,
-        'userFavorites': caps.userFavorites,
-      },
-      {
-        'liveTv': false,
-        'liveTvDvr': false,
-        'folderGrouping': false,
-        'externalSubtitleSearch': false,
-        'instantMix': false,
-        'richMetadataEdit': false,
-        'richHubs': true,
-        'numericUserRating': true,
-        'wholeStarRating': true,
-        'userFavorites': true,
-      },
-    );
-  });
+      expect(
+        {
+          'liveTv': caps.liveTv,
+          'liveTvDvr': caps.liveTvDvr,
+          'folderGrouping': caps.folderGrouping,
+          'externalSubtitleSearch': caps.externalSubtitleSearch,
+          'instantMix': caps.instantMix,
+          'richMetadataEdit': caps.richMetadataEdit,
+          'richHubs': caps.richHubs,
+          'numericUserRating': caps.numericUserRating,
+          'wholeStarRating': caps.wholeStarRating,
+          'userFavorites': caps.userFavorites,
+        },
+        {
+          'liveTv': false,
+          'liveTvDvr': false,
+          'folderGrouping': false,
+          'externalSubtitleSearch': true,
+          'instantMix': false,
+          'richMetadataEdit': false,
+          'richHubs': true,
+          'numericUserRating': true,
+          'wholeStarRating': true,
+          'userFavorites': true,
+        },
+      );
+    },
+  );
 
   group('home dismissal (HomeSectionsV2Api.kt:28-39, HomeViewModel.kt:412-446)', () {
     Map<String, Object?> home(String progressUpdatedAt) => {

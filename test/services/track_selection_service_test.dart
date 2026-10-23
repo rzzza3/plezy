@@ -596,20 +596,6 @@ void main() {
       expect(result.track.language, 'fre');
     });
 
-    test('Priority 2: Plex media info has subs but none selected → off', () {
-      // Server's explicit decision: there ARE subs but the user opted out.
-      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
-      final info = _info(
-        subs: [
-          _plexSub(10, language: 'eng'),
-          _plexSub(11, language: 'fre'),
-        ],
-      );
-      final result = _svc(info: info).selectSubtitleTrack(tracks, null, null)!;
-      expect(result.priority, TrackSelectionPriority.serverSelected);
-      expect(result.track.id, 'no');
-    });
-
     test('Silo media info with subs but none selected falls through to default fallback', () {
       final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre', isDefault: true)];
       final info = _info(
@@ -777,30 +763,6 @@ void main() {
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, 'no');
-    });
-
-    test('Plex account subtitle mode is not re-applied client-side; PMS already folded it into selected', () {
-      // No plexMediaInfo (nothing server-selected to trust) is the only way a
-      // Plex item reaches the profile pass. `none` would force off, `always`
-      // would force on — both would override a decision the server made.
-      final tracks = [_sub('1', lang: 'eng', isDefault: true)];
-      final plexProfile = TestUserProfile(
-        preferredSubtitleLanguage: 'eng',
-        subtitlePlaybackMode: SubtitlePlaybackMode.none,
-      );
-      final result = _svc(metadata: _meta(), profile: plexProfile).selectSubtitleTrack(tracks, null, null)!;
-      expect(result.priority, TrackSelectionPriority.defaultTrack);
-      expect(result.track.id, '1');
-
-      final always = TestUserProfile(
-        preferredSubtitleLanguage: 'eng',
-        subtitlePlaybackMode: SubtitlePlaybackMode.always,
-      );
-      final noDefault = _svc(
-        metadata: _meta(),
-        profile: always,
-      ).selectSubtitleTrack([_sub('1', lang: 'eng')], null, null)!;
-      expect(noDefault.priority, TrackSelectionPriority.off);
     });
 
     test('Silo SubtitleMode.OnlyForced selects matching forced subtitle', () {
@@ -1283,7 +1245,7 @@ void main() {
         subs: [_plexSub(10, languageCode: 'fre', codec: 'ass')],
       );
       final result = _svc(info: info).selectSubtitleTrack(tracks, forcedIntent, null)!;
-      expect(result.priority, TrackSelectionPriority.serverSelected);
+      expect(result.priority, TrackSelectionPriority.off);
       expect(result.track.id, 'no');
     });
 

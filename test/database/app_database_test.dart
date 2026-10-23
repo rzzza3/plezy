@@ -271,9 +271,13 @@ class _AppDatabaseTestSuite {
           });
           final downloads = await database.select(database.downloadedMedia).get();
           expect(downloads.map((row) => row.globalKey), ['plex-server:item']);
-          expect(await database.getDownloadOwnerKeysForProfile('profile-a'), {'plex-server:item'});
-          expect(await database.getDownloadOwnerKeysForProfile('profile-b'), {'plex-server:item'});
-          expect(await database.getValidDownloadOwnersForKey('plex-server:item'), hasLength(2));
+          // Raw rows: runtime owner validity is Silo-only now, and the v26
+          // migration removes these Plex rows on a full upgrade.
+          final owners = await database.select(database.downloadOwners).get();
+          expect(
+            owners.map((row) => (row.profileId, row.globalKey)),
+            unorderedEquals([('profile-a', 'plex-server:item'), ('profile-b', 'plex-server:item')]),
+          );
         }
 
         try {

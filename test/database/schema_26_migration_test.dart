@@ -244,11 +244,12 @@ Future<void> _seedSchema25(File file) async {
       'local-a',
       const MediaItem.silo(id: 'track-1', kind: MediaKind.track, serverId: 'silo-srv').toJson(),
     );
-    await _seedMusicSession(
-      db,
-      'local-b',
-      const MediaItem.silo(id: 'track-2', kind: MediaKind.track, serverId: 'plex-machine').toJson(),
-    );
+    await _seedMusicSession(db, 'local-b', {
+      'backend': 'plex',
+      'id': 'track-2',
+      'kind': 'track',
+      'serverId': 'plex-machine',
+    });
     await _seedMusicSession(
       db,
       'local-c',
