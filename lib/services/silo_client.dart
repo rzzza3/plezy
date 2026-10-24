@@ -20,7 +20,7 @@ import '../media/media_server_client.dart';
 import '../media/media_sort.dart';
 import '../media/media_source_info.dart';
 import '../media/playback_report_metadata.dart';
-import '../media/media_version.dart';
+import '../media/media_file_info.dart';
 import '../media/server_capabilities.dart';
 import '../silo/silo_app.dart';
 import '../silo/silo_catalog.dart';
@@ -402,6 +402,20 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     return item;
   }
 
+  /// File Info reads the catalog detail, which lists every file of a movie
+  /// or episode with its streams.
+  @override
+  Future<MediaFileInfo?> getFileInfo(MediaItem item) async {
+    final SiloItemDetail detail;
+    try {
+      detail = await catalog.itemDetail(item.id);
+    } on MediaServerHttpException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
+    return detail.versions.isEmpty ? null : siloFileInfo(detail.versions);
+  }
+
   MediaItem _detailItem(SiloItemDetail detail) {
     _remember(detail.contentId, switch (siloKind(detail.type)) {
       MediaKind.show => _SiloSeries(title: detail.title, posterUrl: detail.posterUrl),
@@ -677,9 +691,11 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final start = options.startPosition == null ? null : options.startPosition!.inMilliseconds / 1000;
     final previous = _playback;
     final sameItem = previous != null && !previous.isStopped && previous.detail.contentId == options.metadata.id;
-    final versions = sameItem ? [for (final v in previous.detail.versions) v.fileId] : const <int>[];
-    final index = options.selectedMediaIndex;
-    final fileId = index >= 0 && index < versions.length ? versions[index] : null;
+    final fileId = siloRequestedFileId(
+      sourceId: options.selectedMediaSourceId,
+      index: options.selectedMediaIndex,
+      sessionFileIds: sameItem ? [for (final v in previous.detail.versions) v.fileId] : const [],
+    );
 
     final audio = chosenAudio ?? (sameItem ? siloCarriedAudioOrdinal(carriedAudio, previous.playingVersion) : null);
     final operation = sameItem && (fileId == null || fileId == previous.playingVersion.fileId)
@@ -719,19 +735,36 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
         reason: PlaybackFailureReason.authenticationRequired,
       );
     }
+    final device = await SiloApp.playbackFacts();
+    Future<SiloPlaybackSession> startSession({required bool pinFile}) async =>
+        SiloPlaybackSession.start(http, await SiloApp.playbackJournal(), (
+          contentId: options.metadata.id,
+          profileId: profile,
+          device: device,
+          fileId: fileId,
+          pinFile: pinFile,
+          quality: quality,
+          startPosition: start,
+          audioTrackIndex: chosenAudio,
+          carriedAudio: carriedAudio,
+          bandwidthCapKbps: preset.videoBitrateKbps,
+        ));
+    // A picked file the server cannot play here, for example a 4K HDR file
+    // when its 4K transcoding is off, is retried with the server choosing;
+    // the player tells the user which version is playing.
+    Future<SiloPlaybackSession> startPicked() async {
+      if (fileId == null) return startSession(pinFile: false);
+      try {
+        return await startSession(pinFile: true);
+      } on SiloPlaybackFailure catch (failure) {
+        appLogger.i('Silo playback: picked file refused (${failure.reason}), letting the server choose');
+        return startSession(pinFile: false);
+      }
+    }
+
     final SiloPlaybackSession playback;
     try {
-      playback = await SiloPlaybackSession.start(http, await SiloApp.playbackJournal(), (
-        contentId: options.metadata.id,
-        profileId: profile,
-        device: await SiloApp.playbackFacts(),
-        fileId: fileId,
-        quality: quality,
-        startPosition: start,
-        audioTrackIndex: chosenAudio,
-        carriedAudio: carriedAudio,
-        bandwidthCapKbps: preset.videoBitrateKbps,
-      ));
+      playback = await startPicked();
     } on SiloPlaybackFailure catch (failure) {
       appLogger.i('Silo playback: refused (${failure.reason})');
       throw PlaybackException(failure.message);
@@ -781,10 +814,7 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final mediaIndex = playback.detail.versions.indexOf(version);
     final mediaInfo = siloMediaSourceInfo(version, plan, videoUrl: videoUrl, mediaIndex: mediaIndex);
     return PlaybackInitializationResult(
-      availableVersions: [
-        for (final v in playback.detail.versions)
-          MediaVersion(id: '${v.fileId}', videoResolution: v.resolution, bitrate: v.bitrate, container: v.container),
-      ],
+      availableVersions: [for (final v in playback.detail.versions) siloMediaVersion(v)],
       videoUrl: videoUrl,
       mediaInfo: mediaInfo,
       subtitleSidecars: siloSubtitleSidecars(plan, sidecar),

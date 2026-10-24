@@ -49,6 +49,9 @@ typedef SiloPlaybackRequest = ({
   String profileId,
   SiloDeviceFacts device,
   int? fileId,
+
+  /// Start [fileId] as that file: the user picked it.
+  bool pinFile,
   String quality,
   double? startPosition,
   int? audioTrackIndex,
@@ -167,9 +170,9 @@ class SiloPlaybackSession {
     }
     final detail = SiloWatchDetail.fromJson(_json(watch), request.contentId);
     final chosen = request.fileId;
-    final version = chosen != null && detail.versions.any((v) => v.fileId == chosen)
-        ? detail.versions.firstWhere((v) => v.fileId == chosen)
-        : selectSiloVersion(detail.versions, lastFileId: detail.lastFileId, preferredQuality: request.quality);
+    final picked = chosen == null ? null : detail.versions.where((v) => v.fileId == chosen).firstOrNull;
+    final version =
+        picked ?? selectSiloVersion(detail.versions, lastFileId: detail.lastFileId, preferredQuality: request.quality);
 
     final attemptId = newSiloAttemptId();
     final capabilities = siloMpvCodecCapabilities();
@@ -185,6 +188,11 @@ class SiloPlaybackSession {
       startPosition: request.startPosition,
       audioTrackIndex: request.audioTrackIndex ?? siloCarriedAudioOrdinal(request.carriedAudio, version),
       bandwidthCapKbps: request.bandwidthCapKbps,
+      // A file the user picked plays as that file, as a Watch Together room's
+      // does (`T/ui/screens/player/TvVideoPlaybackStarter.kt:118-123`);
+      // otherwise the server may swap in a version the device declares it
+      // can play, such as an SDR copy of an HDR pick.
+      allowAlternateVersions: request.pinFile && picked != null ? false : null,
     );
     var entry = SiloJournalEntry(
       origin: http.origin.toString(),

@@ -89,6 +89,16 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             showErrorSnackBar(context, t.videoControls.transcodeUnavailableFallback);
           }
         }
+        // The server played another file than the one asked for: say which.
+        final requestedVersion = _requestedMediaSourceId;
+        final playedVersion = playbackContext.result.selectedVersion;
+        if (requestedVersion != null &&
+            playedVersion != null &&
+            playedVersion.id.isNotEmpty &&
+            playedVersion.id != requestedVersion &&
+            mounted) {
+          showErrorSnackBar(context, t.videoControls.versionUnavailableFallback(version: playedVersion.displayLabel));
+        }
       }
       final result = playbackContext.result;
       if (!attempt.isCurrent) return;

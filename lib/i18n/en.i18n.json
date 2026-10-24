@@ -681,6 +681,7 @@
     "qualityOriginal": "Original",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
     "transcodeUnavailableFallback": "Transcoding unavailable — playing original quality",
+    "versionUnavailableFallback": "That version can't play here, so ${version} is playing",
     "subtitleUnavailableFallback": "Selected subtitles could not be loaded — continuing without subtitles",
     "pipButton": "Picture-in-Picture mode",
     "aspectRatioButton": "Aspect ratio",

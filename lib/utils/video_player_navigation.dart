@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
 import '../media/media_version.dart';
 import '../media/media_version_preference.dart';
 import '../mpv/mpv.dart';
@@ -504,6 +505,10 @@ Future<bool?> navigateToVideoPlayer(
 /// - [onRefresh]: Optional callback to refresh data when returning from playback
 ///   (only called when not offline)
 /// - All other parameters are passed through to [navigateToVideoPlayer]
+///
+/// When no version is given and a movie or episode on a reachable server has
+/// more than one, the user picks one first; dismissing the picker cancels
+/// the play and returns null.
 Future<bool?> navigateToVideoPlayerWithRefresh(
   BuildContext context, {
   required MediaItem metadata,
@@ -517,6 +522,14 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   bool usePushReplacement = false,
   bool Function()? isLaunchCurrent,
 }) async {
+  if (!isOffline && selectedMediaIndex == null && selectedMediaSourceId == null) {
+    final pick = await _askPlaybackVersion(context, metadata);
+    if (pick.dismissed || !context.mounted || !(isLaunchCurrent?.call() ?? true)) return null;
+    selectedMediaIndex = pick.index;
+    selectedMediaSourceId = pick.sourceId;
+  }
+  if (!context.mounted) return null;
+
   final result = await navigateToVideoPlayer(
     context,
     metadata: metadata,
@@ -537,6 +550,32 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   }
 
   return result;
+}
+
+/// The version a play asked for: none to choose ([index] null), or the
+/// user's pick, or a dismissed picker.
+typedef _PlaybackVersionPick = ({bool dismissed, int? index, String? sourceId});
+
+/// Lists [item]'s versions when it is a movie or episode on a reachable
+/// server and asks which to play if there is more than one. A single version
+/// plays without asking. The pick is saved, as Play Version saves it, so
+/// resuming from Continue Watching keeps the same file.
+Future<_PlaybackVersionPick> _askPlaybackVersion(BuildContext context, MediaItem item) async {
+  const none = (dismissed: false, index: null, sourceId: null);
+  if (item.kind != MediaKind.movie && item.kind != MediaKind.episode) return none;
+  final serverId = serverIdOrNull(item.serverId);
+  if (serverId == null || !context.read<MultiServerProvider>().serverManager.isClientOnline(serverId)) return none;
+  final client = context.tryGetMediaClientForServer(serverId);
+  if (client == null) return none;
+
+  final versions = await resolveMediaVersions(item, client);
+  if (versions.length < 2 || !context.mounted) return none;
+  final index = await showVersionPickerDialog(context, versions, t.mediaMenu.playVersion);
+  if (index == null || !context.mounted) return (dismissed: true, index: null, sourceId: null);
+
+  await saveMediaVersionPreferenceFor(item, index: index, versions: versions);
+  final id = versions[index].id;
+  return (dismissed: false, index: index, sourceId: id.isEmpty ? null : id);
 }
 
 /// Sum of [MediaPart.sizeBytes] across all parts of [version]. Returns

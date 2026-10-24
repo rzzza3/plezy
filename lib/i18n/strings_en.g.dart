@@ -2029,6 +2029,9 @@ class Translations$videoControls$en {
 	/// en: 'Transcoding unavailable — playing original quality'
 	String get transcodeUnavailableFallback => 'Transcoding unavailable — playing original quality';
 
+	/// en: 'That version can't play here, so ${version} is playing'
+	String versionUnavailableFallback({required Object version}) => 'That version can\'t play here, so ${version} is playing';
+
 	/// en: 'Selected subtitles could not be loaded — continuing without subtitles'
 	String get subtitleUnavailableFallback => 'Selected subtitles could not be loaded — continuing without subtitles';
 
@@ -6994,6 +6997,7 @@ extension on Translations {
 			'videoControls.qualityOriginal' => 'Original',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — playing original quality',
+			'videoControls.versionUnavailableFallback' => ({required Object version}) => 'That version can\'t play here, so ${version} is playing',
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
@@ -7370,9 +7374,9 @@ extension on Translations {
 			'explore.cast' => 'Cast',
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
-			'explore.removeFromWatchlist' => 'Remove from Watchlist',
 			_ => null,
 		} ?? switch (path) {
+			'explore.removeFromWatchlist' => 'Remove from Watchlist',
 			'explore.addedToWatchlist' => 'Added to watchlist',
 			'explore.removedFromWatchlist' => 'Removed from watchlist',
 			'explore.watchlistUpdateFailed' => 'Couldn\'t update watchlist',
@@ -7884,9 +7888,9 @@ extension on Translations {
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
-			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',

@@ -54,18 +54,61 @@ int _fileId(Object? value, String field) {
   return id;
 }
 
+/// One video stream of a file (`S/model/catalog/CatalogModels.kt:397-412`).
+class SiloVideoTrack {
+  final String? codec;
+  final String? profile;
+  final int? width;
+  final int? height;
+  final double? frameRate;
+  final bool hdr;
+  final String? hdrFormat;
+
+  const SiloVideoTrack({
+    this.codec,
+    this.profile,
+    this.width,
+    this.height,
+    this.frameRate,
+    this.hdr = false,
+    this.hdrFormat,
+  });
+
+  factory SiloVideoTrack.fromJson(SiloJson json) => SiloVideoTrack(
+    codec: _str(json, 'codec'),
+    profile: _str(json, 'profile'),
+    width: _integer(json, 'width'),
+    height: _integer(json, 'height'),
+    frameRate: _number(json, 'frame_rate'),
+    hdr: json['hdr'] == true,
+    hdrFormat: _str(json, 'hdr_format'),
+  );
+}
+
 class SiloAudioTrack {
   final String? codec;
   final int? channels;
+  final String? channelLayout;
+  final int? sampleRate;
   final String? language;
   final String? title;
   final bool isDefault;
 
-  const SiloAudioTrack({this.codec, this.channels, this.language, this.title, this.isDefault = false});
+  const SiloAudioTrack({
+    this.codec,
+    this.channels,
+    this.channelLayout,
+    this.sampleRate,
+    this.language,
+    this.title,
+    this.isDefault = false,
+  });
 
   factory SiloAudioTrack.fromJson(SiloJson json) => SiloAudioTrack(
     codec: _str(json, 'codec'),
     channels: _integer(json, 'channels'),
+    channelLayout: _str(json, 'layout'),
+    sampleRate: _integer(json, 'sample_rate'),
     language: _str(json, 'language'),
     title: _str(json, 'title'),
     isDefault: json['default'] == true,
@@ -93,10 +136,22 @@ class SiloSubtitleTrack {
 class SiloFileVersion {
   final int fileId;
   final String? resolution;
+
+  /// Kilobits per second: the test server lists a 1080p H.264 remux at
+  /// 26,000.
   final int bitrate;
   final int fileSize;
   final double durationSeconds;
   final String? container;
+  final String? fileName;
+  final String? filePath;
+  final String? videoCodec;
+  final String? audioCodec;
+  final bool hdr;
+
+  /// The edition the file names, such as `Director's Cut`.
+  final String? edition;
+  final List<SiloVideoTrack> videoTracks;
   final List<SiloAudioTrack> audioTracks;
   final List<SiloSubtitleTrack> subtitleTracks;
   final int? effectiveAudioTrackIndex;
@@ -108,14 +163,35 @@ class SiloFileVersion {
     this.fileSize = 0,
     this.durationSeconds = 0,
     this.container,
+    this.fileName,
+    this.filePath,
+    this.videoCodec,
+    this.audioCodec,
+    this.hdr = false,
+    this.edition,
+    this.videoTracks = const [],
     this.audioTracks = const [],
     this.subtitleTracks = const [],
     this.effectiveAudioTrackIndex,
   });
 
+  /// A `versions[]` row of `GET /api/v2/watch/{id}`, which must carry a
+  /// finite `duration_seconds` (`S/network/apiv2/WatchDetailV2Api.kt:25-55`).
   factory SiloFileVersion.fromJson(SiloJson json) {
     final duration = json['duration_seconds'];
     if (duration is! num || !duration.isFinite || duration < 0) throw const SiloDecodeException('duration_seconds');
+    return SiloFileVersion._fromJson(json, duration.toDouble());
+  }
+
+  /// A `versions[]` row of the catalog item detail, whose duration is the
+  /// optional `duration` (`S/network/apiv2/CatalogDetailReadV2Models.kt:189-214`).
+  factory SiloFileVersion.fromCatalogJson(SiloJson json) {
+    final duration = _number(json, 'duration');
+    return SiloFileVersion._fromJson(json, duration == null || duration < 0 ? 0 : duration);
+  }
+
+  factory SiloFileVersion._fromJson(SiloJson json, double durationSeconds) {
+    final video = json['video_tracks'];
     final audio = json['audio_tracks'];
     final subtitles = json['subtitle_tracks'];
     return SiloFileVersion(
@@ -123,8 +199,17 @@ class SiloFileVersion {
       resolution: _str(json, 'resolution'),
       bitrate: _integer(json, 'bitrate') ?? 0,
       fileSize: _integer(json, 'file_size') ?? 0,
-      durationSeconds: duration.toDouble(),
+      durationSeconds: durationSeconds,
       container: _str(json, 'container'),
+      fileName: _str(json, 'file_name'),
+      filePath: _str(json, 'file_path'),
+      videoCodec: _str(json, 'codec_video'),
+      audioCodec: _str(json, 'codec_audio'),
+      hdr: json['hdr'] == true,
+      edition: _str(json, 'edition_raw'),
+      videoTracks: video is List
+          ? [for (final t in siloObjectList(video, 'video_tracks')) SiloVideoTrack.fromJson(t)]
+          : const [],
       audioTracks: audio is List
           ? [for (final t in siloObjectList(audio, 'audio_tracks')) SiloAudioTrack.fromJson(t)]
           : const [],
@@ -224,6 +309,16 @@ SiloFileVersion selectSiloVersion(List<SiloFileVersion> versions, {int? lastFile
     if (siloResolutionRank(version.resolution) <= cap) return version;
   }
   return best;
+}
+
+/// The file a start or reload asks for: a version picked before playback
+/// names its file id, else [index] points into the live session's
+/// [sessionFileIds]. Null leaves the pick to [selectSiloVersion]; the session
+/// also falls back to it when the named file is not in the watch detail.
+int? siloRequestedFileId({String? sourceId, required int index, required List<int> sessionFileIds}) {
+  final requested = int.tryParse(sourceId ?? '');
+  if (requested != null && requested > 0) return requested;
+  return index >= 0 && index < sessionFileIds.length ? sessionFileIds[index] : null;
 }
 
 const double siloResumeRewindSeconds = 7;
@@ -429,6 +524,7 @@ Map<String, Object?> siloStartBody({
   int? audioTrackIndex,
   int? subtitleTrackIndex,
   int? bandwidthCapKbps,
+  bool? allowAlternateVersions,
 }) {
   final subtitle = subtitleTrackIndex != null && subtitleTrackIndex >= 0 ? subtitleTrackIndex : null;
   return {
@@ -447,6 +543,7 @@ Map<String, Object?> siloStartBody({
     'subtitle_track_index': ?subtitle,
     'metered': false,
     'bandwidth_cap_kbps': ?(bandwidthCapKbps != null && bandwidthCapKbps > 0 ? bandwidthCapKbps : null),
+    'allow_alternate_versions': ?allowAlternateVersions,
     'client_capabilities': capabilities,
     'client_playback_context': context,
     'installation_id': installationId,

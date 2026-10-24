@@ -242,13 +242,13 @@ void main() {
       waits = [];
     });
 
-    Future<SiloPlaybackSession> start({AudioTrack? carriedAudio}) async {
+    Future<SiloPlaybackSession> start({AudioTrack? carriedAudio, int? fileId, bool pinFile = false}) async {
       final (session, _) = await signedInSession();
       await session.selectProfile('p-1', null);
       return SiloPlaybackSession.start(
         siloHttpFor(server.fake, session),
         journal,
-        _request(carriedAudio: carriedAudio),
+        _request(carriedAudio: carriedAudio, fileId: fileId, pinFile: pinFile),
         wait: (d) async => waits.add(d),
       );
     }
@@ -447,6 +447,41 @@ void main() {
       },
     );
 
+    test('a picked file is started as that file, with no alternate (TvVideoPlaybackStarter.kt:118-123)', () async {
+      server.versions = [
+        _version('41', resolution: '1080p', bitrate: 8000),
+        _version('42', resolution: '2160p', bitrate: 15000),
+      ];
+      await start(fileId: 41, pinFile: true);
+      final body = server.body('POST', '/api/v2/playback/start')!;
+
+      expect(body['file_id'], '41');
+      expect(body['allow_alternate_versions'], false);
+    });
+
+    test('the server may swap a file it chose, a pick it does not list, or an unpinned retry', () async {
+      server.versions = [
+        _version('41', resolution: '1080p', bitrate: 8000),
+        _version('42', resolution: '2160p', bitrate: 15000),
+      ];
+      await start();
+      expect(server.body('POST', '/api/v2/playback/start')!.containsKey('allow_alternate_versions'), isFalse);
+
+      server.calls.clear();
+      await start(fileId: 99, pinFile: true);
+      final body = server.body('POST', '/api/v2/playback/start')!;
+      expect(body['file_id'], '42', reason: 'the best listed file');
+      expect(body.containsKey('allow_alternate_versions'), isFalse);
+
+      server.calls.clear();
+      await start(fileId: 41);
+      expect(
+        server.body('POST', '/api/v2/playback/start')!.containsKey('allow_alternate_versions'),
+        isFalse,
+        reason: 'the retry after a refused pick',
+      );
+    });
+
     test('a plan on another version than the one asked for makes that version the playing file', () async {
       server
         ..versions = [
@@ -639,6 +674,18 @@ void main() {
     test('a height cap takes the best at or below it', () {
       expect(selectSiloVersion(versions, preferredQuality: '1080p').fileId, 4);
       expect(selectSiloVersion(versions, preferredQuality: '480p').fileId, 2, reason: 'nothing fits, so the best');
+    });
+
+    test('a version picked before playback names its file, even on a fresh start', () {
+      expect(siloRequestedFileId(sourceId: '3', index: 0, sessionFileIds: const []), 3);
+      expect(siloRequestedFileId(sourceId: '3', index: 0, sessionFileIds: const [1, 2]), 3);
+    });
+
+    test('without a picked file, the index points into the live session', () {
+      expect(siloRequestedFileId(index: 1, sessionFileIds: const [7, 8]), 8);
+      expect(siloRequestedFileId(index: 2, sessionFileIds: const [7, 8]), isNull);
+      expect(siloRequestedFileId(index: 0, sessionFileIds: const []), isNull, reason: 'the server picks');
+      expect(siloRequestedFileId(sourceId: 'x', index: 0, sessionFileIds: const []), isNull);
     });
   });
 
@@ -1010,11 +1057,12 @@ class _PlaybackServer {
   }
 }
 
-SiloPlaybackRequest _request({double? start = 593, AudioTrack? carriedAudio}) => (
+SiloPlaybackRequest _request({double? start = 593, AudioTrack? carriedAudio, int? fileId, bool pinFile = false}) => (
   contentId: 'movie-tmdb-1',
   profileId: 'p-1',
   device: _tv,
-  fileId: null,
+  fileId: fileId,
+  pinFile: pinFile,
   quality: 'auto',
   startPosition: start,
   audioTrackIndex: null,
