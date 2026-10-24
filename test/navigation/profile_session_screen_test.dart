@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
@@ -200,6 +203,61 @@ void main() {
       expect(content.hasPrimaryFocus, isTrue, reason: 'focus returns to the session leaf that had it');
     },
   );
+
+  testWidgets('a Back that closed a dialog on KeyDown does not also pop the screen under it on its platform back', (
+    tester,
+  ) async {
+    final graph = await _SessionGraph.create();
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await graph.dispose();
+    });
+
+    await graph.stack.addServer('srv', testHousehold([('owner', 'Owner')]));
+    final owner = graph.stack.profile('srv', 'owner');
+    await graph.storage.setActiveProfileId(owner.id);
+    await graph.activeProfile.reloadFromStorage();
+    await graph.pump(
+      tester,
+      httpClientFactory: () => FakeHttpClient(200, const <int>[]),
+      profileShellBuilder: (context) => _ProfileProbeShell(
+        discoverProviders: [],
+        hiddenProviders: [],
+        trackerProviders: [],
+        companionProviders: [],
+        disposedActiveIds: [],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('push-profile-route')));
+    await tester.pumpAndSettle();
+    unawaited(
+      // Version pickers open on the profile navigator (showScopedDialog).
+      showDialog<void>(
+        context: tester.element(find.text('old profile route')),
+        useRootNavigator: false,
+        builder: (_) => const Focus(autofocus: true, child: Text('version picker')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('version picker'), findsOneWidget);
+
+    // Android TV order: the dialog's DismissAction pops it on KeyDown, then
+    // the platform back for the same press arrives before the KeyUp.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('version picker'), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('old profile route'), findsOneWidget, reason: 'one press closes one thing');
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('old profile route'), findsNothing, reason: 'the next platform back still pops the screen');
+  });
 }
 
 void _expectCloseCount(Iterable<FakeHttpClient> clients, int expected) {

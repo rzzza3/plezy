@@ -124,6 +124,8 @@ class _KeyUpSuppressor {
 
   void clearSuppression() => _suppressed = false;
 
+  bool get isSuppressing => _suppressed;
+
   /// Returns `true` (consumed) when the event belongs to the matched key
   /// category and suppression is active. Clears suppression on [KeyUpEvent],
   /// and on a stale [KeyDownEvent] when [consumeKeyDowns] is unset.
@@ -180,6 +182,11 @@ class BackKeyUpSuppressor {
   static void clearSuppression() => _instance.clearSuppression();
 
   static bool consumeIfSuppressed(KeyEvent event) => _instance.consumeIfSuppressed(event);
+
+  /// Whether the current press already popped a route and its KeyUp is
+  /// still to come. A platform back that arrives in that window belongs to
+  /// the same press.
+  static bool get isSuppressing => _instance.isSuppressing;
 }
 
 /// Tracks whether a back key is currently physically pressed.

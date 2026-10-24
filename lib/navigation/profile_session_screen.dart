@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../connection/connection_registry.dart';
 import '../focus/covered_route_focus_boundary.dart';
+import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
@@ -340,6 +341,12 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
           canPop: false,
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) return;
+            // Android TV delivers a press's platform back just before its
+            // KeyUp. When the KeyDown already closed a dialog (its
+            // DismissAction pops on KeyDown), BackKeySuppressorObserver has
+            // armed the KeyUp suppressor, and this back is the same press:
+            // forwarding it would pop the screen under the dialog too.
+            if (BackKeyUpSuppressor.isSuppressing) return;
             unawaited(_navigatorKey.currentState?.maybePop());
           },
           child: MultiProvider(
