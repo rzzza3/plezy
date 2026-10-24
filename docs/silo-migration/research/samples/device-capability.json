@@ -1,0 +1,20 @@
+{
+  "endpoint": "GET /api/v2/auth/device/capability",
+  "status": 200,
+  "content_type": "application/json",
+  "shape": {
+    "type": "object",
+    "keys": {
+      "revision": "string",
+      "state": "string",
+      "remote_playback_handoff": "bool",
+      "protocol_versions": {
+        "type": "array",
+        "count": 1,
+        "items": "int"
+      },
+      "cancel": "bool",
+      "opened_signal": "bool"
+    }
+  }
+}

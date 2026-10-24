@@ -1,0 +1,57 @@
+{
+  "endpoint": "GET /api/v2/profiles",
+  "status": 200,
+  "content_type": "application/json",
+  "shape": {
+    "type": "object",
+    "keys": {
+      "items": {
+        "type": "array",
+        "count": 2,
+        "items": {
+          "type": "object",
+          "keys": {
+            "id": "string",
+            "name": "string",
+            "avatar": "string",
+            "avatar_source": "string",
+            "has_pin": "bool",
+            "is_child": "bool",
+            "is_primary": "bool",
+            "max_content_rating": "string",
+            "max_advisory_age": "null",
+            "require_advisory_age": "bool",
+            "quality_preference": "string",
+            "language": "string",
+            "preferred_metadata_language": "string",
+            "subtitle_language": "string",
+            "subtitle_mode": "string",
+            "auto_skip_intro": "bool",
+            "auto_skip_credits": "bool",
+            "auto_skip_recap": "bool",
+            "auto_play_next_preview": "bool",
+            "show_forced_subtitles": "bool",
+            "library_restrictions_enabled": "bool",
+            "allowed_library_ids": {
+              "type": "array",
+              "count": 0
+            },
+            "max_playback_quality": "string",
+            "created_at": "string",
+            "updated_at": "string",
+            "avatar_url": {
+              "type": "union",
+              "of": [
+                "string",
+                "absent"
+              ]
+            }
+          }
+        }
+      },
+      "avatar_upload_enabled": "bool",
+      "max_advisory_age_supported": "bool",
+      "require_advisory_age_supported": "bool"
+    }
+  }
+}

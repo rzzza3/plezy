@@ -72,6 +72,20 @@ class TvBrowseRailLayoutMetrics {
   });
 }
 
+/// Silo's TV row heading (TvSectionHeader): plain title over its rail.
+abstract final class TvSectionHeaderTokens {
+  static const TextStyle title = TextStyle(fontSize: 18, height: 22 / 18, fontWeight: FontWeight.w600);
+  static const double titleHeight = 22;
+
+  /// The header's bottom padding plus the row's spacing down to its cards.
+  static const double railGap = 16;
+  static const double height = titleHeight + railGap;
+
+  static const double chevronSize = 16;
+  static const double chevronGap = 4;
+  static const double chevronAlpha = 0.75;
+}
+
 class TvBrowseRailLayout {
   static const double compactTallPosterScale = 0.8;
   static const double compactEpisodeThumbnailScale = compactTallPosterScale;
@@ -89,12 +103,10 @@ class TvBrowseRailLayout {
 
   static double fullCardItemGapForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
-  static double hubStripHeightForScale(double scale) => 30 * scale;
-
   static double nextHubPeekHeightForScale(double scale) => 20 * scale;
 
   static double hubSectionHeightFor({required double scale, required double activeRailHeight}) {
-    return hubStripHeightForScale(scale) + activeRailHeight;
+    return TvSectionHeaderTokens.height + activeRailHeight;
   }
 
   static double viewportHeightFor({required int hubCount, required double scale, required double sectionHeight}) {
@@ -310,7 +322,6 @@ enum TvRailTrailing { none, loading, error, viewAll }
 class TvBrowseRail extends StatefulWidget {
   final List<MediaHub> hubs;
   final HubFocusMemory focusMemory;
-  final IconData Function(MediaHub hub, int index) iconForHub;
 
   /// Whether to show each hub's originating server name in its header. Used when
   /// the loaded hubs span more than one connected server so their origin stays
@@ -369,7 +380,6 @@ class TvBrowseRail extends StatefulWidget {
     super.key,
     required this.hubs,
     required this.focusMemory,
-    required this.iconForHub,
     this.showServerName = false,
     this.onFocusedItemChanged,
     this.onFocusedHubItemChanged,
@@ -1340,7 +1350,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                   listenable: _focusModel,
                   selector: isActiveHub,
                   builder: (context, isActive, _) =>
-                      _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
+                      _buildHubHeader(context, hub: hub, isActive: isActive, scale: scale),
                 ),
                 _buildHubRail(
                   hub: hub,
@@ -1425,16 +1435,8 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     return [hub.title, if (selection.isNotEmpty) selection].join(', ');
   }
 
-  Widget _buildHubHeader(
-    BuildContext context, {
-    required MediaHub hub,
-    required int hubIndex,
-    required bool isActive,
-    required double scale,
-  }) {
+  Widget _buildHubHeader(BuildContext context, {required MediaHub hub, required bool isActive, required double scale}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final titleColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.54);
-    final iconColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.42);
     final showServerName = widget.showServerName && hub.serverName != null;
     final serverColor = colorScheme.primary.withValues(alpha: isActive ? 0.7 : 0.4);
     final serverStyle = Theme.of(
@@ -1442,47 +1444,48 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     ).textTheme.titleMedium?.copyWith(color: serverColor, fontSize: 15 * scale, height: 1, fontWeight: FontWeight.w700);
 
     return SizedBox(
-      height: TvBrowseRailLayout.hubStripHeightForScale(scale),
+      height: TvSectionHeaderTokens.height,
       child: ExcludeFocus(
         child: Align(
-          alignment: .centerLeft,
-          child: Row(
-            children: [
-              AppIcon(widget.iconForHub(hub, hubIndex), fill: 1, size: 20 * scale, color: iconColor),
-              SizedBox(width: 8 * scale),
-              Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        hub.title,
-                        maxLines: 1,
-                        overflow: .ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: titleColor,
-                          fontSize: 18 * scale,
-                          height: 1,
-                          fontWeight: isActive ? FontWeight.w800 : FontWeight.w700,
+          alignment: .topLeft,
+          child: SizedBox(
+            height: TvSectionHeaderTokens.titleHeight,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          hub.title,
+                          maxLines: 1,
+                          overflow: .ellipsis,
+                          style: TvSectionHeaderTokens.title.copyWith(color: colorScheme.onSurface),
                         ),
                       ),
-                    ),
-                    if (showServerName) ...[
-                      SizedBox(width: 8 * scale),
-                      Text('•', style: serverStyle),
-                      SizedBox(width: 8 * scale),
-                      Flexible(
-                        child: Text(hub.serverName!, maxLines: 1, overflow: .ellipsis, style: serverStyle),
-                      ),
+                      if (showServerName) ...[
+                        SizedBox(width: 8 * scale),
+                        Text('•', style: serverStyle),
+                        SizedBox(width: 8 * scale),
+                        Flexible(
+                          child: Text(hub.serverName!, maxLines: 1, overflow: .ellipsis, style: serverStyle),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              if (_trailingFor(hub) == TvRailTrailing.viewAll) ...[
-                SizedBox(width: 8 * scale),
-                AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20 * scale, color: iconColor),
-                SizedBox(width: 30 * scale),
+                if (_trailingFor(hub) == TvRailTrailing.viewAll) ...[
+                  const SizedBox(width: TvSectionHeaderTokens.chevronGap),
+                  AppIcon(
+                    Symbols.chevron_right_rounded,
+                    fill: 1,
+                    size: TvSectionHeaderTokens.chevronSize,
+                    color: colorScheme.onSurface.withValues(alpha: TvSectionHeaderTokens.chevronAlpha),
+                  ),
+                  SizedBox(width: 30 * scale),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

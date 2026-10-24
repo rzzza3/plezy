@@ -16,6 +16,9 @@ import '../media/media_item.dart';
 import '../media/media_library.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../navigation/navigation_tabs.dart';
+import '../profiles/active_profile_provider.dart';
+import '../profiles/profile.dart';
+import '../profiles/profile_avatar.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
@@ -26,6 +29,7 @@ import '../utils/music_navigation.dart';
 import '../utils/content_utils.dart';
 import '../utils/platform_detector.dart';
 import '../utils/scroll_utils.dart';
+import '../utils/initials_palette.dart';
 import '../utils/library_grouping.dart';
 import 'music/equalizer_icon.dart';
 import '../providers/multi_server_provider.dart';
@@ -33,6 +37,59 @@ import '../services/fullscreen_state_manager.dart';
 import '../theme/mono_tokens.dart';
 import '../widgets/backend_badge.dart';
 import '../i18n/strings.g.dart';
+
+/// Geometry, chrome and motion of the TV sidebar, after Silo's TvShellLayout.
+///
+/// The TV rail rests as a slim icon strip and expands over the content
+/// (never pushing it) while it holds focus.
+abstract final class TvSidebarTokens {
+  static const double railWidth = 64;
+  static const double expandedWidth = 204;
+
+  static const double itemHeight = 36;
+  static const double itemInset = 10;
+  static const double itemVerticalInset = 2;
+
+  /// Leading gap inside a capsule, which centers the glyph in [railWidth].
+  static const double itemIconStart = 11;
+  static const double itemLeadingSize = 22;
+  static const double itemIconSize = 17;
+  static const double itemLabelGap = 14;
+  static const double itemLabelEnd = 12;
+  static const double labelSize = 14;
+
+  static const double profileGap = 10;
+  static const double verticalPadding = 24;
+  static const double dividerHorizontalInset = itemInset + 8;
+  static const double dividerVerticalInset = 8;
+
+  /// How far the expanded scrim reaches past the sidebar's edge into content.
+  static const double scrimTail = 380;
+  static const double scrimRestTail = 36;
+
+  static const double restingOpacity = 0.70;
+  static const double restingContentAlpha = 0.66;
+
+  static const Color onSurface = Color(0xFFEDEDED);
+  static const Color focusedContent = Colors.black;
+  static const Color selectedFill = Color.fromRGBO(255, 255, 255, 0.14);
+  static const Color selectedBorder = Color.fromRGBO(255, 255, 255, 0.10);
+  static const Color divider = Color.fromRGBO(255, 255, 255, 0.12);
+  static const Color avatarFill = Color.fromRGBO(255, 255, 255, 0.18);
+  static const Color avatarFocusedFill = Color.fromRGBO(0, 0, 0, 0.82);
+  static const Color avatarFocusedBorder = Color.fromRGBO(0, 0, 0, 0.30);
+
+  static const Duration expandDuration = Duration(milliseconds: 280);
+  static const Duration collapseDuration = Duration(milliseconds: 220);
+  static const Curve easing = Cubic(0.16, 1, 0.3, 1);
+
+  /// Labels trail the width on the way in and lead it on the way out, so they
+  /// never draw clipped mid-word inside a still-narrow capsule.
+  static const Duration labelFadeInDelay = Duration(milliseconds: 70);
+  static const Duration labelFadeIn = Duration(milliseconds: 200);
+  static const Duration labelFadeOut = Duration(milliseconds: 90);
+  static const Duration dimDuration = Duration(milliseconds: 200);
+}
 
 enum _LibraryNavSection { visible, hidden }
 
@@ -166,21 +223,11 @@ class NavigationRailItem extends StatelessWidget {
     this.onNavigateRight,
   });
 
-  Color? _indicatorColorForLayout(MonoTokens t, {required bool focused, required bool collapsedLayout}) {
-    // The collapsed TV rail is a transparent overlay strip; a persistent
-    // active pill over artwork is noise there, so it shows focus only.
-    final showSelected = isSelected && !suppressSelectedBackground && !(collapsedLayout && PlatformDetector.isTV());
+  Color? _indicatorColor(MonoTokens t, {required bool focused}) {
+    final showSelected = isSelected && !suppressSelectedBackground;
     if (focused) return t.text.withValues(alpha: showSelected ? selectedFocusAlpha : focusAlpha);
     if (showSelected) return t.text.withValues(alpha: 0.1);
     return null;
-  }
-
-  Color? _indicatorColor(MonoTokens t, {required bool focused, required double expansion}) {
-    return Color.lerp(
-      _indicatorColorForLayout(t, focused: focused, collapsedLayout: true),
-      _indicatorColorForLayout(t, focused: focused, collapsedLayout: false),
-      expansion,
-    );
   }
 
   Widget _leadingIcon(MonoTokens t) =>
@@ -210,7 +257,7 @@ class NavigationRailItem extends StatelessWidget {
             height: collapsedIndicatorHeight,
             alignment: .center,
             decoration: BoxDecoration(
-              color: _indicatorColor(t, focused: focused, expansion: 0),
+              color: _indicatorColor(t, focused: focused),
               borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
             ),
             child: _leadingIcon(t),
@@ -271,7 +318,7 @@ class NavigationRailItem extends StatelessWidget {
       alignment: .centerLeft,
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: fixedHeight ? 0 : 8),
       decoration: BoxDecoration(
-        color: _indicatorColor(t, focused: focused, expansion: 1),
+        color: _indicatorColor(t, focused: focused),
         borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
       ),
       child: _buildExpandedContent(context, t, labelOpacity: 1, showLeading: true),
@@ -311,7 +358,7 @@ class NavigationRailItem extends StatelessWidget {
               width: lerpDouble(collapsedPillWidth, expandedContentWidth, expansion),
               height: lerpDouble(collapsedIndicatorHeight, expandedHeight, expansion),
               decoration: BoxDecoration(
-                color: _indicatorColor(t, focused: focused, expansion: expansion),
+                color: _indicatorColor(t, focused: focused),
                 borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
               ),
             ),
@@ -403,6 +450,10 @@ class SideNavigationRail extends StatefulWidget {
   /// Called when the user taps the reconnect button in offline mode.
   final VoidCallback? onReconnect;
 
+  /// Opens the profile menu from the TV sidebar's profile row. The row is
+  /// hidden when null.
+  final VoidCallback? onProfileSelected;
+
   /// Called when the rail starts or stops floating over the content as an
   /// M3E modal panel, so the shell can scrim the content it covers. Docked
   /// expansion (always-open, D-pad focus) displaces content and never scrims.
@@ -421,13 +472,14 @@ class SideNavigationRail extends StatefulWidget {
     this.onNavigateToContent,
     this.onFloatingPanelChanged,
     this.onReconnect,
+    this.onProfileSelected,
   });
 
   @override
   State<SideNavigationRail> createState() => SideNavigationRailState();
 }
 
-class SideNavigationRailState extends State<SideNavigationRail> with MountedSetStateMixin {
+class SideNavigationRailState extends State<SideNavigationRail> with MountedSetStateMixin, TickerProviderStateMixin {
   /// Libraries section expansion, held in settings rather than widget state so
   /// it survives relaunch, remount and layout switches (#1896). The rail's
   /// [ListenableBuilder] below listens to the pref, so the toggle just writes.
@@ -438,7 +490,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   bool _lastReportedFloatingPanel = false;
   Timer? _collapseTimer;
   static const double collapsedWidth = 80.0;
-  static const double tvCollapsedWidth = 48.0;
   static const double expandedWidth = 220.0;
   static const double _horizontalPadding = 12.0;
   static const double _collapsedHorizontalPadding = 4.0;
@@ -458,7 +509,11 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   static Duration get expandDuration => DevicePerformance.reducedDuration(const Duration(milliseconds: 250));
   static const Curve expandCurve = Curves.easeInOutCubicEmphasized;
 
-  static double collapsedWidthForContext(BuildContext _) => PlatformDetector.isTV() ? tvCollapsedWidth : collapsedWidth;
+  static double collapsedWidthForContext(BuildContext _) =>
+      PlatformDetector.isTV() ? TvSidebarTokens.railWidth : collapsedWidth;
+
+  static double expandedWidthForContext(BuildContext _) =>
+      PlatformDetector.isTV() ? TvSidebarTokens.expandedWidth : expandedWidth;
 
   /// Edge padding around the item column; collapsed rails center their items
   /// (72px in the 80px desktop strip, 40px in the 48px TV strip).
@@ -466,6 +521,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     return isCollapsed ? _collapsedHorizontalPadding : _horizontalPadding;
   }
 
+  static const _kProfile = 'profile';
   static const _kHome = 'home';
   static const _kExplore = 'explore';
   static const _kNowPlaying = 'nowPlaying';
@@ -485,6 +541,10 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   // Unified focus state tracker for all nav items (main + libraries)
   late final FocusMemoryTracker _focusTracker;
 
+  late final AnimationController _tvExpand = AnimationController(vsync: this);
+  late final AnimationController _tvLabels = AnimationController(vsync: this);
+  bool? _tvExpanded;
+
   /// Whether the sidebar should be expanded (always, hover, or focus)
   bool get _shouldExpand => widget.alwaysExpanded || _isHovered || _isTouchExpanded || widget.isSidebarFocused;
 
@@ -496,7 +556,12 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   /// so a floating panel covers content and owns its own opaque surface and
   /// edge shadow. Every docked shape — collapsed, always-open, or D-pad
   /// focus-expanded — displaces content instead and stays transparent on TV.
-  bool get _isFloatingPanel => _interactionExpanded && !widget.alwaysExpanded;
+  /// The TV rail always overlays content and paints its own scrim, so it
+  /// never reports a floating panel.
+  bool get _isFloatingPanel => !PlatformDetector.isTV() && _interactionExpanded && !widget.alwaysExpanded;
+
+  /// The TV rail lists libraries directly, without the collapsible header.
+  bool get _librariesShown => PlatformDetector.isTV() || _librariesExpanded;
 
   bool get _showDownloads => !PlatformDetector.isAppleTV();
 
@@ -513,6 +578,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   void dispose() {
     _collapseTimer?.cancel();
     _focusTracker.dispose();
+    _tvExpand.dispose();
+    _tvLabels.dispose();
     super.dispose();
   }
 
@@ -628,7 +695,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         return _kExplore;
       case NavigationTabId.libraries:
         final libKey = widget.selectedLibraryKey;
-        if (libKey != null && _librariesExpanded) {
+        if (libKey != null && _librariesShown) {
           final visibleKey = '$_kLibraryItemPrefix:${_LibraryNavSection.visible.name}:$libKey';
           if (_mountedFocusNodeFor(visibleKey) != null) return visibleKey;
           if (_hiddenLibrariesExpanded) {
@@ -677,8 +744,10 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool hasLiveTv,
     required bool hasNowPlaying,
     required bool hasExplore,
+    required bool hasProfile,
   }) {
     return {
+      if (hasProfile) _kProfile,
       _kHome,
       if (hasNowPlaying) _kNowPlaying,
       _kLibraries,
@@ -759,7 +828,30 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool hasNowPlaying,
     required bool hasExplore,
     required bool isCollapsed,
+    required bool hasProfile,
   }) {
+    if (PlatformDetector.isTV()) {
+      return [
+        if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
+        if (!widget.isOfflineMode) ...[
+          if (hasProfile) _kProfile,
+          _kSearch,
+          _kHome,
+          if (hasNowPlaying) _kNowPlaying,
+          if (hasExplore) _kExplore,
+          if (hasLiveTv) 'liveTv',
+        ],
+        if (_showDownloads) _kDownloads,
+        if (!widget.isOfflineMode) ...[
+          ..._focusKeysForLibraryRows(visibleRows),
+          if (hasHiddenLibraries) ...[
+            _kHiddenLibraries,
+            if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
+          ],
+        ],
+        _kSettings,
+      ];
+    }
     return [
       if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
       if (!widget.isOfflineMode) ...[
@@ -824,7 +916,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       _requestFocusAndReveal(node);
       return KeyEventResult.handled;
     }
-    return KeyEventResult.ignored;
+    // Up and Down never carry focus out of the TV sidebar.
+    return PlatformDetector.isTV() ? KeyEventResult.handled : KeyEventResult.ignored;
   }
 
   /// Collapse the sidebar (resets touch-expand state).
@@ -890,6 +983,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     // mini-player for that.
     final musicService = context.watch<MusicPlaybackService?>();
     final nowPlayingTrack = widget.isOfflineMode || !PlatformDetector.isTV() ? null : musicService?.currentTrack;
+    final activeProfiles = PlatformDetector.isTV() ? context.watch<ActiveProfileProvider?>() : null;
+    final activeProfile = widget.isOfflineMode || widget.onProfileSelected == null ? null : activeProfiles?.active;
 
     // Listen to fullscreen + the groupLibrariesByServer / showExploreTab
     // settings so the rail rebuilds when they are toggled in Appearance, and to
@@ -927,6 +1022,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             hasLiveTv: hasLiveTv,
             hasNowPlaying: nowPlayingTrack != null,
             hasExplore: hasExplore,
+            hasProfile: activeProfile != null,
           ),
         );
         final focusOrder = _buildFocusOrder(
@@ -937,8 +1033,25 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           hasNowPlaying: nowPlayingTrack != null,
           hasExplore: hasExplore,
           isCollapsed: isCollapsed,
+          hasProfile: activeProfile != null,
         );
         _debugAssertUniqueFocusOrder(focusOrder);
+        if (PlatformDetector.isTV()) {
+          _syncTvExpansion(!isCollapsed);
+          return _buildTvRail(
+            isCollapsed: isCollapsed,
+            focusOrder: focusOrder,
+            activeProfile: activeProfile,
+            activeProfiles: activeProfiles,
+            nowPlayingTrack: nowPlayingTrack,
+            musicService: musicService,
+            hasLiveTv: hasLiveTv,
+            hasExplore: hasExplore,
+            visibleRows: visibleRows,
+            hiddenRows: hiddenRows,
+            hiddenLibraryCount: hiddenLibraries.length,
+          );
+        }
         return TapRegion(
           onTapOutside: (_) {
             if (_isTouchExpanded) {
@@ -1122,6 +1235,263 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         );
       },
     );
+  }
+
+  void _syncTvExpansion(bool expanded) {
+    if (_tvExpanded == expanded) return;
+    final first = _tvExpanded == null;
+    _tvExpanded = expanded;
+    final target = expanded ? 1.0 : 0.0;
+    if (first) {
+      _tvExpand.value = target;
+      _tvLabels.value = target;
+      return;
+    }
+    unawaited(
+      _tvExpand.animateTo(
+        target,
+        duration: DevicePerformance.reducedDuration(
+          expanded ? TvSidebarTokens.expandDuration : TvSidebarTokens.collapseDuration,
+        ),
+        curve: TvSidebarTokens.easing,
+      ),
+    );
+    if (expanded) {
+      const delay = TvSidebarTokens.labelFadeInDelay;
+      final total = delay + TvSidebarTokens.labelFadeIn;
+      unawaited(
+        _tvLabels.animateTo(
+          1,
+          duration: DevicePerformance.reducedDuration(total),
+          curve: Interval(delay.inMilliseconds / total.inMilliseconds, 1, curve: Curves.fastOutSlowIn),
+        ),
+      );
+    } else {
+      unawaited(_tvLabels.animateTo(0, duration: DevicePerformance.reducedDuration(TvSidebarTokens.labelFadeOut)));
+    }
+  }
+
+  /// The TV sidebar: profile, then a scrolling list (Search, Home, the other
+  /// destinations, libraries), with Settings pinned at the foot. It floats
+  /// over the content on a gradient scrim that deepens as it expands.
+  Widget _buildTvRail({
+    required bool isCollapsed,
+    required List<String> focusOrder,
+    required Profile? activeProfile,
+    required ActiveProfileProvider? activeProfiles,
+    required MediaItem? nowPlayingTrack,
+    required MusicPlaybackService? musicService,
+    required bool hasLiveTv,
+    required bool hasExplore,
+    required List<_LibraryNavRow> visibleRows,
+    required List<_LibraryNavRow> hiddenRows,
+    required int hiddenLibraryCount,
+  }) {
+    final strings = Translations.of(context);
+    final offline = widget.isOfflineMode;
+    final hasLibraries = visibleRows.isNotEmpty || hiddenLibraryCount > 0;
+
+    Widget destination(NavigationTabId tab, String key, IconData icon, String label) => _TvSidebarItem(
+      icon: icon,
+      label: label,
+      isSelected: widget.selectedTab == tab,
+      focusNode: _focusTracker.get(key),
+      labelOpacity: _tvLabels,
+      onTap: () => widget.onDestinationSelected(tab),
+      onNavigateRight: widget.onNavigateToContent,
+    );
+
+    final rail = TapRegion(
+      onTapOutside: (_) {
+        if (_isTouchExpanded) setState(() => _isTouchExpanded = false);
+      },
+      child: MouseRegion(
+        onEnter: (_) => _onHoverEnter(),
+        onExit: (_) => _onHoverExit(),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: isCollapsed ? _expandForTouch : null,
+          child: AnimatedBuilder(
+            animation: _tvExpand,
+            builder: (context, child) => SizedBox(
+              width: lerpDouble(TvSidebarTokens.railWidth, TvSidebarTokens.expandedWidth, _tvExpand.value),
+              child: child,
+            ),
+            child: IgnorePointer(
+              ignoring: isCollapsed,
+              child: Focus(
+                canRequestFocus: false,
+                skipTraversal: true,
+                onKeyEvent: (node, event) => _handleVerticalNavigation(node, event, focusOrder),
+                child: AnimatedOpacity(
+                  opacity: isCollapsed ? TvSidebarTokens.restingOpacity : 1,
+                  duration: DevicePerformance.reducedDuration(TvSidebarTokens.dimDuration),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: TvSidebarTokens.verticalPadding),
+                      if (activeProfile != null) ...[
+                        _TvSidebarItem(
+                          label: activeProfile.displayName,
+                          leadingBuilder: (focused) => _TvSidebarAvatar(
+                            profile: activeProfile,
+                            avatarUrl: activeProfiles?.avatarUrlFor(activeProfile.id),
+                            isFocused: focused,
+                          ),
+                          isSelected: false,
+                          focusNode: _focusTracker.get(_kProfile),
+                          labelOpacity: _tvLabels,
+                          onTap: () => widget.onProfileSelected?.call(),
+                          onNavigateRight: widget.onNavigateToContent,
+                        ),
+                        const SizedBox(height: TvSidebarTokens.profileGap),
+                      ],
+                      Expanded(
+                        child: ListView(
+                          padding: EdgeInsets.zero,
+                          children: [
+                            if (offline && widget.onReconnect != null)
+                              _TvSidebarItem(
+                                icon: widget.isReconnecting ? Symbols.sync_rounded : Symbols.wifi_rounded,
+                                label: strings.common.reconnect,
+                                isSelected: false,
+                                focusNode: _focusTracker.get(_kReconnect),
+                                labelOpacity: _tvLabels,
+                                // ignore: no-empty-block - no-op tap handler while reconnecting
+                                onTap: widget.isReconnecting ? () {} : () => widget.onReconnect?.call(),
+                                onNavigateRight: widget.onNavigateToContent,
+                              ),
+                            if (!offline) ...[
+                              destination(
+                                NavigationTabId.search,
+                                _kSearch,
+                                Symbols.search_rounded,
+                                strings.common.search,
+                              ),
+                              destination(NavigationTabId.discover, _kHome, Symbols.home_rounded, strings.common.home),
+                              if (nowPlayingTrack != null && musicService != null)
+                                _TvSidebarItem(
+                                  label: strings.music.nowPlaying,
+                                  subtitle: nowPlayingTrack.title,
+                                  leadingBuilder: (focused) => EqualizerIcon(
+                                    animate: musicService.isPlaying,
+                                    color: focused ? TvSidebarTokens.focusedContent : TvSidebarTokens.onSurface,
+                                  ),
+                                  isSelected: false,
+                                  focusNode: _focusTracker.get(_kNowPlaying),
+                                  labelOpacity: _tvLabels,
+                                  onTap: () => unawaited(openNowPlaying(context)),
+                                  onNavigateRight: widget.onNavigateToContent,
+                                ),
+                              if (hasExplore)
+                                destination(
+                                  NavigationTabId.explore,
+                                  _kExplore,
+                                  Symbols.explore_rounded,
+                                  strings.navigation.explore,
+                                ),
+                              if (hasLiveTv)
+                                destination(
+                                  NavigationTabId.liveTv,
+                                  'liveTv',
+                                  Symbols.live_tv_rounded,
+                                  strings.navigation.liveTv,
+                                ),
+                            ],
+                            if (_showDownloads)
+                              destination(
+                                NavigationTabId.downloads,
+                                _kDownloads,
+                                Symbols.download_rounded,
+                                strings.navigation.downloads,
+                              ),
+                            if (!offline && hasLibraries) ...[
+                              const _TvSidebarDivider(),
+                              for (final row in visibleRows) _buildTvLibraryRow(row),
+                              if (hiddenLibraryCount > 0) ...[
+                                _TvSidebarItem(
+                                  icon: Symbols.visibility_off_rounded,
+                                  label: strings.libraries.hiddenLibrariesCount(count: hiddenLibraryCount),
+                                  trailingIcon: _hiddenLibrariesExpanded
+                                      ? Symbols.expand_less_rounded
+                                      : Symbols.expand_more_rounded,
+                                  isSelected: false,
+                                  focusNode: _focusTracker.get(_kHiddenLibraries),
+                                  labelOpacity: _tvLabels,
+                                  onTap: () => setState(() => _hiddenLibrariesExpanded = !_hiddenLibrariesExpanded),
+                                  onNavigateRight: widget.onNavigateToContent,
+                                ),
+                                if (_hiddenLibrariesExpanded)
+                                  for (final row in hiddenRows) _buildTvLibraryRow(row),
+                              ],
+                            ],
+                          ],
+                        ),
+                      ),
+                      destination(
+                        NavigationTabId.settings,
+                        _kSettings,
+                        Symbols.settings_rounded,
+                        strings.common.settings,
+                      ),
+                      const SizedBox(height: TvSidebarTokens.verticalPadding),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return SizedBox(
+      width: TvSidebarTokens.expandedWidth + TvSidebarTokens.scrimTail,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(child: CustomPaint(painter: _TvSidebarScrimPainter(_tvExpand))),
+          ),
+          Positioned(top: 0, bottom: 0, left: 0, child: rail),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTvLibraryRow(_LibraryNavRow row) {
+    switch (row) {
+      case _LibraryServerHeaderRow(:final section, :final serverId, :final serverName):
+        final id = ServerId(serverId);
+        final backend = context.read<MultiServerProvider>().serverManager.getClient(id)?.backend;
+        final expanded = !_collapsedServerGroupKeys.contains(_serverGroupStateKey(section, id));
+        return _TvSidebarItem(
+          icon: Symbols.dns_rounded,
+          leadingBuilder: backend == null
+              ? null
+              : (focused) => BackendBadge(
+                  backend: backend,
+                  size: TvSidebarTokens.itemIconSize,
+                  color: focused ? TvSidebarTokens.focusedContent : TvSidebarTokens.onSurface,
+                ),
+          label: serverName,
+          trailingIcon: expanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
+          isSelected: false,
+          focusNode: _focusTracker.get(_serverHeaderFocusKey(section, id)),
+          labelOpacity: _tvLabels,
+          onTap: () => _toggleServerCollapse(section, id),
+          onNavigateRight: widget.onNavigateToContent,
+        );
+      case _LibraryItemRow(:final section, :final library, :final showServerName):
+        return _TvSidebarItem(
+          icon: ContentTypeHelper.getLibraryIcon(library.kind.id),
+          label: library.title,
+          subtitle: showServerName ? library.serverName : null,
+          isSelected: widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == library.globalKey,
+          focusNode: _focusTracker.get(_libraryItemFocusKey(section, library)),
+          labelOpacity: _tvLabels,
+          onTap: () => widget.onLibrarySelected(library.globalKey),
+          onNavigateRight: widget.onNavigateToContent,
+        );
+    }
   }
 
   Widget _buildNavItem({
@@ -1542,4 +1912,257 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       onNavigateRight: widget.onNavigateToContent,
     );
   }
+}
+
+/// One TV sidebar row: a glyph (or [leadingBuilder]) pinned on the collapsed
+/// rail's center line, and a label that fades in as the sidebar widens. The
+/// glyph never moves, so expanding reads as the rail opening.
+///
+/// Focused inverts to a solid capsule with black content; selected carries a
+/// low-alpha fill and hairline border; resting is a bare, muted glyph.
+class _TvSidebarItem extends StatelessWidget {
+  final IconData? icon;
+  final Widget Function(bool focused)? leadingBuilder;
+  final String label;
+  final String? subtitle;
+  final IconData? trailingIcon;
+  final bool isSelected;
+  final FocusNode focusNode;
+  final Animation<double> labelOpacity;
+  final VoidCallback onTap;
+  final VoidCallback? onNavigateRight;
+
+  const _TvSidebarItem({
+    this.icon,
+    this.leadingBuilder,
+    required this.label,
+    this.subtitle,
+    this.trailingIcon,
+    required this.isSelected,
+    required this.focusNode,
+    required this.labelOpacity,
+    required this.onTap,
+    this.onNavigateRight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: focusNode,
+      builder: (context, _) {
+        final focused = focusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
+        final lit = focused || isSelected;
+        final contentColor = focused
+            ? TvSidebarTokens.focusedContent
+            : isSelected
+            ? TvSidebarTokens.onSurface
+            : TvSidebarTokens.onSurface.withValues(alpha: TvSidebarTokens.restingContentAlpha);
+        final subtitle = this.subtitle;
+
+        return Focus(
+          focusNode: focusNode,
+          onKeyEvent: (node, event) => _handleRailItemKey(event, onSelect: onTap, onNavigateRight: onNavigateRight),
+          child: Semantics(
+            button: true,
+            selected: isSelected,
+            label: label,
+            excludeSemantics: true,
+            child: GestureDetector(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TvSidebarTokens.itemInset,
+                  vertical: TvSidebarTokens.itemVerticalInset,
+                ),
+                child: Container(
+                  height: TvSidebarTokens.itemHeight,
+                  clipBehavior: Clip.hardEdge,
+                  decoration: ShapeDecoration(
+                    color: focused
+                        ? TvSidebarTokens.onSurface
+                        : isSelected
+                        ? TvSidebarTokens.selectedFill
+                        : null,
+                    shape: const StadiumBorder(),
+                  ),
+                  // A foreground border, because a decoration's border insets
+                  // the child and would nudge the glyph off the rail's center.
+                  foregroundDecoration: isSelected && !focused
+                      ? const ShapeDecoration(
+                          shape: StadiumBorder(side: BorderSide(color: TvSidebarTokens.selectedBorder)),
+                        )
+                      : null,
+                  child: OverflowBox(
+                    alignment: Alignment.centerLeft,
+                    minWidth: 0,
+                    maxWidth: TvSidebarTokens.expandedWidth - 2 * TvSidebarTokens.itemInset,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: TvSidebarTokens.itemIconStart,
+                        right: TvSidebarTokens.itemLabelEnd,
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox.square(
+                            dimension: TvSidebarTokens.itemLeadingSize,
+                            child: Center(
+                              child:
+                                  leadingBuilder?.call(focused) ??
+                                  AppIcon(
+                                    icon!,
+                                    fill: lit ? 1 : 0,
+                                    size: TvSidebarTokens.itemIconSize,
+                                    color: contentColor,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: TvSidebarTokens.itemLabelGap),
+                          Expanded(
+                            child: FadeTransition(
+                              opacity: labelOpacity,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    label,
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: TvSidebarTokens.labelSize,
+                                      height: subtitle == null ? null : 1.15,
+                                      fontWeight: lit ? FontWeight.w600 : FontWeight.w500,
+                                      color: contentColor,
+                                    ),
+                                  ),
+                                  if (subtitle != null)
+                                    Text(
+                                      subtitle,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        height: 1.15,
+                                        color: contentColor.withValues(alpha: contentColor.a * 0.7),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (trailingIcon != null)
+                            FadeTransition(
+                              opacity: labelOpacity,
+                              child: AppIcon(trailingIcon!, fill: 1, size: 16, color: contentColor),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The active profile's avatar in the TV sidebar's first row. On the focused
+/// white capsule it flips dark so an initial stays readable.
+class _TvSidebarAvatar extends StatelessWidget {
+  final Profile profile;
+  final String? avatarUrl;
+  final bool isFocused;
+
+  const _TvSidebarAvatar({required this.profile, required this.avatarUrl, required this.isFocused});
+
+  @override
+  Widget build(BuildContext context) {
+    final override = avatarUrl;
+    final thumb = override != null && override.isNotEmpty ? override : profile.avatarThumbUrl;
+    return Container(
+      width: TvSidebarTokens.itemLeadingSize,
+      height: TvSidebarTokens.itemLeadingSize,
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isFocused ? TvSidebarTokens.avatarFocusedFill : TvSidebarTokens.avatarFill,
+        border: Border.all(color: isFocused ? TvSidebarTokens.avatarFocusedBorder : TvSidebarTokens.avatarFill),
+      ),
+      child: thumb != null && thumb.isNotEmpty
+          ? ProfileAvatar(
+              profile: profile,
+              avatarUrl: avatarUrl,
+              size: TvSidebarTokens.itemLeadingSize,
+              showLockBadge: false,
+            )
+          : Text(
+              initialOf(profile.displayName),
+              style: const TextStyle(
+                color: TvSidebarTokens.onSurface,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1,
+              ),
+            ),
+    );
+  }
+}
+
+/// A hairline between the fixed destinations and the libraries.
+class _TvSidebarDivider extends StatelessWidget {
+  const _TvSidebarDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: TvSidebarTokens.dividerHorizontalInset,
+        vertical: TvSidebarTokens.dividerVerticalInset,
+      ),
+      child: SizedBox(height: 1, child: ColoredBox(color: TvSidebarTokens.divider)),
+    );
+  }
+}
+
+/// One scrim for both states. At rest it is a light wash that keeps the
+/// glyphs legible over artwork; expanded it is nearly opaque behind the
+/// labels and falls off across the content beside them.
+class _TvSidebarScrimPainter extends CustomPainter {
+  final Animation<double> expand;
+
+  _TvSidebarScrimPainter(this.expand) : super(repaint: expand);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final f = expand.value;
+    final edge = lerpDouble(TvSidebarTokens.railWidth, TvSidebarTokens.expandedWidth, f)!;
+    const restTail = TvSidebarTokens.scrimRestTail;
+    final tail = edge + restTail + (TvSidebarTokens.scrimTail - restTail) * f;
+    final atStart = 0.78 + 0.19 * f;
+    final atEdge = 0.42 + 0.5 * f;
+    // Hold most of the darkness just past the edge so content text beside
+    // the labels recedes instead of competing.
+    final shoulder = edge + (tail - edge) * 0.35;
+    final rect = Rect.fromLTWH(0, 0, tail, size.height);
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.black.withValues(alpha: atStart),
+          Colors.black.withValues(alpha: atEdge),
+          Colors.black.withValues(alpha: atEdge * 0.72),
+          Colors.black.withValues(alpha: 0),
+        ],
+        stops: [0, edge / tail, shoulder / tail, 1],
+      ).createShader(rect);
+    canvas.drawRect(rect, paint);
+  }
+
+  @override
+  bool shouldRepaint(_TvSidebarScrimPainter oldDelegate) => oldDelegate.expand != expand;
 }

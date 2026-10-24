@@ -1,0 +1,21 @@
+{
+  "endpoint": "GET /api/v2/system/info",
+  "status": 200,
+  "content_type": "application/json",
+  "shape": {
+    "type": "object",
+    "keys": {
+      "server_version": "string",
+      "api_major": "int",
+      "contract_digest": "string",
+      "links": {
+        "type": "object",
+        "keys": {
+          "openapi": "string",
+          "capabilities": "string",
+          "identity": "string"
+        }
+      }
+    }
+  }
+}

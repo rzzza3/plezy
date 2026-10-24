@@ -530,7 +530,6 @@ class ExploreScreenState extends State<ExploreScreen>
                 key: _tvBrowseRailKey,
                 hubs: tvHubs,
                 focusMemory: _hubFocusMemory,
-                iconForHub: (hub, _) => _rowIcon(_rowForHub(hub)?.row),
                 onFocusedItemChanged: _setSpotlightItem,
                 loadMoreItems: (hub) {
                   final rowHub = _rowForHub(hub);

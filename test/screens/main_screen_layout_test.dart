@@ -20,11 +20,11 @@ import '../test_helpers/prefs.dart';
 void main() {
   test('side navigation pushes stable foreground off-screen while temporarily expanded', () {
     const viewportWidth = 1280.0;
-    const reservedWidth = SideNavigationRailState.tvCollapsedWidth;
+    const reservedWidth = TvSidebarTokens.railWidth;
 
     final collapsed = mainScreenSideNavigationContentLayout(
       viewportWidth: viewportWidth,
-      currentSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+      currentSideNavigationWidth: TvSidebarTokens.railWidth,
       reservedSideNavigationWidth: reservedWidth,
     );
     final expanded = mainScreenSideNavigationContentLayout(
@@ -33,9 +33,9 @@ void main() {
       reservedSideNavigationWidth: reservedWidth,
     );
 
-    expect(collapsed.width, viewportWidth - SideNavigationRailState.tvCollapsedWidth);
+    expect(collapsed.width, viewportWidth - TvSidebarTokens.railWidth);
     expect(expanded.width, collapsed.width);
-    expect(collapsed.left, SideNavigationRailState.tvCollapsedWidth);
+    expect(collapsed.left, TvSidebarTokens.railWidth);
     expect(expanded.left, SideNavigationRailState.expandedWidth);
     expect(collapsed.left + collapsed.width, viewportWidth);
     expect(expanded.left + expanded.width, viewportWidth + SideNavigationRailState.expandedWidth - reservedWidth);
@@ -307,14 +307,14 @@ void main() {
 
     double left() => tester.widget<Positioned>(find.byKey(const ValueKey('bleed-position'))).left!;
 
-    await tester.pumpWidget(build(SideNavigationRailState.tvCollapsedWidth));
-    expect(left(), -SideNavigationRailState.tvCollapsedWidth);
+    await tester.pumpWidget(build(TvSidebarTokens.railWidth));
+    expect(left(), -TvSidebarTokens.railWidth);
 
     await tester.pumpWidget(build(SideNavigationRailState.expandedWidth));
-    expect(left(), closeTo(-SideNavigationRailState.tvCollapsedWidth, 0.001));
+    expect(left(), closeTo(-TvSidebarTokens.railWidth, 0.001));
 
     await tester.pump(const Duration(milliseconds: 100));
-    expect(left(), lessThan(-SideNavigationRailState.tvCollapsedWidth));
+    expect(left(), lessThan(-TvSidebarTokens.railWidth));
     expect(left(), greaterThan(-SideNavigationRailState.expandedWidth));
 
     await tester.pumpAndSettle();

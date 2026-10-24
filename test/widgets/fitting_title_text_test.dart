@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/widgets/fitting_title_text.dart';
 
@@ -72,6 +73,23 @@ void main() {
         reason: '$text at $size is not maximal',
       );
     }
+  });
+
+  testWidgets('fits with the ambient text style the title renders with', (tester) async {
+    const text = 'ABCDE FGHIJ KLMNO';
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Center(
+          child: DefaultTextStyle(
+            style: TextStyle(letterSpacing: 12),
+            child: SizedBox(width: 300, height: 50, child: FittingTitleText(text, style: TextStyle(fontSize: 40))),
+          ),
+        ),
+      ),
+    );
+    final paragraph = tester.renderObject<RenderParagraph>(find.byType(RichText));
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(paragraph.getDryLayout(const BoxConstraints(maxWidth: 300)).height, lessThanOrEqualTo(50.1));
   });
 
   testWidgets('never goes below the minimum size', (tester) async {

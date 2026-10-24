@@ -133,14 +133,12 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     BuildContext context,
     MediaItem metadata, {
     required bool isTv,
-    required double tvScale,
     required double maxWidth,
   }) {
     return ValueListenableBuilder<int>(
       valueListenable: _playbackStatusRevision,
       builder: (context, _, _) =>
-          _playbackTracksStatus(context, metadata, isTv: isTv, tvScale: tvScale, maxWidth: maxWidth) ??
-          const SizedBox.shrink(),
+          _playbackTracksStatus(context, metadata, isTv: isTv, maxWidth: maxWidth) ?? const SizedBox.shrink(),
     );
   }
 
@@ -148,7 +146,6 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     BuildContext context,
     MediaItem metadata, {
     required bool isTv,
-    required double tvScale,
     required double maxWidth,
   }) {
     final target = _playbackTargetItem(metadata);
@@ -210,15 +207,18 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
             MetadataLineRatings() => '',
           }].join(', ')}';
 
-    // Same ink as the hero's metadata line, one step lighter in weight and
-    // size so it reads as a footnote to the buttons rather than a sixth one.
-    final textStyle = TextStyle(
-      color: isTv ? _tvDetailForegroundColor(context) : Theme.of(context).colorScheme.onSurface,
-      fontSize: isTv ? 15 * tvScale : 12.5,
-      fontWeight: .w600,
-      letterSpacing: 0.1,
-      height: 1.2,
-    );
+    // Off TV: the hero's metadata ink, one step lighter in weight and size so
+    // it reads as a footnote to the buttons rather than a sixth one. On TV it
+    // is Silo's playback readout under the credit line.
+    final textStyle = isTv
+        ? TvDetailTokens.ink(context, TvDetailTokens.credit, TvDetailTokens.creditAlpha)
+        : TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 12.5,
+            fontWeight: .w600,
+            letterSpacing: 0.1,
+            height: 1.2,
+          );
 
     return Semantics(
       key: const ValueKey('detail_playback_tracks'),
