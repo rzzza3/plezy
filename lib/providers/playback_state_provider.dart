@@ -7,8 +7,8 @@ import '../mixins/disposable_change_notifier_mixin.dart';
 /// Fetches a window of items from a server-side play queue. Provider calls
 /// this when the currently loaded window doesn't contain the next item it
 /// needs to surface. Wired to a backend that maintains queues server-side
-/// (Plex's `/playQueues`); left null for client-side queues (Jellyfin's
-/// [LocalPlayQueue]) where the full list is already resident.
+/// (Plex's `/playQueues`); left null for client-side queues
+/// ([LocalPlayQueue]) where the full list is already resident.
 typedef PlayQueueWindowFetcher = Future<PlayQueueResponse?> Function(int playQueueId, {String? center, int window});
 
 /// Outcome of resolving one direction in the active playback queue.
@@ -64,7 +64,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   List<MediaItem> _loadedItems = [];
   final int _windowSize = 50; // Number of items to keep in memory
 
-  /// Synthetic per-item queue IDs for client-side queues (Jellyfin, etc.).
+  /// Synthetic per-item queue IDs for client-side queues.
   /// Parallel to [_loadedItems] — `_syntheticIds[i]` is the queue ID for
   /// `_loadedItems[i]`. Empty when the queue is server-side (Plex), where
   /// the real id lives on [PlexMediaItem.playQueueItemId].
@@ -78,7 +78,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
   /// Returns the queue id for [item] within the current queue. For Plex
   /// items this is the server's `playQueueItemID`; for client-side queues
-  /// (Jellyfin) it's a synthetic index assigned in [setPlaybackFromLocalQueue].
+  /// it's a synthetic index assigned in [setPlaybackFromLocalQueue].
   /// Returns null when [item] isn't in the current loaded window.
   int? playQueueItemIdFor(MediaItem item) {
     if (!_isQueueMode) return null;
@@ -164,8 +164,8 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     safeNotifyListeners();
   }
 
-  /// Initialize playback from a [LocalPlayQueue] (Jellyfin / any backend
-  /// without a server-side queue). Synthetic per-item queue IDs are
+  /// Initialize playback from a [LocalPlayQueue] (any backend without
+  /// a server-side queue). Synthetic per-item queue IDs are
   /// recorded in [_syntheticIds] (parallel to [_loadedItems]) so the
   /// existing Plex-shaped UI — Queue sheet, content strip, current item
   /// highlight — keeps working without a parallel rendering path. Items

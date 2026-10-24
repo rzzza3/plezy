@@ -65,14 +65,14 @@ void main() {
 
   group('contextFor', () {
     test('keeps the SDK default until the user store has been loaded', () {
-      expect(CertificateTrust.contextFor('jellyfin.home'), isNull);
+      expect(CertificateTrust.contextFor('silo.home'), isNull);
     });
 
     test('hands the user store to user-entered hosts and never to fixed endpoints', () async {
       platformAnswers(() => _privateAuthorityPem);
       await CertificateTrust.loadUserAuthorities();
 
-      final userStore = CertificateTrust.contextFor('jellyfin.home');
+      final userStore = CertificateTrust.contextFor('silo.home');
       expect(userStore, isNotNull);
       expect(CertificateTrust.contextFor('192.168.1.3'), same(userStore));
       expect(
@@ -88,15 +88,15 @@ void main() {
     test('an unreadable, empty or malformed store leaves system anchors in place without throwing', () async {
       platformAnswers(() => throw PlatformException(code: 'unavailable'));
       await CertificateTrust.loadUserAuthorities();
-      expect(CertificateTrust.contextFor('jellyfin.home'), isNull);
+      expect(CertificateTrust.contextFor('silo.home'), isNull);
 
       platformAnswers(() => '');
       await CertificateTrust.loadUserAuthorities();
-      expect(CertificateTrust.contextFor('jellyfin.home'), isNull);
+      expect(CertificateTrust.contextFor('silo.home'), isNull);
 
       platformAnswers(() => 'not a certificate bundle');
       await CertificateTrust.loadUserAuthorities();
-      expect(CertificateTrust.contextFor('jellyfin.home'), isNull);
+      expect(CertificateTrust.contextFor('silo.home'), isNull);
     });
   });
 

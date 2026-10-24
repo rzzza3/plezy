@@ -16,8 +16,8 @@ import 'account_preferences_detail_screen.dart';
 ///
 /// With one account a picker would be a single row in front of the only
 /// destination there is, so that account's rows are rendered here instead. With
-/// several, the account has to be chosen first — a Plex profile and a Jellyfin
-/// user store entirely separate values.
+/// several, the account has to be chosen first — each account stores entirely
+/// separate values.
 class AccountPreferencesScreen extends StatelessWidget {
   final List<AccountPreferenceTarget> targets;
 

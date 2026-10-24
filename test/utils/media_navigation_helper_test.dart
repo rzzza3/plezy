@@ -32,7 +32,7 @@ void main() {
   test('season detail target opens parent show and focuses season', () {
     final season = testMediaItem(
       id: 'season-3',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 3',
       index: 3,

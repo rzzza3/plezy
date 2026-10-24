@@ -94,13 +94,13 @@ void main() {
           id: 'movie-prior',
           serverId: 'srv-1',
           title: 'Prior movie',
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
         );
         final targetItem = testMediaItem(
           id: 'movie-next',
           serverId: 'srv-1',
           title: 'Next movie',
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
         );
 
         final peer = _ScreenPeerService();
@@ -660,7 +660,7 @@ void main() {
       accountPreferences.dispose();
     });
     final key = GlobalKey<VideoPlayerScreenState>();
-    final item = testMediaItem(id: 'movie-prior', serverId: 'srv-1', backend: MediaBackend.jellyfin);
+    final item = testMediaItem(id: 'movie-prior', serverId: 'srv-1', backend: MediaBackend.silo);
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -709,12 +709,7 @@ void main() {
           await tester.pump(const Duration(seconds: 1));
           // The restore's reload drops the adjacent episodes and resolves them
           // again, here from the queue the episode was launched in.
-          final next = testMediaItem(
-            id: 'next',
-            title: 'Next episode',
-            serverId: 'srv-1',
-            backend: MediaBackend.jellyfin,
-          );
+          final next = testMediaItem(id: 'next', title: 'Next episode', serverId: 'srv-1', backend: MediaBackend.silo);
           Provider.of<PlaybackStateProvider>(
             screen.key.currentContext!,
             listen: false,
@@ -1130,9 +1125,9 @@ class _ReloadClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   String get serverName => 'Server';
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
   @override
   double get watchedThreshold => 0.9;
   @override
@@ -1262,7 +1257,7 @@ _pushExitScreen(
       watchTogetherLease: watchTogether?.capturePlaybackLease(),
       builder: (_) => VideoPlayerScreen(
         key: key,
-        metadata: testMediaItem(id: 'exit-original', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+        metadata: testMediaItem(id: 'exit-original', serverId: 'srv-1', backend: MediaBackend.silo),
         selectedQualityPreset: TranscodeQualityPreset.original,
         watchTogetherLease: watchTogether?.capturePlaybackLease(),
       ),
@@ -1273,7 +1268,7 @@ _pushExitScreen(
   if (watchTogether == null) {
     var committed = false;
     final reload = key.currentState!
-        .navigateToQueueItem(testMediaItem(id: 'exit-committed', serverId: 'srv-1', backend: MediaBackend.jellyfin))
+        .navigateToQueueItem(testMediaItem(id: 'exit-committed', serverId: 'srv-1', backend: MediaBackend.silo))
         .whenComplete(() => committed = true);
     await pumpUntil(tester, () => committed);
     await reload;

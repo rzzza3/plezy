@@ -10,17 +10,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../test_helpers/prefs.dart';
 
 /// Direct tests of the shared-cache-backed favorite channels store.
-/// `_JellyfinLiveTvSupport` doesn't run in these — the repo is the
-/// boundary, so a test here exercises the legacy-key and legacy-store
-/// adoption paths and the JSON round-trip without spinning up an HTTP layer.
-FavoriteChannel _channel(String id, {String? title, String source = 'server://abc/jellyfin'}) =>
+/// No Live TV backend runs in these — the repo is the boundary, so a test
+/// here exercises the legacy-key and legacy-store adoption paths and the
+/// JSON round-trip without spinning up an HTTP layer.
+FavoriteChannel _channel(String id, {String? title, String source = 'server://abc/livetv'}) =>
     FavoriteChannel(source: source, id: id, title: title);
 
-const _key = 'jellyfin_fav_channels:abc/user-1';
-const _legacyKey = 'jellyfin_fav_channels:abc';
+const _key = 'fav_channels:abc/user-1';
+const _legacyKey = 'fav_channels:abc';
 
 String _list(List<String> ids) => jsonEncode([
-  for (final id in ids) {'source': 'server://abc/jellyfin', 'id': id},
+  for (final id in ids) {'source': 'server://abc/livetv', 'id': id},
 ]);
 
 /// An install whose one-shot legacy→async prefs migration already ran, with
@@ -46,8 +46,8 @@ void main() {
       resetSharedPreferencesForTest(
         initialAsync: {
           _key: jsonEncode([
-            {'source': 'server://abc/jellyfin', 'id': 'ch-1', 'title': 'Channel 1'},
-            {'source': 'server://abc/jellyfin', 'id': 'ch-2', 'title': 'Channel 2'},
+            {'source': 'server://abc/livetv', 'id': 'ch-1', 'title': 'Channel 1'},
+            {'source': 'server://abc/livetv', 'id': 'ch-2', 'title': 'Channel 2'},
           ]),
         },
       );

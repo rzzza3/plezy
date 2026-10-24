@@ -558,39 +558,63 @@ Each live lane drives the Android TV emulator with `adb`. Lanes run one at a tim
 **Depends on.** S7.
 
 **Files.**
-- [ ] Delete `lib/services/jellyfin_client.dart`, `lib/services/jellyfin_client/`, every `lib/services/jellyfin_*.dart`, every `lib/services/media_browser_*.dart`, `lib/media/media_browser_dialect.dart`, `lib/models/jellyfin/`.
-- [ ] Delete `lib/screens/settings/add_jellyfin_screen.dart`, `lib/screens/settings/edit_jellyfin_connection_screen.dart`, `lib/widgets/quick_connect_code_panel.dart`, `lib/screens/settings/quick_connect_flow_mixin.dart` unless Seerr still needs them.
-- [ ] Delete the matching tests under `test/`.
-- [ ] Edit the importers the analyzer lists. `plezy-backend-map.md` counts 25 for `jellyfin_api_cache.dart` and 23 for `jellyfin_client.dart`.
+- [x] Delete `lib/services/jellyfin_client.dart`, `lib/services/jellyfin_client/`, every `lib/services/jellyfin_*.dart`, every `lib/services/media_browser_*.dart`, `lib/media/media_browser_dialect.dart`, `lib/models/jellyfin/`.
+- [x] Delete `lib/screens/settings/add_jellyfin_screen.dart`, `lib/screens/settings/edit_jellyfin_connection_screen.dart`, `lib/widgets/quick_connect_code_panel.dart`, `lib/screens/settings/quick_connect_flow_mixin.dart` unless Seerr still needs them.
+- [x] Delete the matching tests under `test/`.
+- [x] Edit the importers the analyzer lists. `plezy-backend-map.md` counts 25 for `jellyfin_api_cache.dart` and 23 for `jellyfin_client.dart`.
 
 **Build.**
-- [ ] Remove `JellyfinConnection`, `MediaItem.jellyfin`, the `usesMediaBrowserApi` branches, `SeasonEpisodePagingClient` and `MediaDeletionPermissionClient` if Silo does not implement them.
+- [x] Remove `JellyfinConnection`, `MediaItem.jellyfin`, the `usesMediaBrowserApi` branches, `SeasonEpisodePagingClient` and `MediaDeletionPermissionClient` if Silo does not implement them.
 
 **You see.**
-- [ ] The app behaves exactly as at S7.
+- [x] The app behaves exactly as at S7.
 
 **Verify, unit.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
-- [ ] `grep -rli "jellyfin\|emby\|media_browser" lib test` returns only i18n sources and comments listed in S9. Run `flutter analyze && flutter test`.
+- [x] `grep -rli "jellyfin\|emby\|media_browser" lib test` returns only i18n sources and comments listed in S9. Run `flutter analyze && flutter test`.
 
 **Verify, live.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked. Ten lanes on the `swarm workers` role in `p3-models.md` at the PR head, per the boot recipe.
-- [ ] Lane 1. Regression lane against trunk. Run S3's lane 1 scenario at S7 and at head. Save `home.png`. Pass when both match.
-- [ ] Lane 2. Repeat S2 lane 2. Save `signin.png`. Pass as there.
-- [ ] Lane 3. Repeat S3 lane 2. Save `libraries.png`. Pass as there.
-- [ ] Lane 4. Repeat S3 lane 6. Save `detail.png`. Pass as there.
-- [ ] Lane 5. Repeat S3 lane 8. Save `search.png`. Pass as there.
-- [ ] Lane 6. Repeat S5 lane 1. Save `play.png`. Pass as there.
-- [ ] Lane 7. Repeat S5 lane 5. Save `subs.png`. Pass as there.
-- [ ] Lane 8. Repeat S6 lane 2. Save `offline.png`. Pass as there.
-- [ ] Lane 9. Repeat S4 lane 2. Save `dismiss.png`. Pass as there.
-- [ ] Lane 10. Repeat S2 lane 9. Save `signout.png`. Pass as there.
+- [x] Lane 1. Regression lane against trunk. Run S3's lane 1 scenario at S7 and at head. Save `home.png`. Pass when both match.
+- [x] Lane 2. Repeat S2 lane 2. Save `signin.png`. Pass as there.
+- [x] Lane 3. Repeat S3 lane 2. Save `libraries.png`. Pass as there.
+- [x] Lane 4. Repeat S3 lane 6. Save `detail.png`. Pass as there.
+- [x] Lane 5. Repeat S3 lane 8. Save `search.png`. Pass as there.
+- [x] Lane 6. Repeat S5 lane 1. Save `play.png`. Pass as there.
+- [x] Lane 7. Repeat S5 lane 5. Save `subs.png`. Pass as there.
+- [x] Lane 8. Repeat S6 lane 2. Save `offline.png`. Pass as there.
+- [x] Lane 9. Repeat S4 lane 2. Save `dismiss.png`. Pass as there.
+- [x] Lane 10. Repeat S2 lane 9. Save `signout.png`. Pass as there.
 
 **Verify, perf.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
-- [ ] Metric. Release APK size and cold start to first home row.
-- [ ] Probe. Build release APKs at S7 and head. Run ten cold starts each, interleaved.
-- [ ] Baseline. Record S7's size and median first.
-- [ ] Rule. Head is not larger, and its median is within 5 percent of S7's. Fail otherwise.
+- [x] Metric. Release APK size and cold start to first home row.
+- [x] Probe. Build release APKs at S7 and head. Run ten cold starts each, interleaved.
+- [x] Baseline. Record S7's size and median first.
+- [x] Rule. Head is not larger, and its median is within 5 percent of S7's. Fail otherwise.
 
 **Review gate.** None. S8 is not review-gated.
+
+**S8 lane record, 2026-10-22, at `f0252a767` on `feat/silo-s8-drop-jellyfin`.** Lanes ran one at a time on the Android TV emulator `Television_1080p`, per `media/s8/lanes-howto.md`. Debug and release APKs were signed with the host debug key (SHA-256 `b4a70e96…1ee9`, the installed trunk's key). Evidence is in `media/s8/`, with the filtered log in `lanes.log`.
+- Unit. `flutter analyze` clean. `flutter test --concurrency=1` gives `+7296 ~6: All tests passed!` (S7 had 8213; the difference is the deleted Jellyfin, Emby and MediaBrowser tests). The grep leaves only the migration and vault kind strings, the Seerr files and Quick Connect panel, the `x-emby-token` redaction, their tests, and the false positives `totalMemBytes` and `_deleteForItemByServer`.
+- Backups. Trunk `5fc148779` was installed with the operator's Plex data. `trunk.tar` 617,499,648 B, sha256 `cdd226c7…db36787`. S7 debug then ran the v26 migration once and opened the `Silo A` home. `s7-state.tar` 613,526,528 B, sha256 `381a51a0…259daba`. Both are in `~/plezy-s8/backup` (mode 700).
+- Lane 1 pass. S7 and head both log `Silo: home sections 18` and show the same home, Continue Watching first (`home-s7.png`, `home.png`; pixel diff 36 of 2,073,600 px, the clock).
+- Lane 2 pass. Device code shown, approved by the operator, `device code approved` then `signed in`. The picker listed admin, Test and pintest. Admin was picked, and the relaunch opened the `Silo A` home with 18 sections (`silo-code.png`, `signin.png`).
+- Lane 3 pass. All 9 libraries open with items (`libraries.png`).
+- Lane 4 pass. Holiday Touchdown: A Bears Love Story, opened from Recently Added Movies. Title, year, synopsis and cast confirmed against the Silo app by the operator (`detail.png`).
+- Lane 5 pass. "Top Gear" returns 40 results (4 movies, 6 shows, 30 episodes) with the series in them (`search.png`).
+- Lane 6 pass. Holiday Touchdown started from its detail page, `original_http`, played to 276 s, stopped with status 200. The detail page shows Resume, and the operator read 4:35 in the Silo app (`play.png`).
+- Lane 7 pass. English SRT rendered, then Off cleared it (`subs.png`, `subs-off.png`).
+- Lane 8 pass. The first creates got HTTP 429 `rate_limited` from Silo for about 10 minutes. S8 changed no `lib/silo` code. The operator raised the server's download limit, then `Started Silo transfer 3782227688` for The New Prince of Tennis S5E4 and `Download completed` 69 s later. With the per-app firewall on (`set-package-networking-enabled false`, `set-chain3-enabled true`), the episode played from the TV Shows tab while host lookups failed (`offline.png`). The network was restored.
+- Lane 9 pass. Holiday Touchdown removed from Continue Watching through Menu, `Silo events: user_state.changed (home_dismissal)`, and still gone after a force-stop and relaunch (`dismiss.png`, `dismiss-relaunch.png`).
+- Lane 10 pass. Removed Silo from `Silo A`'s detail screen. `Silo: logout status 204`, then `Silo events: idle` and `closed`, and no ticket fetch after (`signout.png`). The server-side session list is for the operator to read in the Silo app.
+- Perf pass. APK 176,602,610 B at S7, 175,813,898 B at head (−788,712 B). Ten interleaved release cold starts each, `Start proc` to `Home: first hub frame`: S7 median 2287.5 ms, head 2268.0 ms (−0.9%). All 20 opened the `Silo A` home, with no release crash (`perf.txt`, `results.tsv`, `perf.png`).
+- No `Unknown MediaBackend` line from S7 or head. Trunk logs `ConnectionRegistry: failed to decode connection silo:…` after the final restore, as it always has.
+- Server state changed. Holiday Touchdown position about 4:35 and its home dismissal. Silo download record 3782227688 for The New Prince of Tennis S5E4. The Silo session in `trunk.tar` and `s7-state.tar` is revoked, and a new one is in `~/plezy-s8/backup/s8-signed-in.tar` (613,407,232 B, sha256 `fd2dacb0…2892c09`). Plex now lists Holiday Touchdown first in trunk's Continue Watching, which the restored files cannot cause, so the Silo server likely forwarded lane 6's progress.
+- Server state restored, 2026-10-22, with the operator's approval. Every item was opened from Search, never from Continue Watching, and cleared with ⋮ → Mark as Unwatched.
+  - Holiday Touchdown on Plex. The RULEONE- copy showed Resume and now shows Play (`restore-plex-ht-resume.png`, `restore-plex-ht-unwatched.png`). The SmellyCats copy had a progress bar on its search poster and was cleared too (`restore-plex-ht-smellycats-unwatched.png`). The FamFlix copy already showed Play. After that it is no longer in trunk's Continue Watching.
+  - Holiday Touchdown on Silo. Clearing it on Plex did not clear Silo: head debug with `s8-signed-in.tar` still showed Resume. Mark as Unwatched there logged `Silo events: user_state.changed (watched)` and the button now reads Play (`restore-silo-ht-resume.png`, `restore-silo-ht-unwatched.png`). Lane 9's home dismissal is left in place, so it stays off Silo's Continue Watching (`restore-silo-home.png`).
+  - Plex item 306090 from the first restore attempt (below). Its logcat was lost, so it was not identified by key. Both candidates were checked instead. All 4 Plex copies of 1UP and all 8 of 2 Fast 2 Furious show Play with no progress, and so do the Silo copies of both (`restore-silo-1up.png`, `restore-silo-2f2f.png`). Nothing was changed.
+  - The Traitors S5E6, first in trunk's Continue Watching, is the operator's own viewing and was left alone.
+- First restore attempt, interrupted. Something else drove `emulator-5554` during it: key events nobody sent, and a Plex playback of item 306090 at about 08:57 device time that the Plex owner stopped after about 10 s. The attempt stopped without changing anything. The rerun had the emulator to itself, and no screen changed without its input. A host reboot between the two attempts cleared the first attempt's evidence from `/tmp`.
+- End state. Trunk reinstalled and `trunk.tar` restored. Home, profiles and downloads match the before shots (`after-trunk-home.png`, `after-profiles.png`, `after-downloads.png`) apart from that Continue Watching entry. After the server-state restore, trunk was installed again (certificate `b4a70e96…1ee9` checked) and `trunk.tar` restored. The home matches `before-trunk-home.png` apart from The Traitors S5E6 at the front of Continue Watching (`restore-trunk-home-before.png`, `after-restore-trunk-home.png`). `trunk.tar` and `s8-signed-in.tar` are kept for S9, with their checksums unchanged.
 
 **Merge.**
 - [ ] Root's clean verdict at the exact head SHA.

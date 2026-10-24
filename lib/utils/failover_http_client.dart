@@ -2,9 +2,8 @@ import 'app_logger.dart';
 import 'media_server_http_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
-/// [MediaServerHttpClient] with endpoint failover, shared by both backends
-/// (the single implementation of what used to be `PlexClient._getWithFailover`
-/// and `_JellyfinFailoverHttpClient`).
+/// [MediaServerHttpClient] with endpoint failover (the extracted
+/// implementation of what used to be `PlexClient._getWithFailover`).
 ///
 /// Semantics — decided once, here ([retryTransientMediaServerCall]'s doc
 /// cross-references this):
@@ -62,8 +61,8 @@ class FailoverHttpClient extends MediaServerHttpClient {
     this.validateCandidate,
   }) : _endpointManager = prioritizedEndpoints.isNotEmpty ? EndpointFailoverManager(prioritizedEndpoints) : null;
 
-  /// Backend name for log lines ('Plex' / 'Jellyfin') — keeps failover logs
-  /// greppable per backend now that the implementation is shared.
+  /// Backend name for log lines (e.g. 'Plex') — keeps failover logs
+  /// greppable per backend.
   final String logLabel;
   final EndpointFailoverManager? _endpointManager;
 

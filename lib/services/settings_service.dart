@@ -87,12 +87,10 @@ enum EpisodeAction { play, details }
 /// sequence auto-advance, offline next/prev, and "download next N" walk.
 enum SpecialsOrdering {
   /// Follow the backend's own ordering: Plex builds its server-side show
-  /// queue from `/allLeaves` (aired order, Specials interleaved); Jellyfin's
-  /// `/Shows/{id}/Episodes` order is preserved as returned (Specials placed
-  /// only by explicit `AirsBefore*` metadata, per the server-wide
-  /// `DisplaySpecialsWithinSeasons` setting). Client-side selections with no
-  /// server order (offline queue, downloads, offline OnDeck) fall back to
-  /// Specials-last.
+  /// queue from `/allLeaves` (aired order, Specials interleaved); other
+  /// backends' episode order is preserved as returned. Client-side selections
+  /// with no server order (offline queue, downloads, offline OnDeck) fall back
+  /// to Specials-last.
   respectServer,
 
   /// Interleave Specials between regular episodes by air date on every
@@ -753,9 +751,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const playerAlwaysOnTop = BoolPref('player_always_on_top');
 
   /// Where Specials (season 0) land in the episode watch order (#1416/#1952).
-  /// Consumed by [sortEpisodesByWatchOrder] (Jellyfin online queue, offline
-  /// next/prev, download/sync "next N", offline OnDeck, Plex fallback queue)
-  /// and by the Plex show play-queue source URI.
+  /// Consumed by [sortEpisodesByWatchOrder] (offline next/prev, download/sync
+  /// "next N", offline OnDeck, Plex fallback queue) and by the Plex show
+  /// play-queue source URI.
   static const specialsOrdering = EnumPref<SpecialsOrdering>(
     'specials_ordering',
     values: SpecialsOrdering.values,

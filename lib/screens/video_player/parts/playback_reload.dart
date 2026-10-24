@@ -197,7 +197,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           partId,
           audioStreamID: isAudioChange ? effectiveAudioStreamId : null,
           // Plex's wire API uses 0 for Off. Keep that convention at this
-          // backend boundary so it cannot collide with Jellyfin source ids.
+          // backend boundary so it cannot collide with other backends' source ids.
           subtitleStreamID: isSubtitleChange
               ? newSubtitleChoice.isOff
                     ? 0
@@ -271,8 +271,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           burnedSourceStreamId != null &&
           _sidecarForSourceStreamId(burnSession, burnedSourceStreamId) != null,
       targetIsOff: choice.isOff,
-      // "A file the client fetches for itself", which the two backends mark differently: Jellyfin
-      // flags the row `IsExternal`, while Plex never sets that and instead gives a real external
+      // "A file the client fetches for itself", which backends may mark differently: Plex
+      // never sets `isExternalFile` and instead gives a real external
       // subtitle a `/library/streams/{id}` key - the same test `_selectedInternalSubtitleForHls`
       // uses to decide what it must not burn. Reading only `isExternalFile` classified every Plex
       // external file as an embedded target and sent an already-loaded track switch to the server.
@@ -534,7 +534,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       final initializationSubtitleTrack = preservesRequestedSubtitleSource
           ? currentSubtitleTrack
           : SubtitlePreference.demoteToIntent(currentSubtitleTrack);
-      // Same boundary rule for audio: native and Jellyfin stream ids are
+      // Same boundary rule for audio: native stream ids are
       // reused per item, so a cross-source carry keeps only its semantics —
       // an identity match against a reused id would latch by ordinal and
       // bypass the evidence bands' ambiguity decline.

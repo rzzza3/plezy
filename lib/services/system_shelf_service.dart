@@ -12,7 +12,6 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
-import 'jellyfin_client.dart';
 import 'plex_client.dart';
 import 'settings_service.dart' show EpisodePosterMode;
 
@@ -308,17 +307,10 @@ class SystemShelfService {
     final String kind;
     final String baseUrl;
     final String? token;
-    String? userId;
     if (client is PlexClient) {
       kind = 'plex';
       baseUrl = client.config.baseUrl;
       token = client.config.token;
-    } else if (client is JellyfinClient) {
-      final connection = client.connection;
-      kind = connection.dialect.name;
-      baseUrl = connection.baseUrl;
-      token = connection.accessToken;
-      userId = connection.userId;
     } else {
       return null;
     }
@@ -329,7 +321,6 @@ class SystemShelfService {
       'name': client.serverName ?? '',
       'baseUrl': baseUrl,
       'token': token,
-      'userId': ?userId,
     };
   }
 

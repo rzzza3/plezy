@@ -7,8 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/services/api_cache.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 import '../test_helpers/media_items.dart';
 
@@ -76,9 +76,8 @@ void main() {
 
       // Register the other backend last; cleanup must not depend on whichever
       // concrete singleton happened to initialize most recently.
-      JellyfinApiCache.initialize(db);
-      final mediaBrowserCache = ApiCache.forBackend(MediaBackend.jellyfin);
-      expect(identical(ApiCache.forBackend(MediaBackend.emby), mediaBrowserCache), isTrue);
+      SiloApiCache.initialize(db);
+      expect(identical(ApiCache.forBackend(MediaBackend.silo), SiloApiCache.instance), isTrue);
       await ApiCache.clearRegisteredVolatile();
 
       expect(await cache.get(ServerId('srv'), '/volatile'), isNull);
@@ -87,12 +86,11 @@ void main() {
 
     test('registering a new database drops stale backend dispatch entries', () async {
       final newDb = AppDatabase.forTesting(NativeDatabase.memory());
-      JellyfinApiCache.initialize(newDb);
+      SiloApiCache.initialize(newDb);
 
       expect(() => ApiCache.forBackend(MediaBackend.plex), throwsStateError);
-      final replacement = JellyfinApiCache.instance;
-      expect(identical(ApiCache.forBackend(MediaBackend.jellyfin), replacement), isTrue);
-      expect(identical(ApiCache.forBackend(MediaBackend.emby), replacement), isTrue);
+      final replacement = SiloApiCache.instance;
+      expect(identical(ApiCache.forBackend(MediaBackend.silo), replacement), isTrue);
       expect(identical(replacement.database, newDb), isTrue);
 
       await newDb.close();

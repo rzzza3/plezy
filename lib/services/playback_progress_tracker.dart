@@ -53,12 +53,12 @@ class PlaybackProgressTracker {
 
   final String? playMethod;
 
-  /// Backend session ID to echo in progress reports. Jellyfin uses this to
-  /// associate `/Sessions/Playing*` calls with a transcoded playback session.
+  /// Backend session ID to echo in progress reports. Silo uses this to match
+  /// reports to its playback session.
   final String? playSessionId;
 
   /// Source-level stream metadata for mapping local player track ids back to
-  /// Jellyfin stream indexes in playback-progress reports.
+  /// backend stream indexes in playback-progress reports.
   final MediaSourceInfo? mediaInfo;
 
   /// Invoked once after the item is successfully scrobbled. The player wires
@@ -89,8 +89,8 @@ class PlaybackProgressTracker {
 
   /// Whether an off subtitle state is a real decision (viewer or server)
   /// rather than the fallout of a declined cross-item carry. When false, the
-  /// off state is not reported as an explicit `-1` stream index — persisting
-  /// it would make Jellyfin hand the off back as this item's default on every
+  /// off state is not reported as an explicit `-1` stream index — a backend
+  /// that persists it would hand the off back as this item's default on every
   /// later open, latching a metadata mismatch into a server-side choice
   /// (#1785). Callers default to deliberate.
   final bool Function()? subtitleOffIsDeliberate;
@@ -98,7 +98,7 @@ class PlaybackProgressTracker {
   /// The source subtitle stream the server is burning into the picture, if
   /// any. A burned subtitle is pixels, not an engine track, so the engine
   /// reads as off while the viewer watches with subtitles on; reporting that
-  /// as `-1` would make Jellyfin remember "off" for the item.
+  /// as `-1` could make the backend remember "off" for the item.
   final int? Function()? burnedSubtitleStreamIndex;
 
   /// Timer for periodic progress updates
@@ -137,7 +137,7 @@ class PlaybackProgressTracker {
   /// The backend has received an at-or-above-threshold report while already
   /// holding a sub-threshold offset — it observed the crossing and marked the
   /// item itself, so an explicit mark would record the same watch twice
-  /// (#1287 Jellyfin, #1740 Plex).
+  /// (#1287, #1740 Plex).
   bool _serverObservedCrossing = false;
 
   /// The terminal stopped report has been delivered; no further report can
@@ -161,18 +161,14 @@ class PlaybackProgressTracker {
   /// because startup heartbeats may be dropped while still completing true.
   final Map<PlaybackReportSnapshot, bool> _deliveredProgressAcknowledgements = Map.identity();
 
-  /// Whether this backend reporting session has successfully opened.
-  bool _hasDeliveredStart = false;
-
   /// Whether a delivered stopped report reached a backend session able to act
-  /// on it. MediaBrowser drops a stop for a session it never opened, so both
-  /// the position it would persist and the watch it would record are lost.
+  /// on it.
   bool _stoppedReportActedOn = false;
 
   /// Whether the delivered stopped report persisted its position.
   bool _stoppedProgressServerAcknowledged = false;
 
-  /// Allows the first persisted Progress after a MediaBrowser Started to
+  /// Allows the first persisted Progress after a Started to
   /// upgrade local provenance even when the position delta is throttled.
   bool _lastProgressNotificationServerAcknowledged = false;
 
@@ -366,7 +362,6 @@ class PlaybackProgressTracker {
     _deliveredBelow = false;
     _serverObservedCrossing = false;
     _sessionEnded = false;
-    _hasDeliveredStart = false;
     _stoppedReportActedOn = false;
     _stoppedProgressServerAcknowledged = false;
   }
@@ -608,27 +603,17 @@ class PlaybackProgressTracker {
   /// never marked server-side.
   void _onReportDelivered(PlaybackReportSnapshot snapshot) {
     final c = client;
-    // The same backend as the client's, but read from the item so the
-    // classification matches the pattern already used for track selection
-    // below and does not depend on a client method.
-    final persistsPositionOnEveryReport = !metadata.backend.usesMediaBrowserApi;
     if (snapshot.isStopped) {
-      // MediaBrowser needs a successfully opened session before Stopped can
-      // persist position or record the watch; Plex timeline reports are
-      // independent.
-      _stoppedReportActedOn = persistsPositionOnEveryReport || _hasDeliveredStart;
-      _stoppedProgressServerAcknowledged = _stoppedReportActedOn;
+      // Every report persists independently of the session's start.
+      _stoppedReportActedOn = true;
+      _stoppedProgressServerAcknowledged = true;
       // A backend that marks played from the stop has now done so, so a
       // crossing latched earlier this session is no longer a write owed to
       // it. Ordering runs both ways -- the crossing can latch before this
       // stop or from it -- so _settleServerMark promotes on the other path.
       if (_stoppedReportActedOn && (c?.marksWatchedOnPlaybackStopped ?? false)) _promoteWatchedPatch();
     } else {
-      final isStarted = !_hasDeliveredStart;
-      _hasDeliveredStart = true;
-      // A MediaBrowser `Started` saves play count and last-played date but
-      // deliberately not the position, so it cannot acknowledge an offset.
-      _deliveredProgressAcknowledgements[snapshot] = !isStarted || persistsPositionOnEveryReport;
+      _deliveredProgressAcknowledgements[snapshot] = true;
     }
 
     final threshold = c?.watchedThreshold;
@@ -663,7 +648,7 @@ class PlaybackProgressTracker {
     if (c == null || !_scrobbled || _serverMarkSettled) return;
     // Backends that mark played from the playback-stopped report do it there,
     // and the terminal stop is always sent. An explicit mark on top would
-    // double-scrobble through the Jellyfin Trakt plugin (#1287).
+    // record the same watch twice (#1287).
     if (c.marksWatchedOnPlaybackStopped) {
       _serverMarkSettled = true;
       // Only once the stop actually reached an open session: settling happens
@@ -804,30 +789,11 @@ class PlaybackProgressTracker {
   }
 
   int? _currentAudioStreamIndex(MediaSourceInfo info) {
-    final playerAudioTracks = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
-    if (metadata.backend.usesMediaBrowserApi &&
-        (info.audioTracks.any((track) => track.isExternal) || playerAudioTracks.length <= 1)) {
-      final selectedSourceTrack = _selectedSourceAudioTrack(info);
-      if (selectedSourceTrack != null) return selectedSourceTrack.id;
-    }
-
     return playingSourceAudioTrack(
       selectedMpvTrack: player.state.track.audio,
       mpvTracks: player.state.tracks.audio,
       sourceTracks: info.audioTracks,
     )?.id;
-  }
-
-  MediaAudioTrack? _selectedSourceAudioTrack(MediaSourceInfo info) {
-    for (final track in info.audioTracks) {
-      if (track.selected) return track;
-    }
-    final defaultIndex = info.defaultAudioStreamIndex;
-    if (defaultIndex == null) return null;
-    for (final track in info.audioTracks) {
-      if (track.id == defaultIndex) return track;
-    }
-    return null;
   }
 
   int? _currentSubtitleStreamIndex(MediaSourceInfo info) {
@@ -850,7 +816,7 @@ class PlaybackProgressTracker {
     }
 
     // Identity, never position: the two catalogs are ordered independently
-    // (Jellyfin lists external files first, the engine its embedded tracks),
+    // (a backend may list external files first, the engine its embedded tracks),
     // and a native track id is the engine's own ordinal, so neither the n-th
     // row nor the row whose stream index happens to equal the native id is
     // this track. An unmatched track is withheld rather than guessed.

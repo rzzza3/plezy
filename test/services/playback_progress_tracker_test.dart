@@ -304,7 +304,7 @@ class _FailingProgressClient extends _FakePlexClient {
   }
 }
 
-/// Jellyfin-style backend: the playback-stopped report marks the item played
+/// Silo-style backend: the playback-stopped report marks the item played
 /// server-side, so the in-player scrobble path must emit only the local watch
 /// event and skip the explicit server mark (#1287).
 class _StopMarksWatchedClient extends _FakePlexClient {
@@ -695,18 +695,18 @@ void main() {
       expect(progressSelection.subtitleStreamIndex, -1);
     });
 
-    test('Jellyfin progress reports the selected subtitle by identity, not catalog position', () async {
+    test('progress reports the selected subtitle by identity, not catalog position', () async {
       final client = _FakePlexClient();
       const audio = AudioTrack(id: '1', language: 'jpn');
       // The engine lists the embedded track first and the sidecar after it;
-      // Jellyfin lists its external file first.
+      // the backend lists its external file first.
       const embeddedJpn = SubtitleTrack(id: '1', language: 'jpn', codec: 'ass');
       const sidecarEng = SubtitleTrack(
         id: '2',
         language: 'eng',
         codec: 'subrip',
         isExternal: true,
-        uri: 'https://jf.example/Videos/42/source-1/Subtitles/3/0/Stream.srt',
+        uri: 'https://silo.example/Videos/42/source-1/Subtitles/3/0/Stream.srt',
       );
       final player = _FakePlayer(
         position: const Duration(seconds: 5),
@@ -734,7 +734,7 @@ void main() {
       );
       final tracker = PlaybackProgressTracker(
         client: client,
-        metadata: testMediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        metadata: testMediaItem(id: '42', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
         player: player,
         isOffline: false,
         mediaInfo: mediaInfo,
@@ -772,7 +772,7 @@ void main() {
       );
       final tracker = PlaybackProgressTracker(
         client: client,
-        metadata: testMediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        metadata: testMediaItem(id: '42', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
         player: player,
         isOffline: false,
         mediaInfo: mediaInfo,
@@ -783,49 +783,6 @@ void main() {
       await tracker.sendProgress('stopped');
 
       expect(client.playbackStreamSelections.single.subtitleStreamIndex, 3);
-    });
-
-    test('Jellyfin progress reports selected source audio when player exposes a single output track', () async {
-      final client = _FakePlexClient();
-      const outputAudio = AudioTrack(id: 'audio_0', language: 'jpn');
-      const subtitlesOff = SubtitleTrack(id: 'no');
-      final player = _FakePlayer(
-        position: const Duration(seconds: 5),
-        duration: const Duration(seconds: 100),
-        tracks: const Tracks(
-          audio: [outputAudio],
-          subtitle: [SubtitleTrack(id: 'text_0', language: 'eng')],
-        ),
-        track: const TrackSelection(audio: outputAudio, subtitle: subtitlesOff),
-      );
-      final mediaInfo = MediaSourceInfo(
-        videoUrl: '',
-        audioTracks: [
-          MediaAudioTrack(id: 1, languageCode: 'eng', selected: false),
-          MediaAudioTrack(id: 4, languageCode: 'jpn', selected: true, external: true),
-        ],
-        subtitleTracks: [MediaSubtitleTrack(id: 3, languageCode: 'eng', selected: false, forced: false)],
-        chapters: const [],
-        mediaSourceId: 'source-1',
-      );
-      final tracker = PlaybackProgressTracker(
-        client: client,
-        metadata: testMediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
-        player: player,
-        isOffline: false,
-        mediaInfo: mediaInfo,
-      );
-      addTearDown(tracker.dispose);
-
-      await tracker.sendProgress('playing');
-      await Future<void>.delayed(Duration.zero);
-      await tracker.sendProgress('playing');
-      await Future<void>.delayed(Duration.zero);
-
-      final progressSelection = client.playbackStreamSelections[1];
-      expect(progressSelection.mediaSourceId, 'source-1');
-      expect(progressSelection.audioStreamIndex, 4);
-      expect(progressSelection.subtitleStreamIndex, -1);
     });
 
     test('an off that fell out of a declined carry is not persisted as -1 (#1785)', () async {
@@ -1022,9 +979,8 @@ void main() {
     });
 
     test('backend that marks watched on stop skips the explicit server mark (#1287)', () async {
-      // Jellyfin: /Sessions/Playing/Stopped marks the item played server-side,
-      // so an explicit markWatched here would double-scrobble via the Trakt
-      // plugin. The local watch event must still fire (UI + Plezy's own Trakt
+      // Silo: the stopped report marks the item played server-side, so an
+      // explicit markWatched here would mark it twice. The local watch event must still fire (UI + Plezy's own Trakt
       // sync, which key on `watched` events, not progress).
       final client = _StopMarksWatchedClient();
       final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
@@ -2324,46 +2280,13 @@ void main() {
       expect(client.markWatchedCalls, isEmpty);
     });
 
-    test('a MediaBrowser stop for a session that never opened does not promote', () async {
-      // Jellyfin drops a stop for a session it never opened, so the watch it
-      // would have recorded never happened and the patch is still owed.
-      final promotions = listenForPromotions();
-      final watched = listenForWatchedEvents();
-      final client = _StopMarksWatchedClient();
-      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
-      final tracker = PlaybackProgressTracker(
-        client: client,
-        metadata: testMediaItem(
-          id: '42',
-          backend: MediaBackend.jellyfin,
-          kind: MediaKind.movie,
-          serverId: ServerId('srv'),
-        ),
-        player: player,
-        isOffline: false,
-      );
-      addTearDown(tracker.dispose);
-
-      await tracker.sendProgress('stopped');
-      await Future<void>.delayed(Duration.zero);
-
-      // The crossing latched locally, so there is a patch to leave owed.
-      expect(watched, hasLength(1));
-      expect(promotions, isEmpty);
-    });
-
-    test('a MediaBrowser stop into an opened session promotes', () async {
+    test('a stop into an opened session promotes on a backend that marks on stop', () async {
       final promotions = listenForPromotions();
       final client = _StopMarksWatchedClient();
       final player = _FakePlayer(position: const Duration(seconds: 10), duration: const Duration(seconds: 100));
       final tracker = PlaybackProgressTracker(
         client: client,
-        metadata: testMediaItem(
-          id: '42',
-          backend: MediaBackend.jellyfin,
-          kind: MediaKind.movie,
-          serverId: ServerId('srv'),
-        ),
+        metadata: testMediaItem(id: '42', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: ServerId('srv')),
         player: player,
         isOffline: false,
       );
@@ -2435,12 +2358,7 @@ void main() {
       final player = _FakePlayer(position: const Duration(seconds: 10), duration: const Duration(seconds: 100));
       final tracker = PlaybackProgressTracker(
         client: client,
-        metadata: testMediaItem(
-          id: '42',
-          backend: MediaBackend.jellyfin,
-          kind: MediaKind.movie,
-          serverId: ServerId('srv'),
-        ),
+        metadata: testMediaItem(id: '42', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: ServerId('srv')),
         player: player,
         isOffline: false,
       );

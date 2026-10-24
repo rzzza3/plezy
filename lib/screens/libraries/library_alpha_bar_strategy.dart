@@ -67,7 +67,7 @@ abstract class LibraryAlphaBarStrategy {
         libraryKey: libraryKey,
         isShared: isShared,
       ),
-      MediaBackend.jellyfin || MediaBackend.emby || MediaBackend.silo => const MediaBrowserAlphaBarStrategy(),
+      MediaBackend.silo => const MediaBrowserAlphaBarStrategy(),
     };
   }
 }

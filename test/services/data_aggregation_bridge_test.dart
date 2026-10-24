@@ -7,7 +7,6 @@ import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -23,8 +22,6 @@ import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/jellyfin_client.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -35,13 +32,6 @@ import 'package:plezy/utils/media_server_timeouts.dart';
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
-
-JellyfinConnection _conn() => testJellyfinConnection(
-  userName: 'edde',
-  accessToken: 'tok-abc',
-  deviceId: 'dev-xyz',
-  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-);
 
 http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
 
@@ -77,6 +67,7 @@ class _LibrariesClient implements MediaServerClient {
   final bool hangLibraries;
   final bool hangSearch;
   final bool hangPeople;
+  int? lastSearchLimit;
   Set<String>? lastExcludedLibraryIds;
   Set<String>? lastPeopleExcludedLibraryIds;
   AbortController? lastSearchAbort;
@@ -101,6 +92,7 @@ class _LibrariesClient implements MediaServerClient {
     AbortController? abort,
     Set<String> excludedLibraryIds = const {},
   }) async {
+    lastSearchLimit = limit;
     lastExcludedLibraryIds = excludedLibraryIds;
     lastSearchAbort = abort;
     if (hangSearch) await _hangUntilAborted(abort);
@@ -172,7 +164,7 @@ class _GatedHubsClient implements MediaServerClient {
   String get serverName => 'Server';
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<MediaLibrary>> fetchLibraries() async => libraries;
@@ -197,6 +189,75 @@ class _GatedHubsClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+MediaLibrary _library(String id, MediaKind kind) =>
+    MediaLibrary(id: id, backend: MediaBackend.silo, title: id, kind: kind, serverId: ServerId('server-1'));
+
+/// Per-library hub client for a server without rich (global) hubs: every row
+/// comes from its libraries, and the global endpoint must never be asked.
+class _PerLibraryHubsClient implements MediaServerClient {
+  _PerLibraryHubsClient(this.libraries);
+
+  final List<MediaLibrary> libraries;
+  var fetchLibrariesCalls = 0;
+  final hubCalls = <({String libraryId, int limit, bool includePlaybackHubs})>[];
+
+  @override
+  ServerId get serverId => ServerId('server-1');
+
+  @override
+  String get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.silo;
+
+  @override
+  ServerCapabilities get capabilities => const ServerCapabilities(richHubs: false);
+
+  @override
+  Future<List<MediaLibrary>> fetchLibraries() async {
+    fetchLibrariesCalls++;
+    return libraries;
+  }
+
+  @override
+  Future<List<MediaHub>> fetchGlobalHubs({
+    int limit = defaultHubPreviewLimit,
+    bool includePlaybackHubs = true,
+    HubFetchDiagnostics? diagnostics,
+  }) => fail('a server without rich hubs must not be asked for global hubs');
+
+  @override
+  Future<List<MediaHub>> fetchLibraryHubs(
+    String libraryId, {
+    String? libraryName,
+    int limit = defaultHubPreviewLimit,
+    bool includePlaybackHubs = true,
+    MediaKind? libraryKind,
+    HubFetchDiagnostics? diagnostics,
+  }) async {
+    hubCalls.add((libraryId: libraryId, limit: limit, includePlaybackHubs: includePlaybackHubs));
+    return [
+      MediaHub(
+        id: '$libraryId.recent',
+        identifier: 'library.$libraryId.recent',
+        title: libraryName ?? libraryId,
+        type: 'mixed',
+        items: [
+          testMediaItem(id: 'item-$libraryId', backend: MediaBackend.silo, serverId: 'server-1', libraryId: libraryId),
+        ],
+        size: 1,
+        libraryId: libraryId,
+      ),
+    ];
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// Covers the remaining cross-server [DataAggregationService] fan-out surface;
 /// single-server calls now go through the per-server client context.
 void main() {
@@ -209,7 +270,6 @@ void main() {
     SettingsService.resetForTesting();
     db = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(db);
-    JellyfinApiCache.initialize(db);
     manager = MultiServerManager();
     service = DataAggregationService(manager);
   });
@@ -267,87 +327,62 @@ void main() {
     return requests;
   }
 
-  for (final backend in ['plex', 'jellyfin', 'emby']) {
-    test('$backend offline expected-server misses expire and reveal copies after recovery', () async {
-      var requests = 0;
-      Future<http.Response> respond(http.Request request) async {
-        requests++;
-        if (backend == 'plex') {
-          return _json({
-            'MediaContainer': {
-              'Metadata': request.url.path == '/library/all'
-                  ? [
-                      {
-                        'ratingKey': 'recovered',
-                        'type': 'movie',
-                        'title': 'Recovered Movie',
-                        'guid': 'com.plexapp.agents.themoviedb://42?lang=en',
-                      },
-                    ]
-                  : <Object>[],
-              'Hub': <Object>[],
-            },
-          });
-        }
-        return request.url.path.endsWith('/Ancestors')
-            ? _json(<Object>[])
-            : _json({
-                'Items': [
+  test('offline expected-server misses expire and reveal copies after recovery', () async {
+    const serverId = 'plex';
+    var requests = 0;
+    Future<http.Response> respond(http.Request request) async {
+      requests++;
+      return _json({
+        'MediaContainer': {
+          'Metadata': request.url.path == '/library/all'
+              ? [
                   {
-                    'Id': 'recovered',
-                    'Type': 'Movie',
-                    'Name': 'Recovered Movie',
-                    'ProviderIds': {'Tmdb': '42'},
+                    'ratingKey': 'recovered',
+                    'type': 'movie',
+                    'title': 'Recovered Movie',
+                    'guid': 'com.plexapp.agents.themoviedb://42?lang=en',
                   },
-                ],
-              });
-      }
-
-      final MediaServerClient client = switch (backend) {
-        'plex' => testPlexClient(serverId: ServerId(backend), handler: respond),
-        'emby' => testEmbyClient(
-          connection: testEmbyConnection(machineId: backend),
-          handler: respond,
-        ),
-        _ => testJellyfinClient(
-          connection: testJellyfinConnection(machineId: backend),
-          handler: respond,
-        ),
-      };
-      manager.debugRegisterClientForTesting(client, online: false);
-      final multiServer = MultiServerProvider(manager, service)
-        ..setExpectedVisibleServerIds({backend})
-        ..setVisibleServerIds({});
-      var now = DateTime.utc(2026, 7, 28);
-      final matcher = CatalogLibraryMatcher.withClock(multiServer, () => now);
-      addTearDown(() {
-        matcher.dispose();
-        multiServer.dispose();
+                ]
+              : <Object>[],
+          'Hub': <Object>[],
+        },
       });
-      const item = CatalogItem(
-        source: CatalogSourceId.trakt,
-        kind: MediaKind.movie,
-        title: 'Recovered Movie',
-        ids: CatalogItemIds(tmdb: 42),
-      );
+    }
 
-      final offline = await matcher.match(item);
-      expect(offline.items, isEmpty);
-      expect(offline.succeededServerIds, isEmpty);
-      expect(offline.unqueriedServerIds, {backend});
-      manager.debugRegisterClientForTesting(client);
-      now = now.add(CatalogLibraryMatcher.negativeTtl - const Duration(seconds: 1));
-      expect((await matcher.match(item)).unqueriedServerIds, {backend});
-      expect(requests, 0);
-
-      now = now.add(const Duration(seconds: 1));
-      final recovered = await matcher.match(item);
-      expect(recovered.items.single.id, 'recovered');
-      expect(recovered.items.single.serverId, backend);
-      expect(recovered.succeededServerIds, {backend});
-      expect(recovered.unqueriedServerIds, isEmpty);
+    final client = testPlexClient(serverId: ServerId(serverId), handler: respond);
+    manager.debugRegisterClientForTesting(client, online: false);
+    final multiServer = MultiServerProvider(manager, service)
+      ..setExpectedVisibleServerIds({serverId})
+      ..setVisibleServerIds({});
+    var now = DateTime.utc(2026, 7, 28);
+    final matcher = CatalogLibraryMatcher.withClock(multiServer, () => now);
+    addTearDown(() {
+      matcher.dispose();
+      multiServer.dispose();
     });
-  }
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Recovered Movie',
+      ids: CatalogItemIds(tmdb: 42),
+    );
+
+    final offline = await matcher.match(item);
+    expect(offline.items, isEmpty);
+    expect(offline.succeededServerIds, isEmpty);
+    expect(offline.unqueriedServerIds, {serverId});
+    manager.debugRegisterClientForTesting(client);
+    now = now.add(CatalogLibraryMatcher.negativeTtl - const Duration(seconds: 1));
+    expect((await matcher.match(item)).unqueriedServerIds, {serverId});
+    expect(requests, 0);
+
+    now = now.add(const Duration(seconds: 1));
+    final recovered = await matcher.match(item);
+    expect(recovered.items.single.id, 'recovered');
+    expect(recovered.items.single.serverId, serverId);
+    expect(recovered.succeededServerIds, {serverId});
+    expect(recovered.unqueriedServerIds, isEmpty);
+  });
 
   group('external-id query coverage', () {
     for (final query in [
@@ -358,7 +393,6 @@ void main() {
         plexGuid: 'plex://movie/5d776b59ad5437001f79c6f8',
         succeeded: {'plex'},
         plexPaths: ['/library/all'],
-        mediaBrowserPaths: <String>[],
       ),
       (
         name: 'external id without title',
@@ -367,16 +401,14 @@ void main() {
         plexGuid: null,
         succeeded: {'plex'},
         plexPaths: ['/library/all'],
-        mediaBrowserPaths: <String>[],
       ),
       (
         name: 'external id and native title',
         ids: const ExternalIds(tmdb: 34523),
         titles: const ['銀河鉄道の夜'],
         plexGuid: null,
-        succeeded: {'plex', 'jellyfin', 'emby'},
+        succeeded: {'plex'},
         plexPaths: ['/library/all', '/hubs/search'],
-        mediaBrowserPaths: ['/Items'],
       ),
       (
         name: 'title without a verifiable identity',
@@ -385,82 +417,50 @@ void main() {
         plexGuid: null,
         succeeded: <String>{},
         plexPaths: <String>[],
-        mediaBrowserPaths: <String>[],
       ),
     ]) {
       test('${query.name} counts only executed backend lookups as successful misses', () async {
-        final requests = <String, List<String>>{'plex': [], 'jellyfin': [], 'emby': []};
+        final requests = <String>[];
         final plex = testPlexClient(
           serverId: ServerId('plex'),
           handler: (request) async {
-            requests['plex']!.add(request.url.path);
+            requests.add(request.url.path);
             return _json({
               'MediaContainer': {'Metadata': <Object>[], 'Hub': <Object>[]},
             });
           },
         );
-        final jellyfin = testJellyfinClient(
-          connection: testJellyfinConnection(machineId: 'jellyfin'),
-          handler: (request) async {
-            requests['jellyfin']!.add(request.url.path);
-            return _json({'Items': <Object>[]});
-          },
-        );
-        final emby = testEmbyClient(
-          connection: testEmbyConnection(machineId: 'emby'),
-          handler: (request) async {
-            requests['emby']!.add(request.url.path);
-            return _json({'Items': <Object>[]});
-          },
-        );
-        for (final client in <MediaServerClient>[plex, jellyfin, emby]) {
-          manager.debugRegisterClientForTesting(client);
-        }
+        manager.debugRegisterClientForTesting(plex);
 
         final result = await service.findByExternalIdsAcrossServers(
           query.ids,
           kind: MediaKind.movie,
-          serverIds: {'plex', 'jellyfin', 'emby'},
+          serverIds: {'plex'},
           titles: query.titles,
           plexGuid: query.plexGuid,
         );
 
         expect(result.items, isEmpty);
         expect(result.succeededServerIds, query.succeeded);
-        expect(result.unqueriedServerIds, {'plex', 'jellyfin', 'emby'}.difference(query.succeeded));
+        expect(result.unqueriedServerIds, {'plex'}.difference(query.succeeded));
         expect(result.failedServerIds, isEmpty);
         expect(result.cancelledServerIds, isEmpty);
-        expect(requests['plex'], query.plexPaths);
-        expect(requests['jellyfin'], query.mediaBrowserPaths);
-        expect(requests['emby'], query.mediaBrowserPaths);
+        expect(requests, query.plexPaths);
       });
     }
 
     test('unsupported media kinds are unqueried, not successful empty answers', () async {
       Future<http.Response> unexpected(http.Request request) async => fail('Unexpected lookup: ${request.url}');
-      final clients = <MediaServerClient>[
-        testPlexClient(serverId: ServerId('plex'), handler: unexpected),
-        testJellyfinClient(
-          connection: testJellyfinConnection(machineId: 'jellyfin'),
-          handler: unexpected,
-        ),
-        testEmbyClient(
-          connection: testEmbyConnection(machineId: 'emby'),
-          handler: unexpected,
-        ),
-      ];
-      for (final client in clients) {
-        manager.debugRegisterClientForTesting(client);
-      }
+      manager.debugRegisterClientForTesting(testPlexClient(serverId: ServerId('plex'), handler: unexpected));
       final result = await service.findByExternalIdsAcrossServers(
         const ExternalIds(tmdb: 42),
         kind: MediaKind.episode,
         titles: const ['Pilot'],
-        serverIds: {'plex', 'jellyfin', 'emby'},
+        serverIds: {'plex'},
       );
       expect(result.items, isEmpty);
       expect(result.succeededServerIds, isEmpty);
-      expect(result.unqueriedServerIds, {'plex', 'jellyfin', 'emby'});
+      expect(result.unqueriedServerIds, {'plex'});
       expect(result.failedServerIds, isEmpty);
       expect(result.cancelledServerIds, isEmpty);
     });
@@ -470,15 +470,14 @@ void main() {
         testPlexClient(serverId: ServerId('cancelled'), handler: (_) async => throw http.RequestAbortedException()),
       );
       manager.debugRegisterClientForTesting(
-        testJellyfinClient(
-          connection: testJellyfinConnection(machineId: 'failed'),
-          handler: (_) async => http.Response('Unauthorized', 401),
-        ),
+        testPlexClient(serverId: ServerId('failed'), handler: (_) async => http.Response('Unauthorized', 401)),
       );
       manager.debugRegisterClientForTesting(
-        testEmbyClient(
-          connection: testEmbyConnection(machineId: 'miss'),
-          handler: (_) async => _json({'Items': <Object>[]}),
+        testPlexClient(
+          serverId: ServerId('miss'),
+          handler: (_) async => _json({
+            'MediaContainer': {'Metadata': <Object>[], 'Hub': <Object>[]},
+          }),
         ),
       );
 
@@ -512,7 +511,7 @@ void main() {
         for (var i = 1; i <= 4; i++)
           MediaLibrary(
             id: 'lib-$i',
-            backend: MediaBackend.jellyfin,
+            backend: MediaBackend.silo,
             title: 'Library $i',
             kind: MediaKind.movie,
             serverId: ServerId('server-1'),
@@ -933,7 +932,6 @@ void main() {
 
     test('searchAcrossServers overfetches and ranks before trimming across backends', () async {
       final plexRequests = <Uri>[];
-      final jellyfinRequests = <Uri>[];
 
       final plexClient = testPlexClient(
         serverId: ServerId('plex-1'),
@@ -963,54 +961,29 @@ void main() {
       addTearDown(plexClient.close);
       manager.debugRegisterClientForTesting(plexClient);
 
-      final jellyfinClient = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((req) async {
-          jellyfinRequests.add(req.url);
-          if (req.url.path == '/Users/user-1/Views') {
-            return _json({
-              'Items': [
-                {'Id': 'shows', 'Name': 'Shows', 'CollectionType': 'tvshows'},
-              ],
-            });
-          }
-          if (req.url.path == '/Items') {
-            return _json({
-              'Items': [
-                {'Id': 'jf-show', 'Type': 'Series', 'Name': 'Spider‑Man'},
-              ],
-            });
-          }
-          if (req.url.path == '/Persons') {
-            return _json({'Items': <Object>[]});
-          }
-          return http.Response('unexpected request', 500);
-        }),
+      final silo = _LibrariesClient(
+        ServerId('silo-1'),
+        searchResults: [
+          testMediaItem(
+            id: 'silo-show',
+            backend: MediaBackend.silo,
+            kind: MediaKind.show,
+            title: 'Spider‑Man',
+            serverId: 'silo-1',
+          ),
+        ],
       );
-      addTearDown(jellyfinClient.close);
-      manager.debugRegisterJellyfinClientForTesting(jellyfinClient);
+      manager.debugRegisterClientForTesting(silo);
 
       final results = await service.searchAcrossServers('Spider Man', limit: 1);
 
-      expect(_hitIds(results), ['jf-show']);
-      // The winning hit carries the library it was found in — a scoped
-      // request per visible library is the only way a Jellyfin search row
-      // ever learns its library (#1970).
-      final winner = (results.hits.single as MediaSearchHit).item;
-      expect(winner.libraryId, 'shows');
-      expect(winner.libraryTitle, 'Shows');
+      expect(_hitIds(results), ['silo-show']);
       final plexTitleRequest = plexRequests.singleWhere((url) => url.queryParameters['searchTypes'] != 'people');
       expect(plexTitleRequest.queryParameters['query'], 'Spider Man');
       expect(plexTitleRequest.queryParameters['limit'], '100');
       expect(plexTitleRequest.queryParameters['searchTypes'], 'movies,tv,music,otherVideos');
-      // Jellyfin search is always library-scoped: each visible library gets
-      // its own /Items request with the full candidate budget, and a video
-      // library issues no /Artists leg.
-      final jfItemsRequest = jellyfinRequests.singleWhere((url) => url.path == '/Items');
-      expect(jfItemsRequest.queryParameters['Limit'], '100');
-      expect(jfItemsRequest.queryParameters['SearchTerm'], 'Spider Man');
-      expect(jfItemsRequest.queryParameters['ParentId'], 'shows');
-      expect(jellyfinRequests.where((url) => url.path == '/Artists'), isEmpty);
+      // Every backend gets the full candidate budget, not the trimmed limit.
+      expect(silo.lastSearchLimit, 100);
     });
 
     test('getOnDeckFromAllServers forwards preview limit to clients', () async {
@@ -1223,266 +1196,45 @@ void main() {
       expect(result.succeededServerIds, {'plex-1'});
     });
 
-    test('per-library hubs skip playback rows and fetch in bounded batches', () async {
-      final captured = <Uri>[];
-      var activeLatest = 0;
-      var maxActiveLatest = 0;
-
-      final client = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((req) async {
-          captured.add(req.url);
-          if (req.url.path == '/Users/user-1/Views') {
-            return _json({
-              'Items': [
-                {'Id': 'lib-1', 'Name': 'Lib 1', 'CollectionType': 'movies'},
-                {'Id': 'lib-2', 'Name': 'Lib 2', 'CollectionType': 'movies'},
-                {'Id': 'lib-3', 'Name': 'Lib 3', 'CollectionType': 'tvshows'},
-                {'Id': 'lib-4', 'Name': 'Lib 4', 'CollectionType': 'tvshows'},
-              ],
-            });
-          }
-          if (req.url.path == '/Users/user-1/Items/Latest') {
-            activeLatest++;
-            if (activeLatest > maxActiveLatest) maxActiveLatest = activeLatest;
-            try {
-              await Future<void>.delayed(const Duration(milliseconds: 10));
-              final parentId = req.url.queryParameters['ParentId']!;
-              return _json({
-                'Items': [
-                  {'Id': 'item-$parentId', 'Type': 'Movie', 'Name': 'Latest $parentId'},
-                ],
-              });
-            } finally {
-              activeLatest--;
-            }
-          }
-          return http.Response('unexpected request', 500);
-        }),
-      );
-      addTearDown(client.close);
-      manager.debugRegisterJellyfinClientForTesting(client);
-
-      final result = await service.getHubsFromAllServers(useGlobalHubs: false, includePlaybackHubs: false);
-      final hubs = result.hubs;
-
-      expect(result.succeededServerIds, {'srv-1'});
-      expect(hubs.map((h) => h.identifier), [
-        'library.lib-1.recent',
-        'library.lib-2.recent',
-        'library.lib-3.recent',
-        'library.lib-4.recent',
-      ]);
-      expect(hubs.map((h) => h.items.single.id), ['item-lib-1', 'item-lib-2', 'item-lib-3', 'item-lib-4']);
-      expect(maxActiveLatest, lessThanOrEqualTo(3));
-      expect(captured.where((uri) => uri.path == '/UserItems/Resume' || uri.path == '/Shows/NextUp'), isEmpty);
-      expect(
-        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
-        ['lib-1', 'lib-2', 'lib-3', 'lib-4'],
-      );
-      expect(
-        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['Limit']),
-        everyElement(defaultHubPreviewLimit.toString()),
-      );
-    });
-
-    test('global home layout falls back to per-library hubs for Jellyfin', () async {
-      final captured = <Uri>[];
-
-      final client = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((req) async {
-          captured.add(req.url);
-          if (req.url.path == '/Users/user-1/Views') {
-            return _json({
-              'Items': [
-                {'Id': 'movies', 'Name': 'Movies', 'CollectionType': 'movies'},
-                {'Id': 'shows', 'Name': 'Shows', 'CollectionType': 'tvshows'},
-              ],
-            });
-          }
-          if (req.url.path == '/Users/user-1/Items/Latest') {
-            final parentId = req.url.queryParameters['ParentId'];
-            return switch (parentId) {
-              'movies' => _json({
-                'Items': [
-                  {'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Latest Movie'},
-                ],
-              }),
-              'shows' => _json({
-                'Items': [
-                  {'Id': 'show-1', 'Type': 'Series', 'Name': 'Latest Show'},
-                ],
-              }),
-              _ => http.Response('mixed latest should not be requested', 500),
-            };
-          }
-          return http.Response('unexpected request', 500);
-        }),
-      );
-      addTearDown(client.close);
-      manager.debugRegisterJellyfinClientForTesting(client);
+    test('global home layout falls back to per-library hubs without rich hubs', () async {
+      final client = _PerLibraryHubsClient([_library('movies', MediaKind.movie), _library('shows', MediaKind.show)]);
+      manager.debugRegisterClientForTesting(client);
 
       final result = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
-      final hubs = result.hubs;
 
-      expect(result.succeededServerIds, {'srv-1'});
-      expect(hubs.map((h) => h.identifier), ['library.movies.recent', 'library.shows.recent']);
-      expect(hubs.map((h) => h.items.single.id), ['movie-1', 'show-1']);
-      expect(captured.where((uri) => uri.path == '/Users/user-1/Views'), hasLength(1));
-      expect(
-        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
-        ['movies', 'shows'],
-      );
-      expect(
-        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['Limit']),
-        everyElement(defaultHubPreviewLimit.toString()),
-      );
+      expect(result.succeededServerIds, {'server-1'});
+      expect(result.hubs.map((h) => h.identifier), ['library.movies.recent', 'library.shows.recent']);
+      expect(result.hubs.map((h) => h.items.single.id), ['item-movies', 'item-shows']);
+      expect(client.fetchLibrariesCalls, 1);
+      expect(client.hubCalls.map((call) => call.libraryId), ['movies', 'shows']);
+      expect(client.hubCalls.map((call) => call.limit), everyElement(defaultHubPreviewLimit));
     });
 
     test('per-library home rows include clip and music libraries and skip photo (#1476)', () async {
-      final captured = <Uri>[];
-
-      final client = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((req) async {
-          captured.add(req.url);
-          if (req.url.path == '/Users/user-1/Views') {
-            return _json({
-              'Items': [
-                {'Id': 'movies', 'Name': 'Movies', 'CollectionType': 'movies'},
-                {'Id': 'mv', 'Name': 'Music Videos', 'CollectionType': 'musicvideos'},
-                {'Id': 'home-vids', 'Name': 'Home Videos', 'CollectionType': 'homevideos'},
-                {'Id': 'music', 'Name': 'Music', 'CollectionType': 'music'},
-                {'Id': 'photos', 'Name': 'Photos', 'CollectionType': 'photos'},
-              ],
-            });
-          }
-          if (req.url.path == '/Users/user-1/Items/Latest') {
-            final parentId = req.url.queryParameters['ParentId'];
-            return switch (parentId) {
-              'movies' => _json({
-                'Items': [
-                  {'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Latest Movie'},
-                ],
-              }),
-              'mv' => _json({
-                'Items': [
-                  {'Id': 'mv-1', 'Type': 'MusicVideo', 'Name': 'Latest Music Video'},
-                ],
-              }),
-              'home-vids' => _json({
-                'Items': [
-                  {'Id': 'vid-1', 'Type': 'Video', 'Name': 'Latest Home Video'},
-                ],
-              }),
-              'music' => _json({
-                'Items': [
-                  {'Id': 'album-1', 'Type': 'MusicAlbum', 'Name': 'Latest Album'},
-                ],
-              }),
-              _ => http.Response('latest should not be requested for $parentId', 500),
-            };
-          }
-          // Music library's played-track rows — empty so only the Latest
-          // Albums hub survives.
-          if (req.url.path == '/Items' && req.url.queryParameters['Filters'] == 'IsPlayed') {
-            return _json({'Items': const <Object>[]});
-          }
-          return http.Response('unexpected request', 500);
-        }),
-      );
-      addTearDown(client.close);
-      manager.debugRegisterJellyfinClientForTesting(client);
+      final client = _PerLibraryHubsClient([
+        _library('movies', MediaKind.movie),
+        _library('mv', MediaKind.clip),
+        _library('home-vids', MediaKind.clip),
+        _library('music', MediaKind.artist),
+        _library('photos', MediaKind.photo),
+      ]);
+      manager.debugRegisterClientForTesting(client);
 
       final result = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
-      final hubs = result.hubs;
 
-      expect(result.succeededServerIds, {'srv-1'});
-      expect(hubs.map((h) => h.identifier), [
+      expect(result.succeededServerIds, {'server-1'});
+      expect(result.hubs.map((h) => h.identifier), [
         'library.movies.recent',
         'library.mv.recent',
         'library.home-vids.recent',
-        'library.music.latestalbums',
+        'library.music.recent',
       ]);
-      expect(hubs[1].items.single.kind, MediaKind.clip);
-      expect(hubs[3].items.single.kind, MediaKind.album);
+      expect(client.hubCalls.map((call) => call.libraryId), ['movies', 'mv', 'home-vids', 'music']);
       expect(
-        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
-        ['movies', 'mv', 'home-vids', 'music'],
+        client.hubCalls.map((call) => call.includePlaybackHubs),
+        everyElement(isFalse),
+        reason: 'the home screen excludes playback-derived rows',
       );
-      expect(
-        captured.where((uri) => uri.path == '/Items' && uri.queryParameters['Filters'] == 'IsPlayed'),
-        isEmpty,
-        reason: 'the home screen excludes playback-derived music rows',
-      );
-      // Music Latest returns album FOLDER dtos — count/user-data fields would
-      // each cost a recursive per-album COUNT query (#1552).
-      final musicLatest = captured.singleWhere(
-        (uri) => uri.path == '/Users/user-1/Items/Latest' && uri.queryParameters['ParentId'] == 'music',
-      );
-      expect(musicLatest.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName,DateCreated');
-      expect(musicLatest.queryParameters['EnableUserData'], 'false');
-      // Video Latest rows carry the same risk: `/Items/Latest` groups a TV
-      // library by series, so the rows are Series FOLDER dtos and the count
-      // fields cost a per-row COUNT each (#1784). Watch state survives via
-      // UserData.UnplayedItemCount, so the hub row set asks for neither.
-      final movieLatest = captured.singleWhere(
-        (uri) => uri.path == '/Users/user-1/Items/Latest' && uri.queryParameters['ParentId'] == 'movies',
-      );
-      expect(movieLatest.queryParameters['Fields'], 'Overview,DateCreated');
-      expect(movieLatest.queryParameters.containsKey('EnableUserData'), isFalse);
-    });
-
-    test('music library recommendations retain recently and most-played rows', () async {
-      final captured = <Uri>[];
-      final client = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((req) async {
-          captured.add(req.url);
-          if (req.url.path == '/Users/user-1/Items/Latest') {
-            return _json([
-              {'Id': 'album-1', 'Type': 'MusicAlbum', 'Name': 'Latest Album'},
-            ]);
-          }
-          if (req.url.path == '/Items' && req.url.queryParameters['Filters'] == 'IsPlayed') {
-            final sortBy = req.url.queryParameters['SortBy'];
-            return _json({
-              'Items': [
-                {
-                  'Id': sortBy == 'DatePlayed' ? 'recent-track' : 'most-played-track',
-                  'Type': 'Audio',
-                  'Name': sortBy == 'DatePlayed' ? 'Recent Track' : 'Most Played Track',
-                },
-              ],
-            });
-          }
-          return http.Response('unexpected request', 500);
-        }),
-      );
-      addTearDown(client.close);
-
-      final hubs = await client.fetchLibraryHubs(
-        'music',
-        libraryName: 'Music',
-        libraryKind: MediaKind.artist,
-        includePlaybackHubs: true,
-      );
-
-      expect(hubs.map((hub) => hub.identifier), [
-        'library.music.latestalbums',
-        'library.music.recentlyplayed',
-        'library.music.mostplayed',
-      ]);
-      final playedQueries = captured
-          .where((uri) => uri.path == '/Items' && uri.queryParameters['Filters'] == 'IsPlayed')
-          .toList();
-      expect(playedQueries.map((uri) => uri.queryParameters['SortBy']), ['DatePlayed', 'PlayCount']);
-      // Audio LEAF dtos: UserData stays (cheap, drives play state); the
-      // folder count fields and Overview are dropped.
-      expect(playedQueries.map((uri) => uri.queryParameters['Fields']).toSet(), {
-        'UserData,PremiereDate,OriginalTitle,SortName',
-      });
     });
 
     test('Plex home layout keeps promoted hubs instead of splitting by preview libraries', () async {

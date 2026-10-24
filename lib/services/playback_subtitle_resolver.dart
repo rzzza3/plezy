@@ -12,7 +12,7 @@ import 'track_selection_service.dart';
 /// A source-catalog subtitle choice.
 ///
 /// Keeping "off" distinct from a numeric stream id prevents backend wire
-/// conventions (notably Plex's `0`) from colliding with real Jellyfin ids.
+/// conventions (notably Plex's `0`) from colliding with real stream ids.
 final class PlaybackSourceSubtitleChoice {
   final bool isOff;
   final int? sourceStreamId;

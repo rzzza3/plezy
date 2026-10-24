@@ -7,7 +7,6 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../media/media_backend.dart';
 import '../services/credential_vault.dart';
-import '../services/jellyfin_endpoint_discovery.dart';
 import '../utils/app_logger.dart';
 import 'connection.dart';
 
@@ -92,24 +91,6 @@ class ConnectionRegistry {
     appLogger.d('ConnectionRegistry: upserted ${connection.kind.id}/${connection.id}');
   }
 
-  /// Shared edit-screen/command validation. Probes public server identity only;
-  /// preparing this value does not change the registry or active client.
-  Future<JellyfinConnection> prepareMediaBrowserEndpoints(JellyfinConnection connection, List<String> urls) async {
-    final input = JellyfinEndpointDiscovery.buildUserInputCandidates(urls, dialect: connection.dialect);
-    final endpoint = await JellyfinEndpointDiscovery(dialect: connection.dialect).raceEndpoints(
-      input.probeBaseUrls,
-      preferredUrl: connection.baseUrl,
-      expectedMachineId: connection.serverMachineId,
-      baseUrlsToPersist: input.explicitBaseUrls,
-      baseUrlValidationGroups: input.validationBaseUrlGroups,
-    );
-    return connection.copyWith(
-      baseUrl: endpoint.activeBaseUrl,
-      baseUrls: endpoint.baseUrls,
-      serverName: endpoint.serverInfo.serverName,
-    );
-  }
-
   Future<void> remove(String id) async {
     await _db.runIdentityMutation(() async {
       await (_db.delete(_db.connections)..where((t) => t.id.equals(id))).go();
@@ -141,7 +122,10 @@ class ConnectionRegistry {
   Future<Connection?> _rowToConnection(ConnectionRow row) async {
     try {
       final json = jsonDecode(row.configJson) as Map<String, dynamic>;
-      final kind = MediaBackend.fromId(row.kind);
+      // A kind Plezy no longer ships (a row that outlived the v26 migration)
+      // drops the row with a warning, not an error.
+      final kind = MediaBackend.fromString(row.kind);
+      if (kind == null) return null;
       final revealed = await CredentialVault.revealConnectionConfig(kind.id, json);
       final createdAt = DateTime.fromMillisecondsSinceEpoch(row.createdAt);
       final lastAuth = row.lastAuthenticatedAt == null
@@ -153,13 +137,6 @@ class ConnectionRegistry {
           json: revealed.config,
           createdAt: createdAt,
           lastAuthenticatedAt: lastAuth,
-        ),
-        MediaBackend.jellyfin || MediaBackend.emby => JellyfinConnection.fromConfigJson(
-          id: row.id,
-          json: revealed.config,
-          createdAt: createdAt,
-          lastAuthenticatedAt: lastAuth,
-          dialect: kind.dialect!,
         ),
         MediaBackend.silo => SiloConnection.fromConfigJson(
           json: revealed.config,

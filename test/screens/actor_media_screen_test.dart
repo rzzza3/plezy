@@ -25,7 +25,7 @@ void main() {
               actorName: 'Jane Doe',
               personId: 'person_1',
               serverId: 'server_1',
-              backend: MediaBackend.jellyfin,
+              backend: MediaBackend.silo,
             ),
           ),
         ),

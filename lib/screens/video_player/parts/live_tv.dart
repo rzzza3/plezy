@@ -166,7 +166,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
 
   /// Resolve the owning live-TV server for [channel] and start a playback
   /// session on it — the shared resolution path for initial launch and
-  /// channel zapping (Plex tunes a DVR, Jellyfin negotiates a direct URL).
+  /// channel zapping (Plex tunes a DVR).
   Future<LiveTvPlaybackSession?> _startLiveSession(LiveTvChannel channel) async {
     final multiServer = context.read<MultiServerProvider>();
     final serverInfo = liveTvServerInfoForChannel(multiServer, channel);
@@ -201,8 +201,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   ///
   /// The session owns the per-backend recovery: Plex re-tunes the channel
   /// for a fresh capture session (the previous one expires while MPV
-  /// exhausts its reconnect attempts) applying the degradation flags;
-  /// Jellyfin re-opens its session-less URL.
+  /// exhausts its reconnect attempts) applying the degradation flags.
   Future<void> _retryLiveStream() async {
     _liveSeek.cancel();
     final currentPlayer = player;
@@ -279,8 +278,8 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         _live.adoptSession(recovered);
         _live.selectedSubtitle = recoveredSubtitle;
       },
-      // Jellyfin's recover() returns the receiver, so the recovered object can
-      // be the still-current session; the retry helper skips the discard by
+      // A backend's recover() may return the receiver, so the recovered object
+      // can be the still-current session; the retry helper skips the discard by
       // identity so a failed retry cannot terminally release it.
       currentSession: () => _live.session,
       discardSession: _abandonLiveSession,
@@ -443,7 +442,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
 
   /// Seek the live TV stream to an absolute epoch second by rebuilding the
   /// stream at the target offset. The session returns null when the backend
-  /// can't time-shift (Jellyfin), and its capture buffer is null there too,
+  /// can't time-shift, and its capture buffer is null there too,
   /// so both guards cover it. Returns whether the rebuilt stream was opened.
   Future<bool> _seekLivePosition(int targetEpochSeconds) async {
     final currentPlayer = player;
@@ -618,7 +617,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       // tuner/transcode session.
       session = await _startLiveSession(channel);
       if (session == null) {
-        // Jellyfin's negotiation returns null instead of throwing, so this
+        // Some backends return null instead of throwing, so this
         // is not covered by the catch below; without feedback a failed zap
         // looks like a dead remote (#2198).
         if (mounted) showErrorSnackBar(context, t.liveTv.failedToStartChannel);

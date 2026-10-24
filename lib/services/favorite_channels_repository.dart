@@ -7,8 +7,8 @@ import 'base_shared_preferences_service.dart';
 import 'prefs_recovery.dart';
 
 /// Persistence boundary for the per-connection favorite-channel list shown
-/// in the Live TV picker. Pulled out of `_JellyfinLiveTvSupport` so the
-/// favorites round-trip can be exercised with an in-memory fake instead of
+/// in the Live TV picker. Kept behind an interface so the favorites
+/// round-trip can be exercised with an in-memory fake instead of
 /// the platform `SharedPreferences` plugin.
 ///
 /// The repo owns the *serialisation*; the call site owns the *key naming*

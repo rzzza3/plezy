@@ -13,9 +13,9 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
@@ -47,7 +47,7 @@ void main() {
         'The expedition follows a careful team through an unfamiliar landscape while each discovery changes their plans.';
     final episode = testMediaItem(
       id: 'semantic_episode',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'A Difficult Crossing',
       index: 3,
@@ -132,7 +132,7 @@ void main() {
 Future<void> _pumpEpisodeCard(WidgetTester tester, MediaItem episode) async {
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(db);
-  JellyfinApiCache.initialize(db);
+  SiloApiCache.initialize(db);
   final downloadManager = DownloadManagerService(
     database: db,
     storageService: DownloadStorageService.instance,

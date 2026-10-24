@@ -194,8 +194,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
   );
 
   // Handle library section items (shared whole-library entries) — Plex-only;
-  // `PlexMappers` stashes the section path in `raw['key']`. Jellyfin "views"
-  // never appear inside a [MediaItem], so the gate never fires for them.
+  // `PlexMappers` stashes the section path in `raw['key']`.
   final rawKey = mi.raw?['key'];
   if (rawKey is String && rawKey.startsWith('/library/sections/')) {
     final sectionId = plexLibrarySectionIdFromString(rawKey);

@@ -189,7 +189,7 @@ void main() {
         // updateServerStatus only populates _serverStatus, not _plexServers, so
         // we exercise the filter via onlineServerIds (which is keyed off
         // status). The serverIds list requires actual server registration
-        // which goes through addPlexAccount/addJellyfinConnection — beyond
+        // which goes through addPlexAccount/addSiloConnection — beyond
         // what this unit test needs to cover.
         manager.updateServerStatus(ServerId('srv-1'), true);
         manager.updateServerStatus(ServerId('srv-2'), true);

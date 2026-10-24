@@ -193,7 +193,7 @@ Future<bool> confirmAndDeleteProfile(
 
 /// Delete a local profile and everything it owns: downloads, sync rules,
 /// downloads' collection membership, queued watch actions, join rows (pruning
-/// now-unreferenced Jellyfin connections), last-used marker, and user-scoped
+/// now-unreferenced connections), last-used marker, and user-scoped
 /// prefs.
 Future<void> deleteProfile(BuildContext context, Profile profile) async {
   final scope = SessionTeardownScope.of(context);

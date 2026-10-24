@@ -15,9 +15,6 @@ import '../profiles/profile_connection.dart';
 import '../profiles/profile_connection_registry.dart';
 import '../services/account_preferences_accounts.dart';
 import '../services/account_preferences_repository.dart';
-import '../services/jellyfin_client.dart';
-import '../services/media_browser_account_preferences_source.dart';
-import '../services/multi_server_manager.dart';
 import '../services/plex_account_preferences_source.dart';
 import '../services/plex_auth_service.dart';
 import '../utils/app_logger.dart';
@@ -58,7 +55,6 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   ConnectionRegistry? _connections;
   ProfileConnectionRegistry? _profileConnections;
   ActiveProfileProvider? _activeProfile;
-  MultiServerManager? _serverManager;
 
   StreamSubscription<List<Connection>>? _connectionsSubscription;
   StreamSubscription<List<ProfileConnection>>? _profileConnectionsSubscription;
@@ -134,39 +130,13 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     await _loadActive(ref);
   }
 
-  /// Make [ref]'s server remember the track picks playback reports for [key]
-  /// ([AccountPreferenceKey.rememberAudioSelections] or
-  /// [AccountPreferenceKey.rememberSubtitleSelections]) by turning the account
-  /// flag on when it is off — the user opted in through the local
-  /// Remember-track-selections toggle, and the server records and applies
-  /// reported stream indexes only behind that flag. Returns whether the server
-  /// will remember; false without a request when the dialect cannot
-  /// ([MediaBrowserDialect.persistsTrackSelectionsViaAccountFlags]).
-  ///
-  /// A flag already on is answered from the cache, so a session writes each
-  /// account at most once per key. Failures propagate: the caller decides
-  /// whether the pick counts as session-only.
-  Future<bool> ensureRemembersTrackSelections(AccountRef ref, AccountPreferenceKey key) async {
-    assert(
-      key == AccountPreferenceKey.rememberAudioSelections || key == AccountPreferenceKey.rememberSubtitleSelections,
-      'Not a track-selection memory flag: ${key.name}',
-    );
-    if (!(ref.backend.dialect?.persistsTrackSelectionsViaAccountFlags ?? false)) return false;
-    if ((await repository.load(ref))[key] == true) return true;
-    appLogger.i('Turning ${key.name} on for ${ref.key}: the local track-selection memory needs it');
-    final updated = await repository.update(ref, AccountPreferencesPatch.of(key, true));
-    return updated[key] == true;
-  }
-
   /// Wire dependencies; safe to call repeatedly from a proxy provider.
   void attach({
     required ConnectionRegistry connections,
     required ProfileConnectionRegistry profileConnections,
     required ActiveProfileProvider activeProfile,
-    MultiServerManager? serverManager,
   }) {
     if (isDisposed) return;
-    _serverManager = serverManager;
     final dependenciesChanged =
         (_connections != null && !identical(_connections, connections)) ||
         (_profileConnections != null && !identical(_profileConnections, profileConnections)) ||
@@ -304,48 +274,10 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     // the same notification, including transitions to no eligible principal.
     if (changed || refChanged) safeNotifyListeners();
     if (ref != null && (refChanged || repository.cached(ref) == null)) await _loadActive(ref);
-    unawaited(_loadNextUpRewatchingAccounts(accounts, playbackRef: ref));
-  }
-
-  /// Next Up rewatching is the one preference a Jellyfin client applies from
-  /// its own account's read ([AccountPreferenceKey.rewatchingInNextUp]), and
-  /// every Jellyfin account the profile browses shows Next Up, not only the
-  /// one playback takes its defaults from. Nothing waits on these, so they
-  /// load in the background once the bind has connected the clients.
-  Future<void> _loadNextUpRewatchingAccounts(
-    List<AccountPreferenceAccount> accounts, {
-    required AccountRef? playbackRef,
-  }) async {
-    final generation = _generation;
-    final accountGeneration = _accountGeneration;
-    await _activeProfile?.awaitBindingSettle();
-    for (final account in accounts) {
-      if (isDisposed || generation != _generation || accountGeneration != _accountGeneration) return;
-      final ref = account.ref;
-      if (ref == playbackRef || !(ref.backend.dialect?.supportsNextUpRewatching ?? false)) continue;
-      if (repository.cached(ref) != null) continue;
-      try {
-        await repository.load(ref);
-      } on AccountPreferencesUnavailableException {
-        appLogger.d('AccountPreferencesController: ${ref.key} unreachable, its Next Up keeps the default');
-      } catch (error, stackTrace) {
-        appLogger.w(
-          'AccountPreferencesController: failed to load ${ref.key} preferences',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      }
-    }
   }
 
   static bool _sameCredentials(AccountPreferenceAccount a, AccountPreferenceAccount b) {
-    if (a.plexToken != b.plexToken) return false;
-    final left = a.connection;
-    final right = b.connection;
-    if (left is JellyfinConnection && right is JellyfinConnection) {
-      return left.accessToken == right.accessToken && left.userId == right.userId && left.deviceId == right.deviceId;
-    }
-    return true;
+    return a.plexToken == b.plexToken;
   }
 
   Future<void> _loadActive(AccountRef ref) async {
@@ -406,7 +338,7 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
 
   /// Build a transport for [ref], or null when the account is currently
   /// unreachable. Resolved per call: a Plex Home token is minted lazily by the
-  /// binder and a MediaBrowser client only exists once its server is online.
+  /// binder.
   Future<AccountPreferencesSource?> _sourceFor(AccountRef ref) async {
     final generation = _generation;
     AccountPreferenceAccount? selected;
@@ -423,18 +355,6 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     switch (ref.backend) {
       case MediaBackend.silo:
         return null;
-      case MediaBackend.jellyfin:
-      case MediaBackend.emby:
-        final client = _serverManager?.getJellyfinClientByCompoundId(ref.connectionId);
-        if (client is! JellyfinClient) return null;
-        final connection = selected.connection;
-        if (connection is! JellyfinConnection ||
-            client.connection.accessToken != connection.accessToken ||
-            client.connection.userId != connection.userId ||
-            client.connection.deviceId != connection.deviceId) {
-          return null;
-        }
-        return MediaBrowserAccountPreferencesSource(client);
       case MediaBackend.plex:
         final token = selected.plexToken;
         if (token == null || token.isEmpty) return null;

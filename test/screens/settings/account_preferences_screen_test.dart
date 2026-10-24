@@ -8,7 +8,6 @@ import 'package:plezy/media/account_preferences.dart';
 import 'package:plezy/media/account_preferences_source.dart';
 import 'package:plezy/media/account_preferences_target.dart';
 import 'package:plezy/media/account_ref.dart';
-import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_server_user_profile.dart';
 import 'package:plezy/screens/settings/account_preferences_detail_screen.dart';
 import 'package:plezy/screens/settings/account_preferences_screen.dart';
@@ -23,11 +22,11 @@ import 'package:provider/provider.dart';
 /// optimistic write, which is the only place in settings where the UI shows a
 /// value the server has not accepted yet.
 void main() {
-  const jellyfinRef = AccountRef.mediaBrowser(backend: MediaBackend.jellyfin, connectionId: 'machine-1/user-1');
+  const basementRef = AccountRef.plex(accountConnectionId: 'plex.account-2');
   const plexRef = AccountRef.plex(accountConnectionId: 'plex.account-1', homeUserUuid: 'home-1');
 
-  const jellyfinTarget = AccountPreferenceTarget(
-    ref: jellyfinRef,
+  const basementTarget = AccountPreferenceTarget(
+    ref: basementRef,
     label: 'Basement',
     subtitle: 'agent · 192.168.1.3',
     isDefaultConnection: true,
@@ -79,11 +78,11 @@ void main() {
 
   testWidgets('several accounts are listed and open their own preferences', (tester) async {
     final repository = repositoryOf({
-      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.jellyfin),
+      basementRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.plex),
       plexRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.plex),
     });
 
-    await pumpSection(tester, repository: repository, targets: const [plexTarget, jellyfinTarget]);
+    await pumpSection(tester, repository: repository, targets: const [plexTarget, basementTarget]);
 
     expect(find.text('Basement'), findsOneWidget);
     expect(find.text('agent · 192.168.1.3'), findsOneWidget);
@@ -102,21 +101,21 @@ void main() {
 
   testWidgets('the picker preserves the resolved account order', (tester) async {
     final repository = repositoryOf({
-      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.jellyfin),
+      basementRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.plex),
       plexRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.plex),
     });
 
-    await pumpSection(tester, repository: repository, targets: const [plexTarget, jellyfinTarget]);
+    await pumpSection(tester, repository: repository, targets: const [plexTarget, basementTarget]);
 
     expect(tester.getTopLeft(find.text('Plex')).dy, lessThan(tester.getTopLeft(find.text('Basement')).dy));
   });
 
   testWidgets('a single account skips the picker and edits in place', (tester) async {
     final repository = repositoryOf({
-      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.jellyfin),
+      basementRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.plex),
     });
 
-    await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
+    await pumpSection(tester, repository: repository, targets: const [basementTarget]);
 
     expect(find.byType(AccountPreferencesBody), findsOneWidget);
     expect(find.byType(AccountPreferencesDetailScreen), findsNothing);
@@ -135,25 +134,7 @@ void main() {
     expect(find.byType(AccountPreferencesBody), findsNothing);
   });
 
-  testWidgets('a MediaBrowser account gets the library rows and no Plex-only rows', (tester) async {
-    final repository = repositoryOf({
-      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.jellyfin),
-    });
-
-    await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
-
-    expect(find.text('Library'), findsOneWidget);
-    expect(find.text('Show missing episodes'), findsOneWidget);
-    expect(find.text('Hide watched items in Latest'), findsOneWidget);
-    expect(find.text('Show the Collections view'), findsOneWidget);
-
-    expect(find.text('SDH subtitles'), findsNothing);
-    expect(find.text('Forced subtitles'), findsNothing);
-    expect(find.text('Personal media'), findsNothing);
-    expect(find.text('Watched indicators'), findsNothing);
-  });
-
-  testWidgets('a Plex account gets the Plex-only rows and no library card', (tester) async {
+  testWidgets('a Plex account gets the Plex-only rows', (tester) async {
     final repository = repositoryOf({
       plexRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.plex),
     });
@@ -165,67 +146,63 @@ void main() {
     expect(find.text('Personal media'), findsOneWidget);
     expect(find.text('Watched indicators'), findsOneWidget);
     expect(find.text('Ratings & reviews'), findsOneWidget);
-
-    expect(find.text('Library'), findsNothing);
-    expect(find.text('Show missing episodes'), findsNothing);
-    expect(find.text('Hide watched items in Latest'), findsNothing);
   });
 
   testWidgets('current values are read from the account', (tester) async {
     final repository = repositoryOf({
-      jellyfinRef: _FakeAccountPreferencesSource(
-        capabilities: AccountPreferencesCapabilities.jellyfin,
+      basementRef: _FakeAccountPreferencesSource(
+        capabilities: AccountPreferencesCapabilities.plex,
         values: const {
-          // Jellyfin stores 639-2; the row has to show the language, not the code.
+          // A stored 639-2 code: the row has to show the language, not the code.
           AccountPreferenceKey.preferredAudioLanguage: 'deu',
-          AccountPreferenceKey.subtitleMode: SubtitlePlaybackMode.onlyForced,
-          AccountPreferenceKey.hidePlayedInLatest: true,
+          AccountPreferenceKey.subtitleMode: SubtitlePlaybackMode.smart,
+          AccountPreferenceKey.autoSelectAudio: false,
         },
       ),
     });
 
-    await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
+    await pumpSection(tester, repository: repository, targets: const [basementTarget]);
 
     expect(find.text('German'), findsOneWidget);
-    expect(find.text('Only forced subtitles'), findsOneWidget);
+    expect(find.text('Shown with foreign audio'), findsOneWidget);
     expect(find.text('No preference'), findsOneWidget);
-    expect(switchValueFor(tester, 'Hide watched items in Latest'), isTrue);
+    expect(switchValueFor(tester, 'Choose audio by language'), isFalse);
   });
 
   testWidgets('a rejected write shows the new value, then reverts and reports', (tester) async {
     final gate = Completer<void>();
     final source = _FakeAccountPreferencesSource(
-      capabilities: AccountPreferencesCapabilities.jellyfin,
-      values: const {AccountPreferenceKey.hidePlayedInLatest: true},
+      capabilities: AccountPreferencesCapabilities.plex,
+      values: const {AccountPreferenceKey.autoSelectAudio: true},
       writeGate: gate,
       rejectWrites: true,
     );
-    final repository = repositoryOf({jellyfinRef: source});
+    final repository = repositoryOf({basementRef: source});
 
-    await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
-    expect(switchValueFor(tester, 'Hide watched items in Latest'), isTrue);
+    await pumpSection(tester, repository: repository, targets: const [basementTarget]);
+    expect(switchValueFor(tester, 'Choose audio by language'), isTrue);
 
-    await tester.tap(find.text('Hide watched items in Latest'));
+    await tester.tap(find.text('Choose audio by language'));
     await tester.pump();
     expect(
-      switchValueFor(tester, 'Hide watched items in Latest'),
+      switchValueFor(tester, 'Choose audio by language'),
       isFalse,
       reason: 'the picked value must appear before the server has answered',
     );
 
     // A second toggle while the first write is outstanding must not queue a
     // conflicting value.
-    await tester.tap(find.text('Hide watched items in Latest'));
+    await tester.tap(find.text('Choose audio by language'));
     await tester.pump();
-    expect(switchValueFor(tester, 'Hide watched items in Latest'), isFalse);
+    expect(switchValueFor(tester, 'Choose audio by language'), isFalse);
 
     gate.complete();
     await tester.pumpAndSettle();
 
     expect(source.writes, hasLength(1));
-    expect(source.writes.single.boolAt(AccountPreferenceKey.hidePlayedInLatest), isFalse);
+    expect(source.writes.single.boolAt(AccountPreferenceKey.autoSelectAudio), isFalse);
     expect(
-      switchValueFor(tester, 'Hide watched items in Latest'),
+      switchValueFor(tester, 'Choose audio by language'),
       isTrue,
       reason: 'a rejected write must leave the account value on screen',
     );
@@ -234,50 +211,50 @@ void main() {
 
   testWidgets('an accepted write keeps the new value', (tester) async {
     final source = _FakeAccountPreferencesSource(
-      capabilities: AccountPreferencesCapabilities.jellyfin,
-      values: const {AccountPreferenceKey.hidePlayedInLatest: true},
+      capabilities: AccountPreferencesCapabilities.plex,
+      values: const {AccountPreferenceKey.autoSelectAudio: true},
     );
-    final repository = repositoryOf({jellyfinRef: source});
+    final repository = repositoryOf({basementRef: source});
 
-    await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
+    await pumpSection(tester, repository: repository, targets: const [basementTarget]);
 
-    await tester.tap(find.text('Hide watched items in Latest'));
+    await tester.tap(find.text('Choose audio by language'));
     await tester.pumpAndSettle();
 
     expect(source.writes, hasLength(1));
-    expect(switchValueFor(tester, 'Hide watched items in Latest'), isFalse);
-    expect(repository.cached(jellyfinRef)?.hidePlayedInLatest, isFalse);
+    expect(switchValueFor(tester, 'Choose audio by language'), isFalse);
+    expect(repository.cached(basementRef)?.autoSelectAudio, isFalse);
     expect(find.text('Could not save changes. Try again.'), findsNothing);
   });
 
   testWidgets('switching the inline account during a write keeps the new account on screen', (tester) async {
     final gate = Completer<void>();
     final original = _FakeAccountPreferencesSource(
-      capabilities: AccountPreferencesCapabilities.jellyfin,
-      values: const {AccountPreferenceKey.hidePlayedInLatest: true},
+      capabilities: AccountPreferencesCapabilities.plex,
+      values: const {AccountPreferenceKey.autoSelectAudio: true},
       writeGate: gate,
     );
     final sources = <AccountRef, AccountPreferencesSource>{
-      jellyfinRef: original,
+      basementRef: original,
       plexRef: _FakeAccountPreferencesSource(
         capabilities: AccountPreferencesCapabilities.plex,
         values: const {AccountPreferenceKey.preferredAudioLanguage: 'fra'},
       ),
     };
     final repository = repositoryOf(sources);
-    await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
-    await tester.tap(find.text('Hide watched items in Latest'));
+    await pumpSection(tester, repository: repository, targets: const [basementTarget]);
+    await tester.tap(find.text('Choose audio by language'));
     await tester.pump();
-    sources.remove(jellyfinRef);
+    sources.remove(basementRef);
     repository.clear();
     await pumpSection(tester, repository: repository, targets: const [plexTarget]);
     expect(find.text('French'), findsOneWidget);
-    expect(find.text('Hide watched items in Latest'), findsNothing);
+    expect(find.text('German'), findsNothing);
 
     gate.complete();
     await tester.pumpAndSettle();
     expect(find.text('French'), findsOneWidget);
-    expect(repository.cached(jellyfinRef), isNull);
+    expect(repository.cached(basementRef), isNull);
     expect(repository.cached(plexRef)?.preferredAudioLanguage, 'fra');
   });
 
@@ -313,7 +290,7 @@ void main() {
     // No source for the ref: the repository reports the account unreachable.
     final repository = repositoryOf(const {});
 
-    await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
+    await pumpSection(tester, repository: repository, targets: const [basementTarget]);
 
     expect(find.text("Can't reach this account"), findsOneWidget);
     expect(find.text('Preferred audio language'), findsNothing);
@@ -367,12 +344,6 @@ class _FakeAccountPreferencesSource implements AccountPreferencesSource {
     playDefaultAudioTrack: _values[AccountPreferenceKey.autoSelectAudio] as bool?,
     preferredSubtitleLanguage: _values[AccountPreferenceKey.preferredSubtitleLanguage] as String?,
     subtitlePlaybackMode: _values[AccountPreferenceKey.subtitleMode] as SubtitlePlaybackMode?,
-    rememberAudioSelections: _values[AccountPreferenceKey.rememberAudioSelections] as bool?,
-    rememberSubtitleSelections: _values[AccountPreferenceKey.rememberSubtitleSelections] as bool?,
-    autoPlayNextEpisode: _values[AccountPreferenceKey.autoPlayNextEpisode] as bool?,
-    displayMissingEpisodes: _values[AccountPreferenceKey.displayMissingEpisodes] as bool?,
-    hidePlayedInLatest: _values[AccountPreferenceKey.hidePlayedInLatest] as bool?,
-    displayCollectionsView: _values[AccountPreferenceKey.displayCollectionsView] as bool?,
     watchedIndicator: _values[AccountPreferenceKey.watchedIndicator] as WatchedIndicatorScope?,
     mediaReviewsVisibility: _values[AccountPreferenceKey.mediaReviewsVisibility] as MediaReviewsVisibility?,
     subtitleAccessibility: _values[AccountPreferenceKey.subtitleAccessibility] as SubtitleAccessibilityPreference?,

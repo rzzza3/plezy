@@ -339,8 +339,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       children: [
         // Connections are managed per-profile (via the Profiles section
         // and each profile's detail screen). The shortcut here just opens
-        // the picker scoped to the active profile so users can add a Plex
-        // account, Jellyfin server, or borrow from another profile.
+        // the picker scoped to the active profile so users can add a Silo
+        // server or borrow from another profile.
         SettingNavigationTile(
           icon: Symbols.add_link_rounded,
           title: t.connections.addConnection,

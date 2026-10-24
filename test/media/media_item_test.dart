@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
@@ -10,9 +9,8 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/services/settings_service.dart';
 import '../test_helpers/media_items.dart';
 
-/// Backend-agnostic [MediaItem] tests. Existing coverage is split between
-/// `plex_mappers_test` and `jellyfin_mappers_test` — those exercise the
-/// JSON mappers but never the neutral model itself. If a mapper is removed
+/// Backend-agnostic [MediaItem] tests. The per-backend mapper tests exercise
+/// the JSON mappers but never the neutral model itself. If a mapper is removed
 /// or refactored these tests still pin the model contract: equality,
 /// copyWith, watch-state derived getters.
 MediaItem _movie({
@@ -190,9 +188,9 @@ void main() {
       expect(episode.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/show-art', '/episode-art']);
     });
 
-    test('Jellyfin movies expose every backdrop in display order', () {
+    test('Silo movies expose every backdrop in display order', () {
       final movie = _movie(
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         artPath: '/art-0',
         backdropPaths: ['/art-0', '/art-1', '/art-2'],
         backgroundSquarePath: '/square',
@@ -205,7 +203,7 @@ void main() {
     test('episodes prefer inherited backdrops over their own art', () {
       final episode = testMediaItem(
         id: 'e-multi',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         artPath: '/episode-0',
         backdropPaths: ['/episode-0', '/episode-1'],
@@ -243,7 +241,7 @@ void main() {
 
     test('near-square containers hold on square art instead of rotating backdrops', () {
       final movie = _movie(
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         artPath: '/art-0',
         backdropPaths: ['/art-0', '/art-1'],
         backgroundSquarePath: '/square',
@@ -253,14 +251,14 @@ void main() {
     });
 
     test('near-square containers rotate backdrops when there is no square art', () {
-      final movie = _movie(backend: MediaBackend.jellyfin, artPath: '/art-0', backdropPaths: ['/art-0', '/art-1']);
+      final movie = _movie(backend: MediaBackend.silo, artPath: '/art-0', backdropPaths: ['/art-0', '/art-1']);
 
       expect(movie.heroRotationPaths(containerAspectRatio: 1.0), ['/art-0', '/art-1']);
     });
 
     test('wide containers rotate backdrops and leave square art behind them', () {
       final movie = _movie(
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         artPath: '/art-0',
         backdropPaths: ['/art-0', '/art-1'],
         backgroundSquarePath: '/square',
@@ -272,7 +270,7 @@ void main() {
     test('rotation before fallback reproduces the candidate order at every aspect', () {
       final episode = testMediaItem(
         id: 'e-order',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         artPath: '/episode-0',
         backdropPaths: ['/episode-0', '/episode-1'],
@@ -308,7 +306,7 @@ void main() {
     test('season progress uses direct episode count only when the leaf total is absent', () {
       final season = testMediaItem(
         id: 'season',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.season,
         childCount: 8,
         viewedLeafCount: 3,
@@ -367,14 +365,11 @@ void main() {
     test('leaf state ignores and clears stale aggregate fields', () {
       final movie = testMediaItem(
         id: 'm',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         viewCount: 0,
         leafCount: 3,
         viewedLeafCount: 3,
-        raw: {
-          'UserData': {'UnplayedItemCount': '0'},
-        },
       );
 
       expect(movie.isWatched, isFalse);
@@ -405,7 +400,7 @@ void main() {
       expect(unwatched.isWatched, isFalse);
     });
 
-    test('container unwatched counts are clamped and tolerate string API values', () {
+    test('container unwatched counts are clamped', () {
       final overReported = testMediaItem(
         id: 's1',
         backend: MediaBackend.plex,
@@ -413,17 +408,8 @@ void main() {
         leafCount: 10,
         viewedLeafCount: 11,
       );
-      final slimJellyfin = testMediaItem(
-        id: 's2',
-        backend: MediaBackend.jellyfin,
-        kind: MediaKind.show,
-        raw: {
-          'UserData': {'UnplayedItemCount': '4'},
-        },
-      );
 
       expect(overReported.unwatchedCount, 0);
-      expect(slimJellyfin.unwatchedCount, 4);
     });
   });
 
@@ -482,13 +468,8 @@ void main() {
       expect(copy.playQueueItemId, 7);
     });
 
-    test('preserves Jellyfin playlist item id when omitted', () {
-      const original = JellyfinMediaItem(
-        id: 'j1',
-        kind: MediaKind.movie,
-        title: 'Old',
-        playlistItemId: 'playlist-entry-1',
-      );
+    test('preserves Silo playlist item id when omitted', () {
+      const original = SiloMediaItem(id: 's1', kind: MediaKind.movie, title: 'Old', playlistItemId: 'playlist-entry-1');
 
       final copy = original.copyWith(title: 'New');
 
@@ -552,20 +533,20 @@ void main() {
       expect(plex.playQueueItemId, 5);
     });
 
-    test('round-trips Jellyfin playlist item id', () {
-      const original = JellyfinMediaItem(id: 'j1', kind: MediaKind.movie, title: 'Movie', playlistItemId: 'entry-1');
+    test('round-trips Silo playlist item id', () {
+      const original = SiloMediaItem(id: 's1', kind: MediaKind.movie, title: 'Movie', playlistItemId: 'entry-1');
 
       final json = original.toJson();
       final decoded = MediaItem.fromJson(json);
 
-      expect(json['backend'], 'jellyfin');
-      expect(decoded, isA<JellyfinMediaItem>());
-      expect((decoded as JellyfinMediaItem).playlistItemId, 'entry-1');
+      expect(json['backend'], 'silo');
+      expect(decoded, isA<SiloMediaItem>());
+      expect((decoded as SiloMediaItem).playlistItemId, 'entry-1');
     });
 
-    test('round-trips Jellyfin backdrop lists', () {
-      const original = JellyfinMediaItem(
-        id: 'j-backdrops',
+    test('round-trips Silo backdrop lists', () {
+      const original = SiloMediaItem(
+        id: 's-backdrops',
         kind: MediaKind.episode,
         artPath: '/episode-0',
         backdropPaths: ['/episode-0', '/episode-1'],
@@ -581,15 +562,12 @@ void main() {
     });
 
     test('cached leaf items ignore stale aggregate watch fields', () {
-      const original = JellyfinMediaItem(
+      const original = SiloMediaItem(
         id: 'cached-music-video',
         kind: MediaKind.clip,
         viewCount: 0,
         leafCount: 1,
         viewedLeafCount: 1,
-        raw: {
-          'UserData': {'UnplayedItemCount': 0},
-        },
       );
 
       final decoded = MediaItem.fromJson(original.toJson());
@@ -607,40 +585,6 @@ void main() {
       expect(decoded.backend, MediaBackend.plex);
       expect(decoded.id, 'legacy');
       expect(decoded.kind, MediaKind.movie);
-    });
-
-    test('an Emby item persists its own backend id and restores the dialect', () {
-      const original = JellyfinMediaItem(
-        dialect: MediaBrowserDialect.emby,
-        // Emby item ids are short numeric strings, not GUIDs.
-        id: '7330',
-        kind: MediaKind.movie,
-        title: 'Movie 001',
-        playlistItemId: 'entry-1',
-      );
-
-      final json = original.toJson();
-      final decoded = MediaItem.fromJson(json);
-
-      // One discriminator on the wire: the union key carries the resolved
-      // backend and the dialect is rebuilt from it.
-      expect(json['backend'], 'emby');
-      expect(json.containsKey('dialect'), isFalse);
-      expect(decoded, isA<JellyfinMediaItem>());
-      expect(decoded.backend, MediaBackend.emby);
-      expect((decoded as JellyfinMediaItem).dialect, MediaBrowserDialect.emby);
-      expect(decoded.playlistItemId, 'entry-1');
-      expect(decoded.id, '7330');
-    });
-
-    test('the compat factory routes both MediaBrowser backends to one variant', () {
-      final emby = MediaItem(id: 'e1', backend: MediaBackend.emby, kind: MediaKind.movie);
-      final jellyfin = MediaItem(id: 'j1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
-
-      expect(emby, isA<JellyfinMediaItem>());
-      expect(jellyfin, isA<JellyfinMediaItem>());
-      expect(emby.backend, MediaBackend.emby);
-      expect(jellyfin.backend, MediaBackend.jellyfin);
     });
   });
 

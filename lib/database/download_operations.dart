@@ -199,31 +199,6 @@ extension DownloadDatabaseOperations on AppDatabase {
     final connectionRows = await select(connections).get();
     final connectionIds = connectionRows.map((row) => row.id).toSet();
     final connectionKindsById = {for (final row in connectionRows) row.id: row.kind};
-    final mediaBrowserIdentities = <String, ({String machineId, String? userId, String backendId})>{};
-    final mediaBrowserMachineIds = <String>{};
-    // `Connections.kind` is the authoritative dialect discriminator; both
-    // MediaBrowser kinds use the same compound machine/user scope shape.
-    for (final connection in connectionRows.where(
-      (row) => row.kind == MediaBackend.jellyfin.id || row.kind == MediaBackend.emby.id,
-    )) {
-      final identity = _mediaBrowserConnectionIdentity(connection);
-      mediaBrowserIdentities[connection.id] = (
-        machineId: identity.machineId,
-        userId: identity.userId,
-        backendId: connection.kind,
-      );
-      mediaBrowserMachineIds.add(identity.machineId);
-    }
-    final mediaBrowserScopesByProfileAndMachine = <String, Map<String, Set<({String scopeId, String backendId})>>>{};
-    for (final binding in await select(profileConnections).get()) {
-      if (binding.userIdentifier.isEmpty) continue;
-      final identity = mediaBrowserIdentities[binding.connectionId];
-      if (identity == null || identity.userId != null && identity.userId != binding.userIdentifier) continue;
-      mediaBrowserScopesByProfileAndMachine
-          .putIfAbsent(binding.profileId, () => <String, Set<({String scopeId, String backendId})>>{})
-          .putIfAbsent(identity.machineId, () => <({String scopeId, String backendId})>{})
-          .add((scopeId: '${identity.machineId}/${binding.userIdentifier}', backendId: identity.backendId));
-    }
     final ownedKeys = <String>{
       for (final owner in owners)
         if (_isValidDownloadOwner(owner, localProfileIds: localProfileIds, connectionIds: connectionIds))
@@ -250,31 +225,9 @@ extension DownloadDatabaseOperations on AppDatabase {
           continue;
         }
 
-        final mediaBrowserScopes =
-            mediaBrowserScopesByProfileAndMachine[profileId]?[row.serverId] ??
-            const <({String scopeId, String backendId})>{};
-        if (mediaBrowserScopes.length == 1) {
-          final adopting = mediaBrowserScopes.single;
-          await transaction(() async {
-            if (isStillActive != null && !isStillActive()) return;
-            await updateDownloadedMediaClientScope(row.globalKey, adopting.scopeId);
-            await addDownloadOwner(
-              profileId: profileId,
-              globalKey: row.globalKey,
-              backendId: adopting.backendId,
-              clientScopeId: adopting.scopeId,
-            );
-          });
-          continue;
-        }
-
-        // A compound non-Plex scope is a legacy MediaBrowser user namespace.
-        // Never attach it to another profile unless that profile has exactly
-        // one matching MediaBrowser binding. The same applies when persisted
-        // MediaBrowser connections identify the machine but the profile has
-        // zero or multiple possible users.
-        final hasLegacyMediaBrowserScope = scopeId?.startsWith('${row.serverId}/') ?? false;
-        if (hasLegacyMediaBrowserScope || mediaBrowserMachineIds.contains(row.serverId)) continue;
+        // A compound `{machineId}/{userId}` scope belongs to a backend Plezy
+        // no longer ships. Never attach it to another profile.
+        if (scopeId?.startsWith('${row.serverId}/') ?? false) continue;
 
         final backendId = connectionKindsById[scopeId];
         await addDownloadOwner(
@@ -829,22 +782,3 @@ bool _isValidDownloadOwner(
   return localProfileIds.isEmpty;
 }
 
-({String machineId, String? userId}) _mediaBrowserConnectionIdentity(ConnectionRow connection) {
-  final separator = connection.id.indexOf('/');
-  var machineId = separator < 0 ? connection.id : connection.id.substring(0, separator);
-  String? userId = separator < 0 || separator == connection.id.length - 1
-      ? null
-      : connection.id.substring(separator + 1);
-  try {
-    final config = jsonDecode(connection.configJson);
-    if (config is Map<String, dynamic>) {
-      final configuredMachineId = config['serverMachineId'];
-      final configuredUserId = config['userId'];
-      if (configuredMachineId is String && configuredMachineId.isNotEmpty) machineId = configuredMachineId;
-      if (configuredUserId is String && configuredUserId.isNotEmpty) userId = configuredUserId;
-    }
-  } on FormatException {
-    // Legacy rows still carry enough identity in their canonical id.
-  }
-  return (machineId: machineId, userId: userId);
-}

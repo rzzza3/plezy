@@ -143,7 +143,7 @@ void main() {
                   id: 'movie-fatal-start',
                   serverId: 'srv-1',
                   title: 'Fatal start',
-                  backend: MediaBackend.jellyfin,
+                  backend: MediaBackend.silo,
                 ),
                 // Non-null so startup skips the OfflineModeProvider lookup.
                 selectedQualityPreset: TranscodeQualityPreset.original,
@@ -193,9 +193,9 @@ class _FailingStreamClient with PlaybackReportRecorder implements MediaServerCli
   @override
   String get serverName => 'Server';
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
   @override
   double get watchedThreshold => 0.9;
   @override

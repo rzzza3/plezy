@@ -994,12 +994,12 @@ void main() {
       await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100');
       final createdAt = (await db.select(db.downloadOwners).get()).single.createdAt;
 
-      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100', backendId: 'jellyfin');
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100', backendId: 'silo');
       await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100', clientScopeId: 'srv/user-a');
 
       final owner = (await db.select(db.downloadOwners).get()).single;
       expect(owner.createdAt, createdAt);
-      expect(owner.backend, 'jellyfin');
+      expect(owner.backend, 'silo');
       expect(owner.clientScopeId, 'srv/user-a');
     });
 

@@ -2,8 +2,7 @@
 ///
 /// Backends routinely return several: Plex's `/library/metadata/{id}` carries
 /// an IMDb score next to both Rotten Tomatoes panels and TMDB, Simkl carries
-/// Simkl/IMDb/MAL side by side, Jellyfin carries a community score next to a
-/// Tomatometer. `MediaItem.rating` keeps the backend's headline number; this
+/// Simkl/IMDb/MAL side by side. `MediaItem.rating` keeps the backend's headline number; this
 /// list keeps every score with attribution so the UI can badge and label them.
 ///
 /// Serialization is hand-written rather than `json_serializable` because

@@ -13,13 +13,13 @@ class MediaStream {
   final String? title;
   final String? displayTitle;
 
-  /// The server's current pick for this user (Plex `selected`, Jellyfin's
-  /// default-stream index). Distinct from [isDefault]: Plex marks the
+  /// The server's current pick for this user (e.g. Plex `selected`).
+  /// Distinct from [isDefault]: Plex marks the
   /// container's default track separately, and the player's selection ladder
   /// ranks the two differently.
   final bool selected;
 
-  /// The container's own default flag (Plex `default`, Jellyfin `IsDefault`).
+  /// The container's own default flag (e.g. Plex `default`).
   final bool isDefault;
 
   // Audio
@@ -35,8 +35,7 @@ class MediaStream {
   final bool forced;
 
   /// Backend-resolved location for true sidecar subtitle download. Null for
-  /// embedded streams, even when Jellyfin can expose them through temporary
-  /// external delivery URLs during playback negotiation.
+  /// embedded streams.
   final String? sidecarPath;
 
   const MediaStream({

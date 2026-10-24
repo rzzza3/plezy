@@ -241,7 +241,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
     try {
       // Backend-neutral [deleteCollection] reads `libraryId` from the
-      // [MediaItem] for Plex's section-id; Jellyfin ignores it.
+      // [MediaItem] for Plex's section-id.
       final success = await mediaClient.deleteCollection(widget.collection);
 
       if (!mounted) return;

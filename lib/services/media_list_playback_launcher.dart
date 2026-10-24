@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
@@ -15,7 +14,6 @@ import '../utils/dialogs.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
-import 'jellyfin_sequential_launcher.dart';
 import 'play_queue_launcher.dart';
 import 'settings_service.dart';
 import '../widgets/dialog_action_button.dart';
@@ -48,19 +46,16 @@ class PlayQueueError extends PlayQueueResult {
 /// Backend-neutral playback launcher for collections and playlists.
 ///
 /// Plex uses server-side `/playQueues` (one round trip, server tracks
-/// queue state). MediaBrowser servers have no equivalent — the concrete
-/// [JellyfinSequentialLauncher] builds an in-memory queue from playable
-/// descendants or playlist items. [MediaListPlaybackLauncher.forItem] picks
-/// the implementation by inspecting the item's backend.
+/// queue state). [MediaListPlaybackLauncher.forItem] picks the
+/// implementation by inspecting the item's backend.
 abstract class MediaListPlaybackLauncher {
   /// Launch playback from a collection (a [MediaItem] with
   /// `kind == MediaKind.collection`) or a [MediaPlaylist].
   ///
   /// [startItem] (optional) starts playback at that item rather than the head
   /// of the queue — used by the playlist detail screen's "tap an item to
-  /// start here" interaction. Plex passes it as `key` to `/playQueues`;
-  /// MediaBrowser rotates the locally-built queue. Ignored when [shuffle] is
-  /// true.
+  /// start here" interaction. Plex passes it as `key` to `/playQueues`.
+  /// Ignored when [shuffle] is true.
   Future<PlayQueueResult> launchFromCollectionOrPlaylist({
     required Object item,
     required bool shuffle,
@@ -69,37 +64,26 @@ abstract class MediaListPlaybackLauncher {
   });
 
   /// Launch shuffled playback for a show or season. Plex builds a server-side
-  /// `/playQueues` with `shuffle=1`; MediaBrowser fetches the full episode
-  /// list via `fetchClientSideEpisodeQueue`, shuffles locally, and publishes
-  /// through `setPlaybackFromLocalQueue` (same path as the sequential queue
-  /// from `EpisodeNavigationService`).
+  /// `/playQueues` with `shuffle=1`.
   Future<PlayQueueResult> launchShuffledShow({required MediaItem metadata, bool showLoadingIndicator = true});
 
   /// Launch playback from a folder row of the library tree. Everything each
   /// backend needs is stamped onto [folder]: Plex builds a server-side
   /// `/playQueues` from [MediaItem.backendFolderKey] (returning a
-  /// [PlayQueueError] when the row carries none), while MediaBrowser fetches
-  /// the folder's playable descendants and publishes a local queue.
+  /// [PlayQueueError] when the row carries none).
   Future<PlayQueueResult> launchFromFolder({
     required MediaItem folder,
     required bool shuffle,
     bool showLoadingIndicator = true,
   });
 
-  /// Pick the right implementation for [item]. Reads
-  /// [MediaItem.backend] / [MediaPlaylist.backend].
+  /// Pick the right implementation for [item], a [MediaItem] or a
+  /// [MediaPlaylist].
   static MediaListPlaybackLauncher forItem(BuildContext context, Object item) {
-    final backend = _backendOf(item);
-    if (backend.usesMediaBrowserApi) {
-      return JellyfinSequentialLauncher(context: context);
+    if (item is! MediaItem && item is! MediaPlaylist) {
+      throw ArgumentError('Unsupported item type for MediaListPlaybackLauncher: ${item.runtimeType}');
     }
     return PlexPlayQueueLauncher.forContext(context, item);
-  }
-
-  static MediaBackend _backendOf(Object item) {
-    if (item is MediaItem) return item.backend;
-    if (item is MediaPlaylist) return item.backend;
-    throw ArgumentError('Unsupported item type for MediaListPlaybackLauncher: ${item.runtimeType}');
   }
 
   /// Pull (kind, id, serverId, serverName) from an [item] that's a

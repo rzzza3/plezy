@@ -22,8 +22,8 @@ DownloadedMediaItem _row({int mediaIndex = 0, String? mediaSourceId}) {
 void main() {
   group('downloadedVersionMatches', () {
     test('source id wins when both sides have one', () {
-      // Equal ids match even when the index disagrees (Jellyfin merged
-      // versions reorder between fetches).
+      // Equal ids match even when the index disagrees (merged versions
+      // can reorder between fetches).
       expect(
         downloadedVersionMatches(
           _row(mediaIndex: 1, mediaSourceId: 'src-a'),

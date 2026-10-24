@@ -49,12 +49,12 @@ enum _EpisodeQueueAvailability { active, unavailable, failed }
 /// - Supporting both sequential and shuffle playback modes
 ///
 /// Plex normally enters with its server-side `/playQueues` queue. If that
-/// setup failed for an episode, the same client-side full-series path used by
-/// Jellyfin is used as a fallback. Playlist and collection queues may contain
+/// setup failed for an episode, the client-side full-series path other
+/// backends use is the fallback. Playlist and collection queues may contain
 /// movies; once membership is verified, they use the same adjacency path.
 class EpisodeNavigationService {
   /// Cached client-side episode lists, keyed by `seriesId`. Populated for
-  /// Jellyfin and when Plex's server-side queue is unavailable. Fetched once
+  /// non-Plex backends and when Plex's server-side queue is unavailable. Fetched once
   /// per series; subsequent navigation within the show reuses the cache.
   ///
   /// Bounded by [_seriesCacheCapacity] LRU-style: each entry holds up to
@@ -92,8 +92,7 @@ class EpisodeNavigationService {
       final playbackState = context.read<PlaybackStateProvider>();
 
       // Preserve a server-side Plex queue when available. Otherwise build a
-      // full-series local queue for Plex or Jellyfin before resolving
-      // adjacency.
+      // full-series local queue before resolving adjacency.
       final availability = await _ensureLocalEpisodeQueue(serverManager, playbackState, metadata);
 
       if (availability == _EpisodeQueueAvailability.unavailable) {
@@ -133,8 +132,8 @@ class EpisodeNavigationService {
   /// collection, or an earlier series build) is preserved for both movies and
   /// episodes. Otherwise an episode's full backend series list is published,
   /// anchored at the current episode. For Plex this series build is the
-  /// fallback when `/playQueues` was unavailable; for Jellyfin it is the
-  /// normal episode path.
+  /// fallback when `/playQueues` was unavailable; for other backends it is
+  /// the normal episode path.
   Future<_EpisodeQueueAvailability> _ensureLocalEpisodeQueue(
     MultiServerManager serverManager,
     PlaybackStateProvider playbackState,
@@ -167,7 +166,7 @@ class EpisodeNavigationService {
     final seriesId = metadata.grandparentId!;
     // The playing item isn't in the active queue. Still don't replace a
     // playlist/collection queue with a series queue: the launcher (e.g.
-    // [JellyfinSequentialLauncher]) sets contextKey to the playlist or
+    // [MediaListPlaybackLauncher]) sets contextKey to the playlist or
     // collection id; a series rebuild here would clobber it and prev/next
     // would walk the show instead of the user's list.
     final activeKey = playbackState.shuffleContextKey;

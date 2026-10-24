@@ -20,8 +20,6 @@ import '../test_helpers/prefs.dart';
 // Focused orchestration coverage lives here: the network response must be
 // published to PlaybackStateProvider before navigation, and a navigation
 // failure remains an owned PlayQueueError rather than a reported success.
-// Jellyfin cancellation ownership is covered by
-// jellyfin_sequential_launcher_test.dart.
 
 class _StubPlexClient implements PlexClient {
   _StubPlexClient({this.response, this.gate});

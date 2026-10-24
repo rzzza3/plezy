@@ -76,11 +76,11 @@ const _sharedLibrary = MediaLibrary(
   isShared: true,
   serverId: 'server',
 );
-// Mirrors the library_browse_tab_test harness: a Jellyfin music library whose
+// Mirrors the library_browse_tab_test harness: a Silo music library whose
 // server has a live fake client, so the browse tab loads real (fake) pages.
 const _musicLibrary = MediaLibrary(
   id: 'music',
-  backend: MediaBackend.jellyfin,
+  backend: MediaBackend.silo,
   title: 'Music',
   kind: MediaKind.artist,
   serverId: 'server-c',
@@ -648,10 +648,10 @@ class _PagedClient implements MediaServerClient {
   String get serverName => 'Server C';
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) async => const [];
@@ -673,7 +673,7 @@ class _PagedClient implements MediaServerClient {
       items: [
         testMediaItem(
           id: 'artist-$pageRequestCount',
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
           kind: MediaKind.artist,
           title: 'Artist',
           serverId: serverId.value,

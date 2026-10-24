@@ -92,7 +92,7 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// even when the composite [isOffline] does not move.
   bool get hasNetworkConnection => _hasNetworkConnection;
 
-  /// Whether at least one media server (Plex or Jellyfin) is reachable.
+  /// Whether at least one media server (Plex or Silo) is reachable.
   ///
   /// Derived live from the visible-server provider (when attached) or the
   /// manager's online set; this provider already listens to both sources, so

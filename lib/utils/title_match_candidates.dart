@@ -17,8 +17,8 @@ final RegExp _bareTrailingNumber = RegExp(r'\s+\d+$');
 final RegExp _numberedNoun = RegExp(r'\b(?:no|vol|pt|ep|episode|chapter)\.?\s+\d+$', caseSensitive: false);
 
 /// Typographic variants media servers index differently from what catalog
-/// providers emit. Plex tokenizes on these, Jellyfin substring-matches them,
-/// and both miss `Journey’s` against a stored `Journey's`.
+/// providers emit. Plex tokenizes on these and misses `Journey’s` against a
+/// stored `Journey's`.
 const Map<String, String> _punctuation = {
   '\u2019': "'", // right single quote
   '\u2018': "'",
@@ -55,9 +55,8 @@ String _normalize(String title) {
 
 /// Ordered, deduplicated title candidates for a media-server reverse lookup.
 ///
-/// Neither backend can filter by external id (Plex's `guid=` matches only the
-/// primary `plex://` guid; Jellyfin dropped `anyProviderIdEquals`), so the
-/// title is the only candidate filter available and a sequel entry's own
+/// Plex can't filter by external id (its `guid=` matches only the primary
+/// `plex://` guid), so the title is the only candidate filter available and a sequel entry's own
 /// title — `You and I Are Polar Opposites Season 2` — never matches the parent
 /// show. Each input contributes itself plus its season-stripped form; the
 /// backend searches every candidate concurrently and verifies external ids,

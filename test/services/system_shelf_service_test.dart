@@ -10,7 +10,6 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/system_shelf_service.dart';
 
@@ -51,12 +50,11 @@ void main() {
   const channel = MethodChannel('test/system_shelf');
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
-  // The real Plex/Jellyfin client fixtures used by the updateSources tests
-  // construct their API caches at creation time.
+  // The real Plex client fixtures used by the updateSources tests construct
+  // their API cache at creation time.
   setUpAll(() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(db);
-    JellyfinApiCache.initialize(db);
     addTearDown(db.close);
   });
 
@@ -270,7 +268,7 @@ void main() {
     }
   });
 
-  test('updateSources publishes per-kind descriptors and skips unusable clients', () async {
+  test('updateSources publishes Plex descriptors and skips unusable clients', () async {
     final calls = <MethodCall>[];
     messenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
@@ -285,35 +283,10 @@ void main() {
       baseUrl: 'https://plex.example.com',
       token: 'plex-token',
     );
-    final jellyfin = testJellyfinClient(
-      connection: testJellyfinConnection(
-        machineId: 'jf-1',
-        userId: 'user-7',
-        serverName: 'Jellyfin Server',
-        baseUrl: 'https://jf.example.com',
-        accessToken: 'jf-token',
-      ),
-    );
-    final emby = testEmbyClient(
-      connection: testEmbyConnection(machineId: 'emby-1', userId: 'emby-user', accessToken: 'emby-token'),
-    );
     final tokenlessPlex = testPlexClient(serverId: ServerId('plex-2'), token: null);
-    final tokenlessJellyfin = testJellyfinClient(
-      connection: testJellyfinConnection(machineId: 'jf-2', accessToken: ''),
-    );
     final unknownBackend = _ShelfClient();
 
-    expect(
-      await service.syncServerSources('owner-a', [
-        plex,
-        jellyfin,
-        emby,
-        tokenlessPlex,
-        tokenlessJellyfin,
-        unknownBackend,
-      ]),
-      isTrue,
-    );
+    expect(await service.syncServerSources('owner-a', [plex, tokenlessPlex, unknownBackend]), isTrue);
 
     expect(calls.single.method, 'updateSources');
     final envelope = calls.single.arguments as Map;
@@ -323,7 +296,7 @@ void main() {
     expect(envelope['maxItems'], 20);
     expect(envelope['sectionTitle'], 'Continue Watching');
     final servers = (envelope['servers'] as List).cast<Map>();
-    expect(servers, hasLength(3));
+    expect(servers, hasLength(1));
     expect(servers[0], {
       'serverId': 'plex-1',
       'kind': 'plex',
@@ -331,17 +304,6 @@ void main() {
       'baseUrl': 'https://plex.example.com',
       'token': 'plex-token',
     });
-    expect(servers[1], {
-      'serverId': 'jf-1',
-      'kind': 'jellyfin',
-      'name': 'Jellyfin Server',
-      'baseUrl': 'https://jf.example.com',
-      'token': 'jf-token',
-      'userId': 'user-7',
-    });
-    expect(servers[2]['kind'], 'emby');
-    expect(servers[2]['userId'], 'emby-user');
-    expect(servers[2]['token'], 'emby-token');
   });
 
   test('syncServerSources is a no-op off tvOS', () async {

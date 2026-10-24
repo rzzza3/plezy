@@ -79,7 +79,7 @@ class TrackControlsState {
   onSubtitleDownloaded;
 
   /// Whether OpenSubtitles search is reachable for this server. The Plex
-  /// server proxies the OpenSubtitles plugin; Jellyfin doesn't expose an
+  /// server proxies the OpenSubtitles plugin; other backends don't expose an
   /// equivalent. The track sheet hides the "Search subtitles" tile when
   /// this is false.
   final bool subtitleSearchSupported;

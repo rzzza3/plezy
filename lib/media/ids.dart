@@ -8,9 +8,9 @@
 /// hashes, and interpolates exactly like its underlying string.
 library;
 
-/// Identifies a media server: a Plex `machineIdentifier` or a Jellyfin server
-/// machine id. This is the key under which a [MediaServerClient] is registered
-/// and the left half of a `serverId:ratingKey` global key.
+/// Identifies a media server, e.g. a Plex `machineIdentifier`. This is the key
+/// under which a [MediaServerClient] is registered and the left half of a
+/// `serverId:ratingKey` global key.
 extension type const ServerId._(String value) implements String {
   factory ServerId(String value) {
     if (value.trim().isEmpty) {

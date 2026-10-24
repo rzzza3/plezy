@@ -63,8 +63,7 @@ class ExternalPlayerService {
   /// Launch an external player with either a pre-resolved [videoUrl] (the
   /// local file of a downloaded copy) or by asking [client] to resolve the
   /// stream for [metadata]. Each backend implements `resolveExternalPlayback`
-  /// for the right URL shape (Plex part URL, Jellyfin
-  /// `/Videos/{id}/stream.{container}?Static=true`) and its external
+  /// for the right URL shape (e.g. Plex part URL) and its external
   /// subtitle files, which Android players receive through the intent.
   static Future<bool> launch({
     required BuildContext context,
@@ -298,7 +297,6 @@ class ExternalPlayerService {
       return;
     }
 
-    var startedSucceeded = false;
     try {
       await client.reportPlaybackStarted(
         itemId: metadata.id,
@@ -307,7 +305,6 @@ class ExternalPlayerService {
         playMethod: 'DirectPlay',
         mediaSourceId: mediaSourceId,
       );
-      startedSucceeded = true;
     } catch (e) {
       appLogger.d('External player progress: started call failed (continuing)', error: e);
     }
@@ -336,9 +333,8 @@ class ExternalPlayerService {
       viewOffset: position.inMilliseconds,
       duration: duration.inMilliseconds,
       watchedThreshold: client.watchedThreshold,
-      // MediaBrowser persists stopped progress only for a session opened by
-      // Started; Plex persists every timeline report independently.
-      serverAcknowledged: !metadata.backend.usesMediaBrowserApi || startedSucceeded,
+      // Plex persists every timeline report independently.
+      serverAcknowledged: true,
     );
 
     if (isWatchedProgress(
@@ -348,9 +344,9 @@ class ExternalPlayerService {
     )) {
       try {
         // reportPlaybackStopped above marks the item played on backends that
-        // support it (Jellyfin); markWatchedFromPlaybackStop then only emits the
-        // local watch event there to avoid double-scrobbling via the Trakt
-        // plugin (#1287). Plex still issues the explicit server call.
+        // support it (Silo); markWatchedFromPlaybackStop then only emits the
+        // local watch event there so the watch isn't recorded twice (#1287).
+        // Plex still issues the explicit server call.
         await client.markWatchedFromPlaybackStop(metadata);
         if (!current()) return;
         unawaited(TrackerCoordinator.instance.markWatched(metadata, client));

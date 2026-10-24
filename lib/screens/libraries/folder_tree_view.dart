@@ -5,7 +5,6 @@ import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
-import '../../services/jellyfin_sequential_launcher.dart';
 import '../../services/media_list_playback_launcher.dart';
 import '../../services/play_queue_launcher.dart';
 import '../../utils/app_logger.dart';
@@ -68,8 +67,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
   }
 
   /// Folders/items returned by the backend's folder API and mapped to neutral
-  /// [MediaItem]s. Plex folder URLs survive in [MediaItem.raw]['key'];
-  /// MediaBrowser folders use the item id as their recursive parent id.
+  /// [MediaItem]s. Plex folder URLs survive in [MediaItem.raw]['key'].
   List<MediaItem> _rootFolders = [];
   final Map<String, List<MediaItem>> _childrenCache = {};
   final Set<String> _expandedFolders = {};
@@ -77,7 +75,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
   bool _isLoadingRoot = false;
   String? _errorMessage;
 
-  /// Generation counter for in-flight loads. MediaBrowser folder fetches
+  /// Generation counter for in-flight loads. Paged folder fetches
   /// render page-by-page via `onPage`; a root reload or deletion refresh
   /// bumps the epoch so superseded pagination callbacks are dropped.
   int _loadEpoch = 0;
@@ -268,34 +266,19 @@ class FolderTreeViewState extends State<FolderTreeView> {
   /// tree is pinned to one server: the Plex client must be the one backing
   /// [widget.serverId], not `forItem`'s fall-back-to-any-online resolution.
   Future<void> _launchFolder(MediaItem folder, {required bool shuffle}) async {
-    final MediaListPlaybackLauncher launcher;
-    if (folder.backend.usesMediaBrowserApi) {
-      launcher = JellyfinSequentialLauncher(context: context);
-    } else {
-      final client = context.getPlexClientForServer(ServerId(widget.serverId!));
-      launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
-    }
+    final client = context.getPlexClientForServer(ServerId(widget.serverId!));
+    final MediaListPlaybackLauncher launcher = PlexPlayQueueLauncher(
+      context: context,
+      client: client,
+      serverId: widget.serverId,
+    );
     await launcher.launchFromFolder(folder: folder, shuffle: shuffle);
   }
 
-  /// Expandable rows: directory rows plus MediaBrowser media containers whose
-  /// direct children form the folder tree. Music libraries expose folder-
-  /// backed artists and albums as MusicArtist/MusicAlbum rather than generic
-  /// Folder DTOs, so those rows must expand instead of opening empty details.
-  bool _isExpandable(MediaItem item) {
-    return item.kind == MediaKind.folder || (item.backend.usesMediaBrowserApi && _isMediaBrowserMediaContainer(item));
-  }
+  /// Expandable rows: directory rows.
+  bool _isExpandable(MediaItem item) => item.kind == MediaKind.folder;
 
-  bool _isMediaBrowserMediaContainer(MediaItem item) {
-    if (item.kind == MediaKind.show || item.kind == MediaKind.season) return true;
-    return widget.libraryKind?.isMusic == true && (item.kind == MediaKind.artist || item.kind == MediaKind.album);
-  }
-
-  bool _canPlayFolder(MediaItem item) {
-    if (item.backend == MediaBackend.plex) return true;
-    if (item.backend.usesMediaBrowserApi) return widget.libraryKind?.isMusic != true;
-    return false;
-  }
+  bool _canPlayFolder(MediaItem item) => item.backend == MediaBackend.plex;
 
   Future<List<MediaItem>> _fetchRootFolders(
     MediaServerClient client, {

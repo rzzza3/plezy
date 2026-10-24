@@ -215,7 +215,7 @@ void main() {
       expect(result, [embedded, availableExternal]);
     });
 
-    test('keeps Jellyfin external-delivery rows that remain embedded during direct play', () {
+    test('keeps external-delivery rows that remain embedded during direct play', () {
       final deliveryExternalEmbedded = MediaSubtitleTrack(
         id: 1,
         codec: 'srt',

@@ -153,7 +153,7 @@ void main() {
                 id: 'open-throw',
                 serverId: 'srv-1',
                 title: 'Open throw',
-                backend: MediaBackend.jellyfin,
+                backend: MediaBackend.silo,
               ),
               selectedQualityPreset: TranscodeQualityPreset.original,
               launchObserver: observer,
@@ -217,9 +217,9 @@ class _StreamClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   String get serverName => 'Server';
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
   @override
   double get watchedThreshold => 0.9;
   @override

@@ -12,8 +12,7 @@ class MediaSourceInfo {
   final MediaDisplayCriteria? displayCriteria;
 
   /// Backend-opaque source id for the selected version. Plex uses the
-  /// authoritative `MediaVersion.id`; Jellyfin uses the selected
-  /// `MediaSources` id.
+  /// authoritative `MediaVersion.id`.
   final String? mediaSourceId;
 
   /// Effective version/part positions after backend selection and fallback.
@@ -24,12 +23,12 @@ class MediaSourceInfo {
   /// where the open file ([partIndex]) sits on the item's timeline.
   final MediaPartTimeline? partTimeline;
 
-  /// Jellyfin default stream indexes for this source. A subtitle index of -1
+  /// Default stream indexes for this source. A subtitle index of -1
   /// is an explicit server/user decision to start with subtitles off.
   final int? defaultAudioStreamIndex;
   final int? defaultSubtitleStreamIndex;
 
-  /// Jellyfin trickplay manifest for the selected source, keyed by tile
+  /// Trickplay manifest for the selected source, keyed by tile
   /// width. Null when the server didn't run trickplay extraction. Plex stays
   /// null here and uses [partId] + the BIF service instead.
   final Map<int, TrickplayInfo>? trickplayByWidth;
@@ -77,8 +76,7 @@ class MediaSourceInfo {
   }
 }
 
-/// Per-resolution Jellyfin trickplay manifest. Mirrors `TrickplayInfoDto`
-/// from the Jellyfin OpenAPI spec.
+/// Per-resolution trickplay manifest.
 class TrickplayInfo {
   final int width;
   final int height;
@@ -269,7 +267,7 @@ class MediaChapter {
   MediaChapter({required this.id, this.index, this.startTimeOffset, this.endTimeOffset, this.title, this.thumb});
 
   /// Backfill missing `endTimeOffset` on each chapter from the next chapter's
-  /// `startTimeOffset`. Jellyfin sends only starts; the seek-bar tick UI needs
+  /// `startTimeOffset`. Some backends send only starts; the seek-bar tick UI needs
   /// duration ranges. Mutates [chapters] in place and returns it.
   static List<MediaChapter> backfillEndOffsets(List<MediaChapter> chapters, {int? runtimeMs}) {
     for (var i = 0; i < chapters.length - 1; i++) {

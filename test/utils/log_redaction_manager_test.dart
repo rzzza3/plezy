@@ -31,7 +31,7 @@ void main() {
       expect(result.contains('[REDACTED]'), isTrue);
     });
 
-    test('redacts Jellyfin api_key query parameter without registration', () {
+    test('redacts api_key query parameter without registration', () {
       final input = 'https://example.com/Items/1/Images/Primary?api_key=jelly-token-123&fmt=jpg';
       final result = LogRedactionManager.redact(input);
       expect(result.contains('jelly-token-123'), isFalse);
@@ -45,7 +45,7 @@ void main() {
       expect(result.contains('[REDACTED]'), isTrue);
     });
 
-    test('redacts Jellyfin Quick Connect secret query parameter without registration', () {
+    test('redacts Quick Connect secret query parameter without registration', () {
       final input = 'https://example.com/QuickConnect/Connect?secret=quick-secret-123&next=1';
       final result = LogRedactionManager.redact(input);
       expect(result.contains('quick-secret-123'), isFalse);
@@ -83,9 +83,9 @@ void main() {
 
     test('redacts MediaBrowser Authorization Token segment', () {
       final input =
-          'Authorization: MediaBrowser Client="Plezy", Device="Plezy", DeviceId="dev-1", Version="1.0", Token="opaque-jellyfin-token"';
+          'Authorization: MediaBrowser Client="Plezy", Device="Plezy", DeviceId="dev-1", Version="1.0", Token="opaque-session-token"';
       final result = LogRedactionManager.redact(input);
-      expect(result.contains('opaque-jellyfin-token'), isFalse);
+      expect(result.contains('opaque-session-token'), isFalse);
       expect(result.contains('Token="[REDACTED]"'), isTrue);
       // Surrounding metadata stays intact for debugging.
       expect(result.contains('Client="Plezy"'), isTrue);

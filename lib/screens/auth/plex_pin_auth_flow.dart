@@ -52,7 +52,7 @@ class PlexPinAuthFlow extends StatefulWidget {
   /// Optional builder for the initial action buttons. The default (`null`)
   /// shows two buttons — "Sign in with Plex" (browser) and "Show QR Code".
   /// Pass a custom builder when the parent wants to integrate the buttons
-  /// into a richer layout (extra Jellyfin button, debug button, branding).
+  /// into a richer layout (debug button, branding).
   final Widget Function(BuildContext context, VoidCallback startBrowser, VoidCallback startQr, bool busy)?
   initialButtonsBuilder;
 

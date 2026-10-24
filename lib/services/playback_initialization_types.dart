@@ -18,8 +18,8 @@ class PlaybackInitializationOptions {
   /// Picks among multiple `MediaSources[]` versions when an item has them.
   final int selectedMediaIndex;
 
-  /// Stable backend source id for the selected media version. Jellyfin merged
-  /// versions can reorder between item fetches, so this wins over index there.
+  /// Stable backend source id for the selected media version. Versions can
+  /// reorder between item fetches, so this wins over index when set.
   final String? selectedMediaSourceId;
 
   /// Version signature ("res:codec:container") of a saved preference whose
@@ -148,11 +148,9 @@ class PlaybackInitializationResult {
   final int? activeAudioStreamId;
 
   /// Server playback session ID that must be echoed in progress/stop reports.
-  /// Jellyfin returns this from `PlaybackInfo` / `TranscodingUrl`.
   final String? playSessionId;
 
-  /// Backend playback method value to report with playback progress. Jellyfin
-  /// expects one of `DirectPlay`, `DirectStream`, or `Transcode`.
+  /// Backend playback method value to report with playback progress.
   final String? playMethod;
 
   /// Effective media version after backend clamping/fallback.
@@ -213,8 +211,7 @@ enum PlaybackFailureReason {
   authenticationRequired,
 
   /// The server answered HTTP 403: it knows this account and refuses it this
-  /// item or this connection (a Jellyfin user denied remote access, Plex's
-  /// remote-playback rules). Signing in again changes nothing.
+  /// item or this connection (e.g. Plex's remote-playback rules). Signing in again changes nothing.
   playbackNotAllowed,
   serverUnavailable,
   cancelled,
@@ -237,7 +234,7 @@ class PlaybackException implements Exception {
 /// Maps a transport-level failure raised while initializing playback onto a
 /// display-safe [PlaybackException].
 ///
-/// Backend-neutral on purpose: Plex and Jellyfin both throw the same
+/// Backend-neutral on purpose: Plex and Silo both throw the same
 /// [MediaServerException] hierarchy, so both clients classify identically.
 PlaybackException classifyPlaybackFailure(Object error) {
   if (error is MediaServerHttpException && error.statusCode == 403) {

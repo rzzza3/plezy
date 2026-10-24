@@ -23,8 +23,8 @@ void _logPlatformClient(String platform, String client) {
 /// only reaching the server: `Client.send` then waits for response headers,
 /// which is the server's think time and the caller's deadline to set.
 ///
-/// The pool is always tuned. Every surface that matters fans out — Plex and
-/// Jellyfin home loads, artwork rails, tracker and Seerr traffic all issue
+/// The pool is always tuned. Every surface that matters fans out — home
+/// loads, artwork rails, tracker and Seerr traffic all issue
 /// several concurrent requests per pass — and the dart:io defaults of 6
 /// connections per host and a 15 s idle timeout cost a fresh TLS handshake per
 /// request on a high-RTT or CDN link. On a 60-way artwork fan-out, 12/90 s

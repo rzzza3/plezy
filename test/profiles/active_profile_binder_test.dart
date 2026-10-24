@@ -473,7 +473,7 @@ void main() {
     });
   });
 
-  test('binds Plex and Jellyfin join rows in parallel', () async {
+  test('binds Plex and Silo join rows in parallel', () async {
     binder.dispose();
     multiServerProvider.dispose();
 
@@ -506,9 +506,9 @@ void main() {
       servers: [_server(accessToken: 'account-server-token')],
       createdAt: DateTime(2026, 1, 1),
     );
-    final jellyfin = _jellyfinConnection();
+    final silo = _siloConnection();
     await connections.upsert(plexAccount);
-    await connections.upsert(jellyfin);
+    await connections.upsert(silo);
     await profileConnections.upsert(
       ProfileConnection(
         profileId: profile.id,
@@ -521,8 +521,8 @@ void main() {
     await profileConnections.upsert(
       ProfileConnection(
         profileId: profile.id,
-        connectionId: jellyfin.id,
-        userIdentifier: jellyfin.userId,
+        connectionId: silo.id,
+        userIdentifier: 'profile-a',
         tokenAcquiredAt: DateTime(2026, 1, 1),
       ),
     );
@@ -531,15 +531,15 @@ void main() {
     await mixedManager.plexStarted.future;
     await Future<void>.delayed(Duration.zero);
 
-    expect(mixedManager.jellyfinStarted.isCompleted, isTrue);
+    expect(mixedManager.siloStarted.isCompleted, isTrue);
     expect(activeProfile.isBinding, isTrue);
 
     mixedManager.releasePlex.complete();
     await bind;
 
     expect(activeProfile.lastBindingSucceeded, isTrue);
-    expect(multiServerProvider.onlineServerIds, ['jf-machine']);
-    expect(multiServerProvider.expectedServerIds.toSet(), {'srv-1', 'jf-machine'});
+    expect(multiServerProvider.onlineServerIds, ['silo-machine']);
+    expect(multiServerProvider.expectedServerIds.toSet(), {'srv-1', 'silo-machine'});
   });
 
   group('Plex Home token cache policy', () {
@@ -1061,7 +1061,7 @@ void main() {
       binder.dispose();
       multiServerProvider.dispose();
 
-      final gated = _GatedJellyfinManager();
+      final gated = _GatedSiloManager();
       manager = gated;
       multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
@@ -1075,10 +1075,10 @@ void main() {
       );
 
       final profile = await createActiveLocalProfile('local-queued');
-      final jellyfin = _jellyfinConnection();
-      await connections.upsert(jellyfin);
+      final silo = _siloConnection();
+      await connections.upsert(silo);
       await profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
+        ProfileConnection(profileId: profile.id, connectionId: silo.id, userIdentifier: 'profile-a'),
       );
 
       final cycle = binder.rebindActive();
@@ -1101,7 +1101,7 @@ void main() {
       binder.dispose();
       multiServerProvider.dispose();
 
-      final gated = _GatedJellyfinManager();
+      final gated = _GatedSiloManager();
       manager = gated;
       multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
@@ -1119,10 +1119,10 @@ void main() {
       await profiles.upsert(profileB);
       await pumpUntil(() async => activeProfile.profiles.any((profile) => profile.id == profileB.id));
 
-      final jellyfin = _jellyfinConnection();
-      await connections.upsert(jellyfin);
+      final silo = _siloConnection();
+      await connections.upsert(silo);
       await profileConnections.upsert(
-        ProfileConnection(profileId: profileA.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
+        ProfileConnection(profileId: profileA.id, connectionId: silo.id, userIdentifier: 'profile-a'),
       );
 
       binder.start();
@@ -1135,14 +1135,14 @@ void main() {
 
       expect(gated.calls, 2);
       expect(binder.debugLastBoundProfileId, profileA.id);
-      expect(multiServerProvider.onlineServerIds, ['jf-machine']);
+      expect(multiServerProvider.onlineServerIds, ['silo-machine']);
       expect(activeProfile.lastBindingSucceeded, isTrue);
     });
     test('passive notifications do not retry a failed profile; explicit rebind does', () async {
       binder.dispose();
       multiServerProvider.dispose();
 
-      final failing = _CountingFailingJellyfinManager();
+      final failing = _CountingFailingSiloManager();
       manager = failing;
       multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
@@ -1156,10 +1156,10 @@ void main() {
       );
 
       final profile = await createActiveLocalProfile('local-failing');
-      final jellyfin = _jellyfinConnection();
-      await connections.upsert(jellyfin);
+      final silo = _siloConnection();
+      await connections.upsert(silo);
       await profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
+        ProfileConnection(profileId: profile.id, connectionId: silo.id, userIdentifier: 'profile-a'),
       );
 
       binder.start();
@@ -1168,7 +1168,7 @@ void main() {
 
       // A passive data change (an unrelated connection appearing) must not
       // re-run the failed bind — mid-session retries can pop PIN prompts.
-      await connections.upsert(_jellyfinConnection2());
+      await connections.upsert(_siloConnection2());
       await Future<void>.delayed(const Duration(milliseconds: 50));
       expect(failing.calls, 1);
 
@@ -1356,54 +1356,46 @@ Map<String, dynamic> _serverJson({
   ],
 };
 
-JellyfinConnection _jellyfinConnection() {
-  return JellyfinConnection(
-    id: 'jf-machine/user-a',
-    baseUrl: 'https://jellyfin.example',
-    serverName: 'Jellyfin',
-    serverMachineId: 'jf-machine',
-    userId: 'user-a',
-    userName: 'User A',
-    accessToken: 'token',
-    deviceId: 'device',
+SiloConnection _siloConnection() {
+  return SiloConnection(
+    origin: 'https://silo.example',
+    serverId: 'silo-machine',
+    serverName: 'Silo',
+    username: 'alice',
     createdAt: DateTime(2026, 1, 1),
   );
 }
 
-JellyfinConnection _jellyfinConnection2() {
-  return JellyfinConnection(
-    id: 'jf-other/user-b',
-    baseUrl: 'https://other.example',
+SiloConnection _siloConnection2() {
+  return SiloConnection(
+    origin: 'https://other.example',
+    serverId: 'silo-other',
     serverName: 'Other',
-    serverMachineId: 'jf-other',
-    userId: 'user-b',
-    userName: 'User B',
-    accessToken: 'token-b',
-    deviceId: 'device',
+    username: 'bob',
     createdAt: DateTime(2026, 1, 2),
   );
 }
 
-class _GatedJellyfinManager extends MultiServerManager {
+class _GatedSiloManager extends MultiServerManager {
   final Completer<void> gate = Completer<void>();
   int calls = 0;
 
   @override
-  Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
+  Future<bool> addSiloConnection(SiloConnection connection, {required String profileId}) async {
     calls++;
     if (calls == 1) await gate.future;
-    updateServerStatus(ServerId(connection.serverMachineId), true);
+    updateServerStatus(ServerId(connection.serverId), true);
     return true;
   }
 }
 
-class _CountingFailingJellyfinManager extends MultiServerManager {
+class _CountingFailingSiloManager extends MultiServerManager {
   int calls = 0;
 
   @override
-  Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
+  Future<bool> addSiloConnection(SiloConnection connection, {required String profileId}) async {
     calls++;
-    updateServerStatus(ServerId(connection.serverMachineId), false);
+    updateServerStatus(ServerId(connection.serverId), false);
     return false;
   }
 }
@@ -1450,11 +1442,7 @@ class _SweptAuthRejectingPlexManager extends MultiServerManager {
   final Set<String> _rejected = {};
 
   @override
-  bool isRegisteredForOtherProfile(
-    ServerId serverId, {
-    required String profileId,
-    Set<String> jellyfinConnectionIds = const {},
-  }) => _rejected.contains(serverId);
+  bool isRegisteredForOtherProfile(ServerId serverId, {required String profileId}) => _rejected.contains(serverId);
 
   @override
   Future<Set<String>> refreshTokensForProfile(
@@ -1508,7 +1496,7 @@ class _RecordingPlexManager extends MultiServerManager {
 class _BlockingMixedMultiServerManager extends MultiServerManager {
   final plexStarted = Completer<void>();
   final releasePlex = Completer<void>();
-  final jellyfinStarted = Completer<void>();
+  final siloStarted = Completer<void>();
 
   @override
   Future<Set<String>> refreshTokensForProfile(
@@ -1525,9 +1513,9 @@ class _BlockingMixedMultiServerManager extends MultiServerManager {
   }
 
   @override
-  Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
-    if (!jellyfinStarted.isCompleted) jellyfinStarted.complete();
-    updateServerStatus(ServerId(connection.serverMachineId), true);
+  Future<bool> addSiloConnection(SiloConnection connection, {required String profileId}) async {
+    if (!siloStarted.isCompleted) siloStarted.complete();
+    updateServerStatus(ServerId(connection.serverId), true);
     return true;
   }
 }

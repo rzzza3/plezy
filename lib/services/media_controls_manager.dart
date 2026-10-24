@@ -57,8 +57,7 @@ class MediaControlsManager {
   ///
   /// This includes title, artist, artwork, and duration. Backend-neutral —
   /// the [MediaServerClient.thumbnailUrl] adapter handles per-backend URL
-  /// shape (Plex's `/photo/:/transcode` proxy vs. Jellyfin's
-  /// self-authenticated image URL).
+  /// shape (e.g. Plex's `/photo/:/transcode` proxy).
   Future<void> updateMetadata({required MediaItem metadata, MediaServerClient? client, Duration? duration}) async {
     if (_updatesSuspended) return;
     final generation = ++_metadataGeneration;

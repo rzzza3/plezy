@@ -9,12 +9,6 @@ part 'media_part.g.dart';
 /// part; Plex stacks split files (CD1/CD2, `Part 1`/`Part 2`) and some
 /// DVD/BluRay rips as several parts of one version, which play as one item
 /// timeline (`MediaPartTimeline`).
-///
-/// Jellyfin and Emby items always map to a single part per media source.
-/// Those servers model a split file as separate hidden items (`PartCount`,
-/// `/Videos/{id}/AdditionalParts`) that each keep their own progress and
-/// watched state; the app does not follow them, so only the first file
-/// plays there.
 @JsonSerializable(includeIfNull: false)
 class MediaPart {
   /// Backend-opaque part identifier.
@@ -22,7 +16,7 @@ class MediaPart {
   final String id;
 
   /// Backend-specific path used to construct a direct stream URL — e.g. Plex's
-  /// `/library/parts/123/file.mkv` or Jellyfin's `/Videos/{id}/stream`. The
+  /// `/library/parts/123/file.mkv`. The
   /// per-backend client is responsible for prefixing the base URL and
   /// appending auth.
   final String? streamPath;

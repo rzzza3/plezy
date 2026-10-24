@@ -499,7 +499,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           // Other episodes of a Plex multi-episode file share this item's
           // part — watching the file watched them too (#1500). Reusing
           // markWatchedFromPlaybackStop keeps the local watched-event
-          // emission and the Jellyfin double-scrobble guard (#1287); the
+          // emission and the double-scrobble guard (#1287); the
           // trackers hear about a sibling the same way any other watched mark
           // reaches them, since no playback session was ever opened for it.
           final siblings = playbackState.sameFileSiblings(metadata, playedPartId: mediaInfo?.partId?.toString());

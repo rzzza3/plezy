@@ -95,28 +95,13 @@ PlexHomeUser _homeUser(String uuid, {int id = 1, String name = 'Home User', Stri
   );
 }
 
-PlexAccountConnection _account(String id) {
+PlexAccountConnection _account(String id, {DateTime? createdAt}) {
   return PlexAccountConnection(
     id: id,
     accountToken: 'token-$id',
     clientIdentifier: 'client-$id',
     accountLabel: 'Plex',
-    createdAt: DateTime(2026, 1, 1),
-  );
-}
-
-JellyfinConnection _jellyfin(String id, {required DateTime createdAt, required String primaryImageTag}) {
-  return JellyfinConnection(
-    id: id,
-    baseUrl: 'https://jellyfin.example',
-    serverName: 'Jellyfin',
-    serverMachineId: 'machine-$id',
-    userId: 'user-$id',
-    userName: 'User $id',
-    accessToken: 'token-$id',
-    deviceId: 'device-$id',
-    primaryImageTag: primaryImageTag,
-    createdAt: createdAt,
+    createdAt: createdAt ?? DateTime(2026, 1, 1),
   );
 }
 
@@ -240,24 +225,6 @@ void main() {
     });
 
     group('avatarUrlFor', () {
-      test('returns the linked Jellyfin user picture after initialize', () async {
-        final profile = Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-        final connection = _jellyfin('first', createdAt: DateTime(2025, 1, 1), primaryImageTag: 'avatar-tag');
-        await registry.upsert(profile);
-        await connections.upsert(connection);
-        await profileConnections.upsert(
-          const ProfileConnection(profileId: 'p1', connectionId: 'first', userIdentifier: 'user-first'),
-        );
-
-        await provider.initialize();
-
-        expect(
-          provider.avatarUrlFor(profile.id),
-          'https://jellyfin.example/Users/user-first/Images/Primary'
-          '?tag=avatar-tag&maxWidth=240&maxHeight=240',
-        );
-      });
-
       test('returns null for profiles without links and unknown profile ids', () async {
         await registry.upsert(Profile.local(id: 'unlinked', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
 
@@ -282,24 +249,26 @@ void main() {
 
       test('linking an older connection updates the selected picture', () async {
         final profile = Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-        final newer = _jellyfin('newer', createdAt: DateTime(2026, 1, 2), primaryImageTag: 'newer-tag');
-        final older = _jellyfin('older', createdAt: DateTime(2025, 12, 31), primaryImageTag: 'older-tag');
+        final newer = _account('newer', createdAt: DateTime(2026, 1, 2));
+        final older = _account('older', createdAt: DateTime(2025, 12, 31));
+        fetchedHomeUsers = [
+          _homeUser('home-newer', thumb: 'https://images.example/newer.jpg'),
+          _homeUser('home-older', id: 2, thumb: 'https://images.example/older.jpg'),
+        ];
         await registry.upsert(profile);
         await connections.upsert(newer);
         await connections.upsert(older);
+        expect(await plexHome.refresh(newer), isTrue);
+        expect(await plexHome.refresh(older), isTrue);
         await profileConnections.upsert(
-          const ProfileConnection(profileId: 'p1', connectionId: 'newer', userIdentifier: 'user-newer'),
+          const ProfileConnection(profileId: 'p1', connectionId: 'newer', userIdentifier: 'home-newer'),
         );
         await provider.initialize();
-        expect(
-          provider.avatarUrlFor(profile.id),
-          'https://jellyfin.example/Users/user-newer/Images/Primary'
-          '?tag=newer-tag&maxWidth=240&maxHeight=240',
-        );
+        expect(provider.avatarUrlFor(profile.id), 'https://images.example/newer.jpg');
 
         final changed = Completer<void>();
         void listener() {
-          if (provider.avatarUrlFor(profile.id)?.contains('older-tag') ?? false) {
+          if (provider.avatarUrlFor(profile.id) == 'https://images.example/older.jpg') {
             if (!changed.isCompleted) changed.complete();
           }
         }
@@ -308,15 +277,11 @@ void main() {
         addTearDown(() => provider.removeListener(listener));
 
         await profileConnections.upsert(
-          const ProfileConnection(profileId: 'p1', connectionId: 'older', userIdentifier: 'user-older'),
+          const ProfileConnection(profileId: 'p1', connectionId: 'older', userIdentifier: 'home-older'),
         );
         await changed.future.timeout(const Duration(seconds: 2));
 
-        expect(
-          provider.avatarUrlFor(profile.id),
-          'https://jellyfin.example/Users/user-older/Images/Primary'
-          '?tag=older-tag&maxWidth=240&maxHeight=240',
-        );
+        expect(provider.avatarUrlFor(profile.id), 'https://images.example/older.jpg');
       });
 
       test('a corrected connection creation time re-picks the avatar without a restart', () async {
@@ -327,20 +292,28 @@ void main() {
         // swallowing that would leave a stale avatar until the next launch.
         final profile = Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
         await registry.upsert(profile);
-        await connections.upsert(_jellyfin('a', createdAt: DateTime(2025, 1, 1), primaryImageTag: 'a-tag'));
-        await connections.upsert(_jellyfin('b', createdAt: DateTime(2026, 1, 1), primaryImageTag: 'b-tag'));
+        final a = _account('a', createdAt: DateTime(2025, 1, 1));
+        final b = _account('b', createdAt: DateTime(2026, 1, 1));
+        fetchedHomeUsers = [
+          _homeUser('home-a', thumb: 'https://images.example/a.jpg'),
+          _homeUser('home-b', id: 2, thumb: 'https://images.example/b.jpg'),
+        ];
+        await connections.upsert(a);
+        await connections.upsert(b);
+        expect(await plexHome.refresh(a), isTrue);
+        expect(await plexHome.refresh(b), isTrue);
         await profileConnections.upsert(
-          const ProfileConnection(profileId: 'p1', connectionId: 'a', userIdentifier: 'user-a'),
+          const ProfileConnection(profileId: 'p1', connectionId: 'a', userIdentifier: 'home-a'),
         );
         await profileConnections.upsert(
-          const ProfileConnection(profileId: 'p1', connectionId: 'b', userIdentifier: 'user-b'),
+          const ProfileConnection(profileId: 'p1', connectionId: 'b', userIdentifier: 'home-b'),
         );
         await provider.initialize();
-        expect(provider.avatarUrlFor(profile.id), contains('tag=a-tag'));
+        expect(provider.avatarUrlFor(profile.id), 'https://images.example/a.jpg');
 
         final changed = Completer<void>();
         void listener() {
-          if ((provider.avatarUrlFor(profile.id)?.contains('b-tag') ?? false) && !changed.isCompleted) {
+          if (provider.avatarUrlFor(profile.id) == 'https://images.example/b.jpg' && !changed.isCompleted) {
             changed.complete();
           }
         }
@@ -355,18 +328,21 @@ void main() {
         );
         await changed.future.timeout(const Duration(seconds: 2));
 
-        expect(provider.avatarUrlFor(profile.id), contains('tag=b-tag'));
+        expect(provider.avatarUrlFor(profile.id), 'https://images.example/b.jpg');
       });
 
       test('token and timestamp churn on a link does not notify listeners', () async {
         await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
-        await connections.upsert(_jellyfin('jellyfin', createdAt: DateTime(2025, 1, 1), primaryImageTag: 'avatar-tag'));
+        final account = _account('plex.acct');
+        fetchedHomeUsers = [_homeUser('home-user', thumb: 'https://images.example/home.jpg')];
+        await connections.upsert(account);
+        expect(await plexHome.refresh(account), isTrue);
         await profileConnections.upsert(
           const ProfileConnection(
             profileId: 'p1',
-            connectionId: 'jellyfin',
+            connectionId: 'plex.acct',
             userToken: 'initial-token',
-            userIdentifier: 'user-jellyfin',
+            userIdentifier: 'home-user',
           ),
         );
         await provider.initialize();
@@ -385,7 +361,7 @@ void main() {
         });
         addTearDown(rowSubscription.cancel);
 
-        await profileConnections.recordToken('p1', 'jellyfin', 'refreshed-token');
+        await profileConnections.recordToken('p1', 'plex.acct', 'refreshed-token');
         await churnObserved.future.timeout(const Duration(seconds: 2));
         await Future<void>(() {});
 

@@ -1,19 +1,18 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/folder_tree_view.dart';
-import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
 
-import '../../test_helpers/backend_client_fixtures.dart';
+import '../../test_helpers/media_items.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
@@ -26,94 +25,10 @@ void main() {
     await SettingsService.getInstance();
   });
 
-  testWidgets('Jellyfin music artists and albums expand through direct children', (tester) async {
-    final client = JellyfinClient.forTesting(
-      connection: testJellyfinConnection(machineId: 'music-server'),
-      httpClient: MockClient((request) async {
-        final parentId = request.url.queryParameters['ParentId'];
-        final foldersOnly = request.url.queryParameters['IncludeItemTypes'] == 'Folder,CollectionFolder';
-        final items = foldersOnly
-            ? const <Map<String, Object?>>[]
-            : switch (parentId) {
-                'music-library' => const [
-                  {'Id': 'artist-1', 'Name': 'Artist One', 'Type': 'MusicArtist', 'IsFolder': true},
-                ],
-                'artist-1' => const [
-                  {
-                    'Id': 'album-1',
-                    'Name': 'Album One',
-                    'Type': 'MusicAlbum',
-                    'IsFolder': true,
-                    'AlbumArtists': [
-                      {'Id': 'artist-1', 'Name': 'Artist One'},
-                    ],
-                  },
-                ],
-                'album-1' => const [
-                  {'Id': 'track-1', 'Name': 'Track One', 'Type': 'Audio', 'AlbumId': 'album-1', 'Album': 'Album One'},
-                ],
-                _ => const <Map<String, Object?>>[],
-              };
-        return http.Response(
-          jsonEncode({'Items': items, 'TotalRecordCount': items.length}),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }),
-    );
-    final provider = testMultiServer(clients: [client]).provider;
-
-    await tester.pumpWidget(
-      ChangeNotifierProvider<MultiServerProvider>.value(
-        value: provider,
-        child: InputModeTracker(
-          child: MaterialApp(
-            theme: monoTheme(dark: true),
-            home: Scaffold(
-              body: CustomScrollView(
-                slivers: const [
-                  FolderTreeView(libraryKey: 'music-library', serverId: 'music-server', libraryKind: MediaKind.artist),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Artist One'), findsOneWidget);
-    expect(find.text('Album One'), findsNothing);
-
-    await tester.tap(find.text('Artist One'));
-    await tester.pumpAndSettle();
-    expect(find.text('Album One'), findsOneWidget);
-    expect(find.text('Track One'), findsNothing);
-
-    await tester.tap(find.text('Album One'));
-    await tester.pumpAndSettle();
-    expect(find.text('Track One'), findsOneWidget);
-  });
-
   testWidgets('refresh reports whether the root listing landed', (tester) async {
-    var failNext = false;
-    final client = JellyfinClient.forTesting(
-      connection: testJellyfinConnection(machineId: 'srv'),
-      httpClient: MockClient((request) async {
-        if (failNext) return http.Response('down', 500);
-        final foldersOnly = request.url.queryParameters['IncludeItemTypes'] == 'Folder,CollectionFolder';
-        final items = foldersOnly
-            ? const <Map<String, Object?>>[]
-            : const [
-                {'Id': 'f1', 'Name': 'Folder One', 'Type': 'Folder', 'IsFolder': true},
-              ];
-        return http.Response(
-          jsonEncode({'Items': items, 'TotalRecordCount': items.length}),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }),
-    );
+    final client = _FolderClient([
+      testMediaItem(id: 'f1', backend: MediaBackend.silo, kind: MediaKind.folder, title: 'Folder One', serverId: 'srv'),
+    ]);
     final provider = testMultiServer(clients: [client]).provider;
     final key = GlobalKey<FolderTreeViewState>();
 
@@ -139,9 +54,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(await refreshed, isTrue);
 
-    failNext = true;
+    client.failNext = true;
     final failed = key.currentState!.refresh();
     await tester.pumpAndSettle();
     expect(await failed, isFalse);
   });
+}
+
+/// Serves one root listing, or throws once [failNext] is set.
+class _FolderClient implements MediaServerClient {
+  _FolderClient(this.rootFolders);
+
+  final List<MediaItem> rootFolders;
+  bool failNext = false;
+
+  @override
+  ServerId get serverId => ServerId('srv');
+
+  @override
+  MediaBackend get backend => MediaBackend.silo;
+
+  @override
+  Future<List<MediaItem>> fetchLibraryFolders(
+    String libraryId, {
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) async {
+    if (failNext) throw Exception('down');
+    return rootFolders;
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

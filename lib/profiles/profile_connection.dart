@@ -11,7 +11,7 @@ part 'profile_connection.freezed.dart';
 /// `ActiveProfileBinder` performs the switch on first activation and
 /// caches the resulting token back into this row.
 ///
-/// For the MediaBrowser backends (Jellyfin and Emby): [userToken] mirrors the
+/// For other backends: [userToken] mirrors the
 /// Connection's accessToken (one user per connection); [userIdentifier] is the
 /// server-side user id.
 @freezed

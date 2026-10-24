@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:plezy/connection/connection.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/database/app_database.dart';
@@ -17,6 +18,7 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/library_management_sheet.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
@@ -304,13 +306,22 @@ void main() {
   });
 
   testWidgets('library admin actions are offered only on servers the user administers', (tester) async {
-    final adminClient = testJellyfinClient(
-      connection: testJellyfinConnection(machineId: 'admin-srv', isAdministrator: true),
+    // Ownership comes from the account's cached server list; recording it via
+    // the auth-error marker needs no network.
+    PlexServer server(String id, {required bool owned}) =>
+        PlexServer(name: id, clientIdentifier: id, accessToken: 'token-$id', owned: owned, connections: []);
+    final account = PlexAccountConnection(
+      id: 'account-1',
+      accountToken: 'account-token',
+      clientIdentifier: 'test-client',
+      accountLabel: 'Account',
+      createdAt: DateTime.utc(2026),
+      servers: [server('admin-srv', owned: true), server('user-srv', owned: false)],
     );
-    final userClient = testJellyfinClient(connection: testJellyfinConnection(machineId: 'user-srv'));
     final manager = MultiServerManager()
-      ..debugRegisterJellyfinClientForTesting(adminClient)
-      ..debugRegisterJellyfinClientForTesting(userClient);
+      ..markPlexConnectionAuthError(account, profileId: 'profile-1')
+      ..debugRegisterClientForTesting(testPlexClient(serverId: ServerId('admin-srv')))
+      ..debugRegisterClientForTesting(testPlexClient(serverId: ServerId('user-srv')));
     final provider = testMultiServerProvider(manager);
     addTearDown(() {
       provider.dispose();
@@ -319,7 +330,7 @@ void main() {
 
     MediaLibrary library(String serverId, String title) => MediaLibrary(
       id: '$serverId-movies',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.plex,
       title: title,
       kind: MediaKind.movie,
       serverId: serverId,

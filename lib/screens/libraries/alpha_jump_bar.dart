@@ -113,8 +113,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
 
   /// Find the nearest displayed letter at or before [letter] in the full list.
   /// Returns an empty string when [letter] is empty so callers can render an
-  /// "unhighlighted" state — important for the Jellyfin filter UX where no
-  /// letter is selected by default.
+  /// "unhighlighted" state.
   String _nearestDisplayed(String letter) {
     if (letter.isEmpty) return '';
     if (_displayed.isEmpty) return letter;

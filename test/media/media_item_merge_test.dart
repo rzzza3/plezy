@@ -104,8 +104,8 @@ void main() {
   });
 
   test('an unstamped re-resolve does not strip a copy of its library', () {
-    // Jellyfin's library stamp is a best-effort ancestors lookup that returns
-    // the item unstamped when it fails. Losing the title would make this copy
+    // A library stamp is a best-effort lookup that returns the item
+    // unstamped when it fails. Losing the title would make this copy
     // indistinguishable from its sibling in the server's other library.
     final merged = mergeLibraryCopies(
       [copy(id: 'hd', libraryTitle: 'Movies', videoResolution: '1080')],

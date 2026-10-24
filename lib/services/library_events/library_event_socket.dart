@@ -155,8 +155,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
   /// attempt so failover-driven base-URL changes take effect on reconnect.
   Uri buildUri();
 
-  /// Runs before each connect attempt (e.g. Emby's capabilities
-  /// registration). A throw fails the attempt into the normal retry path.
+  /// Runs before each connect attempt. A throw fails the attempt into the normal retry path.
   Future<void> prepareConnection() async {}
 
   /// One raw websocket frame (usually a JSON string). Implementations parse

@@ -15,8 +15,7 @@ import '../utils/app_logger.dart';
 import '../utils/track_label_builder.dart';
 
 /// Persists a track choice for the current part to the server and reports
-/// whether the server stored it. Plex only: backends whose picks ride the
-/// playback progress reports ([TrackSelectionMemoryEnabler]) or that keep no
+/// whether the server stored it. Plex only: backends that keep no
 /// server-side stream selection leave this null.
 ///
 /// A server refusal (non-2xx) throws [MediaServerHttpException] with its
@@ -25,16 +24,6 @@ import '../utils/track_label_builder.dart';
 /// [trackType] is `'audio'` or `'subtitle'`.
 typedef TrackPreferencePersister =
     Future<bool> Function({required int partId, required String trackType, required int streamID});
-
-/// Makes the server honour the stream indexes the playback progress reports
-/// already carry for [trackType] (`'audio'` or `'subtitle'`), and reports
-/// whether it will. MediaBrowser only: Jellyfin turns a reported index into the
-/// next play's default only while the account's `RememberAudioSelections` /
-/// `RememberSubtitleSelections` flag is on, so this turns the flag on when the
-/// user opted in locally. False when the backend cannot remember picks at all
-/// ([MediaBrowserDialect.persistsTrackSelectionsViaAccountFlags]) or the
-/// account refused the change.
-typedef TrackSelectionMemoryEnabler = Future<bool> Function(String trackType);
 
 /// Manages track (audio + subtitle) lifecycle: automatic track selection,
 /// server preference sync, and cycling.
@@ -47,14 +36,9 @@ class TrackManager {
   /// Returns false once the owning widget is unmounted or disposed.
   final bool Function() isActive;
 
-  /// Writes a track choice to Plex immediately. `null` for backends whose
-  /// picks ride the progress reports (MediaBrowser, see
-  /// [enableTrackSelectionMemory]) and for playback with no server.
+  /// Writes a track choice to Plex immediately. `null` for backends that keep
+  /// no server-side stream selection and for playback with no server.
   final TrackPreferencePersister? persistTrackPreference;
-
-  /// Makes a MediaBrowser server keep the picks its progress reports carry.
-  /// `null` for Plex and for playback with no server.
-  final TrackSelectionMemoryEnabler? enableTrackSelectionMemory;
 
   /// Resolves the user's profile settings (may be null during loading).
   final MediaServerUserProfile? Function() getProfileSettings;
@@ -126,7 +110,6 @@ class TrackManager {
     required this.player,
     required this.isActive,
     this.persistTrackPreference,
-    this.enableTrackSelectionMemory,
     required this.getProfileSettings,
     required this.waitForProfileSettings,
     required this.metadata,
@@ -540,15 +523,12 @@ class TrackManager {
 
   /// Common guard for the track change handlers: the part id to write against,
   /// or null when nothing is written per part — the user opted out, the
-  /// backend remembers picks through its account instead (settled here), or
-  /// the source cannot be addressed.
+  /// backend keeps no server-side selection, or the source cannot be
+  /// addressed.
   Future<int?> _guardTrackChange(MediaSourceInfo? info, String trackType) async {
     if (!await shouldPersistTrackSelections()) return null;
 
-    if (persistTrackPreference == null) {
-      await _ensureServerRemembersSelections(trackType);
-      return null;
-    }
+    if (persistTrackPreference == null) return null;
 
     if (info == null) {
       appLogger.w('No media info available, cannot save stream selection');
@@ -589,23 +569,6 @@ class TrackManager {
       return;
     }
     appLogger.w('Server did not store the $trackType stream selection');
-    _reportSelectionNotRemembered();
-  }
-
-  /// MediaBrowser: the pick itself travels in the progress reports; what can
-  /// still go wrong is the server ignoring it, which the hook settles.
-  Future<void> _ensureServerRemembersSelections(String trackType) async {
-    final enable = enableTrackSelectionMemory;
-    if (enable == null || !isActive()) return;
-    final bool remembered;
-    try {
-      remembered = await enable(trackType);
-    } catch (e, st) {
-      _handleServerSyncFailure("turn on the account's $trackType selection memory", e, st);
-      return;
-    }
-    if (remembered) return;
-    appLogger.w('Server will not remember $trackType selections');
     _reportSelectionNotRemembered();
   }
 

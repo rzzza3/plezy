@@ -81,7 +81,7 @@ void main() {
   testWidgets('dashboard spotlight still shows one badge for a single-score listing', (tester) async {
     await _pumpSpotlight(
       tester,
-      const MediaItem.jellyfin(
+      const MediaItem.silo(
         id: 'movie_2',
         kind: MediaKind.movie,
         title: 'Community Only',

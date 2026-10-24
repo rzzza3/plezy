@@ -53,7 +53,7 @@ void main() {
   }
 
   testWidgets('avatarUrl renders the derived network image', (tester) async {
-    const avatarUrl = 'https://jellyfin.example/Users/user-1/Images/Primary?tag=derived';
+    const avatarUrl = 'https://silo.example/avatars/user-1?tag=derived';
 
     await pumpAvatar(tester, profile: localProfile(), avatarUrl: avatarUrl);
 
@@ -61,7 +61,7 @@ void main() {
   });
 
   testWidgets('avatarUrl takes precedence over the profile thumbnail', (tester) async {
-    const derivedUrl = 'https://jellyfin.example/Users/user-1/Images/Primary?tag=derived';
+    const derivedUrl = 'https://silo.example/avatars/user-1?tag=derived';
     const profileThumbUrl = 'https://plex.example/profile-thumb.jpg';
 
     await pumpAvatar(
@@ -120,7 +120,7 @@ void main() {
     await pumpAvatar(
       tester,
       profile: localProfile(),
-      avatarUrl: 'https://jellyfin.example/Users/user-1/Images/Primary?tag=large-original',
+      avatarUrl: 'https://silo.example/avatars/user-1?tag=large-original',
       size: size,
       devicePixelRatio: devicePixelRatio,
     );
@@ -134,7 +134,7 @@ void main() {
     await pumpAvatar(
       tester,
       profile: localProfile(pinHash: 'stored-pin-hash'),
-      avatarUrl: 'https://jellyfin.example/Users/user-1/Images/Primary?tag=derived',
+      avatarUrl: 'https://silo.example/avatars/user-1?tag=derived',
     );
 
     expect(find.byType(Image), findsOneWidget);

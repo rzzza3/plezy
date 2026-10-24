@@ -7,20 +7,14 @@ export 'media_stream.dart' show MediaStreamKind;
 
 /// Backend-neutral file-info payload rendered by `FileInfoBottomSheet`.
 ///
-/// The shape mirrors what both media servers actually return: an item owns one
-/// or more *versions* (Plex `Media`, Jellyfin `MediaSources`), a version owns
-/// one or more *parts* (Plex `Part`; Jellyfin folds the file into the source,
-/// so it always yields exactly one), and a part owns the demuxed *streams*.
+/// The shape mirrors what media servers actually return: an item owns one
+/// or more *versions* (Plex `Media`), a version owns one or more *parts*
+/// (Plex `Part`), and a part owns the demuxed *streams*.
 /// Nothing is collapsed to "the first entry" — split/stacked files and
 /// multi-version libraries surface every entry.
 ///
-/// Every field either backend exposes about the file itself is modelled here.
-/// Deliberately excluded are Jellyfin's ffmpeg-input plumbing flags
-/// (`IgnoreDts`, `IgnoreIndex`, `GenPtsInput`, `ReadAtNativeFramerate`,
-/// `RequiresOpening`/`Closing`/`Looping`, `SupportsProbing`,
-/// `UseMostCompatibleTranscodingProfile`, `TranscodingSubProtocol`,
-/// `HasSegments`) and its `Localized*` label helpers: they describe the
-/// transcoder contract or duplicate a flag already modelled, not the file.
+/// Every field a backend exposes about the file itself is modelled here;
+/// transcoder-contract plumbing flags are deliberately excluded.
 class MediaFileInfo {
   /// Every version the server reports, in server order.
   final List<MediaFileVersion> versions;
@@ -28,7 +22,7 @@ class MediaFileInfo {
   const MediaFileInfo({this.versions = const []});
 }
 
-/// One playable version of an item: Plex `Media`, Jellyfin `MediaSources[]`.
+/// One playable version of an item: Plex `Media`.
 ///
 /// The video/audio summary fields are the server's own roll-up of the primary
 /// streams. They are kept because Plex derives them independently of the
@@ -37,13 +31,12 @@ class MediaFileInfo {
 class MediaFileVersion {
   final String? id;
 
-  /// Server-assigned version label (Plex `Media.title`, Jellyfin
-  /// `MediaSource.Name`).
+  /// Server-assigned version label (Plex `Media.title`).
   final String? title;
 
   final String? container;
 
-  /// Overall bitrate in kbps. Jellyfin reports bps and is normalised here.
+  /// Overall bitrate in kbps.
   final int? bitrateKbps;
 
   final int? durationMs;
@@ -67,10 +60,10 @@ class MediaFileVersion {
   final bool? optimizedForStreaming;
   final bool? has64bitOffsets;
 
-  /// Jellyfin `Protocol` (`File`, `Http`, …).
+  /// Source protocol (`File`, `Http`, …).
   final String? protocol;
 
-  /// Jellyfin `VideoType` (`VideoFile`, `Dvd`, `BluRay`, `Iso`).
+  /// Video container type (`VideoFile`, `Dvd`, `BluRay`, `Iso`).
   final String? videoType;
 
   final bool? isRemote;
@@ -79,15 +72,15 @@ class MediaFileVersion {
   final bool? supportsDirectStream;
   final bool? supportsTranscoding;
 
-  /// Jellyfin content ETag — the identity the server invalidates caches on.
+  /// Content ETag — the identity the server invalidates caches on.
   final String? eTag;
 
-  /// Jellyfin default stream selection for this source. `-1` on the subtitle
+  /// Default stream selection for this source. `-1` on the subtitle
   /// index is an explicit "start with subtitles off".
   final int? defaultAudioStreamIndex;
   final int? defaultSubtitleStreamIndex;
 
-  /// Jellyfin `MediaSource.Type` (`Default`, `Grouping`, `Placeholder`).
+  /// Source type (`Default`, `Grouping`, `Placeholder`).
   final String? sourceType;
 
   /// Plex `proxyType == 42` — this version is a server-generated optimized
@@ -102,8 +95,8 @@ class MediaFileVersion {
   /// staring at a missing file needs to see.
   final DateTime? deletedAt;
 
-  /// Jellyfin `Timestamp` — transport-stream timestamp mode (`None`, `Zero`,
-  /// `Valid`) for TS containers.
+  /// Transport-stream timestamp mode (`None`, `Zero`, `Valid`) for TS
+  /// containers.
   final String? transportStreamTimestamp;
 
   /// Plex `displayOffset` — where this version starts inside a multi-part
@@ -112,7 +105,7 @@ class MediaFileVersion {
 
   final List<MediaFilePart> parts;
 
-  /// Embedded non-media files (Jellyfin `MediaAttachments`) — typically the
+  /// Embedded non-media files — typically the
   /// fonts an ASS subtitle track needs.
   final List<MediaFileAttachment> attachments;
 
@@ -174,7 +167,7 @@ class MediaFileVersion {
   }
 }
 
-/// One file backing a version: Plex `Part`, or the Jellyfin source's own file.
+/// One file backing a version: Plex `Part`.
 class MediaFilePart {
   final String? id;
   final String? filePath;
@@ -245,7 +238,7 @@ class MediaFilePart {
   Iterable<MediaStreamDetails> streamsOfKind(MediaStreamKind kind) => streams.where((s) => s.kind == kind);
 }
 
-/// Embedded attachment (Jellyfin `MediaAttachments`).
+/// Embedded attachment.
 class MediaFileAttachment {
   final int? index;
   final String? fileName;
@@ -257,8 +250,8 @@ class MediaFileAttachment {
 
 /// Colour/HDR classification of a video stream, normalised across backends.
 ///
-/// Jellyfin reports it directly (`VideoRangeType`); Plex is derived from the
-/// transfer characteristics plus the Dolby Vision block.
+/// Plex derives it from the transfer characteristics plus the Dolby Vision
+/// block.
 enum MediaVideoRange {
   sdr,
   hdr,
@@ -287,7 +280,7 @@ enum MediaVideoRange {
 }
 
 /// Dolby Vision descriptor. Plex exposes it as `DOVI*` keys on the video
-/// stream, Jellyfin as `Dv*`/`*PresentFlag`.
+/// stream.
 class MediaDolbyVisionInfo {
   final int? profile;
   final int? level;
@@ -297,7 +290,7 @@ class MediaDolbyVisionInfo {
   final bool? elPresent;
   final bool? rpuPresent;
 
-  /// Jellyfin's own summary string (`Dolby Vision Profile 8.1 (HDR10)`).
+  /// Server summary string (`Dolby Vision Profile 8.1 (HDR10)`).
   final String? title;
 
   const MediaDolbyVisionInfo({
@@ -337,7 +330,7 @@ class MediaDolbyVisionInfo {
 class MediaStreamDetails {
   final MediaStreamKind kind;
 
-  /// Backend stream id (Plex `Stream.id`, Jellyfin has none).
+  /// Backend stream id (Plex `Stream.id`).
   final String? id;
 
   /// Container stream ordinal.
@@ -348,25 +341,24 @@ class MediaStreamDetails {
 
   final String? title;
 
-  /// Server-rendered summary (Plex `extendedDisplayTitle`, Jellyfin
-  /// `DisplayTitle`).
+  /// Server-rendered summary (Plex `extendedDisplayTitle`).
   final String? displayTitle;
 
   final String? codec;
 
-  /// FourCC / container codec tag (Plex `codecID`, Jellyfin `CodecTag`).
+  /// FourCC / container codec tag (Plex `codecID`).
   final String? codecTag;
 
   final String? profile;
   final int? level;
 
-  /// Human-readable language (Plex `language`, Jellyfin `DisplayLanguage`).
+  /// Human-readable language (Plex `language`).
   final String? language;
 
   /// ISO 639 code as the server reports it.
   final String? languageCode;
 
-  /// Stream bitrate in kbps. Jellyfin reports bps and is normalised here.
+  /// Stream bitrate in kbps.
   final int? bitrateKbps;
 
   final bool? isDefault;
@@ -406,7 +398,7 @@ class MediaStreamDetails {
   final bool? hasHdr10Plus;
   final MediaDolbyVisionInfo? dolbyVision;
 
-  /// Jellyfin `IsAVC` — whether an H.264 stream uses the AVC (not Annex B)
+  /// Whether an H.264 stream uses the AVC (not Annex B)
   /// bitstream layout, with its NAL length prefix size.
   final bool? isAvc;
   final int? nalLengthSize;
@@ -418,11 +410,10 @@ class MediaStreamDetails {
   /// Transport-stream PID / program identifier.
   final String? streamIdentifier;
 
-  /// Free-form ffmpeg stream comment tag (Plex `comment`, Jellyfin
-  /// `Comment` on embedded cover art).
+  /// Free-form ffmpeg stream comment tag (Plex `comment`).
   final String? comment;
 
-  /// Clockwise display rotation in degrees (Jellyfin `Rotation`).
+  /// Clockwise display rotation in degrees.
   final int? rotation;
 
   /// Plex `descriptions` — the track carries audio descriptions for the
@@ -433,11 +424,10 @@ class MediaStreamDetails {
   /// which some demuxers reject.
   final bool? headerCompression;
 
-  /// On-disk path of a sidecar stream (Jellyfin `Path` on external subtitle
-  /// and lyric streams).
+  /// On-disk path of a sidecar stream.
   final String? filePath;
 
-  /// Jellyfin `TimeBase` — the stream's ffmpeg time base (`1/24000`).
+  /// The stream's ffmpeg time base (`1/24000`).
   final String? timeBase;
 
   // ---- audio ----
@@ -445,7 +435,7 @@ class MediaStreamDetails {
   final String? channelLayout;
   final int? sampleRate;
 
-  /// Jellyfin `AudioSpatialFormat` (`DolbyAtmos`, `DTSX`).
+  /// Spatial audio format (`DolbyAtmos`, `DTSX`).
   final String? spatialFormat;
 
   // ---- subtitle ----
@@ -581,7 +571,7 @@ class MediaStreamDetails {
     return format != null && format.isNotEmpty && format.toLowerCase() != 'none';
   }
 
-  /// `DolbyAtmos` → `Dolby Atmos`. Jellyfin ships the enum name verbatim.
+  /// `DolbyAtmos` → `Dolby Atmos`.
   String? get spatialFormatLabel {
     if (!isSpatialAudio) return null;
     return spatialFormat!.replaceAllMapped(RegExp(r'(?<=[a-z0-9])(?=[A-Z])'), (_) => ' ');

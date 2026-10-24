@@ -29,10 +29,7 @@ import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
 import '../services/plex_client.dart';
-import '../services/jellyfin_client.dart';
 import '../services/silo_client.dart';
-import '../media/account_preferences.dart';
-import '../media/account_ref.dart';
 import '../utils/session_identifier.dart';
 import '../database/app_database.dart';
 import '../media/media_version.dart';
@@ -452,23 +449,6 @@ TrackPreferencePersister _plexTrackPersister(PlexClient client) {
   return ({required int partId, required String trackType, required int streamID}) => trackType == 'audio'
       ? client.selectStreams(partId, audioStreamID: streamID)
       : client.selectStreams(partId, subtitleStreamID: streamID);
-}
-
-/// Builds a [TrackSelectionMemoryEnabler] for the MediaBrowser account
-/// [client] plays as. The pick itself reaches the server in the progress
-/// reports; this turns on the account flag the server needs to keep it
-/// ([AccountPreferencesController.ensureRemembersTrackSelections]).
-TrackSelectionMemoryEnabler _mediaBrowserTrackMemoryEnabler(
-  JellyfinClient client,
-  AccountPreferencesController accountPreferences,
-) {
-  final ref = AccountRef.mediaBrowser(backend: client.dialect.backend, connectionId: client.connection.id);
-  return (trackType) => accountPreferences.ensureRemembersTrackSelections(
-    ref,
-    trackType == 'audio'
-        ? AccountPreferenceKey.rememberAudioSelections
-        : AccountPreferenceKey.rememberSubtitleSelections,
-  );
 }
 
 class VideoPlayerScreen extends StatefulWidget {
@@ -1033,7 +1013,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     readProvider: () => context.read<CompanionRemoteProvider>(),
   );
 
-  /// Backend-neutral lookup. Returns whichever client (Plex or Jellyfin)
+  /// Backend-neutral lookup. Returns whichever client (Plex or Silo)
   /// owns this item. Used by the player initialization path.
   MediaServerClient? _getMediaServerClient(BuildContext context) {
     final id = _currentMetadata.serverId;
@@ -1450,7 +1430,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Keep the queue when this item belongs to it — that covers both
         // server-side queues (Plex `playQueueItemId`) and client-side
-        // launcher-seeded queues (Jellyfin playlist/collection/shuffled
+        // launcher-seeded queues (playlist/collection/shuffled
         // show, with synthetic ids tracked in the provider). For genuine
         // standalone playback (continue-watching, direct episode tap with no
         // queue launcher) clear any stale queue so prev/next stays consistent.
@@ -1731,10 +1711,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Skipped for live TV (has its own tune path — only the quality preset
       // is resolved below) and offline (its own branch in _startPlayback).
       if (!widget.isLive && !_offlineLibraryMode) {
-        // Backend-neutral lookup so Jellyfin items also flow through here.
+        // Backend-neutral lookup so every backend's items flow through here.
         // Plex-specific transcoder caching is gated on capabilities below;
-        // Jellyfin's `streamHeaders` is empty because it embeds api_key in
-        // the query string, while Plex returns the X-Plex-* identity headers.
+        // Plex returns X-Plex-* identity headers via `streamHeaders`.
         final genericClient = _getMediaServerClient(context);
         if (genericClient == null) {
           throw StateError('No client registered for ${_currentMetadata.serverId}');

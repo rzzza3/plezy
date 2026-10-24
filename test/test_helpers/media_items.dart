@@ -71,8 +71,7 @@ MediaItem testMediaItem({
   // Dispatch straight to the concrete variants: the fixture keeps the full
   // union surface while the production `MediaItem()` factory only declares
   // the fields synthetic call sites actually use. Mirrors the old compat
-  // dispatch, including dropping the Plex-only subtitle fields for
-  // MediaBrowser backends.
+  // dispatch, including dropping the Plex-only fields for Silo.
   return switch (backend) {
     MediaBackend.plex => MediaItem.plex(
       id: id,
@@ -132,8 +131,7 @@ MediaItem testMediaItem({
       backendFolderKey: backendFolderKey,
       raw: raw,
     ),
-    MediaBackend.jellyfin || MediaBackend.emby => MediaItem.jellyfin(
-      dialect: backend.dialect!,
+    MediaBackend.silo => MediaItem.silo(
       id: id,
       kind: kind,
       guid: guid,
@@ -191,6 +189,5 @@ MediaItem testMediaItem({
       backendFolderKey: backendFolderKey,
       raw: raw,
     ),
-    MediaBackend.silo => throw UnsupportedError('Silo media items arrive in S3'),
   };
 }

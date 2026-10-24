@@ -3,7 +3,7 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 
 void main() {
-  final serverId = ServerId('jf-machine');
+  final serverId = ServerId('media-machine');
 
   group('resolveActiveClientScopeId', () {
     test('returns null before a client is bound', () {
@@ -15,17 +15,12 @@ void main() {
     });
 
     test('rejects the bare server scope', () {
-      expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'jf-machine'), isNull);
+      expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'media-machine'), isNull);
     });
 
     test('rejects empty and foreign compound scopes', () {
-      expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'jf-machine/'), isNull);
+      expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'media-machine/'), isNull);
       expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'other-machine/user-a'), isNull);
-    });
-
-    test('keeps users on the same server in distinct active scopes', () {
-      expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'jf-machine/user-a'), 'jf-machine/user-a');
-      expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'jf-machine/user-b'), 'jf-machine/user-b');
     });
   });
   group('Plex profile scopes', () {
@@ -44,12 +39,11 @@ void main() {
       expect(resolveActiveClientScopeId(serverId: plexServerId, cacheServerId: profileA), profileA);
     });
 
-    test('encodes profile ids and cannot be interpreted as Jellyfin scope', () {
+    test('encodes profile ids into a Plex profile scope', () {
       final scope = buildPlexProfileScopeId(serverId: plexServerId, profileId: 'profile/a');
 
       expect(scope.profileId, 'profile/a');
       expect(isPlexProfileScopeId(scope), isTrue);
-      expect(isJellyfinUserScopeId(serverId: plexServerId, cacheServerId: scope), isFalse);
       expect(publicPlexServerIdFromScope('plex-machine/user-a'), isNull);
     });
 

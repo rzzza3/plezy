@@ -16,7 +16,6 @@ import 'package:plezy/services/catalog/catalog_library_matcher.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/mal_catalog_source.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/trackers/fribb_mapping_store.dart';
@@ -31,7 +30,6 @@ http.Response _json(Object body) =>
 
 /// Exercise real catalog matching and ID verification, replacing only HTTP.
 Future<void> _expectNativeLibraryMatch(
-  MediaBackend backend,
   CatalogItem item, {
   required String nativeQuery,
   required String storedTitle,
@@ -41,48 +39,31 @@ Future<void> _expectNativeLibraryMatch(
   final searches = <Uri>[];
   Future<http.Response> respond(http.Request request) async {
     final uri = request.url;
-    final isPlex = backend == MediaBackend.plex;
-    if (uri.path == '/Items' && uri.queryParameters.containsKey('ParentId')) {
-      return _json({'Items': <Object>[], 'TotalRecordCount': 0});
-    }
-    if (uri.path == '/hubs/search' || uri.path == '/Items') {
+    if (uri.path == '/hubs/search') {
       searches.add(uri);
-      final query = uri.queryParameters[isPlex ? 'query' : 'SearchTerm'];
+      final query = uri.queryParameters['query'];
       final rows = [
         if (query == nativeQuery)
           for (final id in ['owned', 'wrong-id', if (availableSeason != null) 'no-sequel'])
-            if (isPlex)
-              {
-                'ratingKey': id,
-                'type': item.kind.id,
-                'title': storedTitle,
-                'originalTitle': nativeQuery,
-                'librarySectionID': 1,
-                'librarySectionTitle': 'Anime',
-                'Guid': [
-                  {'id': 'tmdb://${id == 'wrong-id' ? 999 : tmdbId}'},
-                ],
-              }
-            else
-              {
-                'Id': id,
-                'Type': item.kind == MediaKind.movie ? 'Movie' : 'Series',
-                'Name': storedTitle,
-                'OriginalTitle': nativeQuery,
-                'ProviderIds': {'Tmdb': '${id == 'wrong-id' ? 999 : tmdbId}'},
-              },
+            {
+              'ratingKey': id,
+              'type': item.kind.id,
+              'title': storedTitle,
+              'originalTitle': nativeQuery,
+              'librarySectionID': 1,
+              'librarySectionTitle': 'Anime',
+              'Guid': [
+                {'id': 'tmdb://${id == 'wrong-id' ? 999 : tmdbId}'},
+              ],
+            },
       ];
-      return _json(
-        isPlex
-            ? {
-                'MediaContainer': {
-                  'Hub': [
-                    {'type': item.kind.id, 'Metadata': rows},
-                  ],
-                },
-              }
-            : {'Items': rows},
-      );
+      return _json({
+        'MediaContainer': {
+          'Hub': [
+            {'type': item.kind.id, 'Metadata': rows},
+          ],
+        },
+      });
     }
     if (uri.path == '/library/all') {
       return _json({
@@ -94,24 +75,11 @@ Future<void> _expectNativeLibraryMatch(
         },
       });
     }
-    if (uri.path == '/Shows/owned/Seasons' || uri.path == '/Shows/no-sequel/Seasons') {
-      return _json({
-        'Items': [
-          if (uri.path == '/Shows/owned/Seasons')
-            {'Id': 'owned-season', 'Type': 'Season', 'IndexNumber': availableSeason},
-        ],
-      });
-    }
-    if (uri.path == '/Items/owned/Ancestors') return _json(<Object>[]);
-    fail('Unexpected ${backend.name} request: $uri');
+    fail('Unexpected Plex request: $uri');
   }
 
-  final MediaServerClient client = switch (backend) {
-    MediaBackend.plex => testPlexClient(handler: respond),
-    MediaBackend.jellyfin => testJellyfinClient(handler: respond),
-    MediaBackend.emby => testEmbyClient(handler: respond),
-    MediaBackend.silo => throw UnsupportedError('Silo catalog arrives in S3'),
-  };
+  final MediaServerClient client = testPlexClient(handler: respond);
+
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServer = MultiServerProvider(manager, DataAggregationService(manager));
   final matcher = CatalogLibraryMatcher(multiServer);
@@ -123,7 +91,7 @@ Future<void> _expectNativeLibraryMatch(
 
   final result = await matcher.match(item);
   expect(result.items.map((copy) => copy.id), ['owned']);
-  expect(result.items.single.backend, backend);
+  expect(result.items.single.backend, MediaBackend.plex);
   expect(result.failedServerIds, isEmpty);
   expect(result.succeededServerIds, {client.serverId.value});
   expect(searches.length, lessThanOrEqualTo(4), reason: 'logical title searches, excluding GUID/season/ancestor work');
@@ -394,64 +362,54 @@ void main() {
       setUp(() {
         db = AppDatabase.forTesting(NativeDatabase.memory());
         PlexApiCache.initialize(db);
-        JellyfinApiCache.initialize(db);
       });
 
       tearDown(() async {
         await db.close();
       });
 
-      for (final backend in const [MediaBackend.plex, MediaBackend.jellyfin, MediaBackend.emby]) {
-        test('Kimi no Na wa. finds only the ID-verified native-title copy on ${backend.name}', () async {
-          handlers.add(
-            (_) => _json(_pageBody([_node(id: 32281, title: 'Kimi no Na wa.', ja: '君の名は。', mediaType: 'movie')])),
-          );
-          final item = (await source.fetchRow(CatalogRowId.watchlist)).items.single;
-          expect(item.originalTitle, '君の名は。');
-          expect(item.altTitles, contains('Kimi no Na wa.'));
+      test('Kimi no Na wa. finds only the ID-verified native-title copy on Plex', () async {
+        handlers.add(
+          (_) => _json(_pageBody([_node(id: 32281, title: 'Kimi no Na wa.', ja: '君の名は。', mediaType: 'movie')])),
+        );
+        final item = (await source.fetchRow(CatalogRowId.watchlist)).items.single;
+        expect(item.originalTitle, '君の名は。');
+        expect(item.altTitles, contains('Kimi no Na wa.'));
 
-          await _expectNativeLibraryMatch(
-            backend,
-            item,
-            nativeQuery: '君の名は。',
-            storedTitle: 'Your Name.',
-            tmdbId: 372058,
-          );
-        });
+        await _expectNativeLibraryMatch(item, nativeQuery: '君の名は。', storedTitle: 'Your Name.', tmdbId: 372058);
+      });
 
-        test('three sequel title families reach the native parent within budget on ${backend.name}', () async {
-          source.dispose();
-          source = MalCatalogSource(
-            client,
-            fribb: _FakeFribb(const [FribbMappingRow(malId: 35760, tmdbTvId: 1429, tvdbSeason: 3, tmdbSeason: 3)]),
-          );
-          handlers.add(
-            (_) => _json(
-              _pageBody([
-                _node(
-                  id: 35760,
-                  title: 'Shingeki no Kyojin Season 3',
-                  en: 'Attack on Titan Season 3',
-                  ja: '進撃の巨人 Season 3',
-                  synonyms: ['AoT 3', 'Attack on Titan 3rd Season', 'Shingeki no Kyojin 3'],
-                  extra: {'start_date': '2018-07-23'},
-                ),
-              ]),
-            ),
-          );
-          final item = (await source.fetchRow(CatalogRowId.watchlist)).items.single;
-          expect(item.altTitles, contains('Shingeki no Kyojin Season 3'));
+      test('three sequel title families reach the native parent within budget on Plex', () async {
+        source.dispose();
+        source = MalCatalogSource(
+          client,
+          fribb: _FakeFribb(const [FribbMappingRow(malId: 35760, tmdbTvId: 1429, tvdbSeason: 3, tmdbSeason: 3)]),
+        );
+        handlers.add(
+          (_) => _json(
+            _pageBody([
+              _node(
+                id: 35760,
+                title: 'Shingeki no Kyojin Season 3',
+                en: 'Attack on Titan Season 3',
+                ja: '進撃の巨人 Season 3',
+                synonyms: ['AoT 3', 'Attack on Titan 3rd Season', 'Shingeki no Kyojin 3'],
+                extra: {'start_date': '2018-07-23'},
+              ),
+            ]),
+          ),
+        );
+        final item = (await source.fetchRow(CatalogRowId.watchlist)).items.single;
+        expect(item.altTitles, contains('Shingeki no Kyojin Season 3'));
 
-          await _expectNativeLibraryMatch(
-            backend,
-            item,
-            nativeQuery: '進撃の巨人',
-            storedTitle: 'Ataque a los titanes',
-            tmdbId: 1429,
-            availableSeason: 3,
-          );
-        });
-      }
+        await _expectNativeLibraryMatch(
+          item,
+          nativeQuery: '進撃の巨人',
+          storedTitle: 'Ataque a los titanes',
+          tmdbId: 1429,
+          availableSeason: 3,
+        );
+      });
     });
 
     test('ranking sidecars map to the scope implied by each row', () async {

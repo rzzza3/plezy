@@ -14,16 +14,12 @@ import 'package:plezy/services/storage_service.dart';
 
 import '../test_helpers/prefs.dart';
 
-JellyfinConnection _jellyfin({String machineId = 'jf-machine', String userId = 'user-a'}) {
-  return JellyfinConnection(
-    id: '$machineId/$userId',
-    baseUrl: 'https://jellyfin.local',
-    serverName: 'Jellyfin',
-    serverMachineId: machineId,
-    userId: userId,
-    userName: userId,
-    accessToken: 'token-$userId',
-    deviceId: 'device-1',
+SiloConnection _silo({String serverId = 'silo-server'}) {
+  return SiloConnection(
+    origin: 'https://silo.example.test',
+    serverId: serverId,
+    serverName: 'Silo',
+    username: 'alice',
     createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
     lastAuthenticatedAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
   );
@@ -84,8 +80,10 @@ void main() {
   late ProfileConnectionRegistry profileConnections;
   late StorageService storage;
   late ProfileConnectionCleanup cleanup;
+  late List<String> signedOut;
 
   setUp(() async {
+    signedOut = [];
     resetSharedPreferencesForTest();
     db = AppDatabase.forTesting(NativeDatabase.memory());
     connections = ConnectionRegistry(db);
@@ -95,6 +93,7 @@ void main() {
       profileConnections: profileConnections,
       connections: connections,
       storage: storage,
+      signOutSilo: (connection) async => signedOut.add(connection.id),
     );
   });
 
@@ -103,20 +102,15 @@ void main() {
   });
 
   group('profile connection cleanup', () {
-    test('removing the last Jellyfin profile link deletes the connection and profile prefs', () async {
-      final conn = _jellyfin();
+    test('removing the last Silo profile link deletes the connection and profile prefs', () async {
+      final conn = _silo();
       await connections.upsert(conn);
       await profileConnections.upsert(
-        ProfileConnection(
-          profileId: 'p1',
-          connectionId: conn.id,
-          userToken: conn.accessToken,
-          userIdentifier: conn.userId,
-        ),
+        ProfileConnection(profileId: 'p1', connectionId: conn.id, userIdentifier: 'sp-1'),
       );
       await storage.setActiveProfileId('p1');
-      await storage.saveHiddenLibraries({'jf-machine:movies'});
-      await storage.saveLibraryOrder(['jf-machine:movies']);
+      await storage.saveHiddenLibraries({'silo-server:movies'});
+      await storage.saveLibraryOrder(['silo-server:movies']);
 
       await cleanup.removeProfileConnection(profileId: 'p1', connection: conn);
 
@@ -126,30 +120,20 @@ void main() {
       expect(storage.getLibraryOrder(), isNull);
     });
 
-    test('removing one profile link keeps a shared Jellyfin connection and other profile prefs', () async {
-      final conn = _jellyfin();
+    test('removing one profile link keeps a shared Silo connection and other profile prefs', () async {
+      final conn = _silo();
       await connections.upsert(conn);
       await profileConnections.upsert(
-        ProfileConnection(
-          profileId: 'p1',
-          connectionId: conn.id,
-          userToken: conn.accessToken,
-          userIdentifier: conn.userId,
-        ),
+        ProfileConnection(profileId: 'p1', connectionId: conn.id, userIdentifier: 'sp-1'),
       );
       await profileConnections.upsert(
-        ProfileConnection(
-          profileId: 'p2',
-          connectionId: conn.id,
-          userToken: conn.accessToken,
-          userIdentifier: conn.userId,
-        ),
+        ProfileConnection(profileId: 'p2', connectionId: conn.id, userIdentifier: 'sp-2'),
       );
 
       await storage.setActiveProfileId('p1');
-      await storage.saveHiddenLibraries({'jf-machine:movies'});
+      await storage.saveHiddenLibraries({'silo-server:movies'});
       await storage.setActiveProfileId('p2');
-      await storage.saveHiddenLibraries({'jf-machine:movies'});
+      await storage.saveHiddenLibraries({'silo-server:movies'});
 
       await cleanup.removeProfileConnection(profileId: 'p1', connection: conn);
 
@@ -161,7 +145,7 @@ void main() {
       await storage.setActiveProfileId('p1');
       expect(storage.getHiddenLibraries(), isEmpty);
       await storage.setActiveProfileId('p2');
-      expect(storage.getHiddenLibraries(), {'jf-machine:movies'});
+      expect(storage.getHiddenLibraries(), {'silo-server:movies'});
     });
 
     group('Silo, TvSettingsViewModel.kt:748-762', () {
@@ -172,18 +156,6 @@ void main() {
         username: 'alice',
         createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
       );
-      late List<String> signedOut;
-
-      setUp(() {
-        signedOut = [];
-        cleanup = ProfileConnectionCleanup(
-          profileConnections: profileConnections,
-          connections: connections,
-          storage: storage,
-          signOutSilo: (connection) async => signedOut.add(connection.id),
-        );
-      });
-
       test('removing the last link signs this device out of the server and deletes the connection', () async {
         await connections.upsert(silo);
         await profileConnections.upsert(
@@ -206,7 +178,7 @@ void main() {
         );
         await connections.upsert(silo);
         await connections.upsert(other);
-        await connections.upsert(_jellyfin());
+        await connections.upsert(_plex());
 
         await cleanup.signOutAllSiloConnections();
 
@@ -232,126 +204,96 @@ void main() {
       test('startup prune signs out an orphaned Silo connection', () async {
         await connections.upsert(silo);
 
-        expect(await cleanup.pruneUnreferencedJellyfinConnections(), 1);
+        expect(await cleanup.pruneUnreferencedConnections(), 1);
         expect(signedOut, ['silo:server-1']);
       });
     });
 
-    test('startup prune removes unreferenced Jellyfin rows and stale prefs', () async {
-      final conn = _jellyfin();
+    test('startup prune removes unreferenced Silo rows and stale prefs', () async {
+      final conn = _silo();
       await connections.upsert(conn);
       await storage.setActiveProfileId('p1');
-      await storage.saveHiddenLibraries({'jf-machine:movies'});
-      await storage.saveLibrarySort('jf-machine:movies', 'titleSort');
+      await storage.saveHiddenLibraries({'silo-server:movies'});
+      await storage.saveLibrarySort('silo-server:movies', 'titleSort');
 
-      final removed = await cleanup.pruneUnreferencedJellyfinConnections();
+      final removed = await cleanup.pruneUnreferencedConnections();
 
       expect(removed, 1);
       expect(await connections.get(conn.id), isNull);
       expect(storage.getHiddenLibraries(), isEmpty);
-      expect(storage.getLibrarySort('jf-machine:movies'), isNull);
+      expect(storage.getLibrarySort('silo-server:movies'), isNull);
     });
 
-    test('startup prune does not clear prefs when another user on the same server is still referenced', () async {
-      final orphan = _jellyfin(userId: 'user-a');
-      final sharedServer = _jellyfin(userId: 'user-b');
-      await connections.upsert(orphan);
-      await connections.upsert(sharedServer);
-      await profileConnections.upsert(
-        ProfileConnection(
-          profileId: 'p2',
-          connectionId: sharedServer.id,
-          userToken: sharedServer.accessToken,
-          userIdentifier: sharedServer.userId,
-        ),
-      );
-      await storage.setActiveProfileId('p2');
-      await storage.saveHiddenLibraries({'jf-machine:movies'});
-
-      final removed = await cleanup.pruneUnreferencedJellyfinConnections();
-
-      expect(removed, 1);
-      expect(await connections.get(orphan.id), isNull);
-      expect(await connections.get(sharedServer.id), isNotNull);
-      expect(storage.getHiddenLibraries(), {'jf-machine:movies'});
-    });
-
-    test(
-      'sign-out removes the account, its virtual profiles, and their borrowed Jellyfin connection (#1423)',
-      () async {
-        const uuid = 'aaaaaaaaaaaaaaaa';
-        final acct = _plex();
-        final jf = _jellyfin();
-        final vProfile = plexHomeProfileId(accountConnectionId: acct.id, homeUserUuid: uuid);
-        await connections.upsert(acct);
-        await connections.upsert(jf);
-        await profileConnections.upsert(_row(vProfile, acct, userIdentifier: uuid));
-        await profileConnections.upsert(_row(vProfile, jf));
-        await storage.savePlexHomeUsersCache(acct.id, [_homeUser(uuid).toJson()]);
-        await storage.markProfileUsed(vProfile, DateTime.fromMillisecondsSinceEpoch(2_000_000));
-        await storage.setActiveProfileId(vProfile);
-        await storage.saveHiddenLibraries({'jf-machine:movies'});
-
-        final plannedRemoval = await planPlexAccountConnectionRemoval(
-          account: acct,
-          profileConnections: profileConnections,
-        );
-        expect(plannedRemoval.removedVirtualProfileIds, {vProfile});
-        expect(await connections.get(acct.id), isNotNull);
-        expect(await profileConnections.listAll(), hasLength(2));
-
-        final removal = await cleanup.removePlexAccountConnection(acct, plannedRemoval: plannedRemoval);
-
-        expect(removal.removedVirtualProfileIds, {vProfile});
-        expect(removal.borrowerProfileIds, isEmpty);
-        expect(await connections.list(), isEmpty);
-        expect(await profileConnections.listAll(), isEmpty);
-        expect(storage.getPlexHomeUsersCacheJson(acct.id), isNull);
-        expect(storage.getProfileLastUsed(vProfile), isNull);
-        expect(storage.getHiddenLibraries(), isEmpty);
-      },
-    );
-
-    test('sign-out keeps a borrowed Jellyfin connection another profile still references', () async {
+    test('sign-out removes the account, its virtual profiles, and their borrowed Silo connection (#1423)', () async {
       const uuid = 'aaaaaaaaaaaaaaaa';
       final acct = _plex();
-      final jf = _jellyfin();
+      final silo = _silo();
       final vProfile = plexHomeProfileId(accountConnectionId: acct.id, homeUserUuid: uuid);
       await connections.upsert(acct);
-      await connections.upsert(jf);
+      await connections.upsert(silo);
       await profileConnections.upsert(_row(vProfile, acct, userIdentifier: uuid));
-      await profileConnections.upsert(_row(vProfile, jf));
-      await profileConnections.upsert(_row('local-1', jf));
+      await profileConnections.upsert(_row(vProfile, silo));
+      await storage.savePlexHomeUsersCache(acct.id, [_homeUser(uuid).toJson()]);
+      await storage.markProfileUsed(vProfile, DateTime.fromMillisecondsSinceEpoch(2_000_000));
+      await storage.setActiveProfileId(vProfile);
+      await storage.saveHiddenLibraries({'silo-server:movies'});
+
+      final plannedRemoval = await planPlexAccountConnectionRemoval(
+        account: acct,
+        profileConnections: profileConnections,
+      );
+      expect(plannedRemoval.removedVirtualProfileIds, {vProfile});
+      expect(await connections.get(acct.id), isNotNull);
+      expect(await profileConnections.listAll(), hasLength(2));
+
+      final removal = await cleanup.removePlexAccountConnection(acct, plannedRemoval: plannedRemoval);
+
+      expect(removal.removedVirtualProfileIds, {vProfile});
+      expect(removal.borrowerProfileIds, isEmpty);
+      expect(await connections.list(), isEmpty);
+      expect(await profileConnections.listAll(), isEmpty);
+      expect(storage.getPlexHomeUsersCacheJson(acct.id), isNull);
+      expect(storage.getProfileLastUsed(vProfile), isNull);
+      expect(storage.getHiddenLibraries(), isEmpty);
+    });
+
+    test('sign-out keeps a borrowed Silo connection another profile still references', () async {
+      const uuid = 'aaaaaaaaaaaaaaaa';
+      final acct = _plex();
+      final silo = _silo();
+      final vProfile = plexHomeProfileId(accountConnectionId: acct.id, homeUserUuid: uuid);
+      await connections.upsert(acct);
+      await connections.upsert(silo);
+      await profileConnections.upsert(_row(vProfile, acct, userIdentifier: uuid));
+      await profileConnections.upsert(_row(vProfile, silo));
+      await profileConnections.upsert(_row('local-1', silo));
 
       await cleanup.removePlexAccountConnection(acct);
 
-      expect(await connections.get(jf.id), isNotNull);
+      expect(await connections.get(silo.id), isNotNull);
       final remaining = await profileConnections.listAll();
       expect(remaining, hasLength(1));
       expect(remaining.single.profileId, 'local-1');
     });
 
-    test(
-      'sign-out from a local borrower keeps the local profile and its Jellyfin connection (repro 2 shape)',
-      () async {
-        final acct = _plex();
-        final jf = _jellyfin();
-        await connections.upsert(acct);
-        await connections.upsert(jf);
-        await profileConnections.upsert(_row('local-1', acct));
-        await profileConnections.upsert(_row('local-1', jf));
+    test('sign-out from a local borrower keeps the local profile and its Silo connection (repro 2 shape)', () async {
+      final acct = _plex();
+      final silo = _silo();
+      await connections.upsert(acct);
+      await connections.upsert(silo);
+      await profileConnections.upsert(_row('local-1', acct));
+      await profileConnections.upsert(_row('local-1', silo));
 
-        final removal = await cleanup.removePlexAccountConnection(acct);
+      final removal = await cleanup.removePlexAccountConnection(acct);
 
-        expect(removal.removedVirtualProfileIds, isEmpty);
-        expect(removal.borrowerProfileIds, {'local-1'});
-        expect(await connections.get(acct.id), isNull);
-        expect(await connections.get(jf.id), isNotNull);
-        final remaining = await profileConnections.listAll();
-        expect(remaining, hasLength(1));
-        expect(remaining.single.connectionId, jf.id);
-      },
-    );
+      expect(removal.removedVirtualProfileIds, isEmpty);
+      expect(removal.borrowerProfileIds, {'local-1'});
+      expect(await connections.get(acct.id), isNull);
+      expect(await connections.get(silo.id), isNotNull);
+      final remaining = await profileConnections.listAll();
+      expect(remaining, hasLength(1));
+      expect(remaining.single.connectionId, silo.id);
+    });
 
     test('sign-out leaves another account and its virtual profiles untouched (hyphen-bearing ids)', () async {
       const uuid1 = 'aaaaaaaaaaaaaaaa';
@@ -379,12 +321,12 @@ void main() {
     test('sign-out is idempotent', () async {
       const uuid = 'aaaaaaaaaaaaaaaa';
       final acct = _plex();
-      final jf = _jellyfin();
+      final silo = _silo();
       final vProfile = plexHomeProfileId(accountConnectionId: acct.id, homeUserUuid: uuid);
       await connections.upsert(acct);
-      await connections.upsert(jf);
+      await connections.upsert(silo);
       await profileConnections.upsert(_row(vProfile, acct, userIdentifier: uuid));
-      await profileConnections.upsert(_row(vProfile, jf));
+      await profileConnections.upsert(_row(vProfile, silo));
 
       Future<PlexAccountRemoval> run() => cleanup.removePlexAccountConnection(acct);
 
@@ -441,9 +383,9 @@ void main() {
       expect(result.profiles, isEmpty);
     });
 
-    test('only an orphaned Jellyfin connection → pruned, signed out (the #1423 wedge)', () async {
-      final jf = _jellyfin();
-      await connections.upsert(jf);
+    test('only an orphaned Silo connection → pruned, signed out (the #1423 wedge)', () async {
+      final silo = _silo();
+      await connections.upsert(silo);
 
       final result = await resolve();
 
@@ -476,20 +418,20 @@ void main() {
       expect(result.route, PostRemovalRoute.signedOut);
     });
 
-    test('local profile survives alongside an orphaned Jellyfin connection → stay signed in, orphan pruned', () async {
-      final jf = _jellyfin();
-      final referencedJf = _jellyfin(userId: 'user-b');
-      await connections.upsert(jf);
-      await connections.upsert(referencedJf);
+    test('local profile survives alongside an orphaned Silo connection → stay signed in, orphan pruned', () async {
+      final orphan = _silo(serverId: 'silo-orphan');
+      final referenced = _silo(serverId: 'silo-referenced');
+      await connections.upsert(orphan);
+      await connections.upsert(referenced);
       await profileRegistry.upsert(local('local-1'));
-      await profileConnections.upsert(_row('local-1', referencedJf));
+      await profileConnections.upsert(_row('local-1', referenced));
 
       final result = await resolve();
 
       expect(result.route, PostRemovalRoute.staySignedIn);
       expect(result.profiles.single.id, 'local-1');
-      expect(await connections.get(jf.id), isNull);
-      expect(await connections.get(referencedJf.id), isNotNull);
+      expect(await connections.get(orphan.id), isNull);
+      expect(await connections.get(referenced.id), isNotNull);
     });
   });
 }

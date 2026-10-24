@@ -187,8 +187,8 @@ void main() {
     const plex2 = 'https://media.example.test/plex/library/parts/2/file.flac';
     const plex3 = 'https://media.example.test/plex/library/parts/3/file.flac';
     // Another server behind the same origin (path-routed reverse proxy).
-    const jellyfin1 = 'https://media.example.test/jellyfin/Audio/1/stream?ApiKey=k';
-    const jellyfin2 = 'https://media.example.test/jellyfin/Audio/2/stream?ApiKey=k';
+    const other1 = 'https://media.example.test/other/Audio/1/stream?ApiKey=k';
+    const other2 = 'https://media.example.test/other/Audio/2/stream?ApiKey=k';
 
     /// mpv rolls from the playing entry into the armed one.
     Future<void> advance(_AudioCoreMock core, PlayerNative player) async {
@@ -220,12 +220,12 @@ void main() {
       final core = _AudioCoreMock();
       await run(core, (player, transitions) async {
         await openPlex(core, player, plex1);
-        await player.setNext(Media(jellyfin1));
+        await player.setNext(Media(other1));
         await advance(core, player);
         await player.setNext(Media(plex2, headers: plexHeaders));
         await advance(core, player);
 
-        expect(core.mpv.openedHeaders, {plex1: plexItems, jellyfin1: <String>[], plex2: plexItems});
+        expect(core.mpv.openedHeaders, {plex1: plexItems, other1: <String>[], plex2: plexItems});
         expect(core.mpv.prefetched, isEmpty, reason: 'a prefetch sends the playing entry headers');
       });
     });
@@ -236,9 +236,9 @@ void main() {
         await openPlex(core, player, plex1);
         await player.setNext(Media(plex2, headers: plexHeaders));
         await advance(core, player);
-        await player.open(Media(jellyfin1));
+        await player.open(Media(other1));
 
-        expect(core.mpv.openedHeaders[jellyfin1], isEmpty);
+        expect(core.mpv.openedHeaders[other1], isEmpty);
       });
     });
 
@@ -248,12 +248,12 @@ void main() {
         String? prefetchValue() => prefetchWrite(core).$2;
 
         await openPlex(core, player, plex1);
-        await player.setNext(Media(jellyfin1));
+        await player.setNext(Media(other1));
         expect(prefetchValue(), 'no');
 
         await advance(core, player);
-        await player.setNext(Media(jellyfin2));
-        expect(prefetchValue(), 'yes', reason: 'the Jellyfin track now plays');
+        await player.setNext(Media(other2));
+        expect(prefetchValue(), 'yes', reason: "the other server's track now plays");
         await player.setNext(Media(plex2, headers: plexHeaders));
         expect(prefetchValue(), 'no');
 

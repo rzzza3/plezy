@@ -9,8 +9,7 @@ import 'platform_detector.dart';
 
 /// What this install should call itself when talking to media servers and
 /// companion peers: a real platform name, the hardware model, and the
-/// user-facing device name (Plex dashboards show it as the "Player";
-/// Jellyfin as the "Device").
+/// user-facing device name (Plex dashboards show it as the "Player").
 class DeviceIdentity {
   /// 'Android' | 'iOS' | 'tvOS' | 'macOS' | 'Windows' | 'Linux', falling back
   /// to [Platform.operatingSystem] when detection fails.
@@ -107,9 +106,7 @@ class DeviceIdentityService {
 /// The ASCII restriction is not cosmetic. `dart:io` rejects header values
 /// containing anything above 0x7F with a `FormatException`, and CFNetwork
 /// puts the raw code unit on the wire as a Latin-1 byte, which HTTP servers
-/// decoding headers as UTF-8 (Kestrel, hosting Jellyfin) reject as a
-/// malformed request. Headers with a documented percent-encoded wire format
-/// carry the name intact instead — see `buildJellyfinAuthHeader`.
+/// decoding headers as UTF-8 reject as a malformed request.
 String? sanitizeHeaderValue(String? value) {
   if (value == null) return null;
   final buffer = StringBuffer();

@@ -91,16 +91,6 @@ extension type const SiloProfileScopeId._(String value) implements String {
   String get profileId => value.substring(value.indexOf('/') + 1);
 }
 
-/// Jellyfin's established scope is `{machineId}/{userId}`. The reserved Plex
-/// namespaces are deliberately excluded so the backends cannot alias.
-bool isJellyfinUserScopeId({required ServerId serverId, required String cacheServerId}) {
-  final userPrefix = '$serverId/';
-  return cacheServerId.startsWith(userPrefix) &&
-      cacheServerId.length > userPrefix.length &&
-      !isPlexProfileScopeId(cacheServerId) &&
-      PlexTransferScopeId.tryParse(cacheServerId) == null;
-}
-
 /// Returns the user-specific active client scope, or `null` when the client is
 /// absent or only exposes the public server namespace.
 String? resolveActiveClientScopeId({required ServerId serverId, required String? cacheServerId}) {
@@ -110,5 +100,5 @@ String? resolveActiveClientScopeId({required ServerId serverId, required String?
   if (PlexTransferScopeId.tryParse(cacheServerId) != null) return null;
   final siloScope = SiloProfileScopeId.tryParse(cacheServerId);
   if (siloScope != null) return siloScope.publicServerId == serverId ? siloScope : null;
-  return isJellyfinUserScopeId(serverId: serverId, cacheServerId: cacheServerId) ? cacheServerId : null;
+  return null;
 }

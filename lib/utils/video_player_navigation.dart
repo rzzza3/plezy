@@ -246,10 +246,9 @@ typedef ResolvedMediaVersionPreference = ({int index, String? sourceId, String? 
 ///
 /// When [MediaItem.mediaVersions] is populated (Plex hub/detail fetches) the
 /// index is verified and the matched version's real id is returned. When it
-/// isn't (Jellyfin resume rows omit `MediaSources`), the stored index and
-/// signature pass through with a null sourceId — an unverified id from a
-/// sibling episode would be meaningless downstream, while a signature is
-/// safely re-matched there.
+/// isn't, the stored index and signature pass through with a null sourceId —
+/// an unverified id from a sibling episode would be meaningless downstream,
+/// while a signature is safely re-matched there.
 Future<ResolvedMediaVersionPreference?> resolveSavedMediaVersionFor(MediaItem metadata) async {
   final pref = await savedMediaVersionPreferenceFor(metadata);
   if (pref == null) return null;
@@ -318,7 +317,7 @@ Future<bool?> navigateToVideoPlayer(
   final sourceRoute = ModalRoute.of(context);
   final downloadProvider = context.read<DownloadProvider>();
   final launchMusic = launchObserver == null ? null : context.read<MusicPlaybackService>();
-  // Use the manager-routed lookup so Jellyfin items don't trip the
+  // Use the manager-routed lookup so non-Plex items don't trip the
   // Plex-only client. The player branches on the returned type internally.
   final manager = context.read<MultiServerProvider>().serverManager;
   final offlineWatchService = context.read<OfflineWatchSyncService>();

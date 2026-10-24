@@ -274,7 +274,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     var canProcessRules = false;
     for (final s in multiServer.liveTvServers) {
       final serverId = ServerId(s.serverId);
-      // What's On lists Plex's Live TV hubs; Jellyfin and Emby have none, so
+      // What's On lists Plex's Live TV hubs; other backends have none, so
       // the tab would only ever be empty for them.
       hasPlexServer = hasPlexServer || multiServer.getPlexClientForServer(serverId) != null;
       final dvr = multiServer.getClientForServer(serverId)?.liveTvDvr;
@@ -410,8 +410,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           favoriteStoreBySource[source] = storeKey;
 
           final channels = await genericClient.liveTv.fetchChannels(lineup: serverInfo.lineup);
-          // Plex's DVR exposes a separate enabled-channel mapping; Jellyfin
-          // already filters to subscribed channels server-side.
+          // Plex's DVR exposes a separate enabled-channel mapping; other
+          // backends already filter to subscribed channels server-side.
           final enabledKeys = enabledKeysByLiveServer[liveServerKey];
           appLogger.d(
             'Channels from ${serverInfo.dvrKey}: ${channels.length} channels (${enabledKeys?.length ?? 'all'} enabled)',
@@ -480,7 +480,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
       _refreshVisibleTabs(multiServer);
 
-      // Load favorites by backend store: Plex is cloud/account-scoped, Jellyfin per server.
+      // Load favorites by backend store: Plex is cloud/account-scoped, others per server.
       final favoritesLoad = _loadFavorites(multiServer);
       _favoritesLoadFuture = favoritesLoad;
       unawaited(

@@ -117,12 +117,12 @@ void main() {
       title: 'Plex B',
       serverId: 'plex-b',
     );
-    final jellyfin = testMediaItem(
+    final silo = testMediaItem(
       id: '123',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
-      title: 'Jellyfin',
-      serverId: 'jellyfin-a',
+      title: 'Silo',
+      serverId: 'silo-a',
     );
 
     VideoPlayerLaunchIdentity identity(
@@ -152,7 +152,7 @@ void main() {
       expect(guard.activeGlobalKey, 'plex-a:123');
       expect(guard.blocks(target), isTrue);
       expect(guard.blocks(identity(plexB)), isFalse);
-      expect(guard.blocks(identity(jellyfin)), isFalse);
+      expect(guard.blocks(identity(silo)), isFalse);
       expect(guard.blocks(identity(plexA, mediaIndex: 1)), isFalse);
       expect(guard.blocks(identity(plexA, sourceId: 'source-b')), isFalse);
       expect(guard.blocks(identity(plexA, quality: TranscodeQualityPreset.p720_4mbps)), isFalse);
@@ -175,7 +175,7 @@ void main() {
       guard.activate(ownerB, replacement);
 
       expect(guard.clear(ownerA), isFalse);
-      expect(guard.update(ownerA, identity(jellyfin)), isFalse);
+      expect(guard.update(ownerA, identity(silo)), isFalse);
       expect(guard.blocks(replacement), isTrue);
 
       final beforeReload = guard.identityFor(ownerB);
@@ -272,7 +272,7 @@ void main() {
 
       final bare = testMediaItem(
         id: 'ep-2',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Episode 2',
         serverId: 'srv-1',

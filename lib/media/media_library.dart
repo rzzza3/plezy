@@ -3,10 +3,9 @@ import 'ids.dart';
 import 'media_backend.dart';
 import 'media_kind.dart';
 
-/// A top-level browseable section on a server (Plex library section, Jellyfin
-/// view).
+/// A top-level browseable section on a server (e.g. a Plex library section).
 class MediaLibrary {
-  /// Backend-opaque identifier (Plex section id like `"5"`, Jellyfin view UUID).
+  /// Backend-opaque identifier (e.g. Plex section id like `"5"`).
   final String id;
   final MediaBackend backend;
   final String title;
@@ -14,10 +13,6 @@ class MediaLibrary {
   /// Primary media kind held by this library — drives default UI affordances
   /// (poster shape, sort options). For mixed libraries this is [MediaKind.unknown].
   final MediaKind kind;
-
-  /// Explicit item kinds for this library's flat root browse. Mixed libraries
-  /// use this when no single [kind] can describe the server's root view.
-  final List<MediaKind> defaultBrowseKinds;
 
   /// Optional ISO language code of the library's metadata locale.
   final String? language;
@@ -30,7 +25,7 @@ class MediaLibrary {
   final bool hidden;
 
   /// True for individually-shared items presented as a virtual library
-  /// (Plex's "shared with me" surface). Jellyfin returns no such marker.
+  /// (Plex's "shared with me" surface).
   final bool isShared;
 
   final String? serverId;
@@ -41,7 +36,6 @@ class MediaLibrary {
     required this.backend,
     required this.title,
     this.kind = MediaKind.unknown,
-    this.defaultBrowseKinds = const [],
     this.language,
     this.updatedAt,
     this.createdAt,

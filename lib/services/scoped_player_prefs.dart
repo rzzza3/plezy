@@ -30,8 +30,8 @@ final class ScopedPlayerPref<T> {
 /// Writes go to the configured scope: `off` writes nothing, `global` writes
 /// the property's pre-existing global pref, `library`/`title` write an entry
 /// keyed by the item's library/title identity. Items without the required
-/// identity (live TV placeholders, Jellyfin/Emby downloads without a stamped
-/// library, search rows) fall back to the global pref so a change never
+/// identity (live TV placeholders, downloads without a stamped library,
+/// search rows) fall back to the global pref so a change never
 /// silently vanishes.
 ///
 /// Resolution consults only the configured scope's entry, then the global
@@ -192,7 +192,7 @@ abstract final class ScopedPlayerPrefs {
       case PlayerSettingScope.global:
         return null;
       case PlayerSettingScope.library:
-        // Null for Jellyfin/Emby items whose library was never stamped
+        // Null for items whose library was never stamped
         // (notably downloads) and for shared/search rows.
         final libraryKey = item.libraryGlobalKey;
         return libraryKey == null ? null : 'library:$libraryKey';

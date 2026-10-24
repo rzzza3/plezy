@@ -5,9 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_change_event.dart';
-import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/services/library_events/library_event_socket.dart';
-import 'package:plezy/services/library_events/media_browser_library_event_socket.dart';
 import 'package:plezy/services/library_events/plex_library_event_socket.dart';
 
 /// Ephemeral loopback websocket server standing in for a media server's
@@ -18,7 +16,6 @@ class _NotificationServer {
   final HttpServer _server;
   final List<WebSocket> sockets = [];
   final List<Uri> requestUris = [];
-  final List<Map<String, dynamic>> received = [];
   final _connections = StreamController<WebSocket>.broadcast();
 
   String get baseUrl => 'http://${_server.address.address}:${_server.port}';
@@ -30,9 +27,7 @@ class _NotificationServer {
       notification.requestUris.add(request.uri);
       final socket = await WebSocketTransformer.upgrade(request);
       notification.sockets.add(socket);
-      socket.listen((data) {
-        notification.received.add((jsonDecode(data as String) as Map).cast<String, dynamic>());
-      }, onDone: socket.close);
+      socket.listen((_) {}, onDone: socket.close);
       notification._connections.add(socket);
     });
     return notification;
@@ -86,20 +81,6 @@ const _plexPlayingFrame = {
   },
 };
 
-/// LibraryChanged as captured from Jellyfin 10.11 / Emby 4.9.5.
-const _libraryChangedFrame = {
-  'MessageType': 'LibraryChanged',
-  'Data': {
-    'FoldersAddedTo': ['ba9c5cad4ccd875366bf54fd50e04928'],
-    'FoldersRemovedFrom': <String>[],
-    'ItemsAdded': ['6f91bbba468dfbb00984986c4e5d0a74'],
-    'ItemsRemoved': <String>[],
-    'ItemsUpdated': <String>[],
-    'CollectionFolders': ['f137a2dd21bbc1b99aa5c0f6bf02a805', '1071671e7bffa0532e930debee501d2e'],
-    'IsEmpty': false,
-  },
-};
-
 void main() {
   final servers = <_NotificationServer>[];
   final channels = <LibraryEventChannel>[];
@@ -139,23 +120,6 @@ void main() {
     ),
   );
 
-  MediaBrowserLibraryEventSocket mediaBrowserSocket(
-    _NotificationServer server, {
-    MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
-    Future<void> Function()? registerCapabilities,
-  }) => track(
-    MediaBrowserLibraryEventSocket(
-      serverId: ServerId('mb_1'),
-      dialect: dialect,
-      baseUrl: () => server.baseUrl,
-      accessToken: 'access-1',
-      deviceId: 'device-1',
-      registerCapabilities: registerCapabilities,
-      debounce: const Duration(milliseconds: 100),
-      retryBaseDelay: const Duration(milliseconds: 50),
-    ),
-  );
-
   test('websocket URIs preserve a reverse-proxy path prefix', () {
     final plex = track(
       PlexLibraryEventSocket(
@@ -167,17 +131,6 @@ void main() {
     );
     expect(plex.buildUri().path, '/plex/:/websockets/notifications');
     expect(plex.buildUri().scheme, 'wss');
-
-    final mb = track(
-      MediaBrowserLibraryEventSocket(
-        serverId: ServerId('mb_1'),
-        dialect: MediaBrowserDialect.jellyfin,
-        baseUrl: () => 'https://proxy.example/jellyfin',
-        accessToken: 'access-1',
-        deviceId: 'device-1',
-      ),
-    );
-    expect(mb.buildUri().path, '/jellyfin/socket');
   });
 
   group('PlexLibraryEventSocket', () {
@@ -430,166 +383,6 @@ void main() {
 
       await peerClosed.timeout(const Duration(seconds: 5));
       expect(channel.isRunning, isFalse);
-    });
-  });
-
-  group('MediaBrowserLibraryEventSocket', () {
-    test('connects to the dialect path and answers ForceKeepAlive', () async {
-      final server = await startServer();
-      final channel = mediaBrowserSocket(server);
-      channel.start();
-      final socket = await server.nextConnection();
-
-      expect(server.requestUris.single.path, '/socket');
-      expect(server.requestUris.single.queryParameters, containsPair('ApiKey', 'access-1'));
-      expect(server.requestUris.single.queryParameters.containsKey('api_key'), isFalse);
-      expect(server.requestUris.single.queryParameters, containsPair('deviceId', 'device-1'));
-
-      server.send(socket, {'MessageId': 'x', 'Data': 60, 'MessageType': 'ForceKeepAlive'});
-      await _waitFor(() => server.received.any((m) => m['MessageType'] == 'KeepAlive'));
-    });
-
-    test('maps LibraryChanged to a coalesced event', () async {
-      final server = await startServer();
-      final channel = mediaBrowserSocket(server);
-      channel.start();
-      final socket = await server.nextConnection();
-
-      server.send(socket, _libraryChangedFrame);
-
-      final event = await channel.events.first.timeout(const Duration(seconds: 5));
-      expect(event.serverId, 'mb_1');
-      expect(event.itemsAdded, isTrue);
-      expect(event.itemsRemoved, isFalse);
-      expect(event.itemsUpdated, isFalse);
-      expect(event.libraryIds, {'f137a2dd21bbc1b99aa5c0f6bf02a805', '1071671e7bffa0532e930debee501d2e'});
-    });
-
-    test('a LibraryChanged without CollectionFolders widens the window to the whole server', () async {
-      final server = await startServer();
-      final channel = mediaBrowserSocket(server);
-      final events = <LibraryChangeEvent>[];
-      channel.events.listen(events.add);
-      channel.start();
-      final socket = await server.nextConnection();
-
-      server.send(socket, _libraryChangedFrame);
-      await channel.events.first.timeout(const Duration(seconds: 5));
-
-      // Jellyfin derives CollectionFolders from each item's top parent; an
-      // update outside any collection folder names items but no folder.
-      server.send(socket, {
-        'MessageType': 'LibraryChanged',
-        'Data': {
-          'FoldersAddedTo': <String>[],
-          'FoldersRemovedFrom': <String>[],
-          'ItemsAdded': <String>[],
-          'ItemsRemoved': <String>[],
-          'ItemsUpdated': ['6f91bbba468dfbb00984986c4e5d0a74'],
-          'CollectionFolders': <String>[],
-          'IsEmpty': false,
-        },
-      });
-      server.send(socket, _libraryChangedFrame);
-
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      expect(events, hasLength(2));
-      expect(events[1].targetsWholeServer, isTrue);
-      expect(events[1].itemsAdded, isTrue);
-      expect(events[1].itemsUpdated, isTrue);
-    });
-
-    test('LibraryChanged removals carry the removed item ids', () async {
-      final server = await startServer();
-      final channel = mediaBrowserSocket(server);
-      channel.start();
-      final socket = await server.nextConnection();
-
-      server.send(socket, {
-        'MessageType': 'LibraryChanged',
-        'Data': {
-          'FoldersAddedTo': <String>[],
-          'FoldersRemovedFrom': <String>[],
-          'ItemsAdded': <String>[],
-          'ItemsRemoved': ['b44f297fb12dbc4dad50bb49f8475520', '6f91bbba468dfbb00984986c4e5d0a74'],
-          'ItemsUpdated': <String>[],
-          'CollectionFolders': ['f137a2dd21bbc1b99aa5c0f6bf02a805'],
-          'IsEmpty': false,
-        },
-      });
-
-      final event = await channel.events.first.timeout(const Duration(seconds: 5));
-      expect(event.itemsRemoved, isTrue);
-      expect(event.removedItemIds, {'b44f297fb12dbc4dad50bb49f8475520', '6f91bbba468dfbb00984986c4e5d0a74'});
-    });
-
-    test('an empty LibraryChanged emits nothing', () async {
-      final server = await startServer();
-      final channel = mediaBrowserSocket(server);
-      final events = <LibraryChangeEvent>[];
-      channel.events.listen(events.add);
-      channel.start();
-      final socket = await server.nextConnection();
-
-      server.send(socket, {
-        'MessageType': 'LibraryChanged',
-        'Data': {
-          'FoldersAddedTo': <String>[],
-          'FoldersRemovedFrom': <String>[],
-          'ItemsAdded': <String>[],
-          'ItemsRemoved': <String>[],
-          'ItemsUpdated': <String>[],
-          'CollectionFolders': <String>[],
-          'IsEmpty': true,
-        },
-      });
-
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      expect(events, isEmpty);
-    });
-
-    test('Emby registers capabilities before every connect; Jellyfin never does', () async {
-      final server = await startServer();
-      var registrations = 0;
-      final emby = mediaBrowserSocket(
-        server,
-        dialect: MediaBrowserDialect.emby,
-        registerCapabilities: () async => registrations++,
-      );
-      emby.start();
-      final first = await server.nextConnection();
-      expect(registrations, 1);
-      expect(server.requestUris.single.path, '/embywebsocket');
-      expect(server.requestUris.single.queryParameters, containsPair('api_key', 'access-1'));
-      expect(server.requestUris.single.queryParameters.containsKey('ApiKey'), isFalse);
-
-      // A drop re-registers on the reconnect attempt.
-      await first.close();
-      await _waitFor(() => registrations >= 2);
-      emby.dispose();
-
-      final jellyfinServer = await startServer();
-      var jellyfinRegistrations = 0;
-      final jellyfin = mediaBrowserSocket(jellyfinServer, registerCapabilities: () async => jellyfinRegistrations++);
-      jellyfin.start();
-      await jellyfinServer.nextConnection();
-      expect(jellyfinRegistrations, 0);
-    });
-
-    test('a failing capabilities registration retries and then connects', () async {
-      final server = await startServer();
-      var registrations = 0;
-      final channel = mediaBrowserSocket(
-        server,
-        dialect: MediaBrowserDialect.emby,
-        registerCapabilities: () async {
-          registrations++;
-          if (registrations == 1) throw Exception('server busy');
-        },
-      );
-      channel.start();
-      await server.nextConnection();
-      expect(registrations, 2, reason: 'first attempt failed, retry connected');
     });
   });
 }

@@ -35,7 +35,7 @@ import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -87,7 +87,7 @@ void main() {
     const title = 'The Surprisingly Long Movie Title That Needs Two Whole Lines';
     final movie = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: title,
       summary: 'A compact viewport should make the fallback title shrink before it can overlap the detail text.',
@@ -120,7 +120,7 @@ void main() {
 
     final movie = testMediaItem(
       id: 'semantic_movie',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Semantic Movie',
       summary: 'One concise detail announcement.',
@@ -234,7 +234,7 @@ void main() {
 
     final movie = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Idle Reveal Movie',
       summary: 'The detail foreground should appear without needing a D-pad frame.',
@@ -439,7 +439,7 @@ void main() {
 
     final show = testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       serverId: 'server_1',
@@ -447,7 +447,7 @@ void main() {
     );
     final specials = testMediaItem(
       id: 'season_0',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Specials',
       index: 0,
@@ -457,7 +457,7 @@ void main() {
     );
     final season1 = testMediaItem(
       id: 'season_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       index: 1,
@@ -467,7 +467,7 @@ void main() {
     );
     final specialEpisode = testMediaItem(
       id: 'episode_special_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Special 1',
       index: 1,
@@ -479,7 +479,7 @@ void main() {
     );
     final episode1 = testMediaItem(
       id: 'episode_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       index: 1,
@@ -531,7 +531,7 @@ void main() {
 
     final show = testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       serverId: 'server_1',
@@ -539,7 +539,7 @@ void main() {
     );
     final season1 = testMediaItem(
       id: 'season_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       index: 1,
@@ -549,7 +549,7 @@ void main() {
     );
     final season2 = testMediaItem(
       id: 'season_2',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 2',
       index: 2,
@@ -559,7 +559,7 @@ void main() {
     );
     final episode1 = testMediaItem(
       id: 'episode_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       index: 1,
@@ -571,7 +571,7 @@ void main() {
     );
     final episode2 = testMediaItem(
       id: 'episode_2',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 2',
       index: 1,
@@ -639,7 +639,7 @@ void main() {
 
     final show = testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       serverId: 'server_1',
@@ -647,7 +647,7 @@ void main() {
     );
     final season1 = testMediaItem(
       id: 'season_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       index: 1,
@@ -657,7 +657,7 @@ void main() {
     );
     final episode1 = testMediaItem(
       id: 'episode_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       index: 1,
@@ -726,7 +726,7 @@ void main() {
     const summary = 'Light theme detail text should stay readable.';
     final movie = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Readable Movie',
       summary: summary,
@@ -755,7 +755,7 @@ void main() {
 
     final show = testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       serverId: 'server_1',
@@ -763,7 +763,7 @@ void main() {
     );
     final season1 = testMediaItem(
       id: 'season_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       index: 1,
@@ -773,7 +773,7 @@ void main() {
     );
     final season2 = testMediaItem(
       id: 'season_2',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 2',
       index: 2,
@@ -783,7 +783,7 @@ void main() {
     );
     final episode1 = testMediaItem(
       id: 'episode_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       index: 1,
@@ -795,7 +795,7 @@ void main() {
     );
     final episode2 = testMediaItem(
       id: 'episode_2',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 2',
       index: 1,
@@ -849,7 +849,7 @@ void main() {
 
     final show = testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       serverId: 'server_1',
@@ -857,7 +857,7 @@ void main() {
     );
     final season1 = testMediaItem(
       id: 'season_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       index: 1,
@@ -867,7 +867,7 @@ void main() {
     );
     final season2 = testMediaItem(
       id: 'season_2',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 2',
       index: 2,
@@ -877,7 +877,7 @@ void main() {
     );
     final episode1 = testMediaItem(
       id: 'episode_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       index: 1,
@@ -889,7 +889,7 @@ void main() {
     );
     final episode2 = testMediaItem(
       id: 'episode_2',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 2',
       index: 1,
@@ -939,7 +939,7 @@ void main() {
 
     final show = testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       serverId: 'server_1',
@@ -947,7 +947,7 @@ void main() {
     );
     final season1 = testMediaItem(
       id: 'season_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       index: 1,
@@ -957,7 +957,7 @@ void main() {
     );
     final season2 = testMediaItem(
       id: 'season_2',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 2',
       index: 2,
@@ -967,7 +967,7 @@ void main() {
     );
     final episode1 = testMediaItem(
       id: 'episode_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       index: 1,
@@ -979,7 +979,7 @@ void main() {
     );
     final episode2 = testMediaItem(
       id: 'episode_2',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 2',
       index: 1,
@@ -1044,7 +1044,7 @@ void main() {
 
     final show = testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       summary: 'The show summary.',
@@ -1054,7 +1054,7 @@ void main() {
     );
     final season = testMediaItem(
       id: 'season_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       index: 1,
@@ -1064,7 +1064,7 @@ void main() {
     );
     final episode = testMediaItem(
       id: 'episode_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'The One Where the Title Matters',
       summary: 'The episode summary.',
@@ -1079,7 +1079,7 @@ void main() {
     );
     final episode2 = testMediaItem(
       id: 'episode_2',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'The One After',
       index: 2,
@@ -1599,7 +1599,7 @@ void main() {
       await saveMediaVersionPreferenceFor(movie, index: 0, versions: movie.mediaVersions!);
       final database = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(database);
-      JellyfinApiCache.initialize(database);
+      SiloApiCache.initialize(database);
       await tester.runAsync(
         () => database.insertDownload(
           serverId: ServerId('server_1'),
@@ -1649,7 +1649,7 @@ void main() {
 
     final show = testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       serverId: 'server_1',
@@ -1657,7 +1657,7 @@ void main() {
     );
     final season = testMediaItem(
       id: 'season_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       index: 1,
@@ -1667,7 +1667,7 @@ void main() {
     );
     final episode = testMediaItem(
       id: 'episode_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       index: 1,
@@ -1686,7 +1686,7 @@ void main() {
     );
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(database);
-    JellyfinApiCache.initialize(database);
+    SiloApiCache.initialize(database);
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
     final multiServerProvider = testMultiServerProvider(manager);
     final offlineWatch = OfflineWatchSyncService(database: database, serverManager: manager);
@@ -1747,7 +1747,7 @@ void main() {
   group('phone layout', () {
     MediaItem buildShow({String? summary}) => testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       summary: summary,
@@ -1759,7 +1759,7 @@ void main() {
 
     MediaItem buildSeason(MediaItem show, int index) => testMediaItem(
       id: 'season_$index',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season $index',
       index: index,
@@ -1772,7 +1772,7 @@ void main() {
 
     MediaItem buildEpisode(MediaItem show, MediaItem season, int index) => testMediaItem(
       id: '${season.id}_episode_$index',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode S${season.index}E$index',
       index: index,
@@ -1803,7 +1803,7 @@ void main() {
 
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
-      JellyfinApiCache.initialize(db);
+      SiloApiCache.initialize(db);
       final downloadManager = DownloadManagerService(
         database: db,
         storageService: DownloadStorageService.instance,
@@ -1907,7 +1907,7 @@ void main() {
     });
 
     testWidgets('paints the item before the on-deck lookup settles', (tester) async {
-      // Jellyfin needs a second round trip for on-deck; the phone/desktop
+      // Silo needs a second round trip for on-deck; the phone/desktop
       // layout must not wait for it. Scoped to non-TV deliberately: on TV the
       // foreground stays at opacity 0 until `_isTvDetailReadyToReveal` is
       // satisfied, which this change does not move (see the TV counterpart).
@@ -1915,7 +1915,7 @@ void main() {
       final season1 = buildSeason(show, 1);
       MediaItem episode(int number, {required int viewCount}) => testMediaItem(
         id: 'episode_$number',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Episode $number',
         index: number,
@@ -2015,7 +2015,7 @@ void main() {
     testWidgets('deleting a first-route detail cancels plain Play while preferences resolve', (tester) async {
       final movie = testMediaItem(
         id: 'deleted_movie',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Deleted movie',
         serverId: 'server_1',
@@ -2113,7 +2113,7 @@ void main() {
       final versions = [MediaVersion(id: 'v1', videoResolution: '1080'), MediaVersion(id: 'v2', videoResolution: '4k')];
       final movie = testMediaItem(
         id: 'multi_version',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Multi Version',
         serverId: 'server_1',
@@ -2146,7 +2146,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Jellyfin can transcode, so the quality picker follows; keep Original.
+      // Silo can transcode, so the quality picker follows; keep Original.
       await tester.tap(inDialog(t.videoControls.qualityOriginal));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
@@ -2160,7 +2160,7 @@ void main() {
     testWidgets('single-version movie keeps the plain play button', (tester) async {
       final movie = testMediaItem(
         id: 'single_version',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Single Version',
         serverId: 'server_1',
@@ -2191,7 +2191,7 @@ void main() {
       final movie =
           testMediaItem(
             id: 'chip_movie',
-            backend: MediaBackend.jellyfin,
+            backend: MediaBackend.silo,
             kind: MediaKind.movie,
             title: 'Chip Movie',
             year: 2017,
@@ -2279,7 +2279,7 @@ void main() {
       // hero keeps its bottom-left column.
       final movie = testMediaItem(
         id: 'centered_movie',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Centered Movie',
         year: 2017,
@@ -2325,7 +2325,7 @@ void main() {
       const title = 'A Title Long Enough To Need The Whole Wide Hero';
       final movie = testMediaItem(
         id: 'wide_title_movie',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: title,
         year: 2017,
@@ -2768,7 +2768,7 @@ void main() {
   group('deletion leaves via the detail route', () {
     final show = testMediaItem(
       id: 'show_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'The Show',
       serverId: 'server_1',
@@ -2776,7 +2776,7 @@ void main() {
     );
     final season = testMediaItem(
       id: 'season_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       index: 1,
@@ -2787,7 +2787,7 @@ void main() {
     );
     final episode = testMediaItem(
       id: 'episode_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Only Episode',
       index: 1,
@@ -2799,7 +2799,7 @@ void main() {
     );
     final movie = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'The Movie',
       serverId: show.serverId,
@@ -3176,7 +3176,7 @@ void main() {
     ) async {
       final database = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(database);
-      JellyfinApiCache.initialize(database);
+      SiloApiCache.initialize(database);
       final manager = DownloadManagerService(
         database: database,
         storageService: DownloadStorageService.instance,
@@ -3380,10 +3380,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(
@@ -3398,7 +3398,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     final item = id == show.id
         ? show
         : childrenByParent.values.expand((items) => items).where((item) => item.id == id).firstOrNull ?? show;
-    // Mirrors the Jellyfin shape: the item is known first, on-deck needs a
+    // Mirrors the Silo shape: the item is known first, on-deck needs a
     // second round trip.
     if (onItemReady != null) {
       earlyPaints.add(item);

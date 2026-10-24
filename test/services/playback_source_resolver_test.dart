@@ -145,12 +145,12 @@ void main() {
       await db.close();
     });
 
-    final client = _PlaybackClient(clientBackend: MediaBackend.jellyfin);
+    final client = _PlaybackClient(clientBackend: MediaBackend.silo);
     manager.debugRegisterClientForTesting(client, online: true);
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
       PlaybackInitializationOptions(
-        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
         selectedMediaIndex: 0,
         qualityPreset: TranscodeQualityPreset.original,
         sessionIdentifier: 'playback-session-id',

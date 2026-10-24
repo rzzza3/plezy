@@ -5,48 +5,22 @@ import 'media_server_user_profile.dart';
 /// plex.tv, never on the device, and each backend supports a subset — see
 /// [AccountPreferencesCapabilities].
 enum AccountPreferenceKey {
-  /// Preferred audio language. Jellyfin `AudioLanguagePreference` (ISO 639-2),
-  /// Plex `defaultAudioLanguage` (ISO 639-1). Applied by the server.
+  /// Preferred audio language. Plex `defaultAudioLanguage` (ISO 639-1).
+  /// Applied by the server.
   preferredAudioLanguage(AccountPreferenceValueKind.languageCode),
 
   /// Auto-pick an audio track from the language preference instead of keeping
-  /// the file's default. Jellyfin `PlayDefaultAudioTrack`, Plex
-  /// `autoSelectAudio`. Applied by the server.
+  /// the file's default. Plex `autoSelectAudio`. Applied by the server.
   autoSelectAudio(AccountPreferenceValueKind.boolean),
 
-  /// Preferred subtitle language. Jellyfin `SubtitleLanguagePreference`,
-  /// Plex `defaultSubtitleLanguage`. Applied by the server.
+  /// Preferred subtitle language. Plex `defaultSubtitleLanguage`. Applied by
+  /// the server.
   preferredSubtitleLanguage(AccountPreferenceValueKind.languageCode),
 
-  /// When subtitles are auto-enabled. Jellyfin `SubtitleMode`, Plex
-  /// `autoSelectSubtitle`. Applied by the server. Domains differ — see
+  /// When subtitles are auto-enabled. Plex `autoSelectSubtitle`. Applied by
+  /// the server. Domains differ — see
   /// [AccountPreferencesCapabilities.subtitleModes].
   subtitleMode(AccountPreferenceValueKind.subtitleMode),
-
-  /// Reuse the last audio track the user picked for the next item.
-  /// Jellyfin `RememberAudioSelections`. MediaBrowser only.
-  rememberAudioSelections(AccountPreferenceValueKind.boolean),
-
-  /// Reuse the last subtitle track the user picked. Jellyfin
-  /// `RememberSubtitleSelections`. MediaBrowser only.
-  rememberSubtitleSelections(AccountPreferenceValueKind.boolean),
-
-  /// Play the next episode automatically. Jellyfin
-  /// `EnableNextEpisodeAutoPlay`. MediaBrowser only — Plex keeps its twin in
-  /// the per-device `experience` blob, which Plezy deliberately never writes.
-  autoPlayNextEpisode(AccountPreferenceValueKind.boolean),
-
-  /// List episodes the library knows about but has no file for. Jellyfin
-  /// `DisplayMissingEpisodes`. Applied by the server. MediaBrowser only.
-  displayMissingEpisodes(AccountPreferenceValueKind.boolean),
-
-  /// Exclude already-watched items from "Latest" rows. Jellyfin
-  /// `HidePlayedInLatest`. Applied by the server. MediaBrowser only.
-  hidePlayedInLatest(AccountPreferenceValueKind.boolean),
-
-  /// Expose the server's Collections view. Jellyfin `DisplayCollectionsView`.
-  /// Applied by the server. MediaBrowser only.
-  displayCollectionsView(AccountPreferenceValueKind.boolean),
 
   /// Which item types show a watched badge. Plex `watchedIndicator`.
   /// Enforced by the client. Plex only.
@@ -62,18 +36,7 @@ enum AccountPreferenceKey {
 
   /// Forced-subtitle handling for subtitle *searches*. Plex
   /// `defaultSubtitleForced`. Enforced by the client. Plex only.
-  forcedSubtitles(AccountPreferenceValueKind.forcedSubtitles),
-
-  /// Keep a finished series in Next Up while the user rewatches it.
-  ///
-  /// Jellyfin only, and the one key here with no field of its own on the
-  /// server: `/Shows/NextUp` takes `EnableRewatching` per request and
-  /// `UserConfiguration` has no twin, so Plezy stores it in the account's
-  /// `DisplayPreferences` custom prefs and sends the parameter itself. That is
-  /// a deliberate departure from jellyfin-web, which keeps the same switch in
-  /// browser local storage and therefore loses it on every new device; the
-  /// store Plezy uses is keyed by user, so the choice follows the account.
-  rewatchingInNextUp(AccountPreferenceValueKind.boolean);
+  forcedSubtitles(AccountPreferenceValueKind.forcedSubtitles);
 
   const AccountPreferenceKey(this.valueKind);
 
@@ -87,18 +50,11 @@ enum AccountPreferenceKey {
     AccountPreferenceKey.preferredAudioLanguage ||
     AccountPreferenceKey.autoSelectAudio ||
     AccountPreferenceKey.preferredSubtitleLanguage ||
-    AccountPreferenceKey.subtitleMode ||
-    AccountPreferenceKey.displayMissingEpisodes ||
-    AccountPreferenceKey.hidePlayedInLatest ||
-    AccountPreferenceKey.displayCollectionsView => true,
-    AccountPreferenceKey.rememberAudioSelections ||
-    AccountPreferenceKey.rememberSubtitleSelections ||
-    AccountPreferenceKey.autoPlayNextEpisode ||
+    AccountPreferenceKey.subtitleMode => true,
     AccountPreferenceKey.watchedIndicator ||
     AccountPreferenceKey.mediaReviewsVisibility ||
     AccountPreferenceKey.subtitleAccessibility ||
-    AccountPreferenceKey.forcedSubtitles ||
-    AccountPreferenceKey.rewatchingInNextUp => false,
+    AccountPreferenceKey.forcedSubtitles => false,
   };
 }
 
@@ -177,8 +133,7 @@ enum ForcedSubtitlePreference {
 ///
 /// Null means "unset or not supported by this backend"; consult
 /// [AccountPreferencesCapabilities] to tell those apart. Language fields keep
-/// the **server's own spelling** (Jellyfin returns 639-2 `deu`, Plex returns
-/// 639-1 `de`) because [MediaServerUserProfile] consumers match with
+/// the **server's own spelling** (Plex returns 639-1 `de`) because [MediaServerUserProfile] consumers match with
 /// [LanguageCodes.getVariations]; the UI reads the `*Code1` accessors instead.
 class AccountPreferences implements MediaServerUserProfile {
   const AccountPreferences({
@@ -186,17 +141,10 @@ class AccountPreferences implements MediaServerUserProfile {
     this.playDefaultAudioTrack,
     this.preferredSubtitleLanguage,
     this.subtitlePlaybackMode,
-    this.rememberAudioSelections,
-    this.rememberSubtitleSelections,
-    this.autoPlayNextEpisode,
-    this.displayMissingEpisodes,
-    this.hidePlayedInLatest,
-    this.displayCollectionsView,
     this.watchedIndicator,
     this.mediaReviewsVisibility,
     this.subtitleAccessibility,
     this.forcedSubtitles,
-    this.rewatchingInNextUp,
   });
 
   static const empty = AccountPreferences();
@@ -205,17 +153,10 @@ class AccountPreferences implements MediaServerUserProfile {
   final bool? playDefaultAudioTrack;
   final String? preferredSubtitleLanguage;
   final SubtitlePlaybackMode? subtitlePlaybackMode;
-  final bool? rememberAudioSelections;
-  final bool? rememberSubtitleSelections;
-  final bool? autoPlayNextEpisode;
-  final bool? displayMissingEpisodes;
-  final bool? hidePlayedInLatest;
-  final bool? displayCollectionsView;
   final WatchedIndicatorScope? watchedIndicator;
   final MediaReviewsVisibility? mediaReviewsVisibility;
   final SubtitleAccessibilityPreference? subtitleAccessibility;
   final ForcedSubtitlePreference? forcedSubtitles;
-  final bool? rewatchingInNextUp;
 
   /// Preferred audio language narrowed to ISO 639-1 for pickers.
   String? get preferredAudioLanguageCode1 => _code1(preferredAudioLanguage);
@@ -234,25 +175,18 @@ class AccountPreferences implements MediaServerUserProfile {
     AccountPreferenceKey.autoSelectAudio => playDefaultAudioTrack,
     AccountPreferenceKey.preferredSubtitleLanguage => preferredSubtitleLanguageCode1,
     AccountPreferenceKey.subtitleMode => subtitlePlaybackMode,
-    AccountPreferenceKey.rememberAudioSelections => rememberAudioSelections,
-    AccountPreferenceKey.rememberSubtitleSelections => rememberSubtitleSelections,
-    AccountPreferenceKey.autoPlayNextEpisode => autoPlayNextEpisode,
-    AccountPreferenceKey.displayMissingEpisodes => displayMissingEpisodes,
-    AccountPreferenceKey.hidePlayedInLatest => hidePlayedInLatest,
-    AccountPreferenceKey.displayCollectionsView => displayCollectionsView,
     AccountPreferenceKey.watchedIndicator => watchedIndicator,
     AccountPreferenceKey.mediaReviewsVisibility => mediaReviewsVisibility,
     AccountPreferenceKey.subtitleAccessibility => subtitleAccessibility,
     AccountPreferenceKey.forcedSubtitles => forcedSubtitles,
-    AccountPreferenceKey.rewatchingInNextUp => rewatchingInNextUp,
   };
 
   // --- MediaServerUserProfile ------------------------------------------------
   // Implemented so the account cache can feed TrackSelectionService directly
   // instead of maintaining a second fetch path for the same fields.
 
-  /// Defaults to true, matching both backends' own defaults
-  /// (`PlayDefaultAudioTrack` / `autoSelectAudio`) when unset.
+  /// Defaults to true, matching Plex's own `autoSelectAudio` default when
+  /// unset.
   @override
   bool get autoSelectAudio => playDefaultAudioTrack ?? true;
 
@@ -268,12 +202,8 @@ class AccountPreferences implements MediaServerUserProfile {
 
 /// A sparse set of changes to apply to one account.
 ///
-/// Writes are patch-shaped because both backends demand it for different
-/// reasons: Plex Web sends only the changed keys as query parameters, and
-/// Jellyfin's `POST /Users/Configuration` replaces the whole object against
-/// constructor defaults, so its transport must merge the patch into a freshly
-/// read `Configuration` and preserve the fields Plezy does not model
-/// (`OrderedViews`, `CastReceiverId`, …).
+/// Writes are patch-shaped because Plex Web sends only the changed keys as
+/// query parameters.
 class AccountPreferencesPatch {
   AccountPreferencesPatch(Map<AccountPreferenceKey, Object?> values)
     : _values = Map.unmodifiable({for (final entry in values.entries) entry.key: _checked(entry.key, entry.value)});
@@ -327,69 +257,6 @@ class AccountPreferencesPatch {
 /// and callers can distinguish "unset" from "unsupported".
 class AccountPreferencesCapabilities {
   const AccountPreferencesCapabilities({required this.supportedKeys, required this.subtitleModes});
-
-  /// Jellyfin: `UserConfiguration`, plus [AccountPreferenceKey.rewatchingInNextUp]
-  /// in the account's `DisplayPreferences` custom prefs.
-  ///
-  /// [AccountPreferenceKey.rememberAudioSelections] and
-  /// [AccountPreferenceKey.rememberSubtitleSelections] are storable but have
-  /// no row in the Account preferences screen: the local
-  /// `SettingsService.rememberTrackSelections` toggle is the one opt-in, the
-  /// only answer available for Plex, and the one the playback path reads. The
-  /// server, though, records and applies the stream indexes Plezy reports
-  /// only while these flags are on
-  /// ([MediaBrowserDialect.persistsTrackSelectionsViaAccountFlags]), so
-  /// `TrackManager` turns the flag for a picked track type on when the local
-  /// toggle needs it. One direction only — nothing here turns them off — which
-  /// is the rule for which side wins that a second switch would have lacked.
-  ///
-  /// [AccountPreferenceKey.autoPlayNextEpisode] is read and round-tripped —
-  /// the whole-object write must never reset it — but stays deliberately
-  /// **not** editable: Plezy owns that decision locally (`autoPlayNextEpisode`,
-  /// also a toggle in the player's settings sheet) and the server plays no part
-  /// in it.
-  static const jellyfin = AccountPreferencesCapabilities(
-    supportedKeys: {
-      AccountPreferenceKey.preferredAudioLanguage,
-      AccountPreferenceKey.autoSelectAudio,
-      AccountPreferenceKey.preferredSubtitleLanguage,
-      AccountPreferenceKey.subtitleMode,
-      AccountPreferenceKey.rememberAudioSelections,
-      AccountPreferenceKey.rememberSubtitleSelections,
-      AccountPreferenceKey.displayMissingEpisodes,
-      AccountPreferenceKey.hidePlayedInLatest,
-      AccountPreferenceKey.displayCollectionsView,
-      AccountPreferenceKey.rewatchingInNextUp,
-    },
-    subtitleModes: _mediaBrowserSubtitleModes,
-  );
-
-  /// Emby: the same `UserConfiguration` field set, minus rewatching —
-  /// `/Shows/NextUp` has no `EnableRewatching` there
-  /// ([MediaBrowserDialect.supportsNextUpRewatching]) — and minus the remember
-  /// flags, whose effect on Emby playback defaults is unverified
-  /// ([MediaBrowserDialect.persistsTrackSelectionsViaAccountFlags]); storing
-  /// either would promise behaviour the server may not deliver.
-  static const emby = AccountPreferencesCapabilities(
-    supportedKeys: {
-      AccountPreferenceKey.preferredAudioLanguage,
-      AccountPreferenceKey.autoSelectAudio,
-      AccountPreferenceKey.preferredSubtitleLanguage,
-      AccountPreferenceKey.subtitleMode,
-      AccountPreferenceKey.displayMissingEpisodes,
-      AccountPreferenceKey.hidePlayedInLatest,
-      AccountPreferenceKey.displayCollectionsView,
-    },
-    subtitleModes: _mediaBrowserSubtitleModes,
-  );
-
-  static const _mediaBrowserSubtitleModes = {
-    SubtitlePlaybackMode.defaultMode,
-    SubtitlePlaybackMode.always,
-    SubtitlePlaybackMode.onlyForced,
-    SubtitlePlaybackMode.none,
-    SubtitlePlaybackMode.smart,
-  };
 
   /// plex.tv `/api/v2/user/profile`. `autoSelectSubtitle` has three states
   /// only: manual (`none`), with foreign audio (`smart`), always (`always`).

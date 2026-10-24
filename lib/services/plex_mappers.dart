@@ -1,4 +1,4 @@
-// Pure JSON/DTO→neutral-type mappers for Plex. Mirrors [JellyfinMappers].
+// Pure JSON/DTO→neutral-type mappers for Plex.
 //
 // The DTO layer ([PlexMetadataDto] etc.) is a typed shim over the raw
 // `/library/metadata` JSON shape that exists so the Plex-specific quirks
@@ -1023,7 +1023,7 @@ String? _nonEmptyRatingString(Object? value) {
   return trimmed.isEmpty ? null : trimmed;
 }
 
-/// Pure JSON/DTO→neutral-type mappers for Plex. Mirrors [JellyfinMappers].
+/// Pure JSON/DTO→neutral-type mappers for Plex.
 ///
 /// Methods accept already-parsed DTOs (`mediaItem`, `mediaHub`, …); the
 /// [PlexClient] keeps the DTO step internally for caching, copying, and
@@ -1082,8 +1082,8 @@ class PlexMappers {
       editionTitle: dto.editionTitle,
       studio: dto.studio,
       // Plex stores an ordinary track's release year on the parent album.
-      // Normalize it into the neutral item's year, matching Jellyfin Audio
-      // rows, while leaving episode/season hierarchy semantics unchanged.
+      // Normalize it into the neutral item's year, matching other
+      // audio rows, while leaving episode/season hierarchy semantics unchanged.
       year: kind == MediaKind.track ? dto.year ?? dto.parentYear : dto.year,
       originallyAvailableAt: dto.originallyAvailableAt,
       contentRating: dto.contentRating,
