@@ -1,0 +1,16 @@
+02:58:08.275 : [I] Silo playback: stopped (status 200)
+02:58:08.747 : [I] Silo playback: started, SiloPlayable
+02:58:08.747 : [I] Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+02:58:21.524 : [I] Silo playback: progress 1 at 8 s
+02:58:31.519 : [I] Silo playback: progress 2 at 17 s
+02:58:41.526 : [I] Silo playback: progress 3 at 27 s
+02:58:51.541 : [I] Silo playback: progress 4 at 37 s
+02:59:01.535 : [I] Silo playback: progress 5 at 47 s
+02:59:11.529 : [I] Silo playback: progress 6 at 57 s
+02:59:21.550 : [I] Silo playback: progress 7 at 69 s
+02:59:31.537 : [I] Silo playback: progress 8 at 78 s
+02:59:41.537 : [I] Silo playback: progress 9 at 88 s
+02:59:51.524 : [I] Silo playback: progress 10 at 98 s
+03:00:01.525 : [I] Silo playback: progress 11 at 108 s
+03:00:11.536 : [I] Silo playback: progress 12 at 118 s
+03:00:21.536 : [I] Silo playback: progress 13 at 128 s

@@ -26,10 +26,6 @@ class MediaControlsScreenController {
     required this._manager,
     required this._player,
     required this._isMounted,
-    required this.isLive,
-    required this._hasLiveSeekWindow,
-    required this._hasNextLiveChannel,
-    required this._hasPreviousLiveChannel,
     required this._shouldSkipForPip,
     required this._isPlayerInitialized,
     required this._metadata,
@@ -49,18 +45,6 @@ class MediaControlsScreenController {
   final MediaControlsManager? Function() _manager;
   final Player? Function() _player;
   final bool Function() _isMounted;
-  final bool isLive;
-
-  /// Whether the tuned stream has a capture buffer to skip through. Live TV
-  /// without one (Jellyfin negotiates a session-less URL) can only play,
-  /// pause and stop.
-  final bool Function() _hasLiveSeekWindow;
-
-  /// Live TV's next/previous step the channel list, so each direction is
-  /// answered by its own adjacency: a list edge advertises only the direction
-  /// that has a channel to zap to.
-  final bool Function() _hasNextLiveChannel;
-  final bool Function() _hasPreviousLiveChannel;
   final bool Function() _shouldSkipForPip;
   final bool Function() _isPlayerInitialized;
   final MediaItem Function() _metadata;
@@ -117,42 +101,31 @@ class MediaControlsScreenController {
     final currentPlayer = _player();
     if (!_isMounted() || manager == null || currentPlayer == null) return;
 
-    // Off live, an episode or queue item advertises both directions: previous
-    // restarts when nothing earlier is loaded, and next resolves once the
-    // adjacent item arrives.
+    // An episode or queue item advertises both directions: previous restarts
+    // when nothing earlier is loaded, and next resolves once the adjacent item
+    // arrives.
     final hasNavigableItems = _metadata().isEpisode || _isPlaylistActive();
-    final hasNextItem = isLive ? _hasNextLiveChannel() : hasNavigableItems;
-    final hasPreviousItem = isLive ? _hasPreviousLiveChannel() : hasNavigableItems;
-    final contentCanSeek = !isLive && currentPlayer.state.seekable;
+    final contentCanSeek = currentPlayer.state.seekable;
     final canControlPlayback = _canControlPlayback();
     final canNavigateMediaItems = _canNavigateMediaItems();
 
     await manager.setControlsEnabled(
       canPlayPause: canControlPlayback,
-      canGoNext: hasNextItem && canNavigateMediaItems,
-      canGoPrevious: hasPreviousItem && canNavigateMediaItems,
+      canGoNext: hasNavigableItems && canNavigateMediaItems,
+      canGoPrevious: hasNavigableItems && canNavigateMediaItems,
       canSeek: contentCanSeek && canControlPlayback,
       canStop: true,
-      // In-track skips work on live TV only through the capture buffer; a
-      // channel without one (Jellyfin) has nothing to step through, and the
-      // skip would fall through to the VOD accumulator as an absolute seek
-      // against a live playhead.
-      canSkip: canControlPlayback && (!isLive || _hasLiveSeekWindow()),
+      canSkip: canControlPlayback,
       // Video claims the lock-screen / remote-card side slots for ±skip
       // (#1994); the step mirrors the in-player small skip. A mid-playback
       // seekTimeSmall change applies on the next availability sync.
       preferSkipOverTrackButtons: true,
       skipInterval: Duration(seconds: SettingsService.instance.read(SettingsService.seekTimeSmall)),
-      // Rate changes don't apply to a live stream.
-      canSetSpeed: !isLive && canControlPlayback,
+      canSetSpeed: canControlPlayback,
     );
   }
 
   Future<void> seekBackForRewind(Player p) async {
-    // A live stream has no "where you left off": with a capture buffer the
-    // live seek accumulator owns that motion, and without one an absolute
-    // rewind would drag the playhead off the live edge.
-    if (isLive) return;
     final rewindOnResume = _rewindOnResumeSeconds();
     if (rewindOnResume <= 0) return;
     final target = p.state.position - Duration(seconds: rewindOnResume);

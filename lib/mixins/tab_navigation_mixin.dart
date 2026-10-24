@@ -17,8 +17,8 @@ import '../widgets/focusable_tab_chip.dart';
 mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderStateMixin<T> {
   /// Mutable so [initTabNavigation] can be called more than once during a
   /// single State lifetime — the libraries screen rebuilds the controller
-  /// when the visible tab set changes (Jellyfin shows Browse only;
-  /// switching back to a Plex library goes from 1 tab to 4).
+  /// when the visible tab set changes (a Silo library shows two tabs;
+  /// switching to a shared library changes the tabs).
   late TabController tabController;
 
   /// When true, suppress auto-focus in tabs (used when navigating via tab bar).

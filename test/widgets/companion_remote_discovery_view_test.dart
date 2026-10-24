@@ -2,16 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/profiles/profile_connection.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
+import 'package:plezy/profiles/silo_household_service.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/services/companion_remote/companion_remote_peer_service.dart';
 import 'package:plezy/services/companion_remote/lan_discovery_service.dart';
@@ -55,7 +50,7 @@ void main() {
 
   testWidgets('a failed connect restarts discovery and re-lists the broadcasting host', (tester) async {
     resetSharedPreferencesForTest();
-    final stack = await ProfileStack.create(homeUsers: [_adminHomeUser('remote-admin')]);
+    final stack = await ProfileStack.create();
     var stackDisposed = false;
     Future<void> disposeStack() async {
       if (stackDisposed) return;
@@ -65,22 +60,9 @@ void main() {
 
     addTearDown(disposeStack);
 
-    final account = PlexAccountConnection(
-      id: 'remote-account',
-      accountToken: 'token-remote-account',
-      clientIdentifier: 'remote-client',
-      accountLabel: 'remote-account',
-      createdAt: DateTime(2026, 1, 1),
-    );
-    final profile = Profile.local(id: 'remote-profile', displayName: 'remote-profile', createdAt: DateTime(2026, 1, 1));
-    await stack.connections.upsert(account);
-    await stack.profiles.upsert(profile);
-    await stack.profileConnections.upsert(
-      ProfileConnection(profileId: profile.id, connectionId: account.id, userIdentifier: 'remote-admin'),
-      makeDefault: true,
-    );
-    await stack.storage.setActiveProfileId(profile.id);
-    await stack.active.initialize();
+    await stack.addServer('remote-srv', testHousehold([('remote-profile', 'remote-profile')]));
+    await stack.storage.setActiveProfileId('silo:remote-srv/remote-profile');
+    await stack.active.reloadFromStorage();
 
     final peer = _FailingJoinPeerService();
     final discovery = _ScriptedDiscoveryService();
@@ -92,13 +74,14 @@ void main() {
       if (!provider.isDisposed) provider.dispose();
     });
 
-    await stack.plexHome.refresh(account);
-    final home = await stack.plexHome.materializePlexHomeForConnection(account.id);
-    final homeSecret = await RemoteAuthService.instance.deriveHomeSecretFromHome(home!);
+    final homeSecret = await RemoteAuthService.instance.deriveSiloHomeSecret(
+      serverId: 'remote-srv',
+      accountId: 'acct-1',
+    );
     final host = DiscoveredHost(
       authContextId: RemoteAuthService.instance.computeAuthContextId(homeSecret),
       clientId: 'host-client',
-      name: 'Plex-PC',
+      name: 'Den-PC',
       platform: 'Windows',
       port: 48632,
       ips: const ['192.168.11.16'],
@@ -110,8 +93,7 @@ void main() {
           ChangeNotifierProvider<CompanionRemoteProvider>.value(value: provider),
           Provider<ConnectionRegistry>.value(value: stack.connections),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
-          Provider<ProfileConnectionRegistry>.value(value: stack.profileConnections),
-          Provider<PlexHomeService>.value(value: stack.plexHome),
+          Provider<SiloHouseholdService>.value(value: stack.households),
         ],
         child: MaterialApp(
           theme: ThemeData(extensions: const [testMonoTokens]),
@@ -129,9 +111,9 @@ void main() {
 
     discovery.emitHosts([host]);
     await tester.pump();
-    expect(find.text('Plex-PC'), findsOneWidget);
+    expect(find.text('Den-PC'), findsOneWidget);
 
-    await tester.tap(find.text('Plex-PC'));
+    await tester.tap(find.text('Den-PC'));
     for (var i = 0; i < 50 && discovery.startListeningCalls < 2; i++) {
       await tester.pump(const Duration(milliseconds: 20));
     }
@@ -144,11 +126,11 @@ void main() {
 
     discovery.emitHosts([host]);
     await tester.pump();
-    expect(find.text('Plex-PC'), findsOneWidget);
+    expect(find.text('Den-PC'), findsOneWidget);
     expect(find.text(t.companionRemote.pairing.noDevicesFound), findsNothing);
 
     // Unmount and dispose in-body: the pending-timer invariant runs before
-    // teardowns, and PlexHomeService holds a periodic refresh ticker.
+    // teardowns.
     await tester.pumpWidget(const SizedBox());
     provider.dispose();
     // Real event loop: the profile stack's teardown awaits drift stream
@@ -156,21 +138,6 @@ void main() {
     // pumping has stopped.
     await tester.runAsync(disposeStack);
   });
-}
-
-PlexHomeUser _adminHomeUser(String uuid) {
-  return PlexHomeUser(
-    id: 1,
-    uuid: uuid,
-    title: uuid,
-    thumb: '',
-    hasPassword: false,
-    restricted: false,
-    updatedAt: null,
-    admin: true,
-    guest: false,
-    protected: false,
-  );
 }
 
 class _FailingJoinPeerService extends CompanionRemotePeerService {

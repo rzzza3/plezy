@@ -5,68 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_browser_dialect.dart';
-import 'package:plezy/services/credential_vault.dart';
-import 'package:plezy/services/plex_auth_service.dart';
 
 import '../test_helpers/prefs.dart';
 
-JellyfinConnection _jellyfin({String id = 'srv-1', int createdAtMs = 1_000_000}) {
-  return JellyfinConnection(
-    id: id,
-    baseUrl: 'https://jellyfin.local',
+SiloConnection _silo({String serverId = 'srv-1', int createdAtMs = 1_000_000}) {
+  return SiloConnection(
+    origin: 'https://silo.local',
+    serverId: serverId,
     serverName: 'Home',
-    serverMachineId: 'jf-machine-$id',
-    userId: 'user-$id',
-    userName: 'edde',
-    accessToken: 'tok-$id',
-    deviceId: 'dev-1',
+    username: 'edde',
     createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMs),
-  );
-}
-
-JellyfinConnection _emby({String id = 'emby-1', String accessToken = 'emby-token', int createdAtMs = 1_000_000}) {
-  return JellyfinConnection(
-    id: id,
-    baseUrl: 'https://emby.local',
-    serverName: 'Emby Home',
-    serverMachineId: 'emby-machine-$id',
-    userId: 'user-$id',
-    userName: 'edde',
-    accessToken: accessToken,
-    deviceId: 'dev-1',
-    dialect: MediaBrowserDialect.emby,
-    createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMs),
-  );
-}
-
-PlexAccountConnection _plex({String id = 'plex-1'}) {
-  return PlexAccountConnection(
-    id: id,
-    accountToken: 'tok-$id',
-    clientIdentifier: 'cid-$id',
-    accountLabel: 'me@example.com',
-    servers: [
-      PlexServer(
-        name: 'Server $id',
-        clientIdentifier: 'server-$id',
-        accessToken: 'server-token-$id',
-        connections: [
-          PlexConnection(
-            protocol: 'https',
-            address: 'plex.example.com',
-            port: 443,
-            uri: 'https://plex.example.com',
-            local: false,
-            relay: false,
-            ipv6: false,
-          ),
-        ],
-        owned: true,
-      ),
-    ],
-    createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
   );
 }
 
@@ -90,100 +38,93 @@ void main() {
     });
 
     test('upserted connection round-trips through list()', () async {
-      await registry.upsert(_jellyfin(id: 'a'));
+      await registry.upsert(_silo(serverId: 'a'));
       final list = await registry.list();
       expect(list.length, 1);
-      expect(list.first.id, 'a');
+      expect(list.first.id, 'silo:a');
     });
 
-    test('upsert preserves type discriminator (Plex vs Jellyfin)', () async {
-      await registry.upsert(_plex(id: 'p'));
-      await registry.upsert(_jellyfin(id: 'j'));
+    test('a Silo row stores origin and server id, and no credential', () async {
+      await registry.upsert(
+        SiloConnection(
+          origin: 'https://silo.ruleone.xyz',
+          serverId: 'server-1',
+          serverName: 'Silo',
+          username: 'alice',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
+        ),
+      );
 
-      final plex = await registry.get('p');
-      final jelly = await registry.get('j');
-      expect(plex, isA<PlexAccountConnection>());
-      expect(jelly, isA<JellyfinConnection>());
+      final restored = await registry.get('silo:server-1') as SiloConnection;
+      final row = await (db.select(db.connections)..where((table) => table.id.equals('silo:server-1'))).getSingle();
 
-      expect((plex as PlexAccountConnection).accountToken, 'tok-p');
-      expect((jelly as JellyfinConnection).baseUrl, 'https://jellyfin.local');
+      expect(
+        (restored.origin, restored.serverId, restored.serverName, restored.username),
+        ('https://silo.ruleone.xyz', 'server-1', 'Silo', 'alice'),
+      );
+      expect(row.kind, 'silo');
+      expect(jsonDecode(row.configJson), {
+        'origin': 'https://silo.ruleone.xyz',
+        'serverId': 'server-1',
+        'serverName': 'Silo',
+        'username': 'alice',
+      });
     });
 
-    test('Emby upsert preserves its persisted discriminator and connection dialect', () async {
-      await registry.upsert(_emby(id: 'e'));
+    test('a Silo row persists the account id only once it is known', () async {
+      await registry.upsert(_silo(serverId: 'a'));
+      final bare = await (db.select(db.connections)..where((table) => table.id.equals('silo:a'))).getSingle();
+      expect(jsonDecode(bare.configJson), isNot(contains('accountId')));
 
-      final restored = await registry.get('e') as JellyfinConnection;
-      final row = await (db.select(db.connections)..where((table) => table.id.equals('e'))).getSingle();
-
-      expect(restored.dialect, MediaBrowserDialect.emby);
-      expect(restored.kind, MediaBackend.emby);
-      expect(restored.kind.id, 'emby');
-      expect(row.kind, 'emby');
+      await registry.upsert(_silo(serverId: 'a').copyWith(accountId: 'acct-1'));
+      final row = await (db.select(db.connections)..where((table) => table.id.equals('silo:a'))).getSingle();
+      expect(jsonDecode(row.configJson)['accountId'], 'acct-1');
+      expect((await registry.get('silo:a') as SiloConnection).accountId, 'acct-1');
     });
 
-    test('Jellyfin and Emby rows coexist and round-trip to their own dialects', () async {
-      await registry.upsert(_jellyfin(id: 'j'));
-      await registry.upsert(_emby(id: 'e'));
-
-      final jellyfin = await registry.get('j') as JellyfinConnection;
-      final emby = await registry.get('e') as JellyfinConnection;
-      final rows = await db.select(db.connections).get();
-      final kindById = {for (final row in rows) row.id: row.kind};
-
-      expect(jellyfin.dialect, MediaBrowserDialect.jellyfin);
-      expect(jellyfin.kind, MediaBackend.jellyfin);
-      expect(emby.dialect, MediaBrowserDialect.emby);
-      expect(emby.kind, MediaBackend.emby);
-      expect(kindById, {'j': 'jellyfin', 'e': 'emby'});
-    });
-
-    test('upsert encrypts tokens at rest and decrypts on read', () async {
-      await registry.upsert(_plex(id: 'p'));
-      await registry.upsert(_jellyfin(id: 'j'));
-      await registry.upsert(_emby(id: 'e', accessToken: 'emby-raw-token'));
-
-      final rows = await db.select(db.connections).get();
-      expect(rows.singleWhere((r) => r.id == 'p').configJson, isNot(contains('tok-p')));
-      expect(rows.singleWhere((r) => r.id == 'p').configJson, isNot(contains('server-token-p')));
-      expect(rows.singleWhere((r) => r.id == 'j').configJson, isNot(contains('tok-j')));
-      expect(rows.singleWhere((r) => r.id == 'e').configJson, isNot(contains('emby-raw-token')));
-
-      expect((await registry.get('p') as PlexAccountConnection).accountToken, 'tok-p');
-      expect((await registry.get('p') as PlexAccountConnection).servers.single.accessToken, 'server-token-p');
-      expect((await registry.get('j') as JellyfinConnection).accessToken, 'tok-j');
-      expect((await registry.get('e') as JellyfinConnection).accessToken, 'emby-raw-token');
-    });
-
-    test('read migrates legacy plaintext Plex server tokens', () async {
-      final plex = _plex(id: 'legacy');
-      final config = plex.toConfigJson();
-      config['accountToken'] = await CredentialVault.protect(plex.accountToken);
+    test('a Silo row without a server id is dropped', () async {
       await db
           .into(db.connections)
           .insert(
             ConnectionsCompanion.insert(
-              id: plex.id,
-              kind: plex.kind.id,
-              displayName: plex.displayName,
-              configJson: jsonEncode(config),
-              createdAt: plex.createdAt.millisecondsSinceEpoch,
+              id: 'silo:broken',
+              kind: 'silo',
+              displayName: 'Silo',
+              configJson: jsonEncode({'origin': 'https://silo.ruleone.xyz'}),
+              createdAt: 1_000_000,
             ),
           );
 
-      final restored = await registry.get('legacy') as PlexAccountConnection;
-      expect(restored.accountToken, 'tok-legacy');
-      expect(restored.servers.single.accessToken, 'server-token-legacy');
+      expect(await registry.list(), isEmpty);
+    });
 
-      final row = await (db.select(db.connections)..where((t) => t.id.equals('legacy'))).getSingle();
-      expect(row.configJson, isNot(contains('server-token-legacy')));
+    test('stored rows of a kind Plezy no longer ships are dropped', () async {
+      for (final kind in ['plex', 'jellyfin', 'emby']) {
+        await db
+            .into(db.connections)
+            .insert(
+              ConnectionsCompanion.insert(
+                id: 'legacy-$kind',
+                kind: kind,
+                displayName: 'Legacy',
+                configJson: jsonEncode({'baseUrl': 'https://legacy.local'}),
+                createdAt: 1_000_000,
+              ),
+            );
+      }
+      await registry.upsert(_silo(serverId: 's'));
+
+      expect((await registry.list()).map((c) => c.id).toList(), ['silo:s']);
+      expect(await registry.get('legacy-plex'), isNull);
+      expect(await registry.get('legacy-jellyfin'), isNull);
     });
 
     test('remove deletes a row', () async {
-      await registry.upsert(_jellyfin(id: 'a'));
-      await registry.upsert(_jellyfin(id: 'b'));
-      await registry.remove('a');
-      expect((await registry.list()).map((c) => c.id).toList(), ['b']);
-      await registry.remove('b');
+      await registry.upsert(_silo(serverId: 'a'));
+      await registry.upsert(_silo(serverId: 'b'));
+      await registry.remove('silo:a');
+      expect((await registry.list()).map((c) => c.id).toList(), ['silo:b']);
+      await registry.remove('silo:b');
       expect(await registry.list(), isEmpty);
     });
 
@@ -193,18 +134,18 @@ void main() {
       // Re-authenticating rebuilds the model with `DateTime.now()` under the
       // same stable id, so an unguarded writer restamped the originally-first
       // connection and shuffled it to last.
-      await registry.upsert(_jellyfin(id: 'first', createdAtMs: 1_000_000));
-      await registry.upsert(_jellyfin(id: 'second', createdAtMs: 2_000_000));
+      await registry.upsert(_silo(serverId: 'first', createdAtMs: 1_000_000));
+      await registry.upsert(_silo(serverId: 'second', createdAtMs: 2_000_000));
 
-      await registry.upsert(_jellyfin(id: 'first', createdAtMs: 9_000_000));
+      await registry.upsert(_silo(serverId: 'first', createdAtMs: 9_000_000));
 
       final list = await registry.list();
-      expect(list.map((c) => c.id).toList(), ['first', 'second']);
+      expect(list.map((c) => c.id).toList(), ['silo:first', 'silo:second']);
       expect(list.first.createdAt, DateTime.fromMillisecondsSinceEpoch(1_000_000));
     });
 
     test('a genuinely new connection keeps the creation time it was built with', () async {
-      await registry.upsert(_jellyfin(id: 'a', createdAtMs: 5_000_000));
+      await registry.upsert(_silo(serverId: 'a', createdAtMs: 5_000_000));
 
       expect((await registry.list()).single.createdAt, DateTime.fromMillisecondsSinceEpoch(5_000_000));
     });

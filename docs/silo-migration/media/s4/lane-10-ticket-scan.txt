@@ -1,0 +1,6 @@
+# grep -ic ticket over the full logcat (1484 lines)
+10-14 03:37:34.372  9882  9882 I flutter : [I]  Silo events: fetchingTicket
+# strings of 28+ opaque chars in flutter lines
+deviceModel=sdk_google_atv64_x86_64
+flutter/shell/platform/android/android_context_gl_impeller.cc
+local-f8d15736-7421-4e44-bb1b-441eab344ea9

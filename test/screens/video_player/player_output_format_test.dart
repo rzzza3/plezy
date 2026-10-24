@@ -112,7 +112,7 @@ void main() {
 
   test('a frame step that matches no standard rate yields no rate', () async {
     for (final advanced in const [
-      Duration(microseconds: 409556), // 24.417 fps, the rate Plex misdetected in #2607
+      Duration(microseconds: 409556), // 24.417 fps, the rate a server misdetected in #2607
       Duration(milliseconds: 375), // a duplicated timestamp inside a 23.976 fps step
       Duration.zero, // a stalled step
     ]) {

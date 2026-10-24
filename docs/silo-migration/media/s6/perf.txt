@@ -1,0 +1,19 @@
+S6 perf. One file, Taskmaster (US) S1E1 "Physics", 441,046,679 B.
+Trunk 5fc148779 downloads the Plex copy on RULEONE (Plex profile).
+Head fc35e90e9 downloads the Silo copy, episode-tvdb-344961-1-1 (profile Silo A).
+Timed from the Select on Download to the logcat line "Download completed" (emulator clock).
+Each copy was deleted in Plezy before the next run. Interleaved order: T1, H1, T2, T3.
+
+run  build  source        seconds   MB/s (1e6 B)
+T1   trunk  Plex RULEONE   20.32    21.71
+H1   head   Silo          712.40     0.619   (710.46 s from "Started Silo transfer")
+T2   trunk  Plex RULEONE   22.41    19.68
+T3   trunk  Plex RULEONE    6.69    65.93   (the Plex server likely had the file cached after T1/T2)
+
+Trunk median 20.32 s (21.71 MB/s). Head: one run, 712.40 s (0.619 MB/s).
+H2 and H3 were not run. The operator allowed skipping them: each takes about 12 min at the server cap,
+and the operator confirmed the Silo server is capped at about 0.62 MB/s.
+
+Rule. The operator waived the curl baseline and the 80 percent rule (2026-10-21). H1's 0.619 MB/s
+matches the known Silo server cap, so the app adds no measurable overhead on top of the server.
+The Plex side is about 35x faster only because the Plex server has no such cap.

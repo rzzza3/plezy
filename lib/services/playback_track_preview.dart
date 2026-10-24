@@ -9,7 +9,7 @@ import 'track_selection_service.dart';
 /// the same selection ladder the player runs ([TrackSelectionService]) over
 /// the same [MediaSourceInfo] playback consumes. Two ladder inputs are
 /// genuinely unknowable here — a manual choice carried from a previous
-/// episode, and a Plex transcode decision — everything else is the real thing.
+/// episode, and a transcode decision — everything else is the real thing.
 class PlaybackTrackPreview {
   /// The source's audio and subtitle rows, as the player will see them.
   final MediaSourceInfo source;
@@ -43,7 +43,7 @@ bool mediaSourceHasTrackRows(MediaSourceInfo source) =>
 /// [mediaSourceHasTrackRows]) — the caller shows nothing rather than a guess.
 PlaybackTrackPreview? previewPlaybackTracks(MediaItem item, MediaSourceInfo source, {MediaServerUserProfile? profile}) {
   if (!mediaSourceHasTrackRows(source)) return null;
-  final service = TrackSelectionService(profileSettings: profile, metadata: item, plexMediaInfo: source);
+  final service = TrackSelectionService(profileSettings: profile, metadata: item, serverMediaInfo: source);
 
   final audioResult = service.selectAudioTrack(PlaybackSubtitleResolver.audioTracksForSource(source), null);
   final audio = audioResult == null ? null : _sourceAudioRow(source, audioResult.track);

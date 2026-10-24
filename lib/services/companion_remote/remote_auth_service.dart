@@ -5,18 +5,14 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:cryptography/cryptography.dart';
 
-import '../../models/plex/plex_home.dart';
 import '../../utils/app_logger.dart';
 
 /// Cryptographic authentication service for companion remote.
 ///
-/// Proves same-account membership via a backend-derived shared secret.
-///
-/// Plex uses the Plex Home metadata available to signed-in devices. The
-/// MediaBrowser backends (Jellyfin and Emby) use the stable server/user
-/// identity available after sign-in, matching the same local-LAN trust model:
-/// peers that know the same backend identity can discover and authenticate
-/// each other without a central pairing round-trip.
+/// Proves same-account membership via a shared secret derived from the Silo
+/// server id and account id: peers signed in to the same account can
+/// discover and authenticate each other without a central pairing
+/// round-trip.
 class RemoteAuthService {
   RemoteAuthService._();
   static final instance = RemoteAuthService._();
@@ -29,34 +25,29 @@ class RemoteAuthService {
   List<int>? _cachedSecret;
   String? _cachedSecretKey;
 
-  /// Build canonical IKM bytes from home data.
-  /// Format: [4-byte BE len][utf8 bytes] for each field, in fixed order.
-  static Uint8List _canonicalIkm(int homeId, String adminUUID) {
-    final homeIdBytes = utf8.encode(homeId.toString());
-    final uuidBytes = utf8.encode(adminUUID.toLowerCase());
-
+  /// Canonical IKM bytes: `[4-byte BE len][utf8 bytes]` for each field, in
+  /// fixed order, so no two field lists encode to the same bytes.
+  static Uint8List _canonicalIkm(List<String> fields) {
     final buf = BytesWriter();
-    buf.writeUint32BE(homeIdBytes.length);
-    buf.writeBytes(homeIdBytes);
-    buf.writeUint32BE(uuidBytes.length);
-    buf.writeBytes(uuidBytes);
+    for (final field in fields) {
+      final bytes = utf8.encode(field);
+      buf.writeUint32BE(bytes.length);
+      buf.writeBytes(bytes);
+    }
     return buf.toBytes();
   }
 
-  /// Derive the long-term home secret via HKDF-SHA256.
-  /// This is derived in memory from cached Plex data — never persisted.
-  Future<List<int>> deriveHomeSecret(int homeId, String adminUUID) async {
-    // Return cached if inputs unchanged
-    final cacheKey = 'plex:$homeId:${adminUUID.toLowerCase()}';
+  /// Derive the long-term home secret via HKDF-SHA256 from the Silo server
+  /// and the account signed in to it. Every device on that account derives
+  /// the same secret; nothing is persisted.
+  Future<List<int>> deriveSiloHomeSecret({required String serverId, required String accountId}) async {
+    final cacheKey = 'silo:$serverId:$accountId';
     if (_cachedSecret != null && _cachedSecretKey == cacheKey) {
       return _cachedSecret!;
     }
 
-    final hkdf = _hkdf;
-    final ikm = _canonicalIkm(homeId, adminUUID);
-
-    final secretKey = await hkdf.deriveKey(
-      secretKey: SecretKey(ikm),
+    final secretKey = await _hkdf.deriveKey(
+      secretKey: SecretKey(_canonicalIkm(['silo', serverId, accountId])),
       nonce: utf8.encode('plezy-remote-v1'),
       info: utf8.encode('home-secret'),
     );
@@ -65,48 +56,6 @@ class RemoteAuthService {
     _cachedSecretKey = cacheKey;
 
     appLogger.d('RemoteAuth: Derived home secret');
-    return _cachedSecret!;
-  }
-
-  /// Derive the long-term home secret from a PlexHome object.
-  Future<List<int>> deriveHomeSecretFromHome(PlexHome home) async {
-    final admin = home.adminUser;
-    if (admin == null) {
-      throw StateError('PlexHome has no admin user');
-    }
-    return deriveHomeSecret(home.id, admin.uuid);
-  }
-
-  /// Derive a companion remote secret from a MediaBrowser server/user identity
-  /// — Jellyfin or Emby.
-  ///
-  /// Both peers of a pair are signed into the same server and user, so both
-  /// derive the same secret regardless of dialect. The `jellyfin-secret` HKDF
-  /// `info` label and the `jellyfin:` cache prefix are therefore fixed domain
-  /// separators, not dialect discriminators: changing either would invalidate
-  /// every existing pairing for zero benefit.
-  Future<List<int>> deriveJellyfinSecret({required String serverMachineId, required String userId}) async {
-    final normalizedServerId = serverMachineId.toLowerCase();
-    final normalizedUserId = userId.toLowerCase();
-    final cacheKey = 'jellyfin:$normalizedServerId:$normalizedUserId';
-    if (_cachedSecret != null && _cachedSecretKey == cacheKey) {
-      return _cachedSecret!;
-    }
-
-    final buf = BytesWriter();
-    _writeLengthPrefixed(buf, utf8.encode(normalizedServerId));
-    _writeLengthPrefixed(buf, utf8.encode(normalizedUserId));
-
-    final secretKey = await _hkdf.deriveKey(
-      secretKey: SecretKey(buf.toBytes()),
-      nonce: utf8.encode('plezy-remote-v1'),
-      info: utf8.encode('jellyfin-secret'),
-    );
-
-    _cachedSecret = await secretKey.extractBytes();
-    _cachedSecretKey = cacheKey;
-
-    appLogger.d('RemoteAuth: Derived MediaBrowser secret');
     return _cachedSecret!;
   }
 

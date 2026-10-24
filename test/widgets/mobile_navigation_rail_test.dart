@@ -75,8 +75,8 @@ void main() {
   });
 
   testWidgets('labels give way on a viewport too short to show every destination', (tester) async {
-    // A landscape phone: ~410dp tall, six labelled destinations need ~430.
-    tester.view.physicalSize = const Size(900, 410);
+    // A short landscape window: ~330dp tall, five labelled destinations need ~360.
+    tester.view.physicalSize = const Size(900, 330);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -92,7 +92,7 @@ void main() {
     expect(tester.getSize(find.text(t.navigation.libraries)), Size.zero);
     expect(tester.takeException(), isNull);
     // Every destination is still reachable without scrolling.
-    expect(tester.getBottomLeft(find.byType(NavigationRail)).dy, lessThanOrEqualTo(410));
+    expect(tester.getBottomLeft(find.byType(NavigationRail)).dy, lessThanOrEqualTo(330));
 
     expect(MobileNavigationRail.labelsFit(destinations: 6, hasLeading: false, height: 410), isFalse);
     expect(MobileNavigationRail.labelsFit(destinations: 6, hasLeading: false, height: 600), isTrue);

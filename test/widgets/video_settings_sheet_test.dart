@@ -492,19 +492,6 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text(t.messages.fileInfoNotAvailable), findsOneWidget);
     });
-
-    testWidgets('is not offered for live TV, which has no file', (tester) async {
-      final client = _FileInfoClient();
-      final item = testMediaItem(serverId: client.serverId.value);
-      await _pumpFileInfoSheet(
-        tester,
-        client,
-        TrackControlsState(metadata: item, serverId: item.serverId, isLive: true),
-      );
-
-      expect(find.text(t.videoSettings.performanceOverlay), findsOneWidget);
-      expect(find.text(t.mediaMenu.fileInfo), findsNothing);
-    });
   });
 }
 
@@ -562,7 +549,7 @@ class _FileInfoClient implements MediaServerClient {
   ServerId get serverId => ServerId('file-info-server');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<MediaFileInfo?> getFileInfo(MediaItem item) {

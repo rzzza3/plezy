@@ -1,0 +1,63 @@
+d01          1792147284.471 12495 12495 I flutter : [I]  Silo playback: started, SiloPlayable
+d01          1792147284.471 12495 12495 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+d01          1792147286.812 12495 12495 I flutter : [I]  Perf: first frame
+d02          1792147305.006 12495 12495 I flutter : [I]  Silo playback: started, SiloPlayable
+d02          1792147305.006 12495 12495 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+d02          1792147307.336 12495 12495 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+d02          1792147307.376 12495 12495 I flutter : [I]  Perf: first frame
+d03          1792147325.588 12495 12495 I flutter : [I]  Silo playback: started, SiloPlayable
+d03          1792147325.588 12495 12495 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+d03          1792147327.988 12495 12495 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+d03          1792147328.026 12495 12495 I flutter : [I]  Perf: first frame
+h01          1792146463.443  6759  6759 I flutter : [I]  Silo playback: started, SiloPlayable
+h01          1792146463.443  6759  6759 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h01          1792146469.960  6759  6759 I flutter : [I]  Perf: first frame
+h02          1792146489.275  6759  6759 I flutter : [I]  Silo playback: started, SiloPlayable
+h02          1792146489.275  6759  6759 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h02          1792146491.838  6759  6759 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+h02          1792146494.072  6759  6759 I flutter : [I]  Perf: first frame
+h03          1792146504.104  6759  6759 I flutter : [I]  Silo playback: started, SiloPlayable
+h03          1792146504.104  6759  6759 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h03          1792146506.493  6759  6759 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+h03          1792146508.526  6759  6759 I flutter : [I]  Perf: first frame
+h04          1792146518.558  6759  6759 I flutter : [I]  Silo playback: started, SiloPlayable
+h04          1792146518.558  6759  6759 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h04          1792146520.957  6759  6759 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+h04          1792146523.020  6759  6759 I flutter : [I]  Perf: first frame
+h05          1792146532.874  6759  6759 I flutter : [I]  Silo playback: started, SiloPlayable
+h05          1792146532.874  6759  6759 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h05          1792146535.184  6759  6759 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+h05          1792146537.668  6759  6759 I flutter : [I]  Perf: first frame
+h06          1792147172.003 12495 12495 I flutter : [I]  Silo playback: started, SiloPlayable
+h06          1792147172.003 12495 12495 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h06          1792147174.369 12495 12495 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+h06          1792147176.623 12495 12495 I flutter : [I]  Perf: first frame
+h07          1792147186.725 12495 12495 I flutter : [I]  Silo playback: started, SiloPlayable
+h07          1792147186.725 12495 12495 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h07          1792147191.369 12495 12495 I flutter : [I]  Perf: first frame
+h08          1792147201.459 12495 12495 I flutter : [I]  Silo playback: started, SiloPlayable
+h08          1792147201.459 12495 12495 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h08          1792147203.854 12495 12495 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+h08          1792147206.309 12495 12495 I flutter : [I]  Perf: first frame
+h09          1792147216.388 12495 12495 I flutter : [I]  Silo playback: started, SiloPlayable
+h09          1792147216.388 12495 12495 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h09          1792147218.694 12495 12495 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+h09          1792147221.055 12495 12495 I flutter : [I]  Perf: first frame
+h10          1792147230.874 12495 12495 I flutter : [I]  Silo playback: started, SiloPlayable
+h10          1792147230.874 12495 12495 I flutter : [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+h10          1792147233.186 12495 12495 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+h10          1792147235.441 12495 12495 I flutter : [I]  Perf: first frame
+t01          1792146281.571  3777  3777 I flutter : [I]  Perf: first frame
+t02          1792146305.006  3777  3777 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+t02          1792146305.339  3777  3777 I flutter : [I]  Perf: first frame
+t03          1792146317.571  3777  3777 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+t03          1792146318.269  3777  3777 I flutter : [I]  Perf: first frame
+t04          1792146330.644  3777  3777 I flutter : [I]  Perf: first frame
+t05          1792146343.202  3777  3777 I flutter : [I]  Perf: first frame
+t06          1792147018.896  8178  8178 I flutter : [I]  Perf: first frame
+t07          1792147029.927  8178  8178 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+t07          1792147030.260  8178  8178 I flutter : [I]  Perf: first frame
+t08          1792147041.204  8178  8178 I flutter : [W]  [MPV:ffmpeg/video] h264_mediacodec: Input packet is missing PTS
+t08          1792147041.622  8178  8178 I flutter : [I]  Perf: first frame
+t09          1792147053.187  8178  8178 I flutter : [I]  Perf: first frame
+t10          1792147064.942  8178  8178 I flutter : [I]  Perf: first frame

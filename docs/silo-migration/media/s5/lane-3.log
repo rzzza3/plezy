@@ -1,0 +1,36 @@
+17:33:33.140 : [I] ActiveProfileBinder: rebinding for Silo A (local-f8d15736-7421-4e44-bb1b-441eab344ea9)
+17:33:33.953 : [I] Added Silo server: Silo (online)
+17:33:33.957 : [I] Silo events: fetchingTicket
+17:33:34.224 : [I] Silo events: connecting
+17:33:34.924 : [I] Silo events: subscribed
+17:33:34.924 : [I] Silo events: 2 channels, 0 rejected
+17:33:35.124 : [I] Silo events: subscribed
+17:33:35.124 : [I] Silo events: 2 channels, 0 rejected
+17:33:35.525 : [I] Silo: home sections 17
+17:33:35.645 : [I] Home: first hub frame, rows 1
+17:33:35.647 : [I] Home: rows repainted
+17:33:37.125 : [I] Silo events: home refetch
+17:33:37.897 : [I] Silo: home sections 17
+17:33:37.931 : [I] Home: rows repainted
+17:34:16.742 : [I] [MPV:display] hdr=false dv=false current=#1 1920x1080@60.000004Hz supported=[#1 1920x1080@60.000004Hz]
+17:34:17.563 : [I] Silo playback: started, SiloPlayable
+17:34:17.563 : [I] Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+17:34:30.671 : [I] Silo playback: progress 1 at 7 s
+17:34:40.687 : [I] Silo playback: progress 2 at 17 s
+17:34:50.667 : [I] Silo playback: progress 3 at 65 s
+17:35:00.698 : [I] Silo playback: progress 4 at 76 s
+17:35:09.395 : [E] [Player LOG ERROR] [ffmpeg] amediacodec: android.media.MediaCodec$CodecException: client does not own the buffer #0
+17:35:09.395 : [E] [Player LOG ERROR] [ffmpeg]
+17:35:09.395 : [E] [Player LOG ERROR] [ffmpeg] amediacodec: java.lang.IllegalStateException: index 2 is not owned by client
+17:35:09.397 : [E] [Player LOG ERROR] [ffmpeg]
+17:35:10.714 : [I] Silo playback: progress 5 at 115 s
+17:35:20.673 : [I] Silo playback: progress 6 at 115 s
+17:35:30.674 : [I] Silo playback: progress 7 at 115 s
+17:35:40.677 : [I] Silo playback: progress 8 at 115 s
+17:35:44.601 : [I] Silo playback: progress 9 at 115 s
+17:35:45.167 : [I] Silo playback: replanned quality_change, delivery=server_transcode_hls
+17:35:50.671 : [I] Silo playback: progress 10 at 115 s
+17:36:00.713 : [I] Silo playback: progress 11 at 118 s
+17:36:10.734 : [I] Silo playback: progress 12 at 128 s
+17:36:13.882 : [I] Silo playback: progress 13 at 136 s
+17:36:16.186 : [I] Silo playback: stopped (status 200)

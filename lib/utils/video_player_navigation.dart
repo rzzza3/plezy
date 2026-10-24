@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
 import '../media/media_version.dart';
 import '../media/media_version_preference.dart';
 import '../mpv/mpv.dart';
@@ -172,7 +173,7 @@ class VideoPlayerActiveRouteGuard {
 final _inFlightLaunches = <VideoPlayerLaunchIdentity>{};
 
 /// Series (keyed by grandparent) or standalone-item key under
-/// [SettingsService.mediaVersionPreferences], scoped by server — raw Plex
+/// [SettingsService.mediaVersionPreferences], scoped by server — raw
 /// rating keys are small integers that can collide across servers.
 String _mediaVersionPreferenceKey(MediaItem metadata) {
   final serverId = serverIdOrNull(metadata.serverId);
@@ -244,12 +245,11 @@ typedef ResolvedMediaVersionPreference = ({int index, String? sourceId, String? 
 
 /// Resolve the saved preference for [metadata] against its version list.
 ///
-/// When [MediaItem.mediaVersions] is populated (Plex hub/detail fetches) the
+/// When [MediaItem.mediaVersions] is populated (hub/detail fetches) the
 /// index is verified and the matched version's real id is returned. When it
-/// isn't (Jellyfin resume rows omit `MediaSources`), the stored index and
-/// signature pass through with a null sourceId — an unverified id from a
-/// sibling episode would be meaningless downstream, while a signature is
-/// safely re-matched there.
+/// isn't, the stored index and signature pass through with a null sourceId —
+/// an unverified id from a sibling episode would be meaningless downstream,
+/// while a signature is safely re-matched there.
 Future<ResolvedMediaVersionPreference?> resolveSavedMediaVersionFor(MediaItem metadata) async {
   final pref = await savedMediaVersionPreferenceFor(metadata);
   if (pref == null) return null;
@@ -318,8 +318,8 @@ Future<bool?> navigateToVideoPlayer(
   final sourceRoute = ModalRoute.of(context);
   final downloadProvider = context.read<DownloadProvider>();
   final launchMusic = launchObserver == null ? null : context.read<MusicPlaybackService>();
-  // Use the manager-routed lookup so Jellyfin items don't trip the
-  // Plex-only client. The player branches on the returned type internally.
+  // Use the manager-routed lookup; the player branches on the returned type
+  // internally.
   final manager = context.read<MultiServerProvider>().serverManager;
   final offlineWatchService = context.read<OfflineWatchSyncService>();
   final serverId = serverIdOrNull(metadata.serverId);
@@ -505,6 +505,10 @@ Future<bool?> navigateToVideoPlayer(
 /// - [onRefresh]: Optional callback to refresh data when returning from playback
 ///   (only called when not offline)
 /// - All other parameters are passed through to [navigateToVideoPlayer]
+///
+/// When no version is given and a movie or episode on a reachable server has
+/// more than one, the user picks one first; dismissing the picker cancels
+/// the play and returns null.
 Future<bool?> navigateToVideoPlayerWithRefresh(
   BuildContext context, {
   required MediaItem metadata,
@@ -518,6 +522,14 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   bool usePushReplacement = false,
   bool Function()? isLaunchCurrent,
 }) async {
+  if (!isOffline && selectedMediaIndex == null && selectedMediaSourceId == null) {
+    final pick = await _askPlaybackVersion(context, metadata);
+    if (pick.dismissed || !context.mounted || !(isLaunchCurrent?.call() ?? true)) return null;
+    selectedMediaIndex = pick.index;
+    selectedMediaSourceId = pick.sourceId;
+  }
+  if (!context.mounted) return null;
+
   final result = await navigateToVideoPlayer(
     context,
     metadata: metadata,
@@ -538,6 +550,32 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   }
 
   return result;
+}
+
+/// The version a play asked for: none to choose ([index] null), or the
+/// user's pick, or a dismissed picker.
+typedef _PlaybackVersionPick = ({bool dismissed, int? index, String? sourceId});
+
+/// Lists [item]'s versions when it is a movie or episode on a reachable
+/// server and asks which to play if there is more than one. A single version
+/// plays without asking. The pick is saved, as Play Version saves it, so
+/// resuming from Continue Watching keeps the same file.
+Future<_PlaybackVersionPick> _askPlaybackVersion(BuildContext context, MediaItem item) async {
+  const none = (dismissed: false, index: null, sourceId: null);
+  if (item.kind != MediaKind.movie && item.kind != MediaKind.episode) return none;
+  final serverId = serverIdOrNull(item.serverId);
+  if (serverId == null || !context.read<MultiServerProvider>().serverManager.isClientOnline(serverId)) return none;
+  final client = context.tryGetMediaClientForServer(serverId);
+  if (client == null) return none;
+
+  final versions = await resolveMediaVersions(item, client);
+  if (versions.length < 2 || !context.mounted) return none;
+  final index = await showVersionPickerDialog(context, versions, t.mediaMenu.playVersion);
+  if (index == null || !context.mounted) return (dismissed: true, index: null, sourceId: null);
+
+  await saveMediaVersionPreferenceFor(item, index: index, versions: versions);
+  final id = versions[index].id;
+  return (dismissed: false, index: index, sourceId: id.isEmpty ? null : id);
 }
 
 /// Sum of [MediaPart.sizeBytes] across all parts of [version]. Returns

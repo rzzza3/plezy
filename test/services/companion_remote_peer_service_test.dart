@@ -806,7 +806,7 @@ class _TcpProxy {
 
 final _authContext = RemoteAuthContext(
   id: 'context-1',
-  backend: 'plex',
+  backend: 'silo',
   connectionId: 'connection-1',
   homeSecret: List<int>.generate(32, (index) => index),
   discoveryKey: List<int>.generate(32, (index) => 255 - index),

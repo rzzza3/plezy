@@ -115,7 +115,7 @@ void main() {
 
       await tester.pumpWidget(
         shell(
-          PlexVideoControls(
+          SiloVideoControls(
             player: player,
             volumeController: volume,
             metadata: testMediaItem(id: 'startup-chrome'),

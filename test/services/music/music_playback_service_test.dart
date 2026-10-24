@@ -50,7 +50,7 @@ const _trackDuration = Duration(minutes: 3);
 
 MediaItem _track(String id) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.track,
   title: 'Track $id',
   parentTitle: 'Album',
@@ -1313,7 +1313,7 @@ void main() {
   test('a gaplessly advanced track reports its own start, not the finished track\'s playhead (#1849)', () async {
     final long = testMediaItem(
       id: 'long',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.track,
       title: 'Long opener',
       parentTitle: 'Album',
@@ -1325,7 +1325,7 @@ void main() {
 
     // When the advance is announced, the live player state still carries the
     // finished track's playhead — the new file has not reported yet. Reporting
-    // that as the new track's first sample told Plex it was already at ~100%,
+    // that as the new track's first sample told the server it was already at ~100%,
     // which recorded a play (and a Last.fm scrobble) at track start on top of
     // the real one (#1849).
     h.player.setOutgoingPlayhead(position: const Duration(minutes: 7), duration: const Duration(minutes: 7));
@@ -1347,7 +1347,7 @@ void main() {
     // position already belongs to the track that replaced it.
     final undated = testMediaItem(
       id: 'nd',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.track,
       title: 'Unknown length',
       parentTitle: 'Album',

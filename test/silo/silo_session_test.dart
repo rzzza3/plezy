@@ -368,7 +368,7 @@ void main() {
     });
 
     test('the whole session is one encrypted preference value', () async {
-      final session = await SiloSessionController.load(const VaultSiloSessionStore());
+      final session = await SiloSessionController.load(const VaultSiloSessionStore('server-1'));
       await session.replaceAccountSession(
         origin: 'https://silo.ruleone.xyz',
         accessToken: 'access-A',
@@ -379,14 +379,17 @@ void main() {
       await session.saveRefreshedTokens(accessToken: 'access-B', refreshToken: 'refresh-B', expiresInSeconds: 900);
 
       final prefs = await BaseSharedPreferencesService.sharedCache();
-      final raw = prefs.getString(siloSessionPref)!;
+      final raw = prefs.getString(siloSessionPrefFor('server-1'))!;
       expect(CredentialVault.isProtected(raw), true);
       for (final secret in ['access-B', 'refresh-B', 'pin-token']) {
         expect(raw, isNot(contains(secret)));
       }
-      expect(prefs.keys.where((k) => k.startsWith('silo_')).toSet(), {siloSessionPref});
+      expect(prefs.keys.where((k) => k.startsWith('silo_')).toSet(), {siloSessionPrefFor('server-1')});
 
-      final reloaded = await SiloSessionController.load(const VaultSiloSessionStore());
+      final other = await const VaultSiloSessionStore('server-2').read();
+      expect(other.session, isNull, reason: 'each server has its own slot, EncryptedTokenManagerImpl.kt:823-834');
+
+      final reloaded = await SiloSessionController.load(const VaultSiloSessionStore('server-1'));
       expect(reloaded.generation, 2);
       expect(reloaded.session!.tokens.accessToken, 'access-B');
       expect(reloaded.session!.tokens.refreshToken, 'refresh-B');
@@ -401,7 +404,7 @@ void main() {
         manufacturer: 'a',
         model: 'b',
       );
-      final session = await SiloSessionController.load(const VaultSiloSessionStore());
+      final session = await SiloSessionController.load(const VaultSiloSessionStore('server-1'));
       await session.replaceAccountSession(
         origin: 'https://silo.ruleone.xyz',
         accessToken: 'a',
@@ -412,7 +415,7 @@ void main() {
 
       final prefs = await BaseSharedPreferencesService.sharedCache();
       expect(prefs.getString(PrefsSiloDeviceIdStore.key), headers.id);
-      expect((await const VaultSiloSessionStore().read()).session, isNull);
+      expect((await const VaultSiloSessionStore('server-1').read()).session, isNull);
       final again = await SiloHeaders.load(
         store: const PrefsSiloDeviceIdStore(),
         isTv: true,
@@ -423,7 +426,7 @@ void main() {
     });
 
     test('the session key is a credential slot that prefs repair must keep', () {
-      expect(isSensitivePrefKey(siloSessionPref), true);
+      expect(isSensitivePrefKey(siloSessionPrefFor('server-1')), true);
       expect(isSensitivePrefKey(PrefsSiloDeviceIdStore.key), false);
     });
   });

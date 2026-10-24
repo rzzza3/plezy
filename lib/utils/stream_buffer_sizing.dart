@@ -64,7 +64,7 @@ int? networkStreamRingBytes({
   int maxBytes = maxStreamRingBytes,
 }) {
   if (container == null) return null;
-  // Jellyfin may report ffmpeg demuxer alias lists ('mov,mp4,m4a,3gp,3g2,mj2').
+  // Backends may report ffmpeg demuxer alias lists ('mov,mp4,m4a,3gp,3g2,mj2').
   final tokens = container.toLowerCase().split(',').map((token) => token.trim());
   final isQuickTimeFamily = tokens.any(quickTimeFamilyContainers.contains);
   final isMatroskaFamily = tokens.any(matroskaFamilyContainers.contains);

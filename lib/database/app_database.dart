@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 import 'tables.dart';
-import 'plex_metadata_recovery.dart';
 import 'tvos_database_recovery_store.dart';
 import '../models/download_models.dart';
 import '../services/base_shared_preferences_service.dart';
@@ -64,17 +63,20 @@ final class AppDatabaseBootstrap {
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase._(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore})
-    : this._withRecovery(executor, recoveryStore);
+  AppDatabase._(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore, int? schemaVersion})
+    : this._withRecovery(executor, recoveryStore, schemaVersion);
 
   /// Test-only constructor — inject an in-memory [QueryExecutor]
   /// (e.g. `NativeDatabase.memory()`) so tests don't touch real disk.
+  /// [schemaVersion] stops migrations at an older version, so a test of one
+  /// step is not undone by a later one.
   @visibleForTesting
-  AppDatabase.forTesting(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore})
-    : this._withRecovery(executor, recoveryStore);
-  AppDatabase._withRecovery(super.e, this._recoveryStore);
+  AppDatabase.forTesting(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore, int? schemaVersion})
+    : this._withRecovery(executor, recoveryStore, schemaVersion);
+  AppDatabase._withRecovery(super.e, this._recoveryStore, this._schemaVersionOverride);
 
   final TvosDatabaseRecoveryStore? _recoveryStore;
+  final int? _schemaVersionOverride;
   static final Object _durabilityZoneKey = Object();
   static final SerialFutureQueue _tvosRecoveryQueue = SerialFutureQueue();
 
@@ -89,6 +91,7 @@ class AppDatabase extends _$AppDatabase {
     QueryExecutor Function(File file)? executorFactory,
     TvosDatabaseRecoveryStore? recoveryStore,
     TvosDatabaseRecoveryPriorInstallEvidence? priorInstallEvidence,
+    @visibleForTesting int? schemaVersion,
   }) async {
     final file = databaseFile ?? await _resolveProductionDatabaseFile();
     if (!await file.parent.exists()) {
@@ -105,7 +108,11 @@ class AppDatabase extends _$AppDatabase {
 
     final prefs = preferences ?? await BaseSharedPreferencesService.sharedCache();
     final store = recoveryStore ?? TvosDatabaseRecoveryStore(prefs, isTvos: isTvos);
-    final database = AppDatabase._((executorFactory ?? _createNativeDatabase)(file), recoveryStore: store);
+    final database = AppDatabase._(
+      (executorFactory ?? _createNativeDatabase)(file),
+      recoveryStore: store,
+      schemaVersion: schemaVersion,
+    );
     try {
       if (!isTvos) {
         // Drift executors open lazily. Force the connection through setup and
@@ -368,7 +375,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => _schemaVersionOverride ?? 27;
 
   @override
   MigrationStrategy get migration {
@@ -381,6 +388,9 @@ class AppDatabase extends _$AppDatabase {
       // through `_openConnection`.
       beforeOpen: (details) async {
         await customStatement('PRAGMA foreign_keys = ON');
+        if (details.hadUpgrade && (details.versionBefore ?? 0) < 26 && details.versionNow >= 26) {
+          await _reclaimSpaceAfterPurge();
+        }
       },
       onCreate: (Migrator m) async {
         await m.createAll();
@@ -564,7 +574,7 @@ class AppDatabase extends _$AppDatabase {
           for (final row in transferRows) {
             final cacheKey = row.read<String>('cache_key');
             try {
-              final sanitized = sanitizePlexMetadataForOwnerlessTransfer(row.read<String>('data'));
+              final sanitized = _withoutProfilePrivateFields(row.read<String>('data'));
               await customStatement('UPDATE api_cache SET data = ? WHERE cache_key = ?', [sanitized, cacheKey]);
             } on FormatException catch (error, stackTrace) {
               appLogger.w(
@@ -765,9 +775,151 @@ class AppDatabase extends _$AppDatabase {
           await _ignoreAlreadyExists('DownloadCollections table', () => m.createTable(downloadCollections));
           await _ignoreAlreadyExists('DownloadCollectionSyncs table', () => m.createTable(downloadCollectionSyncs));
         }
+        if (from < 26 && to >= 26) {
+          appLogger.i('Removing Plex, Jellyfin and Emby data (v26 migration)');
+          await purgeNonSiloBackendData();
+        }
+        if (from < 27 && to >= 27) {
+          appLogger.i('Removing Plezy profiles and the data they owned (v27 migration)');
+          await purgePlezyProfileData();
+        }
       },
     );
   }
+
+  /// Deletes every stored row that belongs to a backend other than Silo:
+  /// connections and their profile joins, Plex Home profile rows, downloads
+  /// with their owners and queue entries, sync rules, download collections,
+  /// queued offline progress, music sessions holding another backend's items,
+  /// and every cache row outside a `silo:` scope. Local profiles and Silo rows
+  /// stay. A second run finds nothing to delete.
+  ///
+  /// Downloaded files stay on disk. Deleting them needs the download
+  /// manager's storage and SAF services, which do not exist while the
+  /// database migrates.
+  @visibleForTesting
+  Future<void> purgeNonSiloBackendData() async {
+    await customStatement(
+      "DELETE FROM profile_connections WHERE connection_id NOT IN (SELECT id FROM connections WHERE kind = 'silo')",
+    );
+    await customStatement("DELETE FROM connections WHERE kind != 'silo'");
+    await customStatement("DELETE FROM profiles WHERE kind = 'plex_home'");
+    await customStatement('''
+      DELETE FROM downloaded_media
+      WHERE NOT (${_siloScoped('client_scope_id')} OR ${_siloServer('downloaded_media.server_id')})
+    ''');
+    await customStatement('''
+      DELETE FROM download_owners
+      WHERE global_key NOT IN (SELECT global_key FROM downloaded_media)
+        AND backend IS NOT 'silo'
+        AND NOT ${_siloScoped('client_scope_id')}
+    ''');
+    await customStatement(
+      'DELETE FROM download_queue WHERE media_global_key NOT IN (SELECT global_key FROM downloaded_media)',
+    );
+    await customStatement('DELETE FROM sync_rules WHERE NOT ${_siloServer('sync_rules.server_id')}');
+    await customStatement('DELETE FROM sync_rule_downloads WHERE sync_rule_id NOT IN (SELECT id FROM sync_rules)');
+    await customStatement(
+      'DELETE FROM download_collections WHERE NOT ${_siloServer('download_collections.server_id')}',
+    );
+    await customStatement(
+      'DELETE FROM download_collection_syncs WHERE NOT ${_siloServer('download_collection_syncs.server_id')}',
+    );
+    await customStatement('''
+      DELETE FROM offline_watch_progress
+      WHERE NOT (${_siloScoped('client_scope_id')} OR ${_siloServer('offline_watch_progress.server_id')})
+    ''');
+    await customStatement("DELETE FROM api_cache WHERE NOT ${_siloScoped('cache_key')}");
+    await customStatement('''
+      DELETE FROM music_sessions
+      WHERE queue_json NOT LIKE '%"backend":"silo"%'
+        OR queue_json LIKE '%"backend":"plex"%'
+        OR queue_json LIKE '%"backend":"jellyfin"%'
+        OR queue_json LIKE '%"backend":"emby"%'
+    ''');
+  }
+
+  /// Deletes what Plezy's own profiles owned, now that Silo profiles replace
+  /// them: the profile rows and their connection joins, download ownership,
+  /// sync rules and download collections, and music session snapshots.
+  /// Connections other than Silo's go too, though v26 already removed them.
+  ///
+  /// Silo downloads and their `silo:<server_id>/<profile_id>` scope stay;
+  /// with no owner row left, each is reclaimed by the profile of its own
+  /// scope on activation ([adoptLegacyDownloadsForProfile]). Queued offline
+  /// watch actions carry the same scope, so it becomes their owner instead
+  /// of being lost unsynced. A second run finds nothing to delete.
+  @visibleForTesting
+  Future<void> purgePlezyProfileData() async {
+    await customStatement('DELETE FROM profile_connections');
+    await customStatement('DELETE FROM profiles');
+    await customStatement("DELETE FROM connections WHERE kind != 'silo'");
+    await customStatement('DELETE FROM download_owners');
+    await customStatement('DELETE FROM sync_rule_downloads');
+    await customStatement('DELETE FROM sync_rules');
+    await customStatement('DELETE FROM download_collection_syncs');
+    await customStatement('DELETE FROM download_collections');
+    await customStatement('DELETE FROM music_sessions');
+    await customStatement('''
+      UPDATE offline_watch_progress
+      SET profile_id = CASE WHEN ${_siloScoped('client_scope_id')} THEN client_scope_id END
+    ''');
+  }
+
+  /// Fields of a legacy metadata payload that belong to one profile: watch
+  /// state and ratings, at any depth. The v17 migration strips them before
+  /// moving an ownerless download's metadata where any profile can adopt it.
+  static const _profilePrivateMetadataFields = {
+    'lastRatedAt',
+    'lastViewedAt',
+    'skipCount',
+    'userRating',
+    'viewCount',
+    'viewOffset',
+    'viewedLeafCount',
+  };
+
+  /// [source] without [_profilePrivateMetadataFields]. Throws
+  /// [FormatException] for a payload that is not a JSON object.
+  static String _withoutProfilePrivateFields(String source) {
+    final decoded = jsonDecode(source);
+    if (decoded is! Map<String, dynamic>) throw const FormatException('Invalid metadata cache payload');
+    Object? scrub(Object? value) {
+      if (value is Map<String, dynamic>) {
+        return <String, dynamic>{
+          for (final entry in value.entries)
+            if (!_profilePrivateMetadataFields.contains(entry.key)) entry.key: scrub(entry.value),
+        };
+      }
+      if (value is List) return <Object?>[for (final item in value) scrub(item)];
+      return value;
+    }
+
+    return jsonEncode(scrub(decoded));
+  }
+
+  /// Shrinks the file once the v26 purge has freed the old backends' pages.
+  /// SQLite keeps freed pages inside the file, and VACUUM cannot run inside
+  /// the migration's transaction. A failure, such as too little free space for
+  /// the rebuilt copy, leaves the database valid and only logs.
+  Future<void> _reclaimSpaceAfterPurge() async {
+    try {
+      await customStatement('VACUUM');
+      await customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
+    } catch (e) {
+      appLogger.w('Could not reclaim space after the v26 migration', error: e);
+    }
+  }
+
+  /// True when [column] holds a `silo:<server_id>/<profile_id>` scope. False,
+  /// not null, for a null column.
+  static String _siloScoped(String column) => "coalesce(substr($column, 1, 5) = 'silo:', 0)";
+
+  /// True when [column] names a Silo server: one with a Silo connection, or
+  /// one a Silo-scoped download came from.
+  static String _siloServer(String column) =>
+      "(EXISTS (SELECT 1 FROM connections WHERE kind = 'silo' AND id = 'silo:' || $column) "
+      "OR $column IN (SELECT server_id FROM downloaded_media WHERE ${_siloScoped('client_scope_id')}))";
 
   Future<void> _ignoreAlreadyExists(String label, Future<void> Function() operation) async {
     try {

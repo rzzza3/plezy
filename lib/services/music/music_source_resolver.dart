@@ -15,7 +15,7 @@ class MusicSource {
   /// Playable stream URL (or `file://` path for downloaded tracks).
   final String url;
 
-  /// HTTP headers to open [url] with (Plex identity headers; null for
+  /// HTTP headers to open [url] with (server identity headers; null for
   /// local files and backends that self-authenticate via the query string).
   final Map<String, String>? headers;
 
@@ -72,8 +72,7 @@ class ServerMusicSourceResolver implements MusicSourceResolver {
         // resolver's downloaded-copy preference on.
         qualityPreset: TranscodeQualityPreset.original,
         audioQualityPreset: settings.read(SettingsService.musicQualityPreset),
-        // Plex music transcode requires both session ids; fresh per track so
-        // concurrent gapless arming never reuses a live transcode session.
+        // Fresh session ids per track so concurrent gapless arming never reuses a live transcode session.
         sessionIdentifier: generateSessionIdentifier(),
         transcodeSessionId: generateSessionIdentifier(),
       ),

@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:plezy/silo/silo_contract_gate.dart';
 import 'package:plezy/silo/silo_headers.dart';
 import 'package:plezy/silo/silo_http.dart';
+import 'package:plezy/silo/silo_playback.dart';
 import 'package:plezy/silo/silo_session.dart';
 
 const String _usage = '''
@@ -20,11 +22,36 @@ read-only responses, and signs out. Tokens stay in memory.
   --device-id-file <path>  Where the X-Silo-Device-Id persists between runs.
                            Default ~/.config/plezy-silo-probe/device_id
   --time-home <n>          Time n extra GET /api/v2/home/sections calls.
+  --play <id>[@quality]    Start one playback session on the item, print
+                           the plan's structure, fetch the stream once, post
+                           one paused progress sample at the start position,
+                           then stop the session. Repeatable. The quality is
+                           the quality_preference, auto by default.
   --baseline               With --time-home, also time n of the same request
                            on a bare dart:io HttpClient and judge the 50 ms
                            rule.
   --force-refresh          Expire the access token locally before home.
   --revoked                Sign out server-side, then reuse the old tokens.
+  --profile <id>           Act as this profile instead of the one the
+                           approval or the primary open profile gives. It
+                           must have no PIN.
+  --actions <file|->       After the reads, run one action per line from the
+                           file or stdin, in the same session, then log out:
+                             home                   ids per section_type
+                             watch <content_id>     stored position, played
+                                                    and track counts, from
+                                                    /watch and /catalog/items
+                             ids </api/v2/...>      every content_id in a GET,
+                                                    with type, season, episode
+                             watched <content_id>   POST /watched/{id}
+                             unwatched <content_id> DELETE /watched/{id}
+                             watchlist-add <id>     PUT /watchlist/{id}
+                             watchlist-remove <id>  DELETE /watchlist/{id}
+                             toggle <id> <n> <s>    n watched/unwatched
+                                                    flips, s seconds apart
+                             sleep <seconds>
+                           Each write prints its status and done_ms, the
+                           epoch milliseconds the 204 arrived.
 ''';
 
 Future<void> main(List<String> args) async {
@@ -42,18 +69,24 @@ class SiloProbeOptions {
   final String samplesDir;
   final String deviceIdFile;
   final int timeHome;
+  final List<String> play;
   final bool baseline;
   final bool forceRefresh;
   final bool revoked;
+  final String? actions;
+  final String? profile;
 
   const SiloProbeOptions({
     required this.origin,
     required this.samplesDir,
     required this.deviceIdFile,
     this.timeHome = 0,
+    this.play = const [],
     this.baseline = false,
     this.forceRefresh = false,
     this.revoked = false,
+    this.actions,
+    this.profile,
   });
 
   static SiloProbeOptions? parse(List<String> args) {
@@ -62,9 +95,12 @@ class SiloProbeOptions {
     var deviceIdFile =
         '${Platform.environment['HOME'] ?? Directory.systemTemp.path}/.config/plezy-silo-probe/device_id';
     var timeHome = 0;
+    final play = <String>[];
     var baseline = false;
     var forceRefresh = false;
     var revoked = false;
+    String? actions;
+    String? profile;
     for (var i = 0; i < args.length; i++) {
       final arg = args[i];
       String next() => i + 1 < args.length ? args[++i] : throw const FormatException();
@@ -74,6 +110,8 @@ class SiloProbeOptions {
             samples = next();
           case '--device-id-file':
             deviceIdFile = next();
+          case '--play':
+            play.add(next());
           case '--time-home':
             timeHome = int.parse(next());
           case '--baseline':
@@ -82,6 +120,10 @@ class SiloProbeOptions {
             forceRefresh = true;
           case '--revoked':
             revoked = true;
+          case '--actions':
+            actions = next();
+          case '--profile':
+            profile = next();
           case '-h' || '--help':
             return null;
           default:
@@ -100,9 +142,12 @@ class SiloProbeOptions {
       samplesDir: samples,
       deviceIdFile: deviceIdFile,
       timeHome: timeHome,
+      play: play,
       baseline: baseline,
       forceRefresh: forceRefresh,
       revoked: revoked,
+      actions: actions,
+      profile: profile,
     );
   }
 }
@@ -163,6 +208,9 @@ Future<int> runSiloProbe(
     session: session,
     device: device,
     client: client,
+    // The operator named this origin on the command line, which is the
+    // consent the app asks for on screen.
+    cleartextApproved: (origin) => origin == siloOrigin(options.origin),
     onExchange: (exchange) {
       exchanges.add(exchange);
       if (exchange.url.path == '/api/v2/auth/refresh') refreshCalls++;
@@ -217,10 +265,13 @@ Future<int> runSiloProbe(
     final profiles = await silo.send(const SiloRequest.get('/api/v2/profiles'));
     out.writeln('profiles ${profiles.statusCode}');
     await _writeSample(samples, 'profiles.json', 'GET /api/v2/profiles', profiles);
-    final profile = _pickProfile(approved, profiles.isSuccess ? profiles.json() : null);
+    final chosen = options.profile;
+    final profile = chosen != null
+        ? (id: chosen, token: null)
+        : _pickProfile(approved, profiles.isSuccess ? profiles.json() : null);
     if (profile != null) {
       await session.selectProfile(profile.id, profile.token);
-      out.writeln('profile selected pin_token=${profile.token != null}');
+      out.writeln('profile selected id=${profile.id} pin_token=${profile.token != null}');
     } else {
       out.writeln('profile none');
     }
@@ -303,6 +354,26 @@ Future<int> runSiloProbe(
         out.writeln(delta <= _perfBudgetMs ? 'perf PASS' : 'perf FAIL');
       }
     }
+    for (final play in options.play) {
+      final at = play.indexOf('@');
+      await probeSiloPlayback(
+        silo,
+        session,
+        at < 0 ? play : play.substring(0, at),
+        quality: at < 0 ? 'auto' : play.substring(at + 1),
+        out: out,
+        samples: samples,
+      );
+    }
+    final actions = options.actions;
+    if (actions != null) {
+      final lines = actions == '-' ? stdin : File(actions).openRead();
+      await for (final line in lines.transform(utf8.decoder).transform(const LineSplitter())) {
+        final action = parseSiloProbeAction(line);
+        if (action == null) throw const _ProbeFailure(64, 'action unknown');
+        await _runAction(silo, action, out: out, wait: wait, clock: clock);
+      }
+    }
     return 0;
   } on _ProbeFailure catch (failure) {
     out.writeln(failure.message);
@@ -351,6 +422,152 @@ Future<int> _timeRawHome(Uri url, Map<String, String> headers, int n, StringSink
     return median;
   } finally {
     client.close(force: true);
+  }
+}
+
+sealed class SiloProbeAction {
+  const SiloProbeAction();
+}
+
+final class SiloProbeSkip extends SiloProbeAction {
+  const SiloProbeSkip();
+}
+
+final class SiloProbeHome extends SiloProbeAction {
+  const SiloProbeHome();
+}
+
+final class SiloProbeSleep extends SiloProbeAction {
+  final Duration duration;
+
+  const SiloProbeSleep(this.duration);
+}
+
+final class SiloProbeWrite extends SiloProbeAction {
+  final String name;
+  final String method;
+  final String path;
+
+  const SiloProbeWrite(this.name, this.method, this.path);
+}
+
+final class SiloProbeWatch extends SiloProbeAction {
+  final String id;
+
+  const SiloProbeWatch(this.id);
+}
+
+final class SiloProbeIds extends SiloProbeAction {
+  final Uri uri;
+
+  const SiloProbeIds(this.uri);
+}
+
+final class SiloProbeToggle extends SiloProbeAction {
+  final String id;
+  final int times;
+  final Duration interval;
+
+  const SiloProbeToggle(this.id, this.times, this.interval);
+}
+
+/// Null for an unknown command or a malformed argument.
+SiloProbeAction? parseSiloProbeAction(String line) {
+  final words = line.trim().split(RegExp(r'\s+'));
+  if (words.first.isEmpty || words.first.startsWith('#')) return const SiloProbeSkip();
+  String id(String word) => Uri.encodeComponent(word);
+  return switch (words) {
+    ['home'] => const SiloProbeHome(),
+    ['watch', final c] => SiloProbeWatch(c),
+    ['ids', final path] when path.startsWith('/api/v2/') => SiloProbeIds(Uri.parse(path)),
+    ['sleep', final s] when double.tryParse(s) != null => SiloProbeSleep(
+      Duration(milliseconds: (double.parse(s) * 1000).round()),
+    ),
+    ['watched', final c] => SiloProbeWrite('watched', 'POST', '/api/v2/watched/${id(c)}'),
+    ['unwatched', final c] => SiloProbeWrite('unwatched', 'DELETE', '/api/v2/watched/${id(c)}'),
+    ['watchlist-add', final c] => SiloProbeWrite('watchlist-add', 'PUT', '/api/v2/watchlist/${id(c)}'),
+    ['watchlist-remove', final c] => SiloProbeWrite('watchlist-remove', 'DELETE', '/api/v2/watchlist/${id(c)}'),
+    ['toggle', final c, final n, final s] when (int.tryParse(n) ?? 0) > 0 && double.tryParse(s) != null =>
+      SiloProbeToggle(c, int.parse(n), Duration(milliseconds: (double.parse(s) * 1000).round())),
+    _ => null,
+  };
+}
+
+/// Prints ids, statuses and times only, never a title.
+Future<void> _runAction(
+  SiloHttp silo,
+  SiloProbeAction action, {
+  required StringSink out,
+  required Future<void> Function(Duration) wait,
+  required DateTime Function() clock,
+}) async {
+  Future<void> write(SiloProbeWrite write) async {
+    final response = await silo.send(SiloRequest(write.method, write.path, single: true));
+    out.writeln(
+      'action ${write.name} ${Uri.decodeComponent(write.path.split('/').last)} ${response.statusCode} '
+      'done_ms=${clock().millisecondsSinceEpoch}',
+    );
+  }
+
+  switch (action) {
+    case SiloProbeSkip():
+      return;
+    case SiloProbeSleep(:final duration):
+      await wait(duration);
+    case SiloProbeWrite():
+      await write(action);
+    case SiloProbeToggle(:final id, :final times, :final interval):
+      for (var i = 0; i < times; i++) {
+        if (i > 0) await wait(interval);
+        await write(parseSiloProbeAction('${i.isEven ? 'watched' : 'unwatched'} $id')! as SiloProbeWrite);
+      }
+    case SiloProbeWatch(:final id):
+      final watch = await silo.send(SiloRequest.get('/api/v2/watch/${Uri.encodeComponent(id)}'));
+      final json = watch.isSuccess ? _tryJson(watch.body) : null;
+      final userData = json is Map && json['user_data'] is Map ? json['user_data'] as Map : const {};
+      final versions = json is Map && json['versions'] is List
+          ? (json['versions'] as List).whereType<Map>()
+          : const <Map>[];
+      int count(Map version, String key) => version[key] is List ? (version[key] as List).length : 0;
+      out.writeln(
+        'action watch $id ${watch.statusCode} position=${userData['position_seconds']} played=${userData['played']} '
+        'audio=${versions.map((v) => count(v, 'audio_tracks')).join(',')} '
+        'subtitles=${versions.map((v) => count(v, 'subtitle_tracks')).join(',')} '
+        'user_data_keys=${userData.keys.join(',')}',
+      );
+      final item = await silo.send(SiloRequest.get('/api/v2/catalog/items/${Uri.encodeComponent(id)}'));
+      final itemJson = item.isSuccess ? _tryJson(item.body) : null;
+      final itemUserData = itemJson is Map && itemJson['user_data'] is Map ? itemJson['user_data'] as Map : const {};
+      out.writeln(
+        'action item $id ${item.statusCode} position=${itemUserData['position_seconds']} '
+        'played=${itemUserData['played']} in_progress=${itemUserData['is_in_progress']}',
+      );
+    case SiloProbeIds(:final uri):
+      final response = await silo.send(SiloRequest.get(uri.path, query: uri.hasQuery ? uri.queryParameters : null));
+      out.writeln('action ids ${uri.path} ${response.statusCode}');
+      void walk(Object? node) {
+        if (node is List) node.forEach(walk);
+        if (node is! Map) return;
+        if (node['content_id'] is String) {
+          out.writeln(
+            'id ${node['content_id']} type=${node['type']} '
+            'season=${node['season_number']} episode=${node['episode_number']}',
+          );
+        }
+        node.values.forEach(walk);
+      }
+
+      walk(response.isSuccess ? _tryJson(response.body) : null);
+    case SiloProbeHome():
+      final home = await silo.send(const SiloRequest.get('/api/v2/home/sections'));
+      final json = home.isSuccess ? _tryJson(home.body) : null;
+      final sections = json is Map && json['sections'] is List ? json['sections'] as List : const [];
+      out.writeln('action home ${home.statusCode} sections=${sections.length}');
+      for (final section in sections.whereType<Map>()) {
+        final items = section['items'] is List ? section['items'] as List : const [];
+        final ids = [for (final item in items.whereType<Map>()) ?item['content_id']];
+        out.writeln('section ${section['section_type']} ids=${ids.join(',')}');
+      }
   }
 }
 
@@ -633,4 +850,232 @@ Object _mergeShapes(Object a, Object b) {
     }
   }
   return {'type': 'union', 'of': variants.values.toList()};
+}
+
+/// Replaces the session id and every digit run, and keeps query keys only,
+/// so a URL can be printed without a credential or a signed value.
+String siloUrlShape(String url, String sessionId) {
+  final uri = Uri.parse(url.replaceAll(sessionId, 'SESSION'));
+  final path = uri.path.replaceAll(RegExp(r'\d+'), 'N');
+  final keys = uri.queryParameters.keys.toList()..sort();
+  final origin = uri.hasScheme ? '${uri.scheme}://{host}' : '';
+  return '$origin$path${keys.isEmpty ? '' : '?${keys.map((k) => '$k=…').join('&')}'}';
+}
+
+/// One real start, one stream fetch, one progress sample and one stop,
+/// printed as structure only (`research/silo-playback.md` open questions).
+Future<void> probeSiloPlayback(
+  SiloHttp silo,
+  SiloSessionController session,
+  String contentId, {
+  required String quality,
+  required StringSink out,
+  required Directory samples,
+}) async {
+  final caps = await silo.send(const SiloRequest.get('/api/v2/playback/capabilities'));
+  final capsJson = caps.isSuccess ? _tryJson(caps.body) : null;
+  final admission = siloAdmission(caps.statusCode, capsJson);
+  if (capsJson is Map) {
+    out.writeln(
+      'playback_capabilities ${caps.statusCode} state=${capsJson['state']} allowed=${capsJson['allowed']} '
+      'protocols=${capsJson['protocol_versions']} features=${capsJson['features']}',
+    );
+  } else {
+    out.writeln('playback_capabilities ${caps.statusCode}');
+  }
+  await _writeSample(samples, 'playback-capabilities.json', 'GET /api/v2/playback/capabilities', caps);
+  if (admission is! SiloAdmitted) {
+    out.writeln('admission ${admission.runtimeType}');
+    return;
+  }
+
+  final watch = await silo.send(SiloRequest.get('/api/v2/watch/${Uri.encodeComponent(contentId)}'));
+  await _writeSample(samples, 'watch-detail.json', 'GET /api/v2/watch/{id}', watch);
+  final detail = SiloWatchDetail.fromJson(_tryJson(watch.body), contentId);
+  final version = selectSiloVersion(detail.versions, lastFileId: detail.lastFileId, preferredQuality: quality);
+  final start = siloStartPosition(savedPosition: detail.positionSeconds);
+  out.writeln(
+    'watch ${watch.statusCode} versions=${detail.versions.length} file=${version.fileId} '
+    'resolution=${version.resolution} container=${version.container} audio=${version.audioTracks.length} '
+    'subtitles=${version.subtitleTracks.length} resume=${detail.positionSeconds != null} start=$start',
+  );
+
+  final profileId = session.session?.profileId;
+  if (profileId == null) {
+    out.writeln('play skipped, no profile');
+    return;
+  }
+  final body = siloStartBody(
+    fileId: version.fileId,
+    profileId: profileId,
+    attemptId: _uuid(),
+    installationId: admission.installationId,
+    capabilities: siloMpvCodecCapabilities(),
+    context: siloMpvPlaybackContext((
+      formFactor: 'tv',
+      appVersion: 'probe',
+      platform: 'linux',
+      osVersion: null,
+      manufacturer: 'Plezy',
+      model: 'Silo Probe',
+    )),
+    qualityPreference: quality,
+    startPosition: start,
+  );
+  final started = await silo.send(SiloRequest.post('/api/v2/playback/start', body: body, single: true));
+  await _writeSample(samples, 'playback-start.json', 'POST /api/v2/playback/start', started);
+  final startJson = _tryJson(started.body);
+  final sessionId = startJson is Map ? startJson['session_id'] : null;
+  out.writeln('start ${started.statusCode} session=${sessionId is String && sessionId.isNotEmpty}');
+  if (started.statusCode != 201 || sessionId is! String || sessionId.isEmpty) {
+    final problem = started.problem;
+    out.writeln('start_problem ${problem?.code}');
+    return;
+  }
+
+  try {
+    final decision = parseSiloDecision(startJson);
+    out.writeln('decision ${decision.runtimeType}');
+    final SiloPlan? plan = switch (decision) {
+      SiloPlayable(:final plan) => plan,
+      SiloReplanRequired(:final plan, :final reason) => (() {
+        out.writeln('replan_required $reason');
+        return plan;
+      })(),
+      SiloTerminal(:final reason) => (() {
+        out.writeln('terminal $reason');
+        return null;
+      })(),
+      SiloIncompatible() => null,
+    };
+    if (plan != null) await _describePlan(silo, session, plan, sessionId, out);
+
+    final progress = await silo.send(
+      SiloRequest.post(
+        '/api/v2/playback/${Uri.encodeComponent(sessionId)}/progress',
+        body: {'installation_id': admission.installationId, 'sequence': 1, 'position': start ?? 0, 'is_paused': true},
+      ),
+    );
+    final progressJson = _tryJson(progress.body);
+    out.writeln(
+      'progress ${progress.statusCode} outcome=${progressJson is Map ? progressJson['outcome'] : null} '
+      'accepted_sequence=${progressJson is Map && progressJson['accepted'] is Map ? (progressJson['accepted'] as Map)['sequence'] : null}',
+    );
+  } finally {
+    final stopId = _uuid();
+    final stopped = await silo.send(
+      SiloRequest(
+        'DELETE',
+        '/api/v2/playback/${Uri.encodeComponent(sessionId)}',
+        body: {'installation_id': admission.installationId, 'stop_id': stopId},
+        single: true,
+      ),
+    );
+    final stopJson = _tryJson(stopped.body);
+    out.writeln(
+      'stop ${stopped.statusCode} outcome=${stopJson is Map ? stopJson['outcome'] : null} '
+      'stop_id_echoed=${stopJson is Map && stopJson['stop_id'] == stopId}',
+    );
+  }
+}
+
+Future<void> _describePlan(
+  SiloHttp silo,
+  SiloSessionController session,
+  SiloPlan plan,
+  String sessionId,
+  StringSink out,
+) async {
+  final t = plan.timeline;
+  out.writeln(
+    'plan delivery=${plan.delivery} protocol=${plan.stream.protocol} header_refresh=${plan.stream.headerRefresh} '
+    'reason=${plan.decisionReason} effective_file=${plan.effectiveMediaFileId} duration=${plan.sourceDurationSeconds}',
+  );
+  out.writeln('plan_url ${siloUrlShape(plan.stream.url, sessionId)} headers=${plan.stream.headers.keys.toList()}');
+  out.writeln(
+    'plan_timeline source_start=${t.sourceStartSeconds} player_start=${t.playerStartSeconds} '
+    'offset=${t.timelineOffsetSeconds} window=${t.seekWindowStartSeconds}..${t.seekWindowEndSeconds} '
+    'seek_anywhere=${t.canSeekAnywhere}',
+  );
+  out.writeln(
+    'plan_subtitles mode=${plan.subtitleMode} selected=${plan.selectedSubtitle != null} '
+    'inventory=${[for (final r in plan.subtitleInventory) '${r.source}/${r.codec}/${r.delivery}']}',
+  );
+  for (final row in plan.subtitleInventory.take(2)) {
+    final url = row.url;
+    if (url != null) out.writeln('plan_subtitle_url ${siloUrlShape(url, sessionId)}');
+  }
+
+  final current = session.session;
+  if (current == null) return;
+  final url = silo.origin.resolve(plan.stream.url);
+  final sameOrigin = isSameSiloOrigin(url, silo.origin);
+  final client = HttpClient();
+  try {
+    Future<HttpClientResponse> fetch(Uri target, {bool range = false}) async {
+      final request = await client.getUrl(target);
+      request.followRedirects = false;
+      if (isSameSiloOrigin(target, silo.origin)) {
+        request.headers.set(SiloHeaders.authorization, 'Bearer ${current.tokens.accessToken}');
+        if (current.profileId != null) request.headers.set(SiloHeaders.profileId, current.profileId!);
+        if (current.profileToken != null) request.headers.set(SiloHeaders.profileToken, current.profileToken!);
+        silo.device.toMap().forEach(request.headers.set);
+      }
+      plan.stream.headers.forEach(request.headers.set);
+      if (range) request.headers.set(HttpHeaders.rangeHeader, 'bytes=0-1');
+      return request.close();
+    }
+
+    if (plan.stream.protocol == 'hls') {
+      final master = await fetch(url);
+      final text = master.statusCode == 200 ? await utf8.decodeStream(master) : '';
+      if (master.statusCode != 200) await master.drain<void>();
+      out.writeln('stream ${master.statusCode} same_origin=$sameOrigin type=${master.headers.contentType?.mimeType}');
+      final uris = [
+        for (final line in const LineSplitter().convert(text))
+          if (line.isNotEmpty && !line.startsWith('#')) line,
+      ];
+      for (final line in uris.take(3)) {
+        out.writeln('stream_child ${siloUrlShape(line, sessionId)}');
+      }
+      if (uris.isNotEmpty && uris.first.contains('.m3u8')) {
+        final child = url.resolve(uris.first);
+        final media = await fetch(child);
+        final childText = media.statusCode == 200 ? await utf8.decodeStream(media) : '';
+        if (media.statusCode != 200) await media.drain<void>();
+        out.writeln(
+          'stream_media ${media.statusCode} same_directory=${child.path.startsWith(url.path.substring(0, url.path.lastIndexOf('/') + 1))}',
+        );
+        final segments = [
+          for (final line in const LineSplitter().convert(childText))
+            if (line.isNotEmpty && !line.startsWith('#')) line,
+        ];
+        for (final line in segments.take(2)) {
+          out.writeln('stream_segment ${siloUrlShape(line, sessionId)}');
+        }
+        out.writeln('stream_segments ${segments.length} endlist=${childText.contains('#EXT-X-ENDLIST')}');
+      }
+    } else {
+      final response = await fetch(url, range: true);
+      await response.drain<void>();
+      out.writeln(
+        'stream ${response.statusCode} same_origin=$sameOrigin accept_ranges=${response.headers.value('accept-ranges')} '
+        'content_range=${response.headers.value('content-range') != null} etag=${response.headers.value('etag') != null} '
+        'type=${response.headers.contentType?.mimeType}',
+      );
+    }
+  } on Exception catch (error) {
+    out.writeln('stream_error ${error.runtimeType}');
+  } finally {
+    client.close(force: true);
+  }
+}
+
+String _uuid() {
+  final random = Random.secure();
+  final bytes = [for (var i = 0; i < 16; i++) random.nextInt(256)];
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = [for (final b in bytes) b.toRadixString(16).padLeft(2, '0')].join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
 }

@@ -25,6 +25,10 @@ enum SiloAuth {
 
   /// `Authorization` and profile headers from the active session.
   bearer,
+
+  /// `Authorization` without profile headers. `verify-pin` needs it: a stale
+  /// profile token turns a correct PIN into a 403.
+  account,
 }
 
 class SiloRequest {
@@ -57,8 +61,13 @@ class SiloRequest {
   const SiloRequest.get(String path, {Map<String, String>? query, SiloAuth auth = SiloAuth.bearer, bool gated = true})
     : this('GET', path, query: query, auth: auth, gated: gated);
 
-  const SiloRequest.post(String path, {Object? body, SiloAuth auth = SiloAuth.bearer, bool single = false})
-    : this('POST', path, body: body, auth: auth, single: single);
+  const SiloRequest.post(
+    String path, {
+    Object? body,
+    SiloAuth auth = SiloAuth.bearer,
+    bool single = false,
+    Duration timeout = siloRequestTimeout,
+  }) : this('POST', path, body: body, auth: auth, single: single, timeout: timeout);
 }
 
 class SiloResponse {
@@ -77,6 +86,20 @@ class SiloResponse {
   Object? json() => resolveSiloArtworkUrls(jsonDecode(body), url);
 
   SiloProblem? get problem => SiloProblem.tryParse(body);
+}
+
+class SiloStreamedResponse {
+  final int statusCode;
+  final Uri url;
+  final Map<String, String> headers;
+  final Stream<List<int>> stream;
+
+  const SiloStreamedResponse({
+    required this.statusCode,
+    required this.url,
+    required this.headers,
+    required this.stream,
+  });
 }
 
 /// One wire exchange, for request logs. Carries header names only, never
@@ -106,6 +129,17 @@ class SiloCredentialsRepudiatedException implements Exception {
   String toString() => 'SiloCredentialsRepudiatedException';
 }
 
+/// The request would put credentials on an `http://` origin the person has
+/// not approved. It was not sent.
+class SiloCleartextNotApprovedException implements Exception {
+  final String origin;
+
+  const SiloCleartextNotApprovedException(this.origin);
+
+  @override
+  String toString() => 'SiloCleartextNotApprovedException: $origin';
+}
+
 String siloOrigin(Uri url) {
   final scheme = url.scheme.toLowerCase();
   final host = url.host.toLowerCase();
@@ -128,6 +162,7 @@ class SiloHttp {
   final SiloContractGate gate;
   final http.Client _client;
   final void Function(SiloExchange exchange)? onExchange;
+  final bool Function(String origin) _cleartextApproved;
   final SerialFutureQueue _refreshLock = SerialFutureQueue();
 
   SiloHttp({
@@ -137,9 +172,13 @@ class SiloHttp {
     SiloContractGate? gate,
     http.Client? client,
     this.onExchange,
+    bool Function(String origin)? cleartextApproved,
   }) : origin = Uri.parse(siloOrigin(origin)),
        gate = gate ?? SiloContractGate(),
-       _client = client ?? newSiloHttpClient();
+       _client = client ?? newSiloHttpClient(),
+       _cleartextApproved = cleartextApproved ?? _neverApproved;
+
+  static bool _neverApproved(String origin) => false;
 
   static http.Client newSiloHttpClient() => IOClient(HttpClient()..connectionTimeout = siloConnectTimeout);
 
@@ -147,11 +186,18 @@ class SiloHttp {
 
   Future<SiloResponse> send(SiloRequest request) async {
     if (request.gated) gate.check();
+    // Only an unauthenticated GET may reach an unapproved cleartext origin, so
+    // the address probes work before consent and nothing secret leaks.
+    if (origin.scheme == 'http' &&
+        (request.method != 'GET' || request.auth != SiloAuth.none) &&
+        !_cleartextApproved(origin.toString())) {
+      throw SiloCleartextNotApprovedException(origin.toString());
+    }
     final url = _resolve(request);
     final generation = session.generation;
     final current = session.session;
     final hasBearer =
-        request.auth == SiloAuth.bearer && current != null && isSameSiloOrigin(Uri.parse(current.origin), origin);
+        request.auth != SiloAuth.none && current != null && isSameSiloOrigin(Uri.parse(current.origin), origin);
     if (!hasBearer) return _exchange(request, url, null);
 
     var active = current;
@@ -189,6 +235,78 @@ class SiloHttp {
     );
     if (outcome is! SiloRefreshed || session.generation != generation) return response;
     return _exchange(request, url, outcome.session);
+  }
+
+  /// A bearer GET whose body is streamed, not buffered, for download bytes.
+  /// [headers] are added to the session and device headers. Redirects are
+  /// followed under the same origin rules as [send], and a 401 is refreshed
+  /// once and replayed.
+  Future<SiloStreamedResponse> openStream(String path, {Map<String, String> headers = const {}}) async {
+    gate.check();
+    if (origin.scheme == 'http' && !_cleartextApproved(origin.toString())) {
+      throw SiloCleartextNotApprovedException(origin.toString());
+    }
+    final url = origin.resolve(path);
+    final generation = session.generation;
+    final current = session.session;
+    if (current == null || !isSameSiloOrigin(Uri.parse(current.origin), origin)) {
+      throw const SiloCredentialsRepudiatedException();
+    }
+    Map<String, String> headersFor(SiloSession credentials) => {
+      ..._headersFor(credentials, withProfile: true)..remove('Content-Type'),
+      ...headers,
+    };
+    final response = await _openStream(url, headersFor(current));
+    if (response.statusCode != HttpStatus.unauthorized) return response;
+    if (!isSameSiloOrigin(response.url, origin) || session.generation != generation) return response;
+    final outcome = await refresh(sentAccessToken: current.tokens.accessToken, generation: generation);
+    if (outcome is! SiloRefreshed || session.generation != generation) return response;
+    await response.stream.drain<void>();
+    return _openStream(url, headersFor(outcome.session));
+  }
+
+  Future<SiloStreamedResponse> _openStream(Uri url, Map<String, String> headers) async {
+    var hopUrl = url;
+    var trusted = true;
+    for (var hop = 0; ; hop++) {
+      final hopHeaders = trusted
+          ? headers
+          : {
+              for (final entry in headers.entries)
+                if (!SiloHeaders.isCredentialHeader(entry.key)) entry.key: entry.value,
+            };
+      final request = http.Request('GET', hopUrl)
+        ..followRedirects = false
+        ..headers.addAll(hopHeaders);
+      final started = DateTime.now();
+      http.StreamedResponse? response;
+      try {
+        response = await _client.send(request).timeout(siloRequestTimeout);
+      } finally {
+        onExchange?.call(
+          SiloExchange(
+            method: 'GET',
+            url: hopUrl,
+            headerNames: hopHeaders.keys.toList(growable: false),
+            statusCode: response?.statusCode,
+            elapsed: DateTime.now().difference(started),
+          ),
+        );
+      }
+      final location = response.headers['location'];
+      if (!_isRedirect(response.statusCode) || location == null) {
+        return SiloStreamedResponse(
+          statusCode: response.statusCode,
+          url: hopUrl,
+          headers: response.headers,
+          stream: response.stream,
+        );
+      }
+      await response.stream.drain<void>();
+      if (hop >= _maxRedirects) throw http.ClientException('Too many redirects', url);
+      hopUrl = hopUrl.resolve(location);
+      trusted = trusted && isSameSiloOrigin(hopUrl, origin);
+    }
   }
 
   /// One refresh at a time. Inside the lock, a token that differs from the
@@ -260,15 +378,18 @@ class SiloHttp {
 
   Future<SiloResponse> _exchange(SiloRequest request, Uri url, SiloSession? credentials) {
     final body = request.body == null ? null : jsonEncode(_withoutNulls(request.body));
-    return _send(request.method, url, _headersFor(credentials), body, request.timeout);
+    final headers = _headersFor(credentials, withProfile: request.auth == SiloAuth.bearer);
+    return _send(request.method, url, headers, body, request.timeout);
   }
 
-  Map<String, String> _headersFor(SiloSession? credentials) => {
+  Map<String, String> _headersFor(SiloSession? credentials, {required bool withProfile}) => {
     'Content-Type': 'application/json',
     if (credentials != null) ...{
       SiloHeaders.authorization: 'Bearer ${credentials.tokens.accessToken}',
-      SiloHeaders.profileId: ?credentials.profileId,
-      SiloHeaders.profileToken: ?credentials.profileToken,
+      if (withProfile) ...{
+        SiloHeaders.profileId: ?credentials.profileId,
+        SiloHeaders.profileToken: ?credentials.profileToken,
+      },
     },
     ...device.toMap(),
   };

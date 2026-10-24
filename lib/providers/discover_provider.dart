@@ -114,6 +114,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       isBlocked: _isRefreshBlocked,
       runPass: _runLibraryEventRefresh,
     );
+    _homeEventPacer = RefreshPacer(
+      debounce: Duration.zero,
+      cooldown: Duration.zero,
+      blockedRetry: libraryEventBlockedRetry,
+      isBlocked: _isRefreshBlocked,
+      runPass: _runLibraryEventRefresh,
+    );
     // Late server connects (reconnect after outage, slow wave) refresh
     // discover the same way they refresh libraries. Removed in [dispose] so a
     // profile switch can't leave a stale listener on the app-global provider.
@@ -169,6 +176,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   StreamSubscription<LibraryChangeEvent>? _libraryEventSubscription;
   late final RefreshPacer _libraryEventPacer;
 
+  /// A home-stale push arrives already debounced by its channel and must
+  /// repaint within seconds, so it skips the debounce and the cooldown.
+  late final RefreshPacer _homeEventPacer;
+
   /// Authoritative fetches tell the store which items the server re-observed,
   /// so a stale local watch patch stops overriding fresh server state (#1829).
   /// Optional: tests and isolated subtrees may have no store.
@@ -210,7 +221,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Whether the profile binder is still wiring servers. No full pass or
   /// Continue Watching refresh fetches while it runs: a profile switch mounts
-  /// the new session before the binder rotates the shared Plex clients to the
+  /// the new session before the binder rotates the shared clients to the
   /// new user's token, so a fetch here would return the previous user's rows
   /// (#2599). main_screen primes a load once binding settles. A bind that
   /// starts mid-pass keeps a zero-success pass in the loading state instead
@@ -346,8 +357,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// periodically instead of continuously. The first event after a quiet
   /// period always refreshes promptly.
   void _onLibraryContentChanged(LibraryChangeEvent event) {
-    if (isDisposed || !event.hasChanges) return;
-    _libraryEventPacer.schedule();
+    if (isDisposed) return;
+    if (event.homeChanged) {
+      _homeEventPacer.schedule();
+    } else if (event.hasChanges) {
+      _libraryEventPacer.schedule();
+    }
   }
 
   bool _runLibraryEventRefresh() {
@@ -965,7 +980,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // server item in place, so it must not evict anything here.
     if (event.isDownloadOnly) return;
 
-    // Scoped to the emitting server: backend-native ids (Plex rating keys are
+    // Scoped to the emitting server: backend-native ids (item ids are
     // small sequential integers) routinely collide across servers, and push
     // removals made this an automated event (#1646).
     bool affected(MediaItem item) =>
@@ -1107,6 +1122,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _libraryEventSubscription?.cancel();
     _libraryEventSubscription = null;
     _libraryEventPacer.dispose();
+    _homeEventPacer.dispose();
     _loadCoordinator.dispose();
     _pendingSystemShelfItems = null;
     super.dispose();

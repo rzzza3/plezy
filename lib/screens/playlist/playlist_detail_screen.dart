@@ -65,8 +65,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   bool get hasItems => items.isNotEmpty;
 
   /// True when the playlist can't be reordered or have items removed.
-  /// Currently only Plex smart playlists (server-side rule-based; managed via
-  /// filter rules, not direct edits). Jellyfin has no equivalent concept.
+  /// Smart playlists (server-side rule-based; managed via
+  /// filter rules, not direct edits).
   bool get _isReadOnly => widget.playlist.smart;
 
   /// Audio playlists play through the music session (mini-player /
@@ -122,9 +122,9 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         showDownload: isDownloadablePlaylist && (items.isNotEmpty || hasRule),
         onDownload: _downloadPlaylist,
       ),
-      // Delete works on both backends now (Jellyfin uses /Items/{id} DELETE,
-      // wrapped in the neutral [MediaServerClient.deletePlaylist]). Smart
-      // playlists are still skipped — they're a Plex concept and are
+      // Delete goes through the neutral
+      // [MediaServerClient.deletePlaylist]. Smart
+      // playlists are still skipped — they're a server concept and are
       // managed server-side via filter rules, not via DELETE.
       if (!widget.playlist.smart)
         FocusableAction(
@@ -643,8 +643,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// [_cardKeys]. Playlist entries can repeat a media id, so the playlist item
   /// id wins when the backend exposes one.
   String _itemKeyId(MediaItem item) => switch (item) {
-    PlexMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
-    JellyfinMediaItem(:final playlistItemId?) => 'j:$playlistItemId',
+    SiloMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
     _ => item.id,
   };
 
@@ -723,11 +722,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         ...buildStateSlivers(),
         if (items.isNotEmpty) ...[
           if (_isReadOnly)
-            // Smart playlists / Jellyfin playlists: focusable grid view
+            // Read-only playlists: focusable grid view
             // (read-only, no reordering or removal)
             buildFocusableGrid(items: items, onRefresh: updateItem, shape: _isAudioPlaylist ? CardShape.square : null)
           else
-            // Plex regular playlists: sliver reorderable list
+            // Regular playlists: sliver reorderable list
             _buildReorderableList(),
           if (_continuation.isLoading || _continuation.error != null)
             ContinuationStatusSliver(

@@ -10,7 +10,7 @@ void main() {
   test('episode detail target opens parent show and focuses season episode', () {
     final episode = testMediaItem(
       id: 'episode-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       parentId: 'season-2',
@@ -32,7 +32,7 @@ void main() {
   test('season detail target opens parent show and focuses season', () {
     final season = testMediaItem(
       id: 'season-3',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 3',
       index: 3,
@@ -51,7 +51,7 @@ void main() {
   });
 
   test('movie detail target keeps the movie itself', () {
-    final movie = testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+    final movie = testMediaItem(id: 'movie-1', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Movie');
 
     final target = mediaDetailNavigationTargetFor(movie);
 

@@ -15,7 +15,7 @@ class MediaPartSpan {
   Duration get end => start + duration;
 }
 
-/// The timeline of an item stacked across several files — Plex's
+/// The timeline of an item stacked across several files — a server's
 /// `Movie - Part 1.mkv`, `Movie - Part 2.mkv` — and which of them is open.
 ///
 /// Everything above the player speaks item time: resume offsets, progress

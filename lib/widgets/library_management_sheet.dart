@@ -8,45 +8,15 @@ import '../focus/dpad_reorder_mixin.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
-import '../media/ids.dart';
-import '../media/media_backend.dart';
 import '../media/media_library.dart';
-import '../media/media_server_client.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
-import '../providers/multi_server_provider.dart';
-import '../profiles/active_profile_provider.dart';
-import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
 import '../utils/dialogs.dart';
 import '../utils/platform_detector.dart';
-import '../utils/provider_extensions.dart';
-import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
-import 'app_menu.dart';
 import 'bottom_sheet_page_scaffold.dart';
-import 'media_context_menu.dart' show isAdminActionAllowedForMediaItem;
 import 'overlay_sheet.dart';
-
-class ContextMenuItem {
-  final String value;
-  final IconData icon;
-  final String label;
-  final bool requiresConfirmation;
-  final String? confirmationTitle;
-  final String? confirmationMessage;
-  final bool isDestructive;
-
-  const ContextMenuItem({
-    required this.value,
-    required this.icon,
-    required this.label,
-    this.requiresConfirmation = false,
-    this.confirmationTitle,
-    this.confirmationMessage,
-    this.isDestructive = false,
-  });
-}
 
 /// Shows the manage/reorder-libraries sheet (dialog on TV, overlay sheet
 /// otherwise). Reorder and hide/unhide are provider-backed, so any screen can
@@ -57,34 +27,13 @@ class ContextMenuItem {
 /// side nav). [onToggleVisibility] overrides the default plain hide/unhide
 /// (the libraries screen adds "re-select first visible library" logic).
 ///
-/// A library's admin actions (scan, refresh metadata, ...) are offered only
-/// to an owner or administrator of its server; [canAdministerLibrary]
-/// replaces that check in tests.
 Future<void> showLibraryManagementSheet(
   BuildContext context, {
   VoidCallback? onOrderChanged,
   Future<void> Function(MediaLibrary library)? onToggleVisibility,
-  @visibleForTesting bool Function(MediaLibrary library)? canAdministerLibrary,
 }) {
   final librariesProvider = context.read<LibrariesProvider>();
   final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-  final serverManager = Provider.of<MultiServerProvider?>(context, listen: false)?.serverManager;
-  final activeProfile = Provider.of<ActiveProfileProvider?>(context, listen: false)?.active;
-
-  // Same gate as the media context menu's admin entries: the server's owner or
-  // administrator flag, narrowed by a non-admin Plex Home profile.
-  bool defaultCanAdministerLibrary(MediaLibrary library) {
-    final serverId = serverIdOrNull(library.serverId);
-    return serverId != null &&
-        isAdminActionAllowedForMediaItem(
-          isOwnerOrAdmin: serverManager?.isOwnerOrAdmin(serverId) ?? false,
-          itemBackend: library.backend,
-          activeProfile: activeProfile,
-        );
-  }
-
-  final canAdminister = canAdministerLibrary ?? defaultCanAdministerLibrary;
-
   Future<void> defaultToggleVisibility(MediaLibrary library) async {
     final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(library.globalKey);
     if (isHidden) {
@@ -103,8 +52,6 @@ Future<void> showLibraryManagementSheet(
       onOrderChanged?.call();
     },
     onToggleVisibility: onToggleVisibility ?? defaultToggleVisibility,
-    getLibraryMenuItems: (library) => canAdminister(library) ? _getLibraryMenuItems(library) : const [],
-    onLibraryMenuAction: (action, library) => _handleLibraryMenuAction(context, action, library),
   );
 
   if (PlatformDetector.isTV()) {
@@ -132,174 +79,12 @@ List<MediaLibrary> reconcileLibraryOrder(List<MediaLibrary> sheetOrder, List<Med
   return [for (final library in sheetOrder) ?remaining.remove(library.globalKey), ...remaining.values];
 }
 
-List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
-  // Refresh metadata is the only admin action every backend supports — Plex
-  // hits `/library/sections/{id}/refresh?force=1`; MediaBrowser servers post
-  // to `/Items/{id}/Refresh` (the library view is itself an item).
-  final refresh = ContextMenuItem(
-    value: 'refresh',
-    icon: Symbols.sync_rounded,
-    label: t.libraries.refreshMetadata,
-    requiresConfirmation: true,
-    confirmationTitle: t.libraries.refreshMetadata,
-    confirmationMessage: t.libraries.refreshMetadataConfirm(title: library.title),
-    isDestructive: true,
-  );
-  // Scan / analyze / empty trash hit Plex-only endpoints, so backend
-  // capability gating keeps them out of MediaBrowser menus. The library-qualified
-  // resolver independently requires the exact owning Plex server.
-  if (library.backend != MediaBackend.plex) return [refresh];
-  return [
-    ContextMenuItem(
-      value: 'scan',
-      icon: Symbols.refresh_rounded,
-      label: t.libraries.scanLibraryFiles,
-      requiresConfirmation: true,
-      confirmationTitle: t.libraries.scanLibrary,
-      confirmationMessage: t.libraries.scanLibraryConfirm(title: library.title),
-    ),
-    ContextMenuItem(
-      value: 'analyze',
-      icon: Symbols.analytics_rounded,
-      label: t.libraries.analyze,
-      requiresConfirmation: true,
-      confirmationTitle: t.libraries.analyzeLibrary,
-      confirmationMessage: t.libraries.analyzeLibraryConfirm(title: library.title),
-    ),
-    refresh,
-    ContextMenuItem(
-      value: 'empty_trash',
-      icon: Symbols.delete_outline_rounded,
-      label: t.libraries.emptyTrash,
-      requiresConfirmation: true,
-      confirmationTitle: t.libraries.emptyTrash,
-      confirmationMessage: t.libraries.emptyTrashConfirm(title: library.title),
-      isDestructive: true,
-    ),
-  ];
-}
-
-Future<void> _handleLibraryMenuAction(BuildContext context, String action, MediaLibrary library) async {
-  // Find the menu item for confirmation details
-  final menuItems = _getLibraryMenuItems(library);
-  final item = menuItems.where((i) => i.value == action).firstOrNull;
-  if (item == null) return;
-
-  if (item.requiresConfirmation) {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: item.confirmationTitle ?? t.dialog.confirmAction,
-      message: item.confirmationMessage ?? t.libraries.confirmActionMessage,
-      confirmText: t.common.confirm,
-      isDestructive: item.isDestructive,
-    );
-    if (!confirmed || !context.mounted) return;
-  }
-
-  switch (action) {
-    case 'scan':
-      unawaited(_scanLibrary(context, library));
-      break;
-    case 'analyze':
-      unawaited(_analyzeLibrary(context, library));
-      break;
-    case 'refresh':
-      unawaited(_refreshLibraryMetadata(context, library));
-      break;
-    case 'empty_trash':
-      unawaited(_emptyLibraryTrash(context, library));
-      break;
-  }
-}
-
-/// Runs a library admin action, wrapping it in progress/success/failure
-/// snackbars.
-///
-/// [resolveClient] picks the client flavour: `getPlexClientForLibrary` for the
-/// Plex-only endpoints (scan / analyze / empty trash), `getMediaClientForLibrary`
-/// for ops that exist on the backend-neutral [MediaServerClient] interface
-/// (currently just refresh metadata). Both resolvers require the library's exact
-/// owning server and throw the same error when it isn't available.
-Future<void> _performLibraryAction<T extends MediaServerClient>(
-  BuildContext context, {
-  required T Function(BuildContext context) resolveClient,
-  required Future<void> Function(T client) action,
-  required String progressMessage,
-  required String successMessage,
-  required String Function(Object error) failureMessage,
-}) async {
-  try {
-    final client = resolveClient(context);
-
-    if (context.mounted) {
-      showAppSnackBar(context, progressMessage, duration: const Duration(seconds: 2));
-    }
-
-    await action(client);
-
-    if (context.mounted) {
-      showSuccessSnackBar(context, successMessage);
-    }
-  } catch (e) {
-    appLogger.e('Library action failed', error: e);
-    if (context.mounted) {
-      showErrorSnackBar(context, failureMessage(e));
-    }
-  }
-}
-
-Future<void> _scanLibrary(BuildContext context, MediaLibrary library) {
-  return _performLibraryAction(
-    context,
-    resolveClient: (ctx) => ctx.getPlexClientForLibrary(library),
-    action: (client) => client.scanLibrary(library.id),
-    progressMessage: t.messages.libraryScanning(title: library.title),
-    successMessage: t.messages.libraryScanStarted(title: library.title),
-    failureMessage: (error) => t.messages.libraryScanFailed(error: error.toString()),
-  );
-}
-
-Future<void> _refreshLibraryMetadata(BuildContext context, MediaLibrary library) {
-  return _performLibraryAction(
-    context,
-    resolveClient: (ctx) => ctx.getMediaClientForLibrary(library),
-    action: (client) => client.refreshLibraryMetadata(library.id),
-    progressMessage: t.messages.metadataRefreshing(title: library.title),
-    successMessage: t.messages.metadataRefreshStarted(title: library.title),
-    failureMessage: (error) => t.messages.metadataRefreshFailed(error: error.toString()),
-  );
-}
-
-Future<void> _emptyLibraryTrash(BuildContext context, MediaLibrary library) {
-  return _performLibraryAction(
-    context,
-    resolveClient: (ctx) => ctx.getPlexClientForLibrary(library),
-    action: (client) => client.emptyLibraryTrash(library.id),
-    progressMessage: t.libraries.emptyingTrash(title: library.title),
-    successMessage: t.libraries.trashEmptied(title: library.title),
-    failureMessage: (error) => t.libraries.failedToEmptyTrash(error: error),
-  );
-}
-
-Future<void> _analyzeLibrary(BuildContext context, MediaLibrary library) {
-  return _performLibraryAction(
-    context,
-    resolveClient: (ctx) => ctx.getPlexClientForLibrary(library),
-    action: (client) => client.analyzeLibrary(library.id),
-    progressMessage: t.libraries.analyzing(title: library.title),
-    successMessage: t.libraries.analysisStarted(title: library.title),
-    failureMessage: (error) => t.libraries.failedToAnalyze(error: error),
-  );
-}
-
 class _LibraryManagementSheet extends StatefulWidget {
   final bool isDialog;
   final LibrariesProvider librariesProvider;
   final Set<String> hiddenLibraryKeys;
   final Function(List<MediaLibrary>) onReorder;
   final Function(MediaLibrary) onToggleVisibility;
-  final List<ContextMenuItem> Function(MediaLibrary) getLibraryMenuItems;
-  final void Function(String action, MediaLibrary library) onLibraryMenuAction;
 
   const _LibraryManagementSheet({
     this.isDialog = false,
@@ -307,8 +92,6 @@ class _LibraryManagementSheet extends StatefulWidget {
     required this.hiddenLibraryKeys,
     required this.onReorder,
     required this.onToggleVisibility,
-    required this.getLibraryMenuItems,
-    required this.onLibraryMenuAction,
   });
 
   @override
@@ -329,12 +112,8 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   @override
   set reorderItems(List<MediaLibrary> value) => _tempLibraries = value;
 
-  /// Column 2 (the options button) exists only on rows with admin actions.
   @override
-  int get lastReorderColumn =>
-      focusedIndex < _tempLibraries.length && _hasLibraryMenu(_tempLibraries[focusedIndex]) ? 2 : 1;
-
-  bool _hasLibraryMenu(MediaLibrary library) => widget.getLibraryMenuItems(library).isNotEmpty;
+  int get lastReorderColumn => 1;
 
   /// Both layouts scroll the focused row into view: the TV dialog is the D-pad
   /// surface, and the sheet still shows the same cursor to a keyboard user.
@@ -347,11 +126,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   @override
   void onReorderColumnActivated(int column, int index) {
     final library = _tempLibraries[index];
-    if (column == 1) {
-      widget.onToggleVisibility(library);
-    } else if (column == 2 && _hasLibraryMenu(library)) {
-      _showLibraryMenuBottomSheet(context, library);
-    }
+    if (column == 1) widget.onToggleVisibility(library);
   }
 
   @override
@@ -391,21 +166,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
     });
     // Apply immediately
     widget.onReorder(_tempLibraries);
-  }
-
-  void _showLibraryMenuBottomSheet(BuildContext outerContext, MediaLibrary library) {
-    final menuItems = widget.getLibraryMenuItems(library);
-    OverlaySheetController.pushAdaptive<String>(
-      outerContext,
-      builder: (context) => AppMenuSheet<String>(
-        title: library.title,
-        entries: [
-          for (final item in menuItems)
-            AppMenuItem<String>(value: item.value, icon: item.icon, label: item.label, destructive: item.isDestructive),
-        ],
-        onSelected: (value) => widget.onLibraryMenuAction(value, library),
-      ),
-    );
   }
 
   /// Whether the libraries span more than one connected server.
@@ -525,7 +285,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
     }
 
     final isVisibilityButtonFocused = isFocused && focusedColumn == 1;
-    final isOptionsButtonFocused = isFocused && focusedColumn == 2;
 
     return Opacity(
       key: ValueKey(library.globalKey),
@@ -568,15 +327,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
                 onPressed: () => widget.onToggleVisibility(library),
               ),
             ),
-            if (_hasLibraryMenu(library))
-              Container(
-                decoration: FocusTheme.focusBackgroundDecoration(isFocused: isOptionsButtonFocused, borderRadius: 20),
-                child: IconButton(
-                  icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                  tooltip: t.libraries.libraryOptions,
-                  onPressed: () => _showLibraryMenuBottomSheet(context, library),
-                ),
-              ),
           ],
         ),
       ),

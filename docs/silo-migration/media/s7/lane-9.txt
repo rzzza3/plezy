@@ -1,0 +1,19 @@
+# Lane 9: lane 1 full logcat (adb logcat -v epoch, all buffers' default, install -> picker -> Silo A), 848 lines
+# pattern            all-lines  plezy-app(flutter)
+X-Plex-Token             0        0
+plex_token               0        0
+token=                   2        0
+Bearer                   0        0
+access_token             0        0
+accessToken              0        0
+refresh_token            0        0
+ticket=                  0        0
+device_code              0        0
+Authorization            0        0
+enc:v1                   0        0
+plezy_downloads.db       0        0
+app_flutter              0        0
+/data/                   7        0
+# token=/Token=/'/data/' hits are system processes only (PackageManager, SdkSandboxManager binder token, nativeloader APK path, WindowManager).
+# Long opaque strings in Plezy's own log: local profile id (3x), Flutter engine source path (1x). No token, ticket, signed URL or app-data path.
+# Operator did not supply a Plex token prefix; checked by pattern instead.

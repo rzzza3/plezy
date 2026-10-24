@@ -13,11 +13,10 @@ void main() {
   testWidgets('folder rows use the item title for seasons', (tester) async {
     final item = testMediaItem(
       id: 'season-1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       title: 'Season 1',
       grandparentTitle: 'TV Show',
-      raw: const {'Type': 'Season', 'IsFolder': true},
     );
 
     await tester.pumpWidget(
@@ -32,13 +31,7 @@ void main() {
   });
 
   testWidgets('folder rows show play and shuffle buttons when callbacks are supplied', (tester) async {
-    final item = testMediaItem(
-      id: 'folder-1',
-      backend: MediaBackend.jellyfin,
-      kind: MediaKind.unknown,
-      title: 'Videos',
-      raw: const {'Type': 'Folder', 'IsFolder': true},
-    );
+    final item = testMediaItem(id: 'folder-1', backend: MediaBackend.silo, kind: MediaKind.unknown, title: 'Videos');
 
     var played = false;
     var shuffled = false;
@@ -71,7 +64,7 @@ void main() {
     addTearDown(row.dispose);
     addTearDown(player.dispose);
     var selected = false;
-    final item = testMediaItem(id: 'folder-1', backend: MediaBackend.jellyfin, title: 'Videos');
+    final item = testMediaItem(id: 'folder-1', backend: MediaBackend.silo, title: 'Videos');
     await tester.pumpWidget(
       MaterialApp(
         theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.windows),

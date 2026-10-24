@@ -10,9 +10,7 @@ class LyricLine {
 /// Track lyrics as returned by [MediaServerClient.fetchLyrics].
 ///
 /// [synced] is true when (enough) lines carry [LyricLine.startMs] for the
-/// player to highlight/scroll along with playback. Jellyfin's `LyricDto`
-/// omits its `IsSynced` flag on some server versions, so implementations
-/// infer synced-ness from the presence of per-line offsets.
+/// player to highlight/scroll along with playback.
 class Lyrics {
   final bool synced;
   final List<LyricLine> lines;

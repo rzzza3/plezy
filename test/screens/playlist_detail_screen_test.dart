@@ -25,10 +25,9 @@ import 'package:plezy/screens/playlist/playlist_detail_screen.dart';
 import 'package:plezy/screens/playlist/playlist_item_card.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/playlist_items_loader.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_navigation_helper.dart';
@@ -70,7 +69,7 @@ void main() {
       playlistItemsPageSize + 5,
       (index) => testMediaItem(
         id: 'item_$index',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Item $index',
         serverId: 'server_1',
@@ -104,7 +103,7 @@ void main() {
     final harness = await _createHarness([
       testMediaItem(
         id: 'track_1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: 'Track 1',
         serverId: 'server_1',
@@ -132,7 +131,7 @@ void main() {
     final harness = await _createHarness([
       testMediaItem(
         id: 'track_1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: 'Track 1',
         serverId: 'server_1',
@@ -429,38 +428,6 @@ void main() {
     expect(find.byType(MediaCard), findsOneWidget);
     expect(reloads, 0);
   });
-  testWidgets('Jellyfin playlist Play shows cancellable loading and commits no queue on cancel', (tester) async {
-    final items = [
-      testMediaItem(
-        id: 'jf-movie',
-        backend: MediaBackend.jellyfin,
-        kind: MediaKind.movie,
-        title: 'Jellyfin Movie',
-        serverId: 'server_1',
-      ),
-    ];
-    final harness = await _createHarness(items, backend: MediaBackend.jellyfin);
-    await tester.pumpWidget(
-      harness.wrap(const SizedBox(width: 1280, height: 720, child: PlaylistDetailScreen(playlist: _jellyfinPlaylist))),
-    );
-    await tester.pumpAndSettle();
-    harness.client.blockRequests = true;
-
-    await tester.tap(find.byTooltip(t.common.play).first);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.byType(AlertDialog), findsOneWidget);
-    expect(find.text(t.common.cancel), findsOneWidget);
-    expect(harness.client.activeAbort, isNotNull);
-    await tester.tap(find.text(t.common.cancel));
-    await tester.pumpAndSettle();
-
-    expect(harness.client.activeAbort!.isAborted, isTrue);
-    expect(harness.playbackState.isQueueActive, isFalse);
-    expect(find.byType(PlaylistDetailScreen), findsOneWidget);
-    expect(find.byType(SnackBar), findsNothing);
-  });
 
   testWidgets('pending D-pad move disables playlist mutations and restores the exact order on rejection', (
     tester,
@@ -587,7 +554,8 @@ void main() {
 
   testWidgets('refreshing a row keeps its playlist entry id for the next removal', (tester) async {
     final items = [
-      for (final (index, item) in _mediaItems(2).indexed) (item as PlexMediaItem).copyWith(playlistItemId: 100 + index),
+      for (final (index, item) in _mediaItems(2).indexed)
+        (item as SiloMediaItem).copyWith(playlistItemId: '${100 + index}'),
     ];
     final harness = await _createHarness(items);
     await _pushPlaylistRoute(tester, harness);
@@ -599,8 +567,8 @@ void main() {
 
     await tester.tap(find.byTooltip(t.playlists.removeItem).first);
     await tester.pump();
-    final removed = harness.client.removeRequests.single.item as PlexMediaItem;
-    expect(removed.playlistItemId, 100);
+    final removed = harness.client.removeRequests.single.item as SiloMediaItem;
+    expect(removed.playlistItemId, '100');
     harness.client.completeRemove(0, true, applyToServer: true);
     await tester.pumpAndSettle();
   });
@@ -746,17 +714,8 @@ List<String> _visiblePlaylistItemIds(WidgetTester tester) {
 
 const _playlist = MediaPlaylist(
   id: 'playlist_1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Long Playlist',
-  playlistType: 'video',
-  serverId: 'server_1',
-  serverName: 'Server',
-);
-
-const _jellyfinPlaylist = MediaPlaylist(
-  id: 'playlist_jf',
-  backend: MediaBackend.jellyfin,
-  title: 'Jellyfin Playlist',
   playlistType: 'video',
   serverId: 'server_1',
   serverName: 'Server',
@@ -764,7 +723,7 @@ const _jellyfinPlaylist = MediaPlaylist(
 
 const _audioPlaylist = MediaPlaylist(
   id: 'audio_playlist_1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Audio Playlist',
   playlistType: 'audio',
   serverId: 'server_1',
@@ -773,7 +732,7 @@ const _audioPlaylist = MediaPlaylist(
 
 const _smartAudioPlaylist = MediaPlaylist(
   id: 'smart_audio_playlist_1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Smart Audio Playlist',
   playlistType: 'audio',
   smart: true,
@@ -786,7 +745,7 @@ List<MediaItem> _mediaItems(int count) {
     count,
     (index) => testMediaItem(
       id: 'item_$index',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Item $index',
       serverId: 'server_1',
@@ -795,17 +754,11 @@ List<MediaItem> _mediaItems(int count) {
   );
 }
 
-Future<_PlaylistHarness> _createHarness(
-  List<MediaItem> items, {
-  int? failOnceAt,
-  bool deleteResult = false,
-  MediaBackend backend = MediaBackend.plex,
-}) async {
+Future<_PlaylistHarness> _createHarness(List<MediaItem> items, {int? failOnceAt, bool deleteResult = false}) async {
   await SettingsService.getInstance();
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(db);
-  JellyfinApiCache.initialize(db);
+  SiloApiCache.initialize(db);
 
   final downloadManager = DownloadManagerService(
     database: db,
@@ -816,7 +769,7 @@ Future<_PlaylistHarness> _createHarness(
   final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
   await downloadProvider.ensureInitialized();
 
-  final client = _PagedPlaylistClient(items, failOnceAt: failOnceAt, deleteResult: deleteResult, backend: backend);
+  final client = _PagedPlaylistClient(items, failOnceAt: failOnceAt, deleteResult: deleteResult);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServerProvider = testMultiServerProvider(manager);
   final playbackState = PlaybackStateProvider();
@@ -878,9 +831,6 @@ class _PagedPlaylistClient implements MediaServerClient {
   final List<MediaItem> items;
   final int? failOnceAt;
   final bool deleteResult;
-  final MediaBackend _backend;
-  bool blockRequests = false;
-  AbortController? activeAbort;
   final List<int?> requestedStarts = [];
   final List<int?> requestedSizes = [];
   final List<_MoveRequest> moveRequests = [];
@@ -890,14 +840,7 @@ class _PagedPlaylistClient implements MediaServerClient {
   int deleteCalls = 0;
   bool _hasFailed = false;
 
-  factory _PagedPlaylistClient(
-    List<MediaItem> items, {
-    int? failOnceAt,
-    bool deleteResult = false,
-    MediaBackend backend = MediaBackend.plex,
-  }) => _PagedPlaylistClient._(items, failOnceAt, deleteResult, backend);
-
-  _PagedPlaylistClient._(this.items, this.failOnceAt, this.deleteResult, this._backend);
+  _PagedPlaylistClient(this.items, {this.failOnceAt, this.deleteResult = false});
 
   List<String> get authoritativeItemIds => items.map((item) => item.id).toList();
 
@@ -908,25 +851,15 @@ class _PagedPlaylistClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => _backend;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities =>
-      _backend == MediaBackend.jellyfin ? ServerCapabilities.jellyfin : ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
     requestedStarts.add(start);
     requestedSizes.add(size);
-    if (blockRequests) {
-      activeAbort = abort;
-      if (abort == null) {
-        await Completer<void>().future;
-      } else {
-        await abort.trigger;
-        abort.throwIfAborted();
-      }
-    }
 
     final offset = start ?? 0;
     if (!_hasFailed && offset == failOnceAt) {
@@ -1012,7 +945,7 @@ class _PagedPlaylistClient implements MediaServerClient {
   @override
   Future<MediaItem?> fetchItem(String id) async {
     final item = items.firstWhere((item) => item.id == id);
-    return item is PlexMediaItem ? item.copyWith(playlistItemId: null, title: '${item.title} (refreshed)') : item;
+    return item is SiloMediaItem ? item.copyWith(playlistItemId: null, title: '${item.title} (refreshed)') : item;
   }
 
   @override

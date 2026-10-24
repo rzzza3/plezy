@@ -60,13 +60,13 @@ void main() {
   test('buildArtworkSpecs includes all standard artwork with sanitized local keys', () {
     final item = testMediaItem(
       id: 'item-1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       serverId: 'srv',
-      thumbPath: 'https://jf/Items/1/Images/Primary?tag=p&api_key=secret',
-      clearLogoPath: 'https://jf/Items/1/Images/Logo?tag=l&api_key=secret',
-      artPath: 'https://jf/Items/1/Images/Backdrop/0?tag=b&api_key=secret',
-      backgroundSquarePath: 'https://jf/Items/1/Images/Thumb?tag=s&api_key=secret',
+      thumbPath: 'https://media/Items/1/Images/Primary?tag=p&api_key=secret',
+      clearLogoPath: 'https://media/Items/1/Images/Logo?tag=l&api_key=secret',
+      artPath: 'https://media/Items/1/Images/Backdrop/0?tag=b&api_key=secret',
+      backgroundSquarePath: 'https://media/Items/1/Images/Thumb?tag=s&api_key=secret',
     );
 
     final specs = buildArtworkSpecs(item, (path) => path);
@@ -76,7 +76,7 @@ void main() {
     expect(specs.map((spec) => spec.url), everyElement(contains('api_key=secret')));
   });
 
-  test('local paths normalize tokenized Jellyfin URLs', () async {
+  test('local paths normalize api_key-tokenized URLs', () async {
     final settings = await SettingsService.getInstance();
     final storage = DownloadStorageService.instance;
     await storage.initialize(settings);
@@ -85,8 +85,8 @@ void main() {
       http: MediaServerHttpClient(client: FakeHttpClient(200, utf8.encode('image'))),
     );
 
-    const tokenized = 'https://jf/Items/1/Images/Logo?tag=abc&api_key=secret';
-    const sanitized = 'https://jf/Items/1/Images/Logo?tag=abc';
+    const tokenized = 'https://media/Items/1/Images/Logo?tag=abc&api_key=secret';
+    const sanitized = 'https://media/Items/1/Images/Logo?tag=abc';
 
     expect(await service.localPath(ServerId('srv'), tokenized), await service.localPath(ServerId('srv'), sanitized));
   });
@@ -114,7 +114,7 @@ void main() {
       http: MediaServerHttpClient(client: FakeHttpClient(200, body)),
     );
 
-    const rawPath = 'https://jf/Items/1/Images/Logo?tag=abc&api_key=secret';
+    const rawPath = 'https://media/Items/1/Images/Logo?tag=abc&api_key=secret';
     final filePath = await service.localPath(ServerId('srv'), rawPath);
     await File(filePath).writeAsString('<html>not an image</html>');
 
@@ -165,7 +165,7 @@ void main() {
       storageService: storage,
       http: MediaServerHttpClient(client: httpClient),
     );
-    const rawPath = 'https://jf/Items/1/Images/Logo?tag=abc&api_key=secret';
+    const rawPath = 'https://media/Items/1/Images/Logo?tag=abc&api_key=secret';
     final spec = DownloadArtworkSpec(localKey: artworkStorageKey(rawPath), url: 'https://example.test/logo.png');
 
     final first = service.downloadSingleArtwork(ServerId('srv'), spec);

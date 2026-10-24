@@ -14,11 +14,7 @@ import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_rate.dart';
 import '../models/player_setting_scope.dart';
-import '../profiles/active_profile_binder.dart';
 import '../profiles/active_profile_provider.dart';
-import '../profiles/profile_connection_registry.dart';
-import '../profiles/profile_registry.dart';
-import '../profiles/profile_merge.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
@@ -29,7 +25,6 @@ import '../screens/libraries/library_browse_grouping.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/video_player_navigation.dart';
 import 'agent_control_protocol.dart';
-import 'plex_client.dart';
 import 'scoped_player_prefs.dart';
 import 'settings_service.dart';
 import 'shader_service.dart';
@@ -738,9 +733,7 @@ class AgentScopedSettingsCommands {
           // domain with whatever that returns.
           choices[filter.filter] = const [];
         } else {
-          final values =
-              result.cachedValues[filter.filter] ??
-              (client is PlexClient ? await client.getFilterValues(filter.key) : const <MediaFilterValue>[]);
+          final values = result.cachedValues[filter.filter] ?? const <MediaFilterValue>[];
           guard.check();
           choices[filter.filter] = values.map((v) => libraryFilterValueId(v.key, filter.filter)).toList();
         }
@@ -880,190 +873,9 @@ class AgentScopedSettingsCommands {
   Future<List<_ScopedSetting>> _profileEntries(Map<String, dynamic> scope, _ScopedGuard guard) async {
     final active = guard.active;
     final profile = active.active!;
-    final registry = guard.context.context.read<ProfileRegistry>();
-    final links = guard.context.context.read<ProfileConnectionRegistry>();
-    final connections = guard.context.context.read<ConnectionRegistry>();
-    final binder = guard.context.context.read<ActiveProfileBinder>();
-    final rows = visibleProfileConnections(profile, await links.listForProfile(guard.profileId));
-    guard.check();
     final entries = <_ScopedSetting>[
-      if (profile.isLocal)
-        _valueEntry(
-          guard,
-          'name',
-          'string',
-          'immediate',
-          defaultValue: null,
-          resetSupported: false,
-          constraints: const {'nonEmpty': true, 'trim': true},
-          read: () async => {
-            'value': (await registry.list()).where((p) => p.id == guard.profileId).firstOrNull?.displayName,
-          },
-          normalize: (v) {
-            if (v is! String || v.trim().isEmpty) _invalid('A nonempty profile name is required.');
-            return (v).trim();
-          },
-          write: (v, reset) => registry.rename(guard.profileId, v as String, checkCurrent: guard.check),
-        )
-      else
-        _readOnly(
-          'name',
-          'string',
-          'backendOwned',
-          () => {'value': profile.displayName},
-          'Plex owns this profile name.',
-        ),
-      _valueEntry(
-        guard,
-        'default_connection',
-        'string',
-        'nextProfileBinding',
-        defaultValue: null,
-        resetSupported: false,
-        choices: rows.map((r) => r.connectionId).toList(),
-        read: () async => {
-          'value': (await links.listForProfile(guard.profileId)).where((r) => r.isDefault).firstOrNull?.connectionId,
-        },
-        normalize: (v) {
-          if (v is! String || !rows.any((r) => r.connectionId == v)) {
-            _invalid('The connection is not assigned to the active profile.');
-          }
-          return v;
-        },
-        write: (v, reset) => links.setDefault(guard.profileId, v as String, checkCurrent: guard.check),
-      ),
+      _readOnly('name', 'string', 'backendOwned', () => {'value': profile.displayName}, 'Silo owns this profile name.'),
     ];
-    if (!scope.containsKey('connectionId')) {
-      entries.add(
-        _readOnly(
-          'endpoints',
-          'array',
-          'profileRebind',
-          () => throw const AgentControlException('invalidScope', 'An explicit MediaBrowser connectionId is required.'),
-          'An explicit MediaBrowser connectionId is required.',
-          code: 'invalidScope',
-          extra: {
-            'requiredScopeFields': const ['connectionId'],
-            'connectionIds': [
-              for (final row in rows)
-                if (active.connectionsById[row.connectionId] is JellyfinConnection) row.connectionId,
-            ],
-          },
-        ),
-      );
-      return entries;
-    }
-    final connectionId = agentString(scope, 'connectionId');
-    if (!rows.any((r) => r.connectionId == connectionId)) {
-      throw const AgentControlException(
-        'connectionUnavailable',
-        'The connection is not assigned to the active profile.',
-      );
-    }
-    final connection = await connections.get(connectionId);
-    guard.check();
-    if (connection is! JellyfinConnection) {
-      entries.add(
-        _readOnly(
-          'endpoints',
-          'array',
-          'backendOwned',
-          () => {'value': null},
-          'Only MediaBrowser endpoint lists are editable.',
-        ),
-      );
-      return entries;
-    }
-    guard.server(connection.serverMachineId);
-    entries.add(
-      _ScopedSetting(
-        {
-          'key': 'endpoints',
-          'type': 'array',
-          'default': null,
-          'application': 'profileRebind',
-          'applicability': const {'supported': true},
-          'resetSupported': false,
-          'constraints': const {
-            'minItems': 1,
-            'maxItems': 16,
-            'items': 'HTTP(S) base URL without credentials, query, or fragment',
-          },
-          'storageOwnership': 'connectionSharedByLinkedProfiles',
-          'explicitReadRequired': true,
-        },
-        () async {
-          final current = await connections.get(connectionId);
-          guard.check();
-          if (current is! JellyfinConnection) {
-            throw const AgentControlException('connectionUnavailable', 'The connection is unavailable.');
-          }
-          return {'value': current.baseUrls.map(_safeEndpoint).toList()};
-        },
-        (value, reset) async {
-          if (reset) {
-            throw const AgentControlException(
-              'unsupportedReset',
-              'An endpoint list has no default and cannot be cleared.',
-            );
-          }
-          if (value is! List || value.isEmpty || value.length > 16) {
-            _invalid('Endpoints must contain between one and sixteen URLs.');
-          }
-          final urls = <String>[];
-          for (final raw in value) {
-            if (raw is! String) _invalid('Every endpoint must be a URL string.');
-            final uri = Uri.tryParse((raw).trim());
-            if (uri == null ||
-                !const ['http', 'https'].contains(uri.scheme) ||
-                uri.host.isEmpty ||
-                uri.userInfo.isNotEmpty ||
-                uri.hasQuery ||
-                uri.hasFragment) {
-              _invalid('Endpoints must be credential-free HTTP(S) base URLs.');
-            }
-            urls.add(uri.toString());
-          }
-          JellyfinConnection updated;
-          try {
-            updated = await connections.prepareMediaBrowserEndpoints(connection, urls);
-          } catch (_) {
-            guard.check();
-            throw const AgentControlException(
-              'endpointValidationFailed',
-              'The endpoint list could not be verified for this server.',
-            );
-          }
-          guard.check();
-          return () async {
-            final current = await connections.get(connectionId);
-            guard.check();
-            if (current == null || !connections.hasSameConfig(current, connection)) {
-              throw const AgentControlException('settingChanged', 'The connection changed after validation.');
-            }
-            await connections.upsert(updated, expected: connection, checkCurrent: guard.check);
-            guard.checkProfileIdentity();
-            // This is the existing edit-screen rebind path. It deliberately changes
-            // the captured session; do not reinterpret its own invalidation as an
-            // unsaved write or attempt any further commits through the old context.
-            try {
-              await binder.rebindIfActive(guard.profileId);
-            } catch (_) {
-              throw const AgentControlException(
-                'settingEffectFailed',
-                'Endpoints were saved, but profile rebinding failed.',
-                details: {'persisted': true, 'application': 'profileRebind'},
-              );
-            }
-            return {
-              'value': updated.baseUrls.map(_safeEndpoint).toList(),
-              'persisted': true,
-              'bindingSucceeded': active.activeId == guard.profileId && active.lastBindingSucceeded,
-            };
-          };
-        },
-      ),
-    );
     return entries;
   }
 
@@ -1173,7 +985,7 @@ class _ScopedGuard {
       'player' => const {'type', 'profileId', 'serverId', 'itemId', 'libraryId', 'persistence'},
       'server' => const {'type', 'profileId', 'serverId'},
       'library' => const {'type', 'profileId', 'serverId', 'libraryId'},
-      'profile' => const {'type', 'profileId', 'connectionId'},
+      'profile' => const {'type', 'profileId'},
       'catalog' => const {'type', 'profileId'},
       _ => throw const AgentControlException('unsupportedScope', 'Unsupported scoped setting target.'),
     };
@@ -1186,13 +998,10 @@ class _ScopedGuard {
     if (scope['profileId'] != null && scope['profileId'] != profileId) {
       throw const AgentControlException('invalidScope', 'Only the active profile may be targeted.');
     }
-    _profileLinks = {
-      for (final row in active.connectionsByProfile[profileId] ?? const []) row.connectionId: row.userIdentifier,
-    };
-    final connectionIds = {..._profileLinks.keys, if (active.active?.parentConnectionId case final String id) id};
+    final connectionId = active.active?.connectionId;
     _connections = {
-      for (final id in connectionIds)
-        if (active.connectionsById[id] != null) id: active.connectionsById[id]!,
+      if (connectionId != null && active.connectionsById[connectionId] != null)
+        connectionId: active.connectionsById[connectionId]!,
     };
     check();
   }
@@ -1204,7 +1013,6 @@ class _ScopedGuard {
   late final int committedIdentity;
   final Map<String, ({MediaServerClient client, Object authentication})> _clients = {};
   final Map<String, MediaLibrary> _libraries = {};
-  late final Map<String, String> _profileLinks;
   late final Map<String, Connection> _connections;
 
   bool isVisible(String id) =>
@@ -1226,11 +1034,6 @@ class _ScopedGuard {
 
   void check() {
     checkProfileIdentity();
-    final links = active.connectionsByProfile[profileId] ?? const [];
-    if (links.length != _profileLinks.length ||
-        links.any((row) => _profileLinks[row.connectionId] != row.userIdentifier)) {
-      throw const AgentControlException('sessionChanged', 'The profile connection assignments changed.');
-    }
     final registry = context.context.read<ConnectionRegistry>();
     for (final entry in _connections.entries) {
       final current = active.connectionsById[entry.key];
@@ -1305,10 +1108,4 @@ String _choice(Object? value, List<String> choices) {
 
 void _only(Map<String, dynamic> value, Set<String> keys) {
   if (value.keys.any((key) => !keys.contains(key))) _invalid('The value contains unsupported fields.');
-}
-
-String _safeEndpoint(String value) {
-  final uri = Uri.tryParse(value);
-  if (uri == null || uri.userInfo.isNotEmpty || uri.hasQuery || uri.hasFragment) return '[redacted endpoint]';
-  return uri.toString();
 }

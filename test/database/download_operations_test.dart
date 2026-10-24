@@ -956,18 +956,6 @@ void main() {
   });
 
   group('download owners', () {
-    Future<void> insertProfile(String id) async {
-      await db
-          .into(db.profiles)
-          .insert(ProfilesCompanion.insert(id: id, kind: 'local', displayName: id, configJson: '{}', createdAt: 0));
-    }
-
-    Future<void> insertPlexConnection(String id) async {
-      await db
-          .into(db.connections)
-          .insert(ConnectionsCompanion.insert(id: id, kind: 'plex', displayName: id, configJson: '{}', createdAt: 0));
-    }
-
     test('repeated claims preserve creation time and omitted metadata', () async {
       await db
           .into(db.downloadOwners)
@@ -975,7 +963,7 @@ void main() {
             DownloadOwnersCompanion.insert(
               profileId: 'profile-a',
               globalKey: 'srv:100',
-              backend: const Value('plex'),
+              backend: const Value('silo'),
               clientScopeId: const Value('scope-a'),
               createdAt: 1234,
             ),
@@ -986,7 +974,7 @@ void main() {
 
       final owner = (await db.select(db.downloadOwners).get()).single;
       expect(owner.createdAt, 1234);
-      expect(owner.backend, 'plex');
+      expect(owner.backend, 'silo');
       expect(owner.clientScopeId, 'scope-a');
     });
 
@@ -994,36 +982,18 @@ void main() {
       await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100');
       final createdAt = (await db.select(db.downloadOwners).get()).single.createdAt;
 
-      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100', backendId: 'jellyfin');
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100', backendId: 'silo');
       await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100', clientScopeId: 'srv/user-a');
 
       final owner = (await db.select(db.downloadOwners).get()).single;
       expect(owner.createdAt, createdAt);
-      expect(owner.backend, 'jellyfin');
+      expect(owner.backend, 'silo');
       expect(owner.clientScopeId, 'srv/user-a');
     });
 
-    test('owner counts ignore orphan local profiles', () async {
-      await insertProfile('profile-a');
-      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100');
-      await db.addDownloadOwner(profileId: 'profile-deleted', globalKey: 'srv:100');
-
-      expect(await db.getValidDownloadOwnersForKey('srv:100'), hasLength(1));
-      expect(await db.hasDownloadOwner('srv:100', excludingProfileId: 'profile-a'), isFalse);
-    });
-
-    test('owner counts preserve virtual Plex Home profile ids', () async {
-      const plexHomeProfileId = 'plex-home-account-1-00000000-0000-0000-0000-000000000001';
-      await insertPlexConnection('account-1');
-      await db.addDownloadOwner(profileId: plexHomeProfileId, globalKey: 'srv:100');
-
-      expect(await db.getValidDownloadOwnersForKey('srv:100'), hasLength(1));
-      expect(await db.hasDownloadOwner('srv:100'), isTrue);
-    });
-
-    test('owner counts ignore Plex Home rows whose parent connection is gone', () async {
-      const plexHomeProfileId = 'plex-home-missing-account-00000000-0000-0000-0000-000000000001';
-      await db.addDownloadOwner(profileId: plexHomeProfileId, globalKey: 'srv:100');
+    test('owner counts ignore owners that are not Silo profile scopes', () async {
+      const legacyProfileId = 'local-0000';
+      await db.addDownloadOwner(profileId: legacyProfileId, globalKey: 'srv:100');
 
       expect(await db.getValidDownloadOwnersForKey('srv:100'), isEmpty);
       expect(await db.hasDownloadOwner('srv:100'), isFalse);

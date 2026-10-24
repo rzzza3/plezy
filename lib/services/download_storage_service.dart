@@ -104,7 +104,7 @@ class DownloadStorageService {
 
   /// Short tag that makes a download's file name unique to its item, e.g.
   /// `[1a2b3c4d]`. Titles alone collide — the same movie in "Movies" and
-  /// "Movies 4K", or on both a Plex and a Jellyfin server — and the copies
+  /// "Movies 4K", or on two different servers — and the copies
   /// would overwrite, and on deletion remove, each other's files. It is a
   /// digest of the server and item ids (the ids themselves run to 32-40
   /// characters), so enqueue, completion and SAF recovery all derive the same
@@ -189,8 +189,8 @@ class DownloadStorageService {
 
   /// Get artwork file path from a server-side thumb path (synchronous, requires initialization).
   /// Works for any backend — the thumb path is hashed alongside the serverId,
-  /// so Plex `/library/metadata/.../thumb` and Jellyfin
-  /// `/Items/.../Images/Primary` paths both round-trip cleanly.
+  /// so any backend's thumb path (e.g. an item thumb path)
+  /// round-trips cleanly.
   /// Returns path to cached artwork file using hash of the thumb URL, or null if not initialized.
   /// Example: artwork/a1b2c3d4e5f6.jpg
   String? getArtworkPathSync(ServerId serverId, String thumbPath) {

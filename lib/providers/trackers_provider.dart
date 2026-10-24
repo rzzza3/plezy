@@ -40,7 +40,7 @@ typedef TrackerSessionConnectPipeline =
     });
 
 /// Owns the active MAL / AniList / Simkl / Trakt / MDBList sessions for the
-/// currently-selected Plex profile. Single rebind seam:
+/// currently-selected profile. Single rebind seam:
 /// [onActiveProfileChanged] loads every session from its store and pushes it
 /// to the matching tracker.
 class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
@@ -177,7 +177,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _invalidateConnect();
     final userUuid = newUserUuid ?? '';
     // Drop any in-flight scrobble state and release the resolver (which
-    // holds a PlexClient + session cache) before binding to the new profile.
+    // holds a client + session cache) before binding to the new profile.
     TrackerCoordinator.instance.onActiveProfileChanged(userUuid);
 
     final generation = ++_profileBindingGeneration;

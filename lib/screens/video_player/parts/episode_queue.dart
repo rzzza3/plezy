@@ -1,85 +1,8 @@
 part of '../../video_player_screen.dart';
 
 extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
-  /// Ensure a play queue exists for sequential episode playback
-  Future<void> _ensurePlayQueue() async {
-    if (!mounted) return;
-
-    // Download/offline library mode uses the local downloaded queue instead.
-    if (_offlineLibraryMode) return;
-
-    // Skip play queue for live TV (would interfere with tuner session)
-    if (widget.isLive) return;
-
-    if (!_currentMetadata.isEpisode) {
-      return;
-    }
-
-    // Plex-only — Jellyfin's local queue is published by
-    // EpisodeNavigationService._ensureLocalEpisodeQueue from
-    // _loadAdjacentEpisodes, so this method is a no-op for it.
-    if (_currentMetadata.backend != MediaBackend.plex) return;
-
-    try {
-      final client = context.getPlexClientForServer(ServerId(_currentMetadata.serverId!));
-
-      final playbackState = context.read<PlaybackStateProvider>();
-
-      // For episodes, grandparentId points to the show
-      final showRatingKey = _currentMetadata.grandparentId;
-      if (showRatingKey == null) {
-        appLogger.d('Episode missing grandparentId, skipping play queue creation');
-        return;
-      }
-
-      // Preserve any queue this item belongs to — playlist, collection,
-      // or same-show queue. `isItemInActiveQueue` is the same gate
-      // VideoPlayerScreen.initState uses; a context-key check alone would
-      // wipe a playlist queue (its key is the playlist id, not the show).
-      // Only when the active queue is genuinely stale (item not in it)
-      // do we clobber and create a fresh show queue.
-      if (playbackState.isItemInActiveQueue(_currentMetadata)) {
-        playbackState.setCurrentItem(_currentMetadata);
-        appLogger.d('Using existing play queue (context: ${playbackState.shuffleContextKey})');
-        return;
-      }
-      if (playbackState.isQueueActive) {
-        appLogger.d('Resetting stale play queue (was: ${playbackState.shuffleContextKey}, now: $showRatingKey)');
-        playbackState.clearShuffle();
-      }
-
-      appLogger.d('Creating sequential play queue for show $showRatingKey');
-      final playQueue = await client.createShowPlayQueue(
-        showRatingKey: showRatingKey,
-        shuffle: 0,
-        startingEpisodeKey: _currentMetadata.id,
-        librarySectionID: _currentMetadata.libraryId,
-        librarySectionTitle: _currentMetadata.libraryTitle,
-      );
-
-      if (playQueue != null && playQueue.items != null && playQueue.items!.isNotEmpty) {
-        await playbackState.setPlaybackFromPlayQueue(playQueue, showRatingKey);
-        playbackState.setPlayQueueWindowFetcher(
-          (id, {center, window = 50}) => client.getPlayQueue(
-            id,
-            center: center,
-            window: window,
-            librarySectionID: _currentMetadata.libraryId,
-            librarySectionTitle: _currentMetadata.libraryTitle,
-          ),
-        );
-
-        appLogger.d('Sequential play queue created with ${playQueue.items!.length} items');
-      } else {
-        appLogger.w('Plex returned no usable sequential play queue; falling back to a local series queue');
-      }
-    } catch (e, st) {
-      appLogger.w('Could not create Plex play queue; falling back to a local series queue', error: e, stackTrace: st);
-    }
-  }
-
   Future<void> _loadAdjacentEpisodes({MediaItem? metadata, _PlaybackAttempt? attempt}) async {
-    if (!mounted || widget.isLive) return;
+    if (!mounted) return;
 
     final targetMetadata = metadata ?? _currentMetadata;
     try {
@@ -89,8 +12,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
               context: context,
               metadata: targetMetadata,
               // The part actually being played, so the queue can skip sibling
-              // entries of a Plex multi-episode file (#1500). MediaSourceInfo
-              // carries the Plex numeric part id; MediaPart.id is its string form.
+              // entries of a multi-episode file (#1500).
               playedPartId: _currentMediaInfo?.partId?.toString(),
             );
       _commitAdjacentEpisodes(targetMetadata, adjacentEpisodes, attempt);
@@ -154,10 +76,9 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
   /// Best-effort prefetch of the next episode's full metadata row into the
   /// API cache while the current episode plays (#1867).
   ///
-  /// Adjacency comes from queue containers, so the per-item metadata row
-  /// (Plex `/library/metadata/{id}`, Jellyfin `/Users/{uid}/Items/{id}`) is
-  /// cold at the exact moment the transition needs it. Both backends'
-  /// [MediaServerClient.fetchItem] fetch network-first and write that same
+  /// Adjacency comes from queue containers, so the per-item metadata row is
+  /// cold at the exact moment the transition needs it.
+  /// [MediaServerClient.fetchItem] fetches network-first and writes that same
   /// row — the one playback initialization falls back to when the server is
   /// transiently unreachable — so a warm row turns a connectivity blip at
   /// the transition into a normal start instead of a failed advance.

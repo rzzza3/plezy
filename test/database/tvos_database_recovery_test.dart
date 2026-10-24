@@ -12,10 +12,6 @@ import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/database/tvos_database_recovery_store.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/models/download_models.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/profiles/profile_connection.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/credential_vault.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,24 +20,44 @@ import 'package:shared_preferences_platform_interface/types.dart';
 
 import '../test_helpers/prefs.dart';
 
-JellyfinConnection _connection(String id) => JellyfinConnection(
-  id: id,
-  baseUrl: 'https://media.invalid/$id',
-  serverName: 'Server $id',
-  serverMachineId: id,
-  userId: 'user-$id',
-  userName: 'User $id',
-  accessToken: 'protected-connection-canary-$id',
-  deviceId: 'device-$id',
+SiloConnection _connection(String serverId) => SiloConnection(
+  origin: 'https://$serverId.invalid',
+  serverId: serverId,
+  serverName: 'Server $serverId',
+  username: 'protected-connection-canary-$serverId',
   createdAt: DateTime.fromMillisecondsSinceEpoch(1000),
 );
 
-Profile _profile(String id) => Profile.local(
-  id: id,
-  displayName: 'Profile $id',
-  pinHash: computePinHash('1234'),
-  createdAt: DateTime.fromMillisecondsSinceEpoch(2000),
+/// A profile row, written the way the pre-Silo profile registry wrote one.
+/// The tables are empty in production since schema 27, but the recovery
+/// image still carries them.
+Future<void> _upsertProfile(AppDatabase db, String id) => db.runIdentityMutation(
+  () => db
+      .into(db.profiles)
+      .insertOnConflictUpdate(
+        ProfilesCompanion.insert(id: id, kind: 'local', displayName: 'Profile $id', configJson: '{}', createdAt: 2000),
+      ),
 );
+
+/// A profile-connection join with a vault-protected user token.
+Future<void> _upsertJoin(
+  AppDatabase db, {
+  required String profileId,
+  required String connectionId,
+  required String userToken,
+  required String userIdentifier,
+}) => db.runIdentityMutation(() async {
+  await db
+      .into(db.profileConnections)
+      .insertOnConflictUpdate(
+        ProfileConnectionsCompanion.insert(
+          profileId: profileId,
+          connectionId: connectionId,
+          userIdentifier: userIdentifier,
+          userToken: Value(await CredentialVault.protect(userToken)),
+        ),
+      );
+});
 
 final class _FailingStringPreferencesPlatform extends SharedPreferencesAsyncPlatform {
   _FailingStringPreferencesPlatform(this.delegate);
@@ -123,18 +139,17 @@ Future<List<List<Object>>> _criticalRows(AppDatabase db) async => [
 ];
 
 Future<bool> _hasProfile(AppDatabase db, String id) async =>
-    (await ProfileRegistry(db).list()).any((profile) => profile.id == id);
+    (await db.select(db.profiles).get()).any((profile) => profile.id == id);
 
 Future<void> _seedCriticalRows(AppDatabase db) async {
   await ConnectionRegistry(db).upsert(_connection('server-1'));
-  await ProfileRegistry(db).upsert(_profile('local-1'));
-  await ProfileConnectionRegistry(db).upsert(
-    const ProfileConnection(
-      profileId: 'local-1',
-      connectionId: 'server-1',
-      userToken: 'protected-profile-token-canary',
-      userIdentifier: 'user-1',
-    ),
+  await _upsertProfile(db, 'local-1');
+  await _upsertJoin(
+    db,
+    profileId: 'local-1',
+    connectionId: 'silo:server-1',
+    userToken: 'protected-profile-token-canary',
+    userIdentifier: 'user-1',
   );
 
   await db.upsertProgressAction(
@@ -360,7 +375,7 @@ void main() {
 
   test('rejects unreleased generation-bearing recovery payloads', () async {
     final first = await open();
-    await ProfileRegistry(first.database).upsert(_profile('unknown-generation'));
+    await _upsertProfile(first.database, 'unknown-generation');
     await first.database.close();
     database = null;
 
@@ -407,7 +422,7 @@ void main() {
         throwsA(same(originalError)),
       );
 
-      await ProfileRegistry(first.database).upsert(_profile('after-$failurePhase'));
+      await _upsertProfile(first.database, 'after-$failurePhase');
       expect(await _hasProfile(first.database, 'after-$failurePhase'), isTrue);
     });
   }
@@ -458,7 +473,7 @@ void main() {
 
   test('unrelated preferences do not consume the recovery image budget', () async {
     final first = await open();
-    await ProfileRegistry(first.database).upsert(_profile('survives-large-settings'));
+    await _upsertProfile(first.database, 'survives-large-settings');
     await first.database.close();
     database = null;
     await prefs.setString('unrelated_large_setting', List.filled(500000, 'x').join());
@@ -522,14 +537,14 @@ void main() {
       expect(restarted.recoveryOutcome, TvosDatabaseRecoveryOutcome.recoveryRequired);
       expect(prefs.getBool(TvosDatabaseRecoveryStore.recoveryRequiredKey), isTrue);
       await expectLater(
-        ProfileRegistry(restarted.database).upsert(_profile('blocked-after-restart')),
+        _upsertProfile(restarted.database, 'blocked-after-restart'),
         throwsA(isA<TvosDatabaseDurabilityException>()),
       );
       expect(await _hasProfile(restarted.database, 'blocked-after-restart'), isFalse);
 
       await restarted.database.acknowledgeTvosDatabaseRecoveryRequired();
       expect(prefs.getBool(TvosDatabaseRecoveryStore.recoveryRequiredKey), isNull);
-      await ProfileRegistry(restarted.database).upsert(_profile('acknowledged'));
+      await _upsertProfile(restarted.database, 'acknowledged');
       await closeAndDelete();
 
       final restored = await open();
@@ -539,7 +554,7 @@ void main() {
 
     test('successful restore clears recovery-required gate on a materialized candidate', () async {
       final first = await open();
-      await ProfileRegistry(first.database).upsert(_profile('restored-after-restart'));
+      await _upsertProfile(first.database, 'restored-after-restart');
       await first.database.close();
       database = null;
       final identity = prefs.getString(TvosDatabaseRecoveryStore.identityKey)!;
@@ -696,7 +711,7 @@ void main() {
       final result = await open(store: store);
 
       expect(result.recoveryOutcome, TvosDatabaseRecoveryOutcome.adoptedExistingDatabase);
-      await ProfileRegistry(result.database).upsert(_profile('database-remains-authoritative'));
+      await _upsertProfile(result.database, 'database-remains-authoritative');
       expect(await _hasProfile(result.database, 'database-remains-authoritative'), isTrue);
     });
 
@@ -709,13 +724,13 @@ void main() {
       final result = await open(store: store);
 
       expect(result.recoveryOutcome, TvosDatabaseRecoveryOutcome.adoptedExistingDatabase);
-      await ProfileRegistry(result.database).upsert(_profile('database-survives-recovery-budget'));
+      await _upsertProfile(result.database, 'database-survives-recovery-budget');
       expect(await _hasProfile(result.database, 'database-survives-recovery-budget'), isTrue);
     });
 
     test('startup invalidation failure blocks identity mutation until durable retry', () async {
       final first = await open();
-      await ProfileRegistry(first.database).upsert(_profile('stale-image'));
+      await _upsertProfile(first.database, 'stale-image');
       final staleManifest = prefs.getString(TvosDatabaseRecoveryStore.manifestKey)!;
       await first.database.close();
       database = null;
@@ -737,7 +752,7 @@ void main() {
       expect(prefs.getString(TvosDatabaseRecoveryStore.manifestKey), staleManifest);
 
       await expectLater(
-        ProfileRegistry(existing.database).upsert(_profile('blocked-by-stale-image')),
+        _upsertProfile(existing.database, 'blocked-by-stale-image'),
         throwsA(isA<TvosDatabaseDurabilityException>()),
       );
       expect(failedInvalidations, 2);
@@ -757,7 +772,7 @@ void main() {
       failManifestWrites = false;
       final retried = await open(store: store);
       expect(retried.recoveryOutcome, TvosDatabaseRecoveryOutcome.adoptedExistingDatabase);
-      await ProfileRegistry(retried.database).upsert(_profile('committed-after-retry'));
+      await _upsertProfile(retried.database, 'committed-after-retry');
       expect(await _hasProfile(retried.database, 'committed-after-retry'), isTrue);
       expect(prefs.getString(TvosDatabaseRecoveryStore.manifestKey), isNot(staleManifest));
       await retried.database.close();
@@ -773,7 +788,7 @@ void main() {
 
     test('existing database repairs an interrupted manifest authoritatively', () async {
       final first = await open();
-      await ProfileRegistry(first.database).upsert(_profile('authoritative'));
+      await _upsertProfile(first.database, 'authoritative');
       final manifest = jsonDecode(prefs.getString(TvosDatabaseRecoveryStore.manifestKey)!) as Map<String, dynamic>;
       manifest['state'] = 'invalidated';
       await prefs.setString(TvosDatabaseRecoveryStore.manifestKey, jsonEncode(manifest));
@@ -795,7 +810,7 @@ void main() {
   group('invalid missing-database recovery images', () {
     Future<void> expectRejected(Future<void> Function() corrupt) async {
       final first = await open();
-      await ProfileRegistry(first.database).upsert(_profile('must-not-partially-restore'));
+      await _upsertProfile(first.database, 'must-not-partially-restore');
       await first.database.close();
       database = null;
       await corrupt();
@@ -892,7 +907,7 @@ void main() {
         );
         final first = await open(store: crashStore);
         armed = true;
-        await expectLater(ProfileRegistry(first.database).upsert(_profile('crash-row')), throwsA(anything));
+        await expectLater(_upsertProfile(first.database, 'crash-row'), throwsA(anything));
         armed = false;
         final expected = await _criticalRows(first.database);
         await first.database.close();
@@ -925,7 +940,7 @@ void main() {
         );
         final first = await open(store: crashStore);
         armed = true;
-        await expectLater(ProfileRegistry(first.database).upsert(_profile('uncommitted')), throwsA(anything));
+        await expectLater(_upsertProfile(first.database, 'uncommitted'), throwsA(anything));
         await closeAndDelete();
 
         final missing = await open();
@@ -971,20 +986,16 @@ void main() {
     final store = TvosDatabaseRecoveryStore(prefs, isTvos: true, preferenceImageByteCeiling: 1200);
     final first = await open(store: store);
     final canary = List.filled(3000, 'PROTECTED-SIZE-CANARY').join();
-    final huge = JellyfinConnection(
-      id: 'huge',
-      baseUrl: 'https://media.invalid',
+    final huge = SiloConnection(
+      origin: 'https://huge.invalid',
+      serverId: 'huge',
       serverName: canary,
-      serverMachineId: 'huge',
-      userId: 'user',
-      userName: 'user',
-      accessToken: canary,
-      deviceId: 'device',
+      username: canary,
       createdAt: DateTime.fromMillisecondsSinceEpoch(1),
     );
 
     await ConnectionRegistry(first.database).upsert(huge);
-    await ProfileRegistry(first.database).upsert(_profile('after-degradation'));
+    await _upsertProfile(first.database, 'after-degradation');
     expect(await first.database.select(first.database.connections).get(), hasLength(1));
     expect(await first.database.select(first.database.profiles).get(), hasLength(1));
 
@@ -1078,102 +1089,4 @@ void main() {
     await recoverCriticalRows();
     expect(await database!.getPendingWatchActions(), isEmpty);
   });
-
-  test(
-    'each identity mutation wrapper commits recovery for defaults, tokens, cascades, teardown, and clears',
-    () async {
-      await open();
-      ConnectionRegistry connections() => ConnectionRegistry(database!);
-      ProfileRegistry profiles() => ProfileRegistry(database!);
-      ProfileConnectionRegistry joins() => ProfileConnectionRegistry(database!);
-
-      await connections().upsert(_connection('c1'));
-      await connections().upsert(_connection('c2'));
-      await connections().upsert(_connection('c3'));
-      await profiles().upsert(_profile('p1'));
-      await profiles().upsert(_profile('p2'));
-      await recoverCriticalRows();
-
-      await profiles().markUsed('p1', DateTime.fromMillisecondsSinceEpoch(9100));
-      await recoverCriticalRows();
-
-      await profiles().upsert(
-        Profile.plexHome(
-          id: 'legacy-home',
-          displayName: 'Legacy',
-          parentConnectionId: 'c1',
-          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
-        ),
-      );
-      expect(await profiles().dropAllPlexHomeRows(), 1);
-      await recoverCriticalRows();
-
-      await joins().upsert(
-        const ProfileConnection(profileId: 'p1', connectionId: 'c1', userToken: 'token-1', userIdentifier: 'u1'),
-      );
-      await joins().upsert(
-        const ProfileConnection(profileId: 'p1', connectionId: 'c2', userToken: 'token-2', userIdentifier: 'u2'),
-      );
-      await joins().upsert(
-        const ProfileConnection(profileId: 'p2', connectionId: 'c2', userToken: 'token-3', userIdentifier: 'u3'),
-      );
-      await joins().upsert(
-        const ProfileConnection(profileId: 'p2', connectionId: 'c3', userToken: 'token-4', userIdentifier: 'u4'),
-      );
-      await recoverCriticalRows();
-
-      await joins().recordToken('p1', 'c1', 'token-refreshed');
-      await recoverCriticalRows();
-
-      // The corrupting write is deliberately unwrapped: clearing an
-      // undecryptable token on read is the mutation that must commit.
-      final protectedToken = await CredentialVault.protect('token-clear-canary');
-      final protectedEnvelope = jsonDecode(protectedToken.substring('enc:v1:'.length)) as Map<String, dynamic>;
-      final ciphertext = protectedEnvelope['c'] as String;
-      protectedEnvelope['c'] = '${ciphertext.startsWith('A') ? 'B' : 'A'}${ciphertext.substring(1)}';
-      await (database!.update(database!.profileConnections)..where((t) => t.connectionId.equals('c1'))).write(
-        ProfileConnectionsCompanion(userToken: Value('enc:v1:${jsonEncode(protectedEnvelope)}')),
-      );
-      await joins().get('p1', 'c1');
-      final clearedTokenRow = await (database!.select(
-        database!.profileConnections,
-      )..where((t) => t.connectionId.equals('c1'))).getSingle();
-      expect(clearedTokenRow.userToken, isEmpty);
-      await recoverCriticalRows();
-
-      await joins().markUsed('p1', 'c1');
-      await recoverCriticalRows();
-
-      await joins().setDefault('p1', 'c2');
-      await recoverCriticalRows();
-
-      // Removing p1's default join re-promotes the surviving one.
-      await joins().remove('p1', 'c2');
-      expect((await joins().listForProfile('p1')).single.isDefault, isTrue);
-      await recoverCriticalRows();
-
-      // The connection FK cascade drops p2/c2, leaving p2 without a default.
-      await connections().remove('c2');
-      expect((await joins().listForProfile('p2')).single.isDefault, isFalse);
-      await recoverCriticalRows();
-
-      await joins().promoteMissingDefaults();
-      expect((await joins().listForProfile('p2')).single.isDefault, isTrue);
-      await recoverCriticalRows();
-
-      expect(await joins().removeAllForConnection('c3'), 1);
-      await recoverCriticalRows();
-
-      await profiles().remove('p2');
-      await recoverCriticalRows();
-
-      await joins().clear();
-      await recoverCriticalRows();
-      await profiles().clear();
-      await recoverCriticalRows();
-      await connections().clear();
-      await recoverCriticalRows();
-      expect((await _criticalRows(database!)).take(3).expand((rows) => rows), isEmpty);
-    },
-  );
 }

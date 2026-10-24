@@ -159,6 +159,8 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
 
     if (client.capabilities.numericUserRating) {
       final value = (_serverStars * 2).round().clamp(0, 10).toInt();
+      final step = client.capabilities.wholeStarRating ? 2 : 1;
+      int snap(int units) => ((units + step - 1) ~/ step) * step;
       return _RatingRow(
         focusNode: focusNode,
         autofocus: autofocus,
@@ -170,14 +172,14 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
         enabled: !loading,
         onNavigateUp: onNavigateUp,
         onNavigateDown: onNavigateDown,
-        onDecrease: () => _setServerStarUnits(value - 1),
-        onIncrease: () => _setServerStarUnits(value + 1),
+        onDecrease: () => _setServerStarUnits(value - step),
+        onIncrease: () => _setServerStarUnits(value + step),
         onSubmit: () => unawaited(_submitServerStars()),
         control: _StarRatingControl(
           value: value,
           enabled: !loading,
-          onChanged: _setServerStarUnits,
-          onSubmitValue: (units) => unawaited(_submitServerStars(stars: units / 2.0)),
+          onChanged: (units) => _setServerStarUnits(snap(units)),
+          onSubmitValue: (units) => unawaited(_submitServerStars(stars: snap(units) / 2.0)),
         ),
       );
     }
@@ -548,7 +550,9 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     return () => nodes[index].requestFocus();
   }
 
-  String _backendLabel(MediaBackend backend) => backend.dialect?.productName ?? 'Plex';
+  String _backendLabel(MediaBackend backend) => switch (backend) {
+    MediaBackend.silo => 'Silo',
+  };
 }
 
 const _serverKey = 'server';

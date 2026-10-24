@@ -1,0 +1,60 @@
+idle_start device_s=1791960005.337
+host_ms=1791996414744 device_ms=1791960608352
+action watched movie-tmdb-1381078 204 done_ms=1791996414978
+1791960079.644 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960079.644 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960081.645 12975 12975 I flutter : [I]  Silo events: home refetch
+1791960083.151 12975 12975 I flutter : [I]  Silo: home sections 17
+1791960083.168 12975 12975 I flutter : [I]  Home: rows repainted
+1791960122.625 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960122.625 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960122.625 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960124.626 12975 12975 I flutter : [I]  Silo events: home refetch
+1791960125.871 12975 12975 I flutter : [I]  Silo: home sections 17
+1791960125.903 12975 12975 I flutter : [I]  Home: rows repainted
+1791960163.411 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960163.411 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960163.456 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960163.457 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960163.457 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960165.458 12975 12975 I flutter : [I]  Silo events: home refetch
+1791960166.663 12975 12975 I flutter : [I]  Silo: home sections 17
+1791960166.717 12975 12975 I flutter : [I]  Home: rows repainted
+1791960194.515 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960194.516 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960194.516 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960196.516 12975 12975 I flutter : [I]  Silo events: home refetch
+1791960197.773 12975 12975 I flutter : [I]  Silo: home sections 17
+1791960197.792 12975 12975 I flutter : [I]  Home: rows repainted
+1791960227.849 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960227.849 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960227.849 12975 12975 I flutter : [I]  Silo events: catalog event
+1791960229.850 12975 12975 I flutter : [I]  Silo events: home refetch
+1791960231.302 12975 12975 I flutter : [I]  Silo: home sections 17
+1791960231.318 12975 12975 I flutter : [I]  Home: rows repainted
+1791960279.707 12975 12975 I flutter : [I]  Silo events: backingOff
+1791960280.708 12975 12975 I flutter : [I]  Silo events: fetchingTicket
+1791960281.430 12975 12975 I flutter : [I]  Silo events: connecting
+1791960282.143 12975 12975 I flutter : [I]  Silo events: subscribed
+1791960282.143 12975 12975 I flutter : [I]  Silo events: 2 channels, 0 rejected
+1791960282.375 12975 12975 I flutter : [I]  Silo events: subscribed
+1791960282.375 12975 12975 I flutter : [I]  Silo events: 2 channels, 0 rejected
+1791960284.376 12975 12975 I flutter : [I]  Silo events: home refetch
+1791960285.261 12975 12975 I flutter : [I]  Silo: home sections 17
+1791960285.306 12975 12975 I flutter : [I]  Home: rows repainted
+1791960582.144 12975 12975 I flutter : [I]  Silo events: backingOff
+1791960583.145 12975 12975 I flutter : [I]  Silo events: fetchingTicket
+1791960583.854 12975 12975 I flutter : [I]  Silo events: connecting
+1791960584.466 12975 12975 I flutter : [I]  Silo events: subscribed
+1791960584.466 12975 12975 I flutter : [I]  Silo events: 2 channels, 0 rejected
+1791960584.666 12975 12975 I flutter : [I]  Silo events: subscribed
+1791960584.666 12975 12975 I flutter : [I]  Silo events: 2 channels, 0 rejected
+1791960586.668 12975 12975 I flutter : [I]  Silo events: home refetch
+1791960587.457 12975 12975 I flutter : [I]  Silo: home sections 17
+1791960587.476 12975 12975 I flutter : [I]  Home: rows repainted
+1791960608.576 12975 12975 I flutter : [I]  Silo events: user_state.changed (watched)
+1791960610.578 12975 12975 I flutter : [I]  Silo events: home refetch
+1791960611.822 12975 12975 I flutter : [I]  Silo: home sections 17
+1791960611.846 12975 12975 I flutter : [I]  Home: rows repainted
+action unwatched movie-tmdb-1381078 204 done_ms=1791996426722
+clock offset host-device ms: 35806392

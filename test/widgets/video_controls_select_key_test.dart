@@ -167,7 +167,7 @@ void main() {
     await tester.pumpWidget(
       shell(
         platform: platform,
-        PlexVideoControls(
+        SiloVideoControls(
           player: player,
           volumeController: volume,
           metadata: testMediaItem(id: 'select-key'),
@@ -195,7 +195,7 @@ void main() {
   String? focusLabel() => FocusManager.instance.primaryFocus?.debugLabel;
 
   InputMode currentMode(WidgetTester tester) =>
-      InputModeTracker.of(tester.element(find.byType(PlexVideoControls)), listen: false);
+      InputModeTracker.of(tester.element(find.byType(SiloVideoControls)), listen: false);
 
   /// Mounts the player, runs [body], then unmounts and disarms the auto-hide
   /// timer so the harness's pending-timer check stays honest.

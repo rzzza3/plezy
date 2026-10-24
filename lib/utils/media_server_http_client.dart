@@ -401,7 +401,7 @@ class MediaServerHttpClient {
   Uri _buildUri(String path, Map<String, dynamic>? queryParameters) {
     final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    // [path] may already carry a query string (e.g. Plex home hub keys like
+    // [path] may already carry a query string (e.g. hub keys like
     // `/hubs/home/recentlyAdded?type=2&sectionID=2`). Merge via [_appendQuery] —
     // the same path used for absolute URLs in [_send] — so extra params join with
     // `&` instead of producing a malformed double-`?` URL that corrupts the
@@ -441,10 +441,9 @@ class MediaServerHttpClient {
 
     // Structured bodies are always JSON-encoded, so default the content type
     // to match. `request.headers` is case-insensitive and already carries the
-    // caller/default headers, so an explicit content type wins (Jellyfin pins
-    // `application/json` in its defaults). Without this, `request.body` falls
-    // back to text/plain, which Plex's cloud endpoints reject — the favorites
-    // PUT to epg.provider.plex.tv answered 400 (#1878).
+    // caller/default headers, so an explicit content type wins. Without this,
+    // `request.body` falls back to text/plain, which some endpoints reject
+    // with 400 (#1878).
     request.headers.putIfAbsent('content-type', () => 'application/json');
     request.body = jsonEncode(body);
   }
@@ -515,5 +514,5 @@ class _RequestScope {
 }
 
 /// Shared [MediaServerHttpClient] instance for ad-hoc requests (update checks,
-/// log uploads, image fetches, etc). No base URL or default Plex headers.
+/// log uploads, image fetches, etc). No base URL or default server headers.
 final httpClient = MediaServerHttpClient();

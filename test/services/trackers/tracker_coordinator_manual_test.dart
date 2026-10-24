@@ -51,7 +51,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   }) : serverId = serverId ?? ServerId('server-1');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async {
@@ -110,7 +110,7 @@ class _FakeAnimeListsLookup implements AnimeListsMappingLookup {
 
 MediaItem _season() => testMediaItem(
   id: 'season-1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.season,
   title: 'Season 1',
   serverId: ServerId('server-1'),
@@ -121,7 +121,7 @@ MediaItem _season() => testMediaItem(
 
 MediaItem _episode(int number, {int season = 1}) => testMediaItem(
   id: 'episode-$season-$number',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode $number',
   serverId: ServerId('server-1'),
@@ -134,7 +134,7 @@ MediaItem _episode(int number, {int season = 1}) => testMediaItem(
 /// resolver reads the show's guids through `grandparentId`.
 MediaItem _episodeOfShow(int number, {int season = 1}) => testMediaItem(
   id: 'episode-$season-$number',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode $number',
   serverId: ServerId('server-1'),
@@ -146,7 +146,7 @@ MediaItem _episodeOfShow(int number, {int season = 1}) => testMediaItem(
 
 MediaItem _show() => testMediaItem(
   id: 'show-1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.show,
   title: 'Show 1',
   serverId: ServerId('server-1'),
@@ -155,7 +155,7 @@ MediaItem _show() => testMediaItem(
 
 MediaItem _movie() => testMediaItem(
   id: 'movie-1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: 'Movie 1',
   serverId: ServerId('server-1'),
@@ -450,7 +450,7 @@ void main() {
           'show-1': [
             testMediaItem(
               id: 'season-1',
-              backend: MediaBackend.plex,
+              backend: MediaBackend.silo,
               kind: MediaKind.season,
               title: 'Season 1',
               index: 1,

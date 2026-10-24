@@ -4,7 +4,7 @@ import '../../utils/serial_future_queue.dart';
 import '../base_shared_preferences_service.dart';
 import '../credential_vault.dart';
 
-/// Per-Plex-profile persistence for the Seerr session, mirroring
+/// Per-profile persistence for the Seerr session, mirroring
 /// `TrackerAccountStore`'s `user_{uuid}_{baseKey}` scoping.
 ///
 /// The password ([SeerrSession.secret]) is CredentialVault-protected at the

@@ -27,14 +27,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     // A sidecar subtitle fetch can also log a status, but it never raises the
     // end-file error this handler is wired to, so a latched status belongs to
     // the primary media open.
-    final action = resolvePlaybackFailureAction(
-      cause: err.cause,
-      fatalHttpStatuses: _fatalHttpStatuses,
-      isLive: widget.isLive,
-      liveRetrying: _live.retrying,
-      liveFallbackLevel: _live.fallbackLevel,
-      liveRetryFailed: _live.retryFailed,
-    );
+    final action = resolvePlaybackFailureAction(cause: err.cause, fatalHttpStatuses: _fatalHttpStatuses);
 
     switch (action) {
       // Every dialog is unrecoverable until the server side changes, so each
@@ -51,14 +44,6 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       case PlaybackFailureAction.serverBusyDialog:
         _latchFatalPlaybackError(action);
         unawaited(_showServerBusyDialog());
-      // The bounded retry operation owns errors raised while applying/opening
-      // its replacement stream. Do not let the same error close the route.
-      case PlaybackFailureAction.ignore:
-        return;
-      case PlaybackFailureAction.liveRetry:
-        _beginLiveLadderRetry();
-      case PlaybackFailureAction.liveInterrupted:
-        showGlobalErrorSnackBar(t.messages.liveStreamInterrupted);
       case PlaybackFailureAction.fatal:
         _latchFatalPlaybackError(action, cause: err.cause);
         // A failed core start carries only diagnostic text; _lastLogError is
@@ -75,13 +60,6 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
           PlayerError.audioOutputFailed => t.messages.audioOutputFailed,
           _ => t.messages.playbackFailedDetail(error: _redactPlayerError(lastLogError ?? err.message)),
         };
-        // Live TV has no in-place reload to retry through: its own start
-        // flow leaves the route on failure, so a dead live session does too.
-        if (widget.isLive) {
-          showGlobalErrorSnackBar(message);
-          unawaited(_handleBackButton());
-          return;
-        }
         _presentPlaybackFailure(message);
     }
   }
@@ -218,11 +196,11 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     if (status != null && fatalPlaybackHttpStatuses.contains(status)) _fatalHttpStatuses.add(status);
     // An open the server answers with 503 never fails on its own: ffmpeg's
     // reconnect loop retries 503 forever and mpv just reports buffering
-    // (#1830). Bound it. Live TV stays out — its ladder owns retries there.
+    // (#1830). Bound it.
     // A sidecar subtitle fetch shares this log stream and could arm the
     // watchdog too, but a first frame disarms it, so that only matters when
     // the primary media is itself stuck.
-    if (status == 503 && !widget.isLive && !_firstFrame.rendered && !_hasFatalPlaybackError) {
+    if (status == 503 && !_firstFrame.rendered && !_hasFatalPlaybackError) {
       _http503Watchdog.onOpenPhase503();
     }
     if (log.level == PlayerLogLevel.error || log.level == PlayerLogLevel.fatal) {

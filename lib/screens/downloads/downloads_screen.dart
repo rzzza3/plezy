@@ -109,8 +109,8 @@ class DownloadsScreenState extends State<DownloadsScreen>
   }
 
   /// The live client of the server a download (`serverId:ratingKey`) came
-  /// from. Backend-neutral: Jellyfin and Emby downloads resume and retry
-  /// through the same [MediaServerClient] path as Plex.
+  /// from. Backend-neutral: every backend's downloads resume and retry
+  /// through the same [MediaServerClient] path.
   MediaServerClient? _clientForDownload(String globalKey) {
     final serverId = parseGlobalKey(globalKey)?.serverId ?? globalKey;
     return context.read<MultiServerProvider>().serverManager.getClient(ServerId(serverId));

@@ -14,8 +14,6 @@ void main() {
       ['messages', 'playbackDataInvalid'],
       ['messages', 'playbackCancelled'],
       ['messages', 'playbackFailed'],
-      ['profiles', 'borrowLoadFailed'],
-      ['liveTv', 'favoritesUpdateFailed'],
       ['settings', 'downloadLocationPickerUnavailable'],
     ];
     final sourceDirectory = Directory('lib/i18n');

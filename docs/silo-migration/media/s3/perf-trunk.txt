@@ -1,0 +1,10 @@
+trunk run 0 6674 ms rows 1
+trunk run 1 6763 ms rows 1
+trunk run 2 6616 ms rows 1
+trunk run 3 6552 ms rows 1
+trunk run 4 6633 ms rows 1
+trunk run 5 6664 ms rows 1
+trunk run 6 6631 ms rows 1
+trunk run 7 6207 ms rows 1
+trunk run 8 6941 ms rows 1
+trunk run 9 6936 ms rows 1

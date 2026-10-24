@@ -3,9 +3,9 @@ import '../base_shared_preferences_service.dart';
 import 'tracker_constants.dart';
 import 'tracker_session.dart';
 
-/// Per-Plex-profile session persistence for any tracker service.
+/// Per-profile session persistence for any tracker service.
 ///
-/// Keyed by `user_{uuid}_{baseKey}` so each Plex Home profile gets its own
+/// Keyed by `user_{uuid}_{baseKey}` so each Silo profile gets its own
 /// stored session. The storage key remains service-specific, while the payload
 /// is the unified [TrackerSession] JSON shape.
 ///

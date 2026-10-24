@@ -45,7 +45,7 @@ class FiltersBottomSheet extends StatefulWidget {
 
   /// Optional pre-fetched values per filter name. When non-null the editor
   /// reads from this instead of calling [loadFilterValues] — used for
-  /// MediaBrowser libraries where values arrive with the category listing.
+  /// libraries where values arrive with the category listing.
   final Map<String, List<MediaFilterValue>>? cachedValues;
 
   const FiltersBottomSheet({
@@ -172,7 +172,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     });
 
     try {
-      // Cached path (MediaBrowser) — the category listing carried the values.
+      // Cached path — the category listing carried the values.
       final cached = cachedValues?[filterKey];
       final values = cached ?? await loader(filter);
       if (!_isCurrentFilterValuesLoad(generation, serverId, libraryKey, filterKey)) return;

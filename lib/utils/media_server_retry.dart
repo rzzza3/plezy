@@ -17,7 +17,7 @@ typedef MediaServerRetryCall<T> = Future<T> Function(Duration timeout, AbortCont
 ///
 /// `http.Client.send` resolves when response *headers* arrive, so the
 /// per-request budget each attempt is handed covers DNS + TCP + TLS +
-/// request + **the server's think time**. A Jellyfin `/Items/Latest` that
+/// request + **the server's think time**. A slow listing request that
 /// needs 11s on a large library therefore raises a `TimeoutException` against
 /// a 10s budget, which [MediaServerHttpException.from] types as
 /// [MediaServerHttpErrorType.connectionTimeout] — indistinguishable from a

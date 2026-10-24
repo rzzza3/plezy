@@ -10,7 +10,7 @@ import '../test_helpers/media_items.dart';
 MediaItem _episode({int? viewOffsetMs, int? durationMs, int? viewCount, int? leafCount, int? viewedLeafCount}) {
   return testMediaItem(
     id: '1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     viewOffsetMs: viewOffsetMs,
     durationMs: durationMs,
@@ -21,7 +21,7 @@ MediaItem _episode({int? viewOffsetMs, int? durationMs, int? viewCount, int? lea
 }
 
 MediaItem _movie({int? viewCount}) {
-  return testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie, viewCount: viewCount);
+  return testMediaItem(id: '1', backend: MediaBackend.silo, kind: MediaKind.movie, viewCount: viewCount);
 }
 
 void main() {
@@ -59,7 +59,7 @@ void main() {
   group('MediaItemTypes.shouldHideSpoiler', () {
     test('false for non-episodes', () {
       expect(_movie().shouldHideSpoiler, isFalse);
-      final show = testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.show);
+      final show = testMediaItem(id: '1', backend: MediaBackend.silo, kind: MediaKind.show);
       expect(show.shouldHideSpoiler, isFalse);
     });
 

@@ -55,43 +55,13 @@ class CatalogPage {
   const CatalogPage({required this.items, this.hasMore = false, this.totalResults});
 }
 
-/// How a provider intends a hub to be presented. Providers tag hubs (Plex
-/// `style`), and rendering every one as the same shelf discards that.
-///
-/// Only values a provider was actually observed to send are declared. A live
-/// Plex Home response returned 17 renderable hubs: 5 `shelf`, 1
-/// `availabilityPlatforms`, 11 with no style at all. Absent stays absent —
-/// null means "the provider expressed no preference", which is not the same
-/// as `shelf`, even though both render identically today. Do not add a
-/// speculative style before a provider is seen sending it.
-enum CatalogHubStyle {
-  /// The default horizontal poster shelf.
-  shelf,
-
-  /// A hub whose entries are streaming services/platforms rather than titles.
-  availabilityPlatforms,
-}
-
-/// One provider-defined Explore shelf. Unlike [CatalogRowId], hubs are
-/// discovered at runtime and retain the provider's title and stable id.
-class CatalogHub {
-  final String id;
-  final String title;
-  final CatalogPage page;
-
-  /// The provider's presentation hint, or null when it sent none.
-  final CatalogHubStyle? style;
-
-  const CatalogHub({required this.id, required this.title, required this.page, this.style});
-}
-
 /// Everything a catalog detail screen needs from the item's own provider.
 ///
 /// The contract is a request-count ceiling, not a single response: an
 /// implementation must issue no more requests than the separate cast and
 /// related calls it replaces, and [item] must be enriched purely from bodies
 /// it was already fetching. Providers differ — Simkl's detail body already
-/// carries recommendations, while Plex (`/library/metadata/{id}` plus
+/// carries recommendations, while a server (its item detail plus
 /// `/related`) and Seerr (detail plus `/recommendations`) genuinely need two.
 /// Where two calls remain, run them concurrently and isolate their failures:
 /// a failed related call must still yield the enriched item and its cast.
@@ -139,19 +109,8 @@ class CatalogRelation {
   const CatalogRelation({required this.type, required this.items});
 }
 
-/// Optional capability for catalog providers that expose dynamic hub rows.
-///
-/// [CatalogSource] stays fixed-row by default. Providers such as Plex can
-/// implement this alongside it without forcing every source to grow no-op
-/// methods.
-abstract interface class CatalogHubSource {
-  Future<List<CatalogHub>> fetchHubs({int limit = 25});
-
-  Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25});
-}
-
 /// A pluggable external catalog provider backing the Explore tab (Trakt
-/// today; Overseerr/Jellyfin or MAL later).
+/// today; Overseerr or MAL later).
 ///
 /// Implementations wrap an authenticated API client owned by their account
 /// provider; disposing a source must not dispose that client.

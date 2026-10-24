@@ -34,7 +34,7 @@ class DiscoveredHost {
 /// UDP-based LAN discovery for companion remote.
 ///
 /// Hosts broadcast authenticated beacons; clients listen and filter
-/// by matching Plex home membership.
+/// by matching the Silo account.
 class LanDiscoveryService {
   static const int defaultDiscoveryPort = 48633;
   static const int _broadcastIntervalSeconds = 3;

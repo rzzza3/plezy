@@ -20,7 +20,8 @@ import '../utils/scroll_utils.dart';
 /// Implementations override [performSearchQuery]; everything else (including
 /// controller/node disposal) is owned here.
 mixin DebouncedMediaSearch<T extends StatefulWidget, R> on State<T> {
-  static const Duration searchDebounceDuration = Duration(milliseconds: 500);
+  /// The Silo TV search waits 300 ms (`T/ui/screens/search/TvSearchViewModel.kt:152`).
+  static const Duration searchDebounceDuration = Duration(milliseconds: 300);
 
   late final TextEditingController searchController = TextEditingController();
   late final FocusNode searchFocusNode = FocusNode(debugLabel: '${searchDebugLabel}Input');

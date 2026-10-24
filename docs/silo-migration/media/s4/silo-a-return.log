@@ -1,0 +1,10 @@
+10-14 03:39:26.147  9882  9882 I flutter : [I]  Silo events: fetchingTicket
+10-14 03:39:26.805  9882  9882 I flutter : [I]  Silo events: connecting
+10-14 03:39:27.483  9882  9882 I flutter : [I]  Silo: home sections 17
+10-14 03:39:27.536  9882  9882 I flutter : [I]  Home: first hub frame, rows 1
+10-14 03:39:27.539  9882  9882 I flutter : [I]  Silo events: subscribed
+10-14 03:39:27.539  9882  9882 I flutter : [I]  Silo events: 2 channels, 0 rejected
+10-14 03:39:27.757  9882  9882 I flutter : [I]  Silo events: subscribed
+10-14 03:39:27.757  9882  9882 I flutter : [I]  Silo events: 2 channels, 0 rejected
+10-14 03:39:29.758  9882  9882 I flutter : [I]  Silo events: home refetch
+10-14 03:39:30.527  9882  9882 I flutter : [I]  Silo: home sections 17

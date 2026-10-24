@@ -39,44 +39,9 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
-  testWidgets('Jellyfin hub advances by raw page size after screen filtering', (tester) async {
-    final items = List.generate(
-      205,
-      (index) => _item(index, libraryId: index.isEven ? '7' : '8', backend: MediaBackend.jellyfin),
-    );
-    final harness = await _createHarness(items, backend: MediaBackend.jellyfin);
-
-    await tester.pumpWidget(
-      harness.wrap(
-        HubDetailScreen(
-          hub: MediaHub(
-            id: 'home.continue',
-            title: 'Recent',
-            type: 'movie',
-            items: items.take(5).toList(),
-            size: items.length,
-            more: true,
-            libraryId: '7',
-            serverId: 'server_1',
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(harness.client.requestedStarts, [0, 200]);
-    expect(harness.client.fullHubRequests, 0);
-    expect(find.text(t.common.retry), findsNothing);
-
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -30000));
-    await tester.pumpAndSettle();
-    expect(find.text('Item 204'), findsOneWidget);
-    expect(find.text('Item 203'), findsNothing);
-  });
-
   testWidgets('iOS status-bar tap scrolls the hub grid to top', (tester) async {
-    final items = List.generate(60, (index) => _item(index, backend: MediaBackend.jellyfin));
-    final harness = await _createHarness(items, backend: MediaBackend.jellyfin);
+    final items = List.generate(60, (index) => _item(index));
+    final harness = await _createHarness(items);
 
     await tester.pumpWidget(
       harness.wrap(
@@ -111,42 +76,9 @@ void main() {
     expect(position.pixels, 0);
   });
 
-  testWidgets('Jellyfin Recently Added fetches every page only as the user reaches the end', (tester) async {
-    final items = List.generate(450, (index) => _item(index, backend: MediaBackend.jellyfin));
-    final harness = await _createHarness(items, backend: MediaBackend.jellyfin);
-
-    await tester.pumpWidget(
-      harness.wrap(
-        HubDetailScreen(
-          hub: MediaHub(
-            id: 'home.recent',
-            title: 'Recently Added',
-            type: 'mixed',
-            items: items.take(20).toList(),
-            size: items.length,
-            more: true,
-            serverId: 'server_1',
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(harness.client.requestedStarts, [0]);
-    expect(harness.client.requestedSizes, [200]);
-
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
-    await tester.pumpAndSettle();
-    expect(harness.client.requestedStarts, [0, 200, 400]);
-    expect(harness.client.requestedSizes, [200, 200, 50]);
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
-    await tester.pumpAndSettle();
-    expect(find.text('Item 449'), findsOneWidget);
-  });
-
-  testWidgets('Plex hub replaces its preview with the full-hub response', (tester) async {
-    final items = List.generate(205, (index) => _item(index, backend: MediaBackend.plex));
-    final harness = await _createHarness(items, backend: MediaBackend.plex);
+  testWidgets('a hub replaces its preview with the full-hub response', (tester) async {
+    final items = List.generate(205, (index) => _item(index));
+    final harness = await _createHarness(items);
 
     await tester.pumpWidget(
       harness.wrap(
@@ -182,8 +114,8 @@ void main() {
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
 
-    final items = List.generate(12, (index) => _item(index, backend: MediaBackend.plex));
-    final harness = await _createHarness(items, backend: MediaBackend.plex);
+    final items = List.generate(12, (index) => _item(index));
+    final harness = await _createHarness(items);
     await SettingsService.instance.write(SettingsService.libraryDensity, 2);
 
     await tester.pumpWidget(
@@ -221,7 +153,7 @@ void main() {
     final items = [_titled('z', 'Zulu'), _titled('m', 'Mike'), _titled('a', 'Alpha')];
 
     Future<void> pumpAndSortByTitle(WidgetTester tester, {required String focusTitle}) async {
-      final harness = await _createHarness(items, backend: MediaBackend.plex);
+      final harness = await _createHarness(items);
       await tester.pumpWidget(
         harness.wrap(
           HubDetailScreen(
@@ -271,7 +203,7 @@ void main() {
     // grid had unmounted it. Flutter parks a request on a detached node until it
     // is reparented, so focus stayed on the app bar and every DOWN was a no-op.
     Future<void> pumpHub(WidgetTester tester, List<MediaItem> items) async {
-      final harness = await _createHarness(items, backend: MediaBackend.plex);
+      final harness = await _createHarness(items);
       await tester.pumpWidget(
         harness.wrap(
           HubDetailScreen(
@@ -348,60 +280,11 @@ void main() {
     });
   });
 
-  testWidgets('Plex section sorts order by their own field and unsupported ones are not offered', (tester) async {
-    MediaItem played(String id, String title, int plays) => testMediaItem(
-      id: id,
-      backend: MediaBackend.plex,
-      kind: MediaKind.movie,
-      title: title,
-      viewCount: plays,
-      serverId: 'server_1',
-      serverName: 'Server',
-    );
-    final items = [played('a', 'Alpha', 1), played('b', 'Bravo', 3), played('c', 'Charlie', 2)];
-    final harness = await _createHarness(items, backend: MediaBackend.plex);
-    harness.client.sortOptions = const [
-      MediaSort(key: 'titleSort', descKey: 'titleSort:desc', title: 'Title', defaultDirection: 'asc'),
-      MediaSort(key: 'viewCount', descKey: 'viewCount:desc', title: 'Plays', defaultDirection: 'desc'),
-      MediaSort(key: 'mediaHeight', descKey: 'mediaHeight:desc', title: 'Resolution', defaultDirection: 'desc'),
-    ];
-    await tester.pumpWidget(
-      harness.wrap(
-        HubDetailScreen(
-          hub: MediaHub(
-            id: '/hubs/sections/1/recentlyAdded',
-            title: 'Hub',
-            type: 'movie',
-            items: items,
-            size: items.length,
-            serverId: 'server_1',
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip(t.libraries.sort));
-    await tester.pumpAndSettle();
-    // A sort the loaded items cannot honor would silently order by title.
-    expect(find.text('Resolution'), findsNothing);
-    await tester.tap(find.text('Plays'));
-    await tester.pump();
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-
-    final titles = tester
-        .widgetList<FocusableMediaCard>(find.byType(FocusableMediaCard))
-        .map((card) => (card.item as MediaItem).title)
-        .toList();
-    expect(titles, ['Bravo', 'Charlie', 'Alpha']);
-  });
-
   group('default sort fallback logging', () {
-    // Sort options are fetched per Plex library section. Aggregated rows
-    // (Continue Watching spans servers) and MediaBrowser hubs name no section,
+    // Sort options are fetched per library. Aggregated rows
+    // (Continue Watching spans servers) and synthesized hubs name no section,
     // so falling back to the default sorts is the designed path and must not
-    // raise a warning; a Plex section hub that lost its serverId is a real
+    // raise a warning; a library hub that lost its serverId is a real
     // tagging defect and must.
     late Logger originalLogger;
     late _RecordingLogOutput logOutput;
@@ -414,8 +297,8 @@ void main() {
     tearDown(() => logging.appLogger = originalLogger);
 
     Future<void> pumpHub(WidgetTester tester, {required String id, String? identifier, String? serverId}) async {
-      final items = List.generate(3, (index) => _item(index, backend: MediaBackend.plex));
-      final harness = await _createHarness(items, backend: MediaBackend.plex);
+      final items = List.generate(3, (index) => _item(index));
+      final harness = await _createHarness(items);
       await tester.pumpWidget(
         harness.wrap(
           HubDetailScreen(
@@ -441,33 +324,26 @@ void main() {
       expect(find.byTooltip(t.libraries.sort), findsOneWidget);
     });
 
-    testWidgets('a MediaBrowser hub key opens without a warning', (tester) async {
+    testWidgets('a synthesized hub key opens without a warning', (tester) async {
       await pumpHub(tester, id: 'home.recent', identifier: 'home.recent', serverId: 'server_1');
 
       expect(logOutput.levels.where((level) => level.value >= Level.warning.value), isEmpty);
     });
-
-    testWidgets('a Plex section hub that lost its serverId still warns', (tester) async {
-      await pumpHub(tester, id: '/hubs/sections/1/recentlyAdded');
-
-      expect(logOutput.levels, contains(Level.warning));
-    });
   });
 }
 
-MediaItem _item(int index, {required MediaBackend backend, String? libraryId}) => testMediaItem(
+MediaItem _item(int index) => testMediaItem(
   id: 'item_$index',
-  backend: backend,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: 'Item $index',
-  libraryId: libraryId,
   serverId: 'server_1',
   serverName: 'Server',
 );
 
 MediaItem _titled(String id, String title) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: title,
   serverId: 'server_1',
@@ -477,9 +353,9 @@ MediaItem _titled(String id, String title) => testMediaItem(
 FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
     tester.widget<FocusableMediaCard>(find.ancestor(of: find.text(title), matching: find.byType(FocusableMediaCard)));
 
-Future<_HubHarness> _createHarness(List<MediaItem> items, {required MediaBackend backend}) async {
+Future<_HubHarness> _createHarness(List<MediaItem> items) async {
   await SettingsService.getInstance();
-  final client = _PagedHubClient(items, backend: backend);
+  final client = _PagedHubClient(items);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final provider = testMultiServerProvider(manager);
   addTearDown(provider.dispose);
@@ -513,16 +389,15 @@ class _RecordingLogOutput extends LogOutput {
 }
 
 class _PagedHubClient implements MediaServerClient {
-  _PagedHubClient(this.items, {required this.backend});
+  _PagedHubClient(this.items);
 
   final List<MediaItem> items;
   final List<int?> requestedStarts = [];
-  final List<int?> requestedSizes = [];
   int fullHubRequests = 0;
   List<MediaSort> sortOptions = const [];
 
   @override
-  final MediaBackend backend;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerId get serverId => ServerId('server_1');
@@ -531,8 +406,7 @@ class _PagedHubClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  ServerCapabilities get capabilities =>
-      backend == MediaBackend.plex ? ServerCapabilities.plex : ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<LibraryPage<MediaItem>> fetchMoreHubItemsPage(
@@ -542,7 +416,6 @@ class _PagedHubClient implements MediaServerClient {
     AbortController? abort,
   }) async {
     requestedStarts.add(start);
-    requestedSizes.add(size);
     return fakeLibraryPage(items, start: start, size: size);
   }
 

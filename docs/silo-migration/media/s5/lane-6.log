@@ -1,0 +1,26 @@
+02:44:55.864 : [I] [MPV:display] hdr=false dv=false current=#1 1920x1080@60.000004Hz supported=[#1 1920x1080@60.000004Hz]
+02:44:56.520 : [I] Silo playback: started, SiloPlayable
+02:44:56.520 : [I] Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=38 version=1 effective=0
+02:45:14.754 : [I] Silo playback: progress 1 at 4 s
+02:45:24.363 : [I] Silo playback: progress 2 at 4 s
+02:45:31.689 : [I] Silo playback: progress 3 at 4 s
+02:45:32.346 : [I] Silo playback: replanned quality_change, delivery=server_transcode_hls
+02:45:34.361 : [I] Silo playback: progress 4 at 4 s
+02:45:44.350 : [I] Silo playback: progress 5 at 4 s
+02:45:54.348 : [I] Silo playback: progress 6 at 12 s
+02:46:04.346 : [I] Silo playback: progress 7 at 22 s
+02:46:14.349 : [I] Silo playback: progress 8 at 32 s
+02:46:24.357 : [I] Silo playback: progress 9 at 42 s
+02:46:34.344 : [I] Silo playback: progress 10 at 52 s
+02:46:44.350 : [I] Silo playback: progress 11 at 259 s
+02:46:54.346 : [I] Silo playback: progress 12 at 318 s
+02:47:04.374 : [I] Silo playback: progress 13 at 328 s
+02:47:14.350 : [I] Silo playback: progress 14 at 854 s
+02:47:24.354 : [I] Silo playback: progress 15 at 1454 s
+02:47:34.354 : [I] Silo playback: progress 16 at 2054 s
+02:47:44.350 : [I] Silo playback: progress 17 at 2329 s
+02:47:54.352 : [I] Silo playback: progress 18 at 2339 s
+02:48:04.352 : [I] Silo playback: progress 19 at 2349 s
+02:48:14.369 : [I] Silo playback: progress 20 at 2359 s
+02:48:19.066 : [I] Silo playback: progress 21 at 2366 s
+02:48:21.332 : [I] Silo playback: stopped (status 200)

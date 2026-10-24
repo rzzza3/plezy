@@ -42,7 +42,7 @@ void main() {
       expect(networkStreamRingBytes(container: 'mp4', bitrateKbps: 69140), 64 * 1024 * 1024);
     });
 
-    test('matches ffmpeg demuxer alias lists from Jellyfin', () {
+    test('matches ffmpeg demuxer alias lists', () {
       expect(networkStreamRingBytes(container: 'mov,mp4,m4a,3gp,3g2,mj2', bitrateKbps: 69140), 64 * 1024 * 1024);
       expect(networkStreamRingBytes(container: 'matroska,webm', bitrateKbps: 69140), 64 * 1024 * 1024);
     });

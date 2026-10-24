@@ -7,15 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/profiles/silo_household_service.dart';
 import 'package:plezy/screens/main_screen.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_stack.dart';
 
 void main() {
   test('side navigation pushes stable foreground off-screen while temporarily expanded', () {
@@ -326,36 +324,26 @@ void main() {
       resetSharedPreferencesForTest();
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       final connections = ConnectionRegistry(db);
-      final profileConnections = ProfileConnectionRegistry(db);
-      final profiles = ProfileRegistry(db);
       final storage = await StorageService.getInstance();
-      final plexHome = PlexHomeService(
-        connections: connections,
-        profileConnections: profileConnections,
-        storage: storage,
-        plexHomeUserFetcher: (_) async => const [],
-      );
+      final serverHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
       final active = _GatedInitializeActiveProfileProvider(
-        registry: profiles,
-        plexHome: plexHome,
+        households: serverHome,
         connections: connections,
-        profileConnections: profileConnections,
         storage: storage,
       );
       addTearDown(() async {
         await active.resetForTesting();
         active.dispose();
-        await plexHome.dispose();
+        serverHome.dispose();
         await db.close();
       });
-      return _PromptFixture(profiles: profiles, storage: storage, active: active);
+      return _PromptFixture(connections: connections, households: serverHome, storage: storage, active: active);
     }
 
     test('mid-initialize synchronous notify pushes exactly one requireSelection picker', () async {
       final fixture = await makeFixture();
       // Two selectable profiles, none active: the prompt must push the picker.
-      await fixture.profiles.upsert(Profile.local(id: 'p1', displayName: 'One', createdAt: DateTime(2026, 1, 1)));
-      await fixture.profiles.upsert(Profile.local(id: 'p2', displayName: 'Two', createdAt: DateTime(2026, 1, 2)));
+      await fixture.seed([('p1', 'One'), ('p2', 'Two')]);
 
       var claimed = false;
       var pushes = 0;
@@ -411,8 +399,8 @@ void main() {
       // One profile, already active, "require selection on open" off: the
       // prompt must decline to push and release its claim so a later genuine
       // prompt is still possible.
-      await fixture.profiles.upsert(Profile.local(id: 'p1', displayName: 'One', createdAt: DateTime(2026, 1, 1)));
-      await fixture.storage.setActiveProfileId('p1');
+      await fixture.seed([('p1', 'One')]);
+      await fixture.storage.setActiveProfileId('silo:srv/p1');
       fixture.active.initializeGate.complete();
 
       var claimed = false;
@@ -446,10 +434,19 @@ void main() {
 }
 
 class _PromptFixture {
-  _PromptFixture({required this.profiles, required this.storage, required this.active});
+  _PromptFixture({required this.connections, required this.households, required this.storage, required this.active});
 
-  final ProfileRegistry profiles;
+  final ConnectionRegistry connections;
+  final SiloHouseholdService households;
   final StorageService storage;
+
+  /// Sign in to one server whose household lists [profiles].
+  Future<void> seed(List<(String, String)> profiles) async {
+    final connection = testSiloConnection('srv');
+    await connections.upsert(connection);
+    await households.put(connection, testHousehold(profiles));
+  }
+
   final _GatedInitializeActiveProfileProvider active;
 }
 
@@ -458,10 +455,8 @@ class _PromptFixture {
 /// notifies while MainScreen's prompt is still awaiting initialize().
 class _GatedInitializeActiveProfileProvider extends ActiveProfileProvider {
   _GatedInitializeActiveProfileProvider({
-    required super.registry,
-    required super.plexHome,
+    required super.households,
     required super.connections,
-    required super.profileConnections,
     required super.storage,
   });
 

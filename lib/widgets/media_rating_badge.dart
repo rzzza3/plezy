@@ -113,7 +113,7 @@ class InlineRatingBadges extends StatelessWidget {
         _buildContent(
           source: rating.source,
           value: rating.value,
-          // Plex's own critic/audience split is the only place the generic
+          // A server's own critic/audience split is the only place the generic
           // icons still carry meaning; every branded source draws its logo.
           fallbackIcon: rating.source == 'audience' ? Symbols.people_rounded : Symbols.star_rounded,
           foreground: foreground,

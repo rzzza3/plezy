@@ -18,8 +18,8 @@ class PlaybackInitializationOptions {
   /// Picks among multiple `MediaSources[]` versions when an item has them.
   final int selectedMediaIndex;
 
-  /// Stable backend source id for the selected media version. Jellyfin merged
-  /// versions can reorder between item fetches, so this wins over index there.
+  /// Stable backend source id for the selected media version. Versions can
+  /// reorder between item fetches, so this wins over index when set.
   final String? selectedMediaSourceId;
 
   /// Version signature ("res:codec:container") of a saved preference whose
@@ -55,15 +55,15 @@ class PlaybackInitializationOptions {
   /// sidecar-capable backends keep subtitle delivery independent.
   final SubtitlePreference? preferredSubtitleTrack;
 
-  /// Plex transcode `X-Plex-Session-Identifier`. Required for Plex transcode.
+  /// Transcode session identifier, for backends whose transcode needs one.
   final String? sessionIdentifier;
 
-  /// Plex transcode `playSessionId`. Same as [sessionIdentifier] — required
-  /// for Plex transcode.
+  /// Transcode `playSessionId`. Same as [sessionIdentifier], for backends
+  /// whose transcode needs one.
   final String? transcodeSessionId;
 
   /// Where playback is about to start, in item time. An item stacked across
-  /// several files (Plex `Part 1`, `Part 2`) opens the file holding it; see
+  /// several files (`Part 1`, `Part 2`) opens the file holding it; see
   /// [MediaSourceInfo.partTimeline]. Null starts from the first file.
   final Duration? startPosition;
 
@@ -120,7 +120,7 @@ class ExternalPlaybackTarget {
 
 /// Reason the transcode branch fell back to direct play.
 enum TranscodeFallbackReason {
-  /// Plex decision said only direct-play is available.
+  /// Decision said only direct-play is available.
   directPlayOnly,
 
   /// The decision endpoint errored (HTTP error, code >= 2000, parse failure).
@@ -148,11 +148,9 @@ class PlaybackInitializationResult {
   final int? activeAudioStreamId;
 
   /// Server playback session ID that must be echoed in progress/stop reports.
-  /// Jellyfin returns this from `PlaybackInfo` / `TranscodingUrl`.
   final String? playSessionId;
 
-  /// Backend playback method value to report with playback progress. Jellyfin
-  /// expects one of `DirectPlay`, `DirectStream`, or `Transcode`.
+  /// Backend playback method value to report with playback progress.
   final String? playMethod;
 
   /// Effective media version after backend clamping/fallback.
@@ -164,6 +162,15 @@ class PlaybackInitializationResult {
   /// even when it differs from the requested one. Online backends leave this
   /// null and the id is derived from [availableVersions] instead.
   final String? selectedMediaSourceId;
+
+  /// Item time at the stream's zero, when the server's stream starts part
+  /// way into the item. The player lays the stream onto the item timeline,
+  /// so everything above it speaks item time.
+  final Duration timelineOffset;
+
+  /// Where the server says the stream starts, in item time. Wins over the
+  /// resume position the player asked for.
+  final Duration? streamStart;
 
   /// True when [videoUrl] points at a downloaded/local copy. This is a media
   /// source detail, not a statement about whether server reporting is possible.
@@ -191,6 +198,8 @@ class PlaybackInitializationResult {
     this.playMethod,
     this.selectedMediaIndex = 0,
     this.selectedMediaSourceId,
+    this.timelineOffset = Duration.zero,
+    this.streamStart,
   });
 }
 
@@ -202,8 +211,7 @@ enum PlaybackFailureReason {
   authenticationRequired,
 
   /// The server answered HTTP 403: it knows this account and refuses it this
-  /// item or this connection (a Jellyfin user denied remote access, Plex's
-  /// remote-playback rules). Signing in again changes nothing.
+  /// item or this connection (e.g. remote-playback rules). Signing in again changes nothing.
   playbackNotAllowed,
   serverUnavailable,
   cancelled,
@@ -226,7 +234,7 @@ class PlaybackException implements Exception {
 /// Maps a transport-level failure raised while initializing playback onto a
 /// display-safe [PlaybackException].
 ///
-/// Backend-neutral on purpose: Plex and Jellyfin both throw the same
+/// Backend-neutral on purpose: every backend throws the same
 /// [MediaServerException] hierarchy, so both clients classify identically.
 PlaybackException classifyPlaybackFailure(Object error) {
   if (error is MediaServerHttpException && error.statusCode == 403) {

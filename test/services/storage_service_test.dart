@@ -67,46 +67,7 @@ void main() {
       final second = await StorageService.getInstance();
       expect(identical(first, second), isFalse);
       // Reset only the cached singleton, not the underlying prefs — values survive.
-      // ignore: deprecated_member_use_from_same_package
-      expect(second.getPlexToken(), 'token-1');
-    });
-  });
-
-  group('PlexToken & ClientIdentifier (legacy migration slots)', () {
-    test('getPlexToken reads the legacy slot', () async {
-      final s = await StorageService.getInstance();
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getPlexToken(), isNull);
-      await s.prefs.setString('plex_token', 'abc-123');
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getPlexToken(), 'abc-123');
-    });
-
-    test('getOrCreateClientIdentifier returns existing value when set', () async {
-      final s = await StorageService.getInstance();
-      await s.prefs.setString('client_identifier', 'preset-id');
-      final result = await s.getOrCreateClientIdentifier();
-      expect(result, 'preset-id');
-    });
-
-    test('getOrCreateClientIdentifier generates and persists a UUID on first call', () async {
-      final s = await StorageService.getInstance();
-
-      final generated = await s.getOrCreateClientIdentifier();
-      expect(generated, isNotEmpty);
-      // UUIDv4 has 5 hyphen-separated segments.
-      expect(generated.split('-'), hasLength(5));
-
-      // Second call returns the same value, not a new UUID.
-      final again = await s.getOrCreateClientIdentifier();
-      expect(again, generated);
-    });
-
-    test('getOrCreateClientIdentifier replaces empty stored value', () async {
-      final s = await StorageService.getInstance();
-      await s.prefs.setString('client_identifier', '');
-      final generated = await s.getOrCreateClientIdentifier();
-      expect(generated, isNotEmpty);
+      expect(second.prefs.getString('plex_token'), 'token-1');
     });
   });
 
@@ -132,23 +93,6 @@ void main() {
   });
 
   group('Servers list (legacy migration slot)', () {
-    test('legacy raw read returns null when nothing is stored', () async {
-      final s = await StorageService.getInstance();
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getServersListJson(), isNull);
-    });
-
-    test('clearServersList removes the value', () async {
-      final s = await StorageService.getInstance();
-      // Write directly under the legacy key — the public setter is gone.
-      await s.prefs.setString('servers_list', '[{"x":1}]');
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getServersListJson(), '[{"x":1}]');
-      await s.clearServersList();
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getServersListJson(), isNull);
-    });
-
     test('clearMultiServerData clears legacy list + order + endpoint prefixes', () async {
       final s = await StorageService.getInstance();
       // Write legacy values directly — the setters are gone.
@@ -159,8 +103,7 @@ void main() {
 
       await s.clearMultiServerData();
 
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getServersListJson(), isNull);
+      expect(s.prefs.getString('servers_list'), isNull);
       expect(s.prefs.getString('server_order'), isNull);
       expect(s.getServerEndpoint(ServerId('a')), isNull);
       expect(s.getServerEndpoint(ServerId('b')), isNull);
@@ -273,31 +216,6 @@ void main() {
       expect(s.getLibraryOrder(), ['u2-a']);
     });
 
-    test('plex_home profile id parses out the home-user UUID for the prefix', () async {
-      final s = await StorageService.getInstance();
-      // Format: `plex-home-{accountConnectionId}-{homeUserUuid}` where both
-      // the accountConnectionId AND the UUID contain hyphens. The scope must
-      // be the FULL 36-char UUID — `lastIndexOf('-')` would slice inside the
-      // UUID and break legacy `currentUserUUID`-scoped storage migration.
-      await s.setActiveProfileId('plex-home-plex.abc-def-123-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
-      await s.saveLibraryOrder(['x']);
-      expect(s.prefs.getString('user_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee_library_order'), json.encode(['x']));
-    });
-
-    test('legacy currentUserUUID scope migrates into the plex-home profile slot', () async {
-      // Regression: with the old `lastIndexOf('-')` parser, the scope was
-      // only the trailing 12 hex chars of the UUID, so the per-user prefs
-      // written under the legacy `currentUserUUID` (which used the FULL
-      // UUID as the prefix) would not be picked up after migration.
-      final s = await StorageService.getInstance();
-      const uuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
-
-      // Pre-seed the legacy per-user-scoped order under the full UUID.
-      await s.prefs.setString('user_${uuid}_library_order', json.encode(['legacy']));
-
-      await s.setActiveProfileId('plex-home-plex.abc-def-123-$uuid');
-      expect(s.getLibraryOrder(), ['legacy']);
-    });
   });
 
   group('Library filters / sort / grouping / tab', () {
@@ -427,60 +345,74 @@ void main() {
     });
   });
 
-  group('CurrentUserUUID (legacy migration slot)', () {
-    test('clearCurrentUserUUID wipes the slot', () async {
+  group('clearLegacyBackendPrefsOnce', () {
+    const legacy = {
+      'plex_token': 'legacy-token',
+      'current_user_uuid': 'uuid-1',
+      'servers_list': '[]',
+      'server_order': '[]',
+      'selected_library_key': 'plex-machine:1',
+      'library_filters': '{}',
+      'library_order': '["plex-machine:1"]',
+      'hidden_libraries': '[]',
+      'home_users_cache': '[]',
+      'home_users_cache_expiry': '0',
+      'server_endpoint_plex-machine': 'https://plex.example',
+      'plex_home_users_plex-account': '[]',
+      'library_filters_plex-machine:1': '{}',
+      'library_sort_plex-machine:1': '{}',
+      'library_grouping_plex-machine:1': 'all',
+      'library_tab_plex-machine:1': 'browse',
+    };
+    const kept = {
+      'active_app_profile_id': 'local-1',
+      'client_identifier': 'device-1',
+      'silo_device_id': 'silo-device-1',
+      'silo_session_v1.origin': 'https://silo.example',
+      'user_local-1_selected_library_key': 'silo-srv:movies',
+      'user_local-1_library_sort_silo-srv:movies': '{}',
+      'user_local-1_library_order': '["silo-srv:movies"]',
+    };
+
+    Future<StorageService> seeded() async {
       final s = await StorageService.getInstance();
-      await s.prefs.setString('current_user_uuid', 'u-1');
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getCurrentUserUUID(), 'u-1');
-      await s.clearCurrentUserUUID();
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getCurrentUserUUID(), isNull);
-    });
-  });
-
-  group('migratePlexHomeUserScopes (onInit)', () {
-    const fullId = 'plex-home-plex.e443d57860076fc3-379704d0c6601309';
-    const uuid = '379704d0c6601309';
-
-    Future<StorageService> reinitialize() async {
-      BaseSharedPreferencesService.resetForTesting();
-      return StorageService.getInstance();
+      for (final entry in {...legacy, ...kept}.entries) {
+        await s.prefs.setString(entry.key, entry.value);
+      }
+      await s.prefs.setInt('profile_last_used_local-1', 42);
+      return s;
     }
 
-    test('moves full-profile-id-scoped keys onto the uuid scope', () async {
-      var s = await StorageService.getInstance();
-      await s.prefs.setString('user_${fullId}_selected_library_key', 'lib-1');
-      await s.prefs.setBool('user_${fullId}_some_flag', true);
-      await s.prefs.setStringList('user_${fullId}_hidden_libraries', ['a', 'b']);
+    test('removes the legacy Plex keys and Plex-era library prefixes', () async {
+      final s = await seeded();
 
-      s = await reinitialize();
+      await s.clearLegacyBackendPrefsOnce();
 
-      expect(s.prefs.getString('user_${uuid}_selected_library_key'), 'lib-1');
-      expect(s.prefs.getBool('user_${uuid}_some_flag'), isTrue);
-      expect(s.prefs.getStringList('user_${uuid}_hidden_libraries'), ['a', 'b']);
-      expect(s.prefs.keys.where((k) => k.contains('plex-home-')), isEmpty);
+      expect(s.prefs.keys.where(legacy.containsKey), isEmpty);
     });
 
-    test('full-id value wins over a stale pre-migration uuid-scoped value', () async {
-      var s = await StorageService.getInstance();
-      await s.prefs.setString('user_${uuid}_selected_library_key', 'stale');
-      await s.prefs.setString('user_${fullId}_selected_library_key', 'fresh');
+    test('keeps profile-scoped prefs, the active profile, recency and device ids', () async {
+      final s = await seeded();
 
-      s = await reinitialize();
+      await s.clearLegacyBackendPrefsOnce();
 
-      expect(s.prefs.getString('user_${uuid}_selected_library_key'), 'fresh');
+      for (final entry in kept.entries) {
+        expect(s.prefs.getString(entry.key), entry.value, reason: entry.key);
+      }
+      expect(s.prefs.getInt('profile_last_used_local-1'), 42);
     });
 
-    test('leaves local-profile scopes and unparseable plex-home scopes untouched', () async {
-      var s = await StorageService.getInstance();
-      await s.prefs.setString('user_local-1_selected_library_key', 'keep');
-      await s.prefs.setString('user_plex-home-acct-not-a-uuid_key', 'keep-too');
+    test('runs once, so keys written afterwards stay', () async {
+      var s = await seeded();
+      await s.clearLegacyBackendPrefsOnce();
 
-      s = await reinitialize();
+      await s.prefs.setString('library_sort_silo-srv:movies', '{}');
+      await s.clearLegacyBackendPrefsOnce();
+      BaseSharedPreferencesService.resetForTesting();
+      s = await StorageService.getInstance();
+      await s.clearLegacyBackendPrefsOnce();
 
-      expect(s.prefs.getString('user_local-1_selected_library_key'), 'keep');
-      expect(s.prefs.getString('user_plex-home-acct-not-a-uuid_key'), 'keep-too');
+      expect(s.prefs.getString('library_sort_silo-srv:movies'), '{}');
     });
   });
 
@@ -506,21 +438,31 @@ void main() {
       await s.clearCredentials();
 
       // Credential-bucket keys all gone.
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getPlexToken(), isNull);
+      expect(s.prefs.getString('plex_token'), isNull);
       expect(s.prefs.getString('client_identifier'), isNull);
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getCurrentUserUUID(), isNull);
+      expect(s.prefs.getString('current_user_uuid'), isNull);
 
       // Multi-server data wiped.
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getServersListJson(), isNull);
+      expect(s.prefs.getString('servers_list'), isNull);
       expect(s.prefs.getString('server_order'), isNull);
       expect(s.getServerEndpoint(ServerId('a')), isNull);
 
       // Library prefs and unrelated state untouched (no scope active, so
       // the scoped read falls through to the same legacy key it was written to).
       expect(s.getLibraryOrder(), ['lib-1']);
+    });
+
+    test('removes every Silo session slot and keeps the Silo device id', () async {
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('silo_session_v1.server-1', 'enc:v1:a');
+      await s.prefs.setString('silo_session_v1.server-2', 'enc:v1:b');
+      await s.prefs.setString('silo_device_id', 'device-1');
+
+      await s.clearCredentials();
+
+      expect(s.prefs.getString('silo_session_v1.server-1'), isNull);
+      expect(s.prefs.getString('silo_session_v1.server-2'), isNull);
+      expect(s.prefs.getString('silo_device_id'), 'device-1');
     });
   });
 
@@ -690,12 +632,43 @@ void main() {
 
       await s.clearUserData();
 
-      // ignore: deprecated_member_use_from_same_package
-      expect(s.getPlexToken(), isNull);
+      expect(s.prefs.getString('plex_token'), isNull);
       // setActiveProfileId is unaffected by clearCredentials, so the prefix
       // is still active — clearLibraryPreferences cleared the scoped values.
       expect(s.getLibraryOrder(), isNull);
       expect(s.getHiddenLibraries(), isEmpty);
+    });
+  });
+
+  group('clearPlezyProfilePrefsOnce', () {
+    test('drops prefs keyed by a Plezy profile and keeps Silo scopes and global slots', () async {
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('user_local-1_seerr_session', '{}');
+      await s.prefs.setString('user_local-1_trakt_session', '{}');
+      await s.prefs.setString('user_local-1_library_order', '[]');
+      await s.prefs.setInt('profile_last_used_local-1', 42);
+      await s.prefs.setString('user_silo:srv/p-1_seerr_session', '{}');
+      await s.prefs.setInt('profile_last_used_silo:srv/p-1', 7);
+      await s.prefs.setString('trakt_session', '{}');
+      await s.setActiveProfileId('silo:srv/p-1');
+
+      await s.clearPlezyProfilePrefsOnce();
+
+      expect(s.prefs.keys.where((k) => k.contains('local-1')), isEmpty);
+      expect(s.prefs.getString('user_silo:srv/p-1_seerr_session'), '{}');
+      expect(s.prefs.getInt('profile_last_used_silo:srv/p-1'), 7);
+      expect(s.prefs.getString('trakt_session'), '{}');
+      expect(s.getActiveProfileId(), 'silo:srv/p-1');
+    });
+
+    test('runs once, so keys written afterwards stay', () async {
+      final s = await StorageService.getInstance();
+      await s.clearPlezyProfilePrefsOnce();
+      await s.prefs.setString('user_local-2_library_order', '[]');
+
+      await s.clearPlezyProfilePrefsOnce();
+
+      expect(s.prefs.getString('user_local-2_library_order'), '[]');
     });
   });
 }

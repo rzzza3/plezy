@@ -105,7 +105,7 @@ Map<String, int> _searchKindCounts(Iterable<MediaItem> items) {
 /// Drop items belonging to a hidden library.
 ///
 /// Items the backend could not attribute to a library ([MediaItem.libraryGlobalKey]
-/// is null) are kept: Plex search and `/library/shared/all` return shared and
+/// is null) are kept: search can return shared and
 /// external rows that have no local section, and those are not something the
 /// user hid.
 List<MediaItem> _withoutHiddenLibraries(List<MediaItem> items, Set<String>? hiddenLibraryKeys) {
@@ -310,8 +310,8 @@ class DataAggregationService {
     var filteredOnDeck = _withoutHiddenLibraries(fetched.items, hiddenLibraryKeys);
 
     // Sort by most recently viewed, falling back to addedAt for unwatched items.
-    // Same key as JellyfinClient's continue-watching merge (MediaItem.recencySortKey)
-    // so per-server and cross-server ordering can't drift apart.
+    // Shared key (MediaItem.recencySortKey) so per-server and cross-server
+    // ordering can't drift apart.
     filteredOnDeck.sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
 
     filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
@@ -530,7 +530,7 @@ class DataAggregationService {
 
   /// Fetch recommendation hubs from all servers as neutral [MediaHub]s.
   /// When useGlobalHubs is true (default), rich-hub backends use their true
-  /// home page hubs (Plex's promoted/global hub endpoint).
+  /// home page hubs (the server's global hub endpoint).
   /// Backends without rich home hubs fall back to per-library hubs so one
   /// capped "Latest" response cannot hide whole library types.
   /// [serverIds] restricts the fan-out (including the library prefetch) to
@@ -557,8 +557,8 @@ class DataAggregationService {
 
     // Home layout needs the library list for every client: fallback backends
     // build all their rows from per-library hubs, and rich-hub backends
-    // (Plex) need it to detect visible music libraries, whose hubs the
-    // global-hub endpoint excludes. One `fetchLibraries` per server, served
+    // need it to detect visible music libraries, whose hubs a global-hub
+    // endpoint can exclude. One `fetchLibraries` per server, served
     // from the per-backend API cache when warm.
     final libraryFetch = useGlobalHubs ? await getMediaLibrariesFromAllServers(serverIds: serverIds) : null;
     final libraries = libraryFetch == null ? null : _groupLibrariesByServer(libraryFetch.libraries);
@@ -589,7 +589,7 @@ class DataAggregationService {
             includePlaybackHubs: includePlaybackHubs,
             diagnostics: globalDiagnostics,
           );
-          // Plex's promoted/global hub endpoint never includes music
+          // A global hub endpoint may omit music
           // libraries — append their per-library hubs so music rows
           // reach home. A failed prefetch cannot establish that there
           // are no visible music libraries, so it is not a successful no-op.
@@ -619,7 +619,7 @@ class DataAggregationService {
           }
           if (music != null) {
             // The music append is optional: it must not vouch for the server
-            // when the global leg failed or was cancelled (Plex records that
+            // when the global leg failed or was cancelled (the client records that
             // in diagnostics and returns [] instead of throwing), or a lone
             // music row would replace every cached movie/TV home row.
             if (music.succeeded && !globalDiagnostics.failed && !globalDiagnostics.cancelled) {
@@ -676,8 +676,8 @@ class DataAggregationService {
   }
 
   /// Per-library hub fetch for a single client. Filters to visible libraries
-  /// of [kinds] (movie/show/clip/artist by default — clip covers Jellyfin
-  /// musicvideos/homevideos, #1476; artist brings music rows to home) and
+  /// of [kinds] (movie/show/clip/artist by default — clip covers music-video
+  /// and home-video libraries, #1476; artist brings music rows to home) and
   /// concatenates the results. The rich-hub music append passes
   /// `{MediaKind.artist}` to fetch only what the global endpoint misses.
   ///
@@ -772,10 +772,10 @@ class DataAggregationService {
     return filtered;
   }
 
-  /// Search across all online servers (Plex + Jellyfin) for titles and
-  /// people. Per-server outcomes distinguish authoritative empty results from
-  /// failed or cancelled legs; they describe the title search only. The
-  /// people search on each server is best-effort, like Plex's supplemental
+  /// Search across all online servers for titles and people. Per-server
+  /// outcomes distinguish authoritative empty results from failed or
+  /// cancelled legs; they describe the title search only. The
+  /// people search on each server is best-effort, like a supplemental
   /// category legs: a failure there costs that server's people, never its
   /// titles or its place in `succeededServerIds`.
   ///
@@ -930,7 +930,6 @@ class DataAggregationService {
     required Set<String> serverIds,
     List<String> titles = const [],
     int? year,
-    String? plexGuid,
     ExternalSeasonRef? season,
   }) async {
     final clients = _clientsFor(serverIds);
@@ -948,8 +947,7 @@ class DataAggregationService {
     final fetched = await _fanOut<MediaItem>(
       clients,
       failureMessage: (serverId) => 'External-id lookup failed on $serverId',
-      fetch: (_, client) =>
-          client.findByExternalIds(ids, kind: kind, titles: titles, year: year, plexGuid: plexGuid, season: season),
+      fetch: (_, client) => client.findByExternalIds(ids, kind: kind, titles: titles, year: year, season: season),
     );
     unqueriedServerIds.addAll(fetched.unqueriedServerIds);
     return (

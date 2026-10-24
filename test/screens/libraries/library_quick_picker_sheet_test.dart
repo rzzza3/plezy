@@ -10,19 +10,19 @@ void main() {
     final libraries = [
       const MediaLibrary(
         id: '1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         title: 'Movies',
         kind: MediaKind.movie,
-        serverId: 'plex-server',
-        serverName: 'Plex Server',
+        serverId: 'srv',
+        serverName: 'Den Server',
       ),
       const MediaLibrary(
         id: '2',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         title: 'Shows',
         kind: MediaKind.show,
-        serverId: 'jellyfin-server',
-        serverName: 'Jellyfin Server',
+        serverId: 'silo-server',
+        serverName: 'Silo Server',
       ),
     ];
     String? selectedKey;
@@ -42,8 +42,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Plex Server'), findsOneWidget);
-    expect(find.text('Jellyfin Server'), findsOneWidget);
+    expect(find.text('Den Server'), findsOneWidget);
+    expect(find.text('Silo Server'), findsOneWidget);
     expect(find.text('Movies'), findsOneWidget);
     expect(find.text('Shows'), findsOneWidget);
 
@@ -55,19 +55,19 @@ void main() {
     final libraries = [
       const MediaLibrary(
         id: '1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         title: 'Movies',
         kind: MediaKind.movie,
-        serverId: 'plex-server',
-        serverName: 'Plex Server',
+        serverId: 'srv',
+        serverName: 'Den Server',
       ),
       const MediaLibrary(
         id: '2',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         title: 'Shows',
         kind: MediaKind.show,
-        serverId: 'jellyfin-server',
-        serverName: 'Jellyfin Server',
+        serverId: 'silo-server',
+        serverName: 'Silo Server',
       ),
     ];
 
@@ -88,7 +88,7 @@ void main() {
 
     expect(find.text('Movies'), findsOneWidget);
     expect(find.text('Shows'), findsOneWidget);
-    expect(find.text('Plex Server'), findsOneWidget);
-    expect(find.text('Jellyfin Server'), findsOneWidget);
+    expect(find.text('Den Server'), findsOneWidget);
+    expect(find.text('Silo Server'), findsOneWidget);
   });
 }

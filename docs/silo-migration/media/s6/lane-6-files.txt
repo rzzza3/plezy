@@ -1,0 +1,5 @@
+# lane 6, 2026-10-20 22:43:58, after deleting Taskmaster (US) S1E1 in Plezy
+$ run-as com.edde746.plezy find ./app_flutter/downloads -type f
+(no output)
+$ run-as com.edde746.plezy find . -name '*.part' -o -name '*.part.silo'
+(no output)

@@ -88,7 +88,7 @@ void main() {
   testWidgets('unmounted controls no longer listen to the first-frame gate', (tester) async {
     await tester.pumpWidget(
       shell(
-        PlexVideoControls(
+        SiloVideoControls(
           player: player,
           volumeController: volume,
           metadata: testMediaItem(id: 'gate'),

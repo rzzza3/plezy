@@ -2,21 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/connection/connection.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/models/plex/plex_home.dart';
-import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/models/companion_remote/remote_command.dart';
 import 'package:plezy/models/companion_remote/remote_session.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/services/companion_remote/companion_remote_peer_service.dart';
 import 'package:plezy/services/companion_remote/lan_discovery_service.dart';
 import 'package:plezy/services/companion_remote/remote_auth_context.dart';
 import 'package:plezy/services/companion_remote/remote_auth_service.dart';
 
-import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_stack.dart';
 
@@ -70,18 +64,11 @@ void main() {
     test('a refresh still rebuilding when the provider is disposed does not restart the host', () async {
       final stack = await ProfileStack.create();
       addTearDown(stack.dispose);
-      final first = _localProfile('profile-a');
-      final second = _localProfile('profile-b');
-      for (final (profile, connection) in [(first, _jellyfinConnection('a')), (second, _jellyfinConnection('b'))]) {
-        await stack.connections.upsert(connection);
-        await stack.profiles.upsert(profile);
-        await stack.profileConnections.upsert(
-          ProfileConnection(profileId: profile.id, connectionId: connection.id, userIdentifier: connection.userId),
-          makeDefault: true,
-        );
-      }
-      await stack.storage.setActiveProfileId(first.id);
-      await stack.active.initialize();
+      await stack.addServer('srv-a', testHousehold([('profile-a', 'A')], accountId: 'acct-a'));
+      await stack.addServer('srv-b', testHousehold([('profile-b', 'B')], accountId: 'acct-b'));
+      await stack.storage.setActiveProfileId('silo:srv-a/profile-a');
+      await stack.active.reloadFromStorage();
+      final second = stack.profile('srv-b', 'profile-b');
 
       final disconnectGate = Completer<void>();
       final host = _FakeCompanionRemotePeerService(disconnectGate: disconnectGate);
@@ -94,21 +81,12 @@ void main() {
         if (!disconnectGate.isCompleted) disconnectGate.complete();
         if (!provider.isDisposed) provider.dispose();
       });
-      expect(
-        await provider.ensureCryptoReady(
-          null,
-          connections: stack.connections,
-          activeProfile: stack.active,
-          profileConnections: stack.profileConnections,
-        ),
-        isTrue,
-      );
+      expect(await provider.ensureCryptoReady(connections: stack.connections, activeProfile: stack.active), isTrue);
       await provider.startHostServer();
       provider.bindProfileServices(
         connections: stack.connections,
         activeProfile: stack.active,
-        profileConnections: stack.profileConnections,
-        plexHome: stack.plexHome,
+        households: stack.households,
       );
       // Let the watchers' initial emissions refresh an unchanged identity.
       await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -661,214 +639,90 @@ void main() {
   });
 
   group('CompanionRemoteProvider — crypto identity', () {
-    test('Jellyfin remote secret is stable across tokens for the same server user', () async {
-      final auth = RemoteAuthService.instance;
-      auth.clearCache();
-
-      final tokenA = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-a');
-      final tokenAAgain = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-a');
-      final tokenB = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-a');
-      final otherUser = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-b');
-
-      expect(tokenAAgain, tokenA);
-      expect(tokenB, tokenA);
-      expect(otherUser, isNot(tokenA));
-    });
-
-    test('ensureCryptoReady rebuilds when the active profile/account changes', () async {
+    Future<ProfileStack> twoServers() async {
       final stack = await ProfileStack.create();
       addTearDown(stack.dispose);
+      await stack.addServer('srv-a', testHousehold([('p-1', 'Owner'), ('p-2', 'Kids')], accountId: 'acct-a'));
+      await stack.addServer('srv-b', testHousehold([('p-3', 'Den')], accountId: 'acct-b'));
+      return stack;
+    }
 
-      final accountA = _plexAccount('plex-a', 'client-a');
-      final accountB = _plexAccount('plex-b', 'client-b');
-      final profileA = _localProfile('profile-a');
-      final profileB = _localProfile('profile-b');
-      await stack.connections.upsert(accountA);
-      await stack.connections.upsert(accountB);
-      await stack.profiles.upsert(profileA);
-      await stack.profiles.upsert(profileB);
-      await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profileA.id, connectionId: accountA.id, userIdentifier: 'admin-a'),
-        makeDefault: true,
-      );
-      await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profileB.id, connectionId: accountB.id, userIdentifier: 'admin-b'),
-        makeDefault: true,
-      );
-      await stack.storage.setActiveProfileId(profileA.id);
-      await stack.active.initialize();
+    test("the context is the active profile's server, account and profile", () async {
+      final stack = await twoServers();
+      await stack.storage.setActiveProfileId('silo:srv-a/p-2');
+      await stack.active.reloadFromStorage();
 
       final provider = CompanionRemoteProvider();
       addTearDown(provider.dispose);
-      final okA = await provider.ensureCryptoReady(
-        _home('admin-a'),
-        connections: stack.connections,
-        activeProfile: stack.active,
-        profileConnections: stack.profileConnections,
-        account: accountA,
-      );
-      expect(okA, isTrue);
-      expect(provider.debugCryptoConnectionId, accountA.id);
-      expect(provider.debugCryptoProfileId, profileA.id);
+      expect(await provider.ensureCryptoReady(connections: stack.connections, activeProfile: stack.active), isTrue);
 
-      await stack.active.activate(profileB);
-
-      final ok = await provider.ensureCryptoReady(
-        _home('admin-b'),
-        connections: stack.connections,
-        activeProfile: stack.active,
-        profileConnections: stack.profileConnections,
-        account: accountB,
-      );
-
-      expect(ok, isTrue);
-      expect(provider.debugCryptoConnectionId, accountB.id);
-      expect(provider.debugCryptoProfileId, profileB.id);
+      expect(provider.debugCryptoConnectionId, 'silo:srv-a');
+      expect(provider.debugCryptoConnectionIds, ['silo:srv-a']);
+      expect(provider.debugCryptoProfileId, 'silo:srv-a/p-2');
+      expect(provider.debugCryptoUserUuid, 'p-2');
     });
 
-    test('ensureCryptoReady uses the active local profile Plex row', () async {
-      final stack = await ProfileStack.create();
-      addTearDown(stack.dispose);
-
-      final accountA = _plexAccount('plex-a', 'client-a');
-      final accountB = _plexAccount('plex-b', 'client-b');
-      final profile = _localProfile('profile-local');
-      await stack.connections.upsert(accountA);
-      await stack.connections.upsert(accountB);
-      await stack.profiles.upsert(profile);
-      await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: accountB.id, userIdentifier: 'child-b', isDefault: true),
-        makeDefault: true,
-      );
-      await stack.storage.setActiveProfileId(profile.id);
-      await stack.active.initialize();
+    test('ensureCryptoReady rebuilds when the active profile changes server', () async {
+      final stack = await twoServers();
+      await stack.storage.setActiveProfileId('silo:srv-a/p-1');
+      await stack.active.reloadFromStorage();
 
       final provider = CompanionRemoteProvider();
       addTearDown(provider.dispose);
-      final ok = await provider.ensureCryptoReady(
-        _homeWithUsers('admin-b', ['child-b']),
-        connections: stack.connections,
-        activeProfile: stack.active,
-        profileConnections: stack.profileConnections,
-      );
+      expect(await provider.ensureCryptoReady(connections: stack.connections, activeProfile: stack.active), isTrue);
+      expect(provider.debugCryptoConnectionId, 'silo:srv-a');
 
-      expect(ok, isTrue);
-      expect(provider.debugCryptoConnectionId, accountB.id);
-      expect(provider.debugCryptoProfileId, profile.id);
-      expect(provider.debugCryptoUserUuid, 'child-b');
+      expect(await stack.active.activate(stack.profile('srv-b', 'p-3')), isTrue);
+      expect(await provider.ensureCryptoReady(connections: stack.connections, activeProfile: stack.active), isTrue);
+
+      expect(provider.debugCryptoConnectionId, 'silo:srv-b');
+      expect(provider.debugCryptoProfileId, 'silo:srv-b/p-3');
     });
 
-    test('ensureCryptoReady uses the active local profile Jellyfin row', () async {
-      final stack = await ProfileStack.create();
-      addTearDown(stack.dispose);
-
-      final jellyfin = _jellyfinConnection('jf-a');
-      final profile = _localProfile('profile-jf');
-      await stack.connections.upsert(jellyfin);
-      await stack.profiles.upsert(profile);
-      await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
-        makeDefault: true,
-      );
-      await stack.storage.setActiveProfileId(profile.id);
-      await stack.active.initialize();
+    test('ensureCryptoReady is not ready without an active profile', () async {
+      final stack = await twoServers();
 
       final provider = CompanionRemoteProvider();
       addTearDown(provider.dispose);
-      final ok = await provider.ensureCryptoReady(
-        null,
-        connections: stack.connections,
-        activeProfile: stack.active,
-        profileConnections: stack.profileConnections,
-      );
 
-      expect(ok, isTrue);
-      expect(provider.debugCryptoConnectionId, jellyfin.id);
-      expect(provider.debugCryptoProfileId, profile.id);
-      expect(provider.debugCryptoUserUuid, jellyfin.userId);
-    });
-
-    test('ensureCryptoReady includes every active local profile remote identity', () async {
-      final stack = await ProfileStack.create();
-      addTearDown(stack.dispose);
-
-      final account = _plexAccount('plex-a', 'client-a');
-      final jellyfin = _jellyfinConnection('jf-a');
-      final profile = _localProfile('profile-mixed');
-      final home = _homeWithUsers('admin-a', ['child-a']);
-      await stack.connections.upsert(account);
-      await stack.connections.upsert(jellyfin);
-      await stack.profiles.upsert(profile);
-      await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
-        makeDefault: true,
-      );
-      await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: account.id, userIdentifier: 'child-a'),
-      );
-      await stack.storage.setActiveProfileId(profile.id);
-      await stack.active.initialize();
-
-      final provider = CompanionRemoteProvider();
-      addTearDown(provider.dispose);
-      final ok = await provider.ensureCryptoReady(
-        home,
-        connections: stack.connections,
-        activeProfile: stack.active,
-        profileConnections: stack.profileConnections,
-        plexHomeForConnection: (_) async => home,
-      );
-
-      expect(ok, isTrue);
-      expect(provider.debugCryptoConnectionId, jellyfin.id);
-      expect(provider.debugCryptoConnectionIds, [jellyfin.id, account.id]);
-    });
-
-    test('ensureCryptoReady does not fall back to an account without an active profile', () async {
-      final stack = await ProfileStack.create();
-      addTearDown(stack.dispose);
-
-      await stack.connections.upsert(_plexAccount('plex-a', 'client-a'));
-      await stack.profiles.upsert(_localProfile('profile-a'));
-      await stack.active.initialize();
-
-      final provider = CompanionRemoteProvider();
-      addTearDown(provider.dispose);
-      final ok = await provider.ensureCryptoReady(
-        _home('admin-a'),
-        connections: stack.connections,
-        activeProfile: stack.active,
-        profileConnections: stack.profileConnections,
-      );
-
-      expect(ok, isFalse);
+      expect(await provider.ensureCryptoReady(connections: stack.connections, activeProfile: stack.active), isFalse);
       expect(provider.isCryptoReady, isFalse);
     });
 
-    test('resetForLogout clears crypto context', () async {
+    test('ensureCryptoReady is not ready until the account id is known', () async {
       final stack = await ProfileStack.create();
       addTearDown(stack.dispose);
-
-      final account = _plexAccount('plex-a', 'client-a');
-      final profile = _localProfile('profile-a');
-      await stack.connections.upsert(account);
-      await stack.profiles.upsert(profile);
-      await stack.profileConnections.upsert(
-        ProfileConnection(profileId: profile.id, connectionId: account.id, userIdentifier: 'admin-a'),
-        makeDefault: true,
-      );
-      await stack.storage.setActiveProfileId(profile.id);
-      await stack.active.initialize();
+      final legacy = testSiloConnection('srv-a', accountId: '');
+      await stack.connections.upsert(legacy);
+      await stack.storage.setActiveProfileId('silo:srv-a/p-1');
+      await stack.active.reloadFromStorage();
 
       final provider = CompanionRemoteProvider();
       addTearDown(provider.dispose);
-      await provider.ensureCryptoReady(
-        _home('admin-a'),
-        connections: stack.connections,
-        activeProfile: stack.active,
-        profileConnections: stack.profileConnections,
-        account: account,
-      );
+
+      expect(await provider.ensureCryptoReady(connections: stack.connections, activeProfile: stack.active), isFalse);
+    });
+
+    test('the shared secret follows the Silo server and account, not the device', () async {
+      final auth = RemoteAuthService.instance;
+      final a = await auth.deriveSiloHomeSecret(serverId: 'srv-a', accountId: 'acct-a');
+      final again = await auth.deriveSiloHomeSecret(serverId: 'srv-a', accountId: 'acct-a');
+      final otherAccount = await auth.deriveSiloHomeSecret(serverId: 'srv-a', accountId: 'acct-b');
+      final otherServer = await auth.deriveSiloHomeSecret(serverId: 'srv-b', accountId: 'acct-a');
+
+      expect(auth.computeAuthContextId(again), auth.computeAuthContextId(a));
+      expect(auth.computeAuthContextId(otherAccount), isNot(auth.computeAuthContextId(a)));
+      expect(auth.computeAuthContextId(otherServer), isNot(auth.computeAuthContextId(a)));
+    });
+
+    test('resetForLogout clears crypto context', () async {
+      final stack = await twoServers();
+      await stack.storage.setActiveProfileId('silo:srv-a/p-1');
+      await stack.active.reloadFromStorage();
+
+      final provider = CompanionRemoteProvider();
+      addTearDown(provider.dispose);
+      await provider.ensureCryptoReady(connections: stack.connections, activeProfile: stack.active);
       expect(provider.isCryptoReady, isTrue);
 
       await provider.resetForLogout();
@@ -878,58 +732,6 @@ void main() {
       expect(provider.debugCryptoProfileId, isNull);
     });
   });
-}
-
-PlexAccountConnection _plexAccount(String id, String clientIdentifier) {
-  return PlexAccountConnection(
-    id: id,
-    accountToken: 'token-$id',
-    clientIdentifier: clientIdentifier,
-    accountLabel: id,
-    createdAt: DateTime(2026, 1, 1),
-  );
-}
-
-JellyfinConnection _jellyfinConnection(String id) => testJellyfinConnection(
-  id: id,
-  machineId: 'machine-$id',
-  userId: 'user-$id',
-  baseUrl: 'https://jellyfin.example.test',
-  serverName: 'Jellyfin',
-  userName: 'User $id',
-  accessToken: 'token-$id',
-  deviceId: 'device-$id',
-  createdAt: DateTime(2026, 1, 1),
-);
-
-Profile _localProfile(String id) {
-  return Profile.local(id: id, displayName: id, createdAt: DateTime(2026, 1, 1));
-}
-
-PlexHome _home(String adminUuid) {
-  return PlexHome(id: 1, users: [_homeUser(adminUuid, admin: true)]);
-}
-
-PlexHome _homeWithUsers(String adminUuid, List<String> userUuids) {
-  return PlexHome(
-    id: 1,
-    users: [_homeUser(adminUuid, admin: true), for (final uuid in userUuids) _homeUser(uuid, admin: false)],
-  );
-}
-
-PlexHomeUser _homeUser(String uuid, {required bool admin}) {
-  return PlexHomeUser(
-    id: admin ? 1 : 2,
-    uuid: uuid,
-    title: uuid,
-    thumb: '',
-    hasPassword: false,
-    restricted: false,
-    updatedAt: null,
-    admin: admin,
-    guest: false,
-    protected: false,
-  );
 }
 
 class _FakePeerFactory {
@@ -1158,28 +960,15 @@ class _RemoteHarness {
   }) async {
     final stack = await ProfileStack.create();
 
-    final account = _plexAccount('remote-account', 'remote-client');
-    final profile = _localProfile('remote-profile');
-    await stack.connections.upsert(account);
-    await stack.profiles.upsert(profile);
-    await stack.profileConnections.upsert(
-      ProfileConnection(profileId: profile.id, connectionId: account.id, userIdentifier: 'remote-admin'),
-      makeDefault: true,
-    );
-    await stack.storage.setActiveProfileId(profile.id);
-    await stack.active.initialize();
+    await stack.addServer('remote-srv', testHousehold([('remote-profile', 'Remote')]));
+    await stack.storage.setActiveProfileId('silo:remote-srv/remote-profile');
+    await stack.active.reloadFromStorage();
 
     final provider = CompanionRemoteProvider.forTesting(
       peerServiceFactory: peerServiceFactory,
       discoveryServiceFactory: discoveryServiceFactory,
     );
-    final ready = await provider.ensureCryptoReady(
-      _home('remote-admin'),
-      connections: stack.connections,
-      activeProfile: stack.active,
-      profileConnections: stack.profileConnections,
-      account: account,
-    );
+    final ready = await provider.ensureCryptoReady(connections: stack.connections, activeProfile: stack.active);
     if (!ready) {
       throw StateError('Remote test harness failed to initialize crypto');
     }

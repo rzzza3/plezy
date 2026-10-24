@@ -412,8 +412,8 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('TV spotlight rotates the Jellyfin item backdrop list', (tester) async {
-    final item = JellyfinMediaItem(
+  testWidgets('TV spotlight rotates the Silo item backdrop list', (tester) async {
+    final item = MediaItem.silo(
       id: 'show-1',
       kind: MediaKind.show,
       artPath: first.path,

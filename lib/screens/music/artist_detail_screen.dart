@@ -48,7 +48,7 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
   final FocusNode _bioFocusNode = FocusNode(debugLabel: 'artist_bio');
 
   /// Discography sections in display order. A single flat `albums` group
-  /// (Plex with no singles/live/compilations, or any Jellyfin/Emby artist)
+  /// (an artist with no singles/live/compilations)
   /// renders the flat grid. The sections mirror the concatenation order of
   /// [items], so [updateItem]'s in-place swap stays visible.
   List<ArtistDiscographyGroup> _discographyGroups = const [];

@@ -7,7 +7,6 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../media/media_backend.dart';
 import '../services/credential_vault.dart';
-import '../services/jellyfin_endpoint_discovery.dart';
 import '../utils/app_logger.dart';
 import 'connection.dart';
 
@@ -92,24 +91,6 @@ class ConnectionRegistry {
     appLogger.d('ConnectionRegistry: upserted ${connection.kind.id}/${connection.id}');
   }
 
-  /// Shared edit-screen/command validation. Probes public server identity only;
-  /// preparing this value does not change the registry or active client.
-  Future<JellyfinConnection> prepareMediaBrowserEndpoints(JellyfinConnection connection, List<String> urls) async {
-    final input = JellyfinEndpointDiscovery.buildUserInputCandidates(urls, dialect: connection.dialect);
-    final endpoint = await JellyfinEndpointDiscovery(dialect: connection.dialect).raceEndpoints(
-      input.probeBaseUrls,
-      preferredUrl: connection.baseUrl,
-      expectedMachineId: connection.serverMachineId,
-      baseUrlsToPersist: input.explicitBaseUrls,
-      baseUrlValidationGroups: input.validationBaseUrlGroups,
-    );
-    return connection.copyWith(
-      baseUrl: endpoint.activeBaseUrl,
-      baseUrls: endpoint.baseUrls,
-      serverName: endpoint.serverInfo.serverName,
-    );
-  }
-
   Future<void> remove(String id) async {
     await _db.runIdentityMutation(() async {
       await (_db.delete(_db.connections)..where((t) => t.id.equals(id))).go();
@@ -123,45 +104,29 @@ class ConnectionRegistry {
     });
   }
 
-  /// All Plex accounts in insertion order. Convenience over
-  /// `(await list()).whereType<PlexAccountConnection>()` — cuts ~3 lines from
-  /// every caller that needs to filter by backend.
-  Future<List<PlexAccountConnection>> listPlexAccounts() async {
-    final all = await list();
-    return all.whereType<PlexAccountConnection>().toList();
-  }
-
-  /// Lookup a [PlexAccountConnection] by id. Returns `null` if no row
-  /// matches OR the row exists but isn't a Plex account.
-  Future<PlexAccountConnection?> getPlexAccount(String id) async {
-    final c = await get(id);
-    return c is PlexAccountConnection ? c : null;
-  }
-
   Future<Connection?> _rowToConnection(ConnectionRow row) async {
     try {
       final json = jsonDecode(row.configJson) as Map<String, dynamic>;
-      final kind = MediaBackend.fromId(row.kind);
+      // A kind Plezy no longer ships (a row that outlived the v26 migration)
+      // drops the row with a warning, not an error.
+      final kind = MediaBackend.fromString(row.kind);
+      if (kind == null) return null;
       final revealed = await CredentialVault.revealConnectionConfig(kind.id, json);
       final createdAt = DateTime.fromMillisecondsSinceEpoch(row.createdAt);
       final lastAuth = row.lastAuthenticatedAt == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(row.lastAuthenticatedAt!);
-      final connection = switch (kind) {
-        MediaBackend.plex => PlexAccountConnection.fromConfigJson(
-          id: row.id,
+      final Connection? connection = switch (kind) {
+        MediaBackend.silo => SiloConnection.fromConfigJson(
           json: revealed.config,
           createdAt: createdAt,
           lastAuthenticatedAt: lastAuth,
-        ),
-        MediaBackend.jellyfin || MediaBackend.emby => JellyfinConnection.fromConfigJson(
-          id: row.id,
-          json: revealed.config,
-          createdAt: createdAt,
-          lastAuthenticatedAt: lastAuth,
-          dialect: kind.dialect!,
         ),
       };
+      if (connection == null) {
+        appLogger.w('ConnectionRegistry: dropping incomplete ${kind.id} connection ${row.id}');
+        return null;
+      }
       _decryptedConfigs[connection] = revealed.config;
       if (revealed.migrated) {
         await upsert(connection);

@@ -1,0 +1,27 @@
+# S7 perf: first launch after upgrade vs trunk cold start (Android TV emulator Television_1080p)
+# Builds: debug x86_64 both sides (a profile build is not debuggable, so run-as restores would not work). Trunk 5fc148779; head 30bb0a60f (code fixes on top of bed4e1d5b).
+# Each cycle: restore backup (reinstalls trunk) -> launch trunk (Tn) -> force-stop -> adb install -r head -> launch head (Un).
+# Start = ActivityManager 'Start proc'; end = flutter 'Startup phase: phase=database_ready' (debug-build equivalent of the profile-only
+# 'Startup phase image-cache' marker, right after open + v26 migration + VACUUM). Screen after Tn = Plex home; after Un = profile picker.
+# DB before every upgrade: plezy_downloads.db 876,544 B + WAL 4,120,032 B (api_cache 65,278 B).
+cycle 1 07:50:04 db+wal bytes before=876544+4120032
+T1 start=1792565404.255 db_ready=1792565406.162 ms=1906 am_TotalTime=1673 migration_lines=0
+U1 start=1792565423.523 db_ready=1792565425.308 ms=1785 am_TotalTime=1550 migration_lines=1
+cycle 2 07:51:44 db+wal bytes before=876544+4120032
+T2 start=1792565504.288 db_ready=1792565506.227 ms=1938 am_TotalTime=1702 migration_lines=0
+U2 start=1792565523.509 db_ready=1792565525.253 ms=1743 am_TotalTime=1526 migration_lines=1
+cycle 3 07:52:23 db+wal bytes before=876544+4120032
+T3 start=1792565543.730 db_ready=1792565545.593 ms=1862 am_TotalTime=1634 migration_lines=0
+U3 start=1792565562.867 db_ready=1792565564.559 ms=1691 am_TotalTime=1489 migration_lines=1
+cycle 4 07:53:02 db+wal bytes before=876544+4120032
+T4 start=1792565583.004 db_ready=1792565584.820 ms=1815 am_TotalTime=1608 migration_lines=0
+U4 start=1792565602.186 db_ready=1792565603.944 ms=1757 am_TotalTime=1526 migration_lines=1
+cycle 5 07:53:42 db+wal bytes before=876544+4120032
+T5 start=1792565622.288 db_ready=1792565624.133 ms=1844 am_TotalTime=1643 migration_lines=0
+U5 start=1792565641.409 db_ready=1792565643.130 ms=1721 am_TotalTime=1481 migration_lines=1
+
+median trunk cold start (T) = 1862 ms
+median head first post-upgrade launch (U) = 1743 ms
+difference U - T = -119 ms; rule: <= +2000 ms -> PASS
+
+# pre-fix head d4d78b2a4, one cycle (superseded by the code fixes): T 1820 ms, U 1806 ms

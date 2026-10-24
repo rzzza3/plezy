@@ -57,8 +57,7 @@ class MediaControlsManager {
   ///
   /// This includes title, artist, artwork, and duration. Backend-neutral —
   /// the [MediaServerClient.thumbnailUrl] adapter handles per-backend URL
-  /// shape (Plex's `/photo/:/transcode` proxy vs. Jellyfin's
-  /// self-authenticated image URL).
+  /// shape (e.g. a transcode proxy).
   Future<void> updateMetadata({required MediaItem metadata, MediaServerClient? client, Duration? duration}) async {
     if (_updatesSuspended) return;
     final generation = ++_metadataGeneration;
@@ -114,7 +113,7 @@ class MediaControlsManager {
   /// Reads [url] through the shared artwork cache, which also keeps the token
   /// out of its own metadata.
   static Future<Uint8List?> _loadArtworkFromCache(String url) async {
-    final response = await PlexImageCacheManager.instance.getFileStream(url).firstWhere((r) => r is FileInfo);
+    final response = await ArtworkCacheManager.instance.getFileStream(url).firstWhere((r) => r is FileInfo);
     return (response as FileInfo).file.readAsBytes();
   }
 

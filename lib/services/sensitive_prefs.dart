@@ -13,7 +13,7 @@
 ///   AniList, Simkl, Trakt and MDBList live here in plaintext.
 /// * Seerr sessions — `SeerrSessionStore` persists a raw `connect.sid` cookie
 ///   alongside a vault-protected password.
-/// * [legacyPlexTokenPref] — the pre-connection-registry Plex token slot. It is
+/// * [legacyPlexTokenPref] — the pre-connection-registry account token slot. It is
 ///   drained by the connection migration but can linger on old installs.
 ///
 /// Two subsystems consult this list, both added for #1732:
@@ -35,10 +35,15 @@ library;
 /// Key holding the base64 `CredentialVault` AES-256 key.
 const String credentialVaultKeyPref = 'credential_vault_key_v1';
 
-/// The vault-protected Silo session: tokens, expiry, profile and generation.
+/// Prefix of the vault-protected Silo session slots, one per server:
+/// tokens, expiry, profile and generation.
 const String siloSessionPref = 'silo_session_v1';
 
-/// Legacy single-slot Plex token, superseded by the connection registry.
+String siloSessionPrefFor(String serverId) => '$siloSessionPref.$serverId';
+
+bool isSiloSessionPrefKey(String key) => key.startsWith('$siloSessionPref.');
+
+/// Legacy single-slot account token from the removed backend, superseded by the connection registry.
 const String legacyPlexTokenPref = 'plex_token';
 
 /// Unscoped base keys used by `TrackerAccountStore`, one per tracker service.
@@ -79,5 +84,5 @@ bool isSeerrSessionPrefKey(String key) => profileScopedCredentialBaseKey(key) ==
 bool isSensitivePrefKey(String key) =>
     key == credentialVaultKeyPref ||
     key == legacyPlexTokenPref ||
-    key == siloSessionPref ||
+    isSiloSessionPrefKey(key) ||
     profileScopedCredentialBaseKey(key) != null;

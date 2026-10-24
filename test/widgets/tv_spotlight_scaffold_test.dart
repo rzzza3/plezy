@@ -6,7 +6,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/widgets/tv_spotlight_scaffold.dart';
 import '../test_helpers/media_items.dart';
 
-MediaItem _item(String id) => testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, title: id);
+MediaItem _item(String id) => testMediaItem(id: id, backend: MediaBackend.silo, kind: MediaKind.movie, title: id);
 
 MediaHub _hub(String id, List<MediaItem> items) =>
     MediaHub(id: id, title: id, type: 'movie', size: items.length, items: items);
@@ -46,7 +46,7 @@ void main() {
 
   test('spotlight controller resolves the latest item instance for a retained selection', () {
     final stale = _item('same');
-    final refreshed = testMediaItem(id: 'same', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Updated');
+    final refreshed = testMediaItem(id: 'same', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Updated');
     final controller = TvSpotlightController(settleDelay: Duration.zero);
     addTearDown(controller.dispose);
     controller.value = stale;

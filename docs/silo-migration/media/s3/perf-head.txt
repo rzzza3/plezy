@@ -1,0 +1,10 @@
+head run 1 4513 ms rows 1
+head run 2 4691 ms rows 1
+head run 3 4716 ms rows 1
+head run 4 4402 ms rows 1
+head run 5 4484 ms rows 1
+head run 6 4433 ms rows 1
+head run 7 4523 ms rows 1
+head run 8 4442 ms rows 1
+head run 9 4480 ms rows 1
+head run 10 4476 ms rows 1

@@ -48,13 +48,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
 
   PlaybackSourceSubtitleChoice? _selectedSourceSubtitleChoiceForControls(List<MediaSubtitleTrack> tracks) {
     if (tracks.isEmpty) return null;
-    if (widget.isLive) {
-      // Live selection is owned by the session state, not a PlaybackSession.
-      final selected = _live.selectedSubtitle;
-      return selected == null
-          ? const PlaybackSourceSubtitleChoice.off()
-          : PlaybackSourceSubtitleChoice.source(selected.id);
-    }
     final selection = _playbackSession?.subtitleSelection;
     if (selection != null) {
       if (selection.isOff) return const PlaybackSourceSubtitleChoice.off();
@@ -64,11 +57,10 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       }
     }
     // No fallback to `MediaSubtitleTrack.selected`. That flag is the server's
-    // *request* (Plex `Stream.selected`, Jellyfin `DefaultSubtitleStreamIndex`)
+    // *request* (`selected`)
     // and feeds `TrackSelectionService.selectSubtitleTrack` Priority 2 as an
-    // input; it is never a report of what the resolver settled on, and live
-    // tune metadata can carry it stale. Reading it back here ticked rows that
-    // were never selected.
+    // input; it is never a report of what the resolver settled on. Reading it
+    // back here ticked rows that were never selected.
     return const PlaybackSourceSubtitleChoice.off();
   }
 
@@ -76,11 +68,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       _playbackSession?.context.result.subtitleSidecars ?? const <PlaybackSubtitleSidecar>[];
 
   List<MediaSubtitleTrack> _sourceSubtitleTracksForControls() {
-    if (widget.isLive) {
-      // The live session lists only server-deliverable (burnable) streams;
-      // in-band captions stay in the native player track list.
-      return _live.session?.subtitleTracks ?? const <MediaSubtitleTrack>[];
-    }
     final sidecarSourceIds = {for (final sidecar in _sourceSubtitleSidecarsForControls()) ?sidecar.sourceStreamId};
     return selectableSourceSubtitleTracks(
       _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
@@ -261,9 +248,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     // The screen answers next/previous once for every entry
                     // point; the buttons add only the in-flight and room
                     // authority gates so a control cannot look live while it
-                    // does nothing. Live TV is never room-bound, and its zap
-                    // debounces itself through the transition gate.
-                    final canNavigateItems = widget.isLive || authority.canNavigateMediaItems;
+                    // does nothing.
+                    final canNavigateItems = authority.canNavigateMediaItems;
                     final onNext = _hasNextItem && !_episode.isLoadingNext && canNavigateItems
                         ? _navigateToNextItem
                         : null;
@@ -276,7 +262,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     return Video(
                       player: player!,
                       hasFirstFrame: _firstFrame.uiReady,
-                      controls: (context) => PlexVideoControls(
+                      controls: (context) => SiloVideoControls(
                         player: player!,
                         volumeController: _volumeController!,
                         metadata: _currentMetadata,
@@ -325,14 +311,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         // ignore: no-empty-block - state update triggers rebuild to reflect shader change
                         onShaderChanged: () => _setPlayerState(() {}),
                         thumbnailDataBuilder: _scrubPreviewSource?.isAvailable == true ? _getThumbnailData : null,
-                        isLive: widget.isLive,
-                        liveChannelName: _live.channelName,
-                        captureBuffer: _live.captureBuffer,
-                        isAtLiveEdge: _live.atLiveEdge,
-                        liveEpochForPosition: widget.isLive ? _liveEpochForPosition : null,
-                        onLiveSeek: _live.captureBuffer != null ? _seekLiveToEpoch : null,
-                        onLiveSeekBy: _live.captureBuffer != null ? _liveSeek.seekBy : null,
-                        onJumpToLive: _live.captureBuffer != null && !_live.atLiveEdge ? _jumpToLiveEdge : null,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
                         onToggleAmbientLighting: _ambientLightingService?.isSupported == true
                             ? _visualEffects.toggleAmbientLighting

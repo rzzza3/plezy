@@ -3,11 +3,9 @@ import '../media/ids.dart';
 import '../media/library_filter_selection.dart';
 import '../media/library_query.dart';
 
-import 'package:uuid/uuid.dart';
-
-import '../profiles/profile.dart';
 import '../utils/log_redaction_manager.dart';
 import 'base_shared_preferences_service.dart';
+import 'sensitive_prefs.dart';
 
 enum LibraryPreference { filters, sort, grouping, tab }
 
@@ -36,6 +34,37 @@ class StorageService extends BaseSharedPreferencesService {
 
   static const List<String> _libraryPreferenceKeys = [_keyLibraryFilters, _keyLibraryOrder, _keyHiddenLibraries];
 
+  /// Set once [clearPlezyProfilePrefsOnce] has run.
+  static const String _keyPlezyProfilePrefsCleared = 'plezy_profile_prefs_cleared_v1';
+
+  /// Set once [clearLegacyBackendPrefsOnce] has run.
+  static const String _keyLegacyBackendPrefsCleared = 'legacy_backend_prefs_cleared_v1';
+
+  /// Unscoped slots from before connections and profiles moved into the
+  /// database. Every one holds removed-backend state or a library preference
+  /// from that era.
+  static const List<String> _legacyBackendKeys = [
+    _keyPlexToken,
+    _keyCurrentUserUUID,
+    _keyServersList,
+    _keyServerOrder,
+    _keySelectedLibraryKey,
+    _keyLibraryFilters,
+    _keyLibraryOrder,
+    _keyHiddenLibraries,
+    'home_users_cache',
+    'home_users_cache_expiry',
+  ];
+
+  static const List<String> _legacyBackendPrefixes = [
+    _prefixServerEndpoint,
+    _prefixPlexHomeUsers,
+    _prefixLibraryFilters,
+    _prefixLibrarySort,
+    _prefixLibraryGrouping,
+    _prefixLibraryTab,
+  ];
+
   StorageService._();
 
   static Future<StorageService> getInstance() {
@@ -44,69 +73,53 @@ class StorageService extends BaseSharedPreferencesService {
 
   @override
   Future<void> onInit() async {
-    // Seed known values so logs can redact immediately on startup. Reading
-    // the legacy plex_token slot here is acceptable: it's a one-shot
-    // redaction-priming read for any tokens lingering from before the
-    // migration ran (after migration the slot is empty so this is a no-op).
-    // ignore: deprecated_member_use_from_same_package
-    LogRedactionManager.registerToken(getPlexToken());
-    await _migratePlexHomeUserScopes();
+    // Seed known values so logs can redact immediately on startup: a token
+    // lingering in the legacy account slot until
+    // [clearLegacyBackendPrefsOnce] runs (afterwards this is a no-op).
+    LogRedactionManager.registerToken(readNullableString(_keyPlexToken));
   }
 
-  /// One-time repair for prefs scoped by a full `plex-home-…` profile id.
-  /// [parsePlexHomeProfileId] historically rejected real 16-hex home-user
-  /// uuids, so `_userPrefix` fell back to the full profile id and wrote
-  /// `user_plex-home-{acct}-{uuid}_*` keys instead of the intended
-  /// `user_{uuid}_*`. Move them onto the uuid scope. On conflict the
-  /// full-id value wins: it is the more recently written one (uuid-scoped
-  /// keys can only predate the profiles migration).
-  Future<void> _migratePlexHomeUserScopes() async {
-    const scopePrefix = 'user_plex-home-';
-    final keys = prefs.keys.where((k) => k.startsWith(scopePrefix)).toList(growable: false);
-    for (final key in keys) {
-      final withoutUserPrefix = key.substring('user_'.length);
-      // Profile ids contain no underscores, so the first `_` ends the scope.
-      final sep = withoutUserPrefix.indexOf('_');
-      if (sep <= 0) continue;
-      final parsed = parsePlexHomeProfileId(withoutUserPrefix.substring(0, sep));
-      if (parsed == null) continue;
-      final newKey = 'user_${parsed.homeUserUuid}_${withoutUserPrefix.substring(sep + 1)}';
-      switch (prefs.get(key)) {
-        case final List<Object?> v:
-          await prefs.setStringList(newKey, v.cast<String>());
-        case final String v:
-          await prefs.setString(newKey, v);
-        case final bool v:
-          await prefs.setBool(newKey, v);
-        case final int v:
-          await prefs.setInt(newKey, v);
-        case final double v:
-          await prefs.setDouble(newKey, v);
-        default:
-          continue; // Unknown shape — leave the old key untouched.
-      }
-      await prefs.remove(key);
-    }
+  /// Removes the legacy pre-Silo backend keys once, so an unscoped library
+  /// preference cannot bring back a backend the schema 26 migration removed. Profile-scoped preferences, the
+  /// active profile, profile recency and the device identifier stay.
+  Future<void> clearLegacyBackendPrefsOnce() async {
+    if (prefs.getBool(_keyLegacyBackendPrefsCleared) ?? false) return;
+    final keys = prefs.keys
+        .where((key) => _legacyBackendKeys.contains(key) || _legacyBackendPrefixes.any(key.startsWith))
+        .toList(growable: false);
+    await Future.wait(keys.map(prefs.remove));
+    await prefs.setBool(_keyLegacyBackendPrefsCleared, true);
+  }
+
+  /// Removes the preferences keyed by a Plezy profile id once, alongside the
+  /// schema 27 migration: Silo profiles replaced Plezy's, so a `user_{scope}_*`
+  /// or `profile_last_used_*` key outside a `silo:` scope can never be read
+  /// again. That includes each profile's Seerr and tracker sessions; global
+  /// (unscoped) slots stay.
+  Future<void> clearPlezyProfilePrefsOnce() async {
+    if (prefs.getBool(_keyPlezyProfilePrefsCleared) ?? false) return;
+    const scopedPrefixes = ['user_', _prefixProfileLastUsed];
+    final keys = prefs.keys
+        .where(
+          (key) => scopedPrefixes.any(
+            (prefix) => key.startsWith(prefix) && !key.substring(prefix.length).startsWith('silo:'),
+          ),
+        )
+        .toList(growable: false);
+    await Future.wait(keys.map(prefs.remove));
+    await prefs.setBool(_keyPlezyProfilePrefsCleared, true);
   }
 
   // User-scoped storage for per-profile library settings
 
-  /// Returns the scope identifier for the active profile, or `null` if no
-  /// profile is active.
-  ///
-  /// For Plex Home profiles (id format `plex-home-{connId}-{homeUserUuid}`)
-  /// the scope is the home-user UUID — keeps per-user library prefs working
-  /// the same way the legacy `currentUserUUID` did. For local profiles, the
-  /// full profile id is the scope.
+  /// Returns the scope identifier for the active profile — its id, the
+  /// client scope `silo:<server_id>/<profile_id>` — or `null` if no profile
+  /// is active.
   String? activeUserScope() => _activeUserScope();
 
-  String userScopeForProfileId(String profileId) => profileUserScope(profileId);
+  String userScopeForProfileId(String profileId) => profileId;
 
-  String? _activeUserScope() {
-    final id = getActiveProfileId();
-    if (id == null) return null;
-    return profileUserScope(id);
-  }
+  String? _activeUserScope() => getActiveProfileId();
 
   /// Returns `'user_{scope}_'` for the active profile, or `''` if no
   /// profile is active.
@@ -174,41 +187,13 @@ class StorageService extends BaseSharedPreferencesService {
     await prefs.remove('$_prefixServerEndpoint$serverId');
   }
 
-  // Plex.tv Token — read once by [ConnectionBootstrap.migrateLegacyPlexAccount]
-  // on the upgrade run. The new pipeline stores Plex account tokens on
-  // [PlexAccountConnection.accountToken] in [ConnectionRegistry].
-  @Deprecated(
-    'Read PlexAccountConnection.accountToken from ConnectionRegistry instead. '
-    'Only ConnectionBootstrap.migrateLegacyPlexAccount may use this.',
-  )
-  String? getPlexToken() {
-    return readNullableString(_keyPlexToken);
-  }
-
-  /// Drop the legacy `plex_token` slot. Called by
-  /// [ConnectionBootstrap.migrateLegacyPlexAccount] after the token has
-  /// been moved into a [PlexAccountConnection] row, so a later sign-out
-  /// doesn't get resurrected on next launch (the migration would
-  /// otherwise see the orphaned token and re-create the connection).
-  Future<void> clearLegacyPlexToken() async {
-    await prefs.remove(_keyPlexToken);
-  }
-
-  /// Return the persisted device identifier, generating and saving a UUID on
-  /// first call. Used by Plex's `X-Plex-Client-Identifier` header so plex.tv
-  /// sees the same device across launches; not Plex-specific in itself —
-  /// Jellyfin's `DeviceId` header reuses the same value too.
-  Future<String> getOrCreateClientIdentifier() async {
-    final existing = readNullableString(_keyClientId);
-    if (existing != null && existing.isNotEmpty) return existing;
-    final generated = const Uuid().v4();
-    await prefs.setString(_keyClientId, generated);
-    return generated;
-  }
-
   // Clear all credentials
   Future<void> clearCredentials() async {
-    await Future.wait([..._credentialKeys.map((k) => prefs.remove(k)), clearMultiServerData()]);
+    await Future.wait([
+      ..._credentialKeys.map((k) => prefs.remove(k)),
+      clearMultiServerData(),
+      _clearKeysWithPrefix('$siloSessionPref.'),
+    ]);
     LogRedactionManager.clearTrackedValues();
   }
 
@@ -443,50 +428,13 @@ class StorageService extends BaseSharedPreferencesService {
   Future<void> clearLibraryOrder({required String profileId, void Function()? checkCurrent}) =>
       _resetScopedPreference(_keyLibraryOrder, profileId: profileId, checkCurrent: checkCurrent);
 
-  // Current User UUID — read once by [ConnectionBootstrap._promoteActiveProfileFromLegacy]
-  // on the upgrade run, then cleared. Replaced by
-  // [getActiveProfileId] / [setActiveProfileId].
-  @Deprecated(
-    'Use setActiveProfileId / getActiveProfileId. '
-    'Only ConnectionBootstrap._promoteActiveProfileFromLegacy may read this.',
-  )
-  String? getCurrentUserUUID() {
-    return readNullableString(_keyCurrentUserUUID);
-  }
-
-  /// Clears the legacy `currentUserUUID` slot. Used by the upgrade migration.
-  Future<void> clearCurrentUserUUID() async {
-    await prefs.remove(_keyCurrentUserUUID);
-  }
-
   // Clear all user-related data (for logout)
   Future<void> clearUserData() async {
     await Future.wait([clearCredentials(), clearLibraryPreferences()]);
   }
 
-  // Multi-Server Support Methods
-  //
-  // Servers now live on [PlexAccountConnection.servers] in
-  // [ConnectionRegistry]. The legacy `servers_list` JSON slot is read once
-  // by [ConnectionBootstrap.migrateLegacyPlexAccount] and then dropped.
-
-  /// Get legacy servers list as JSON string. Use [ConnectionRegistry] for
-  /// fresh data; this exists only for the boot-time migration.
-  @Deprecated(
-    'Read PlexAccountConnection.servers from ConnectionRegistry. '
-    'Only ConnectionBootstrap.migrateLegacyPlexAccount may use this.',
-  )
-  String? getServersListJson() {
-    return readNullableString(_keyServersList);
-  }
-
-  /// Clear the legacy servers list.
-  Future<void> clearServersList() async {
-    await prefs.remove(_keyServersList);
-  }
-
   Future<void> clearMultiServerData() async {
-    await Future.wait([clearServersList(), clearServerOrder(), _clearKeysWithPrefix(_prefixServerEndpoint)]);
+    await Future.wait([prefs.remove(_keyServersList), clearServerOrder(), _clearKeysWithPrefix(_prefixServerEndpoint)]);
   }
 
   /// Clear legacy server order.
@@ -506,31 +454,9 @@ class StorageService extends BaseSharedPreferencesService {
     await prefs.remove(_keyActiveProfileId);
   }
 
-  // Per-connection Plex Home users cache. Plex Home profiles are not
-  // persisted as Profile rows — they're fetched live by [PlexHomeService]
-  // and cached here so the picker can paint immediately on cold start.
-  // Stored as a JSON list of [PlexHomeUser] payloads, no TTL — the service
-  // refreshes in the background via stale-while-revalidate.
-  Future<void> savePlexHomeUsersCache(String connectionId, List<Map<String, dynamic>> users) async {
-    await prefs.setString('$_prefixPlexHomeUsers$connectionId', json.encode(users));
-  }
-
-  String? getPlexHomeUsersCacheJson(String connectionId) {
-    return readNullableString('$_prefixPlexHomeUsers$connectionId');
-  }
-
-  Future<void> clearPlexHomeUsersCache(String connectionId) async {
-    await prefs.remove('$_prefixPlexHomeUsers$connectionId');
-  }
-
-  Future<void> clearAllPlexHomeUsersCache() async {
-    await _clearKeysWithPrefix(_prefixPlexHomeUsers);
-  }
-
-  // `lastUsedAt` for ordering and future filtering of profiles by recency
-  // (currently surfaced via `Profile.lastUsedAt`). Stored separately so it
-  // works for both DB-backed local profiles and virtual Plex Home profiles
-  // (which don't have a Profile row to update).
+  // `lastUsedAt` for ordering profiles by recency (surfaced via
+  // `Profile.lastUsedAt`). Silo owns the profiles, so the app keeps this
+  // client-side stamp next to them.
   Future<void> markProfileUsed(String profileId, DateTime at) async {
     await prefs.setInt('$_prefixProfileLastUsed$profileId', at.millisecondsSinceEpoch);
   }
@@ -548,10 +474,9 @@ class StorageService extends BaseSharedPreferencesService {
     await prefs.remove('$_prefixProfileLastUsed$profileId');
   }
 
-  /// Remove every user-scoped pref under [profileId]'s scope. For Plex Home
-  /// profiles the scope is the home-user uuid, which is shared by any borrow
-  /// of the same home user — only call when that user's access is being torn
-  /// down entirely (profile delete / account sign-out).
+  /// Remove every user-scoped pref under [profileId]'s scope — only call
+  /// when that profile's access is being torn down entirely (server
+  /// sign-out).
   Future<void> clearUserScopedPreferencesForProfile(String profileId) async {
     await _clearKeysWithPrefix(_userPrefixForProfileId(profileId));
   }

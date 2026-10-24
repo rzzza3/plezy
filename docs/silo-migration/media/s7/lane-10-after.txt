@@ -1,0 +1,33 @@
+184	app_flutter/plezy_downloads.db
+8	app_flutter/downloads/Movies/Love of Your Life (2026)
+16	app_flutter/downloads/Movies
+430728	app_flutter/downloads/TV Shows/Taskmaster (2018)/Season 01
+430736	app_flutter/downloads/TV Shows/Taskmaster (2018)
+430744	app_flutter/downloads/TV Shows
+430768	app_flutter/downloads
+298888	./cache
+48	./code_cache
+8	./databases
+676	./no_backup
+48	./shared_prefs
+8	./app_flutter/downloads/Movies/Love of Your Life (2026)
+16	./app_flutter/downloads/Movies
+430728	./app_flutter/downloads/TV Shows/Taskmaster (2018)/Season 01
+430736	./app_flutter/downloads/TV Shows/Taskmaster (2018)
+430744	./app_flutter/downloads/TV Shows
+430768	./app_flutter/downloads
+598644	./app_flutter
+20	./files/datastore
+16	./files/backgroundDownloaderDatabase
+8	./files/backgroundDownloaderResumeData
+48	./files/backgroundDownloaderTaskRecords
+116	./files
+898436	.
+total 264
+drwx------ 2 u0_a88 u0_a88   4096 2026-10-21 03:21 artwork
+drwx------ 4 u0_a88 u0_a88   4096 2026-10-21 03:21 downloads
+drwx------ 2 u0_a88 u0_a88   4096 2026-10-21 07:23 flutter_assets
+-rw------- 1 u0_a88 u0_a88 184320 2026-10-21 07:23 plezy_downloads.db
+-rw------- 1 u0_a88 u0_a88  32768 2026-10-21 07:23 plezy_downloads.db-shm
+-rw------- 1 u0_a88 u0_a88   8272 2026-10-21 07:23 plezy_downloads.db-wal
+-rw------- 1 u0_a88 u0_a88      0 2026-10-21 07:23 res_timestamp-152-1792563783630

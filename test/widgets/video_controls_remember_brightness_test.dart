@@ -116,7 +116,7 @@ void main() {
             body: SizedBox(
               width: surface.width,
               height: surface.height,
-              child: PlexVideoControls(
+              child: SiloVideoControls(
                 player: player,
                 volumeController: volume,
                 metadata: testMediaItem(id: 'remember-brightness'),
@@ -152,7 +152,7 @@ void main() {
   /// 84px up over the 420px active band (600 minus the 15% exclusion bands)
   /// is a +0.2 brightness/volume delta.
   Future<void> edgeSwipe(WidgetTester tester, {required double x}) async {
-    final origin = tester.getRect(find.byType(PlexVideoControls)).topLeft;
+    final origin = tester.getRect(find.byType(SiloVideoControls)).topLeft;
     final gesture = await tester.startGesture(origin + Offset(x, 400));
     await tester.pump(); // Resolve the candidate baseline read deterministically.
     await gesture.moveTo(origin + Offset(x, 316));

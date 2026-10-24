@@ -1,0 +1,59 @@
+860	app_flutter/plezy_downloads.db
+4032	app_flutter/plezy_downloads.db-wal
+8	app_flutter/downloads/Movies/Love of Your Life (2026)
+16	app_flutter/downloads/Movies
+430728	app_flutter/downloads/TV Shows/Taskmaster (2018)/Season 01
+430736	app_flutter/downloads/TV Shows/Taskmaster (2018)
+430744	app_flutter/downloads/TV Shows
+430768	app_flutter/downloads
+12	./cache/data/user/0/com.edde746.plezy/no_backup
+20	./cache/data/user/0/com.edde746.plezy
+28	./cache/data/user/0
+36	./cache/data/user
+44	./cache/data
+1060	./cache/cached_network_image_ce/hive
+281804	./cache/cached_network_image_ce
+720	./cache/system_shelf_artwork/58e282251c5a6248015d0a4a3bde698f753b07dc037c75c302164dda55fdf600
+728	./cache/system_shelf_artwork
+16304	./cache/subtitle_fonts
+298888	./cache
+8	./code_cache/flutter_engine/deb287481e3ce9468f3434937ced4240a70539ca/skia/8df24be66531469e576a806749a0202ae26b8d08/sksl
+16	./code_cache/flutter_engine/deb287481e3ce9468f3434937ced4240a70539ca/skia/8df24be66531469e576a806749a0202ae26b8d08
+24	./code_cache/flutter_engine/deb287481e3ce9468f3434937ced4240a70539ca/skia
+32	./code_cache/flutter_engine/deb287481e3ce9468f3434937ced4240a70539ca
+40	./code_cache/flutter_engine
+48	./code_cache
+8	./databases
+676	./no_backup
+48	./shared_prefs
+159192	./app_flutter/flutter_assets
+7648	./app_flutter/artwork
+8	./app_flutter/downloads/Movies/Love of Your Life (2026)
+16	./app_flutter/downloads/Movies
+430728	./app_flutter/downloads/TV Shows/Taskmaster (2018)/Season 01
+430736	./app_flutter/downloads/TV Shows/Taskmaster (2018)
+430744	./app_flutter/downloads/TV Shows
+430768	./app_flutter/downloads
+602548	./app_flutter
+20	./files/datastore
+16	./files/backgroundDownloaderDatabase
+8	./files/backgroundDownloaderResumeData
+48	./files/backgroundDownloaderTaskRecords
+116	./files
+902340	.
+total 4956
+drwx------ 2 u0_a88 u0_a88    4096 2026-10-21 03:21 artwork
+drwx------ 4 u0_a88 u0_a88    4096 2026-10-21 03:21 downloads
+drwx------ 2 u0_a88 u0_a88    4096 2026-10-21 07:13 flutter_assets
+-rw------- 1 u0_a88 u0_a88  876544 2026-10-20 22:49 plezy_downloads.db
+-rw------- 1 u0_a88 u0_a88   32768 2026-10-21 07:20 plezy_downloads.db-shm
+-rw------- 1 u0_a88 u0_a88 4120032 2026-10-21 07:20 plezy_downloads.db-wal
+-rw------- 1 u0_a88 u0_a88       0 2026-10-21 07:13 res_timestamp-152-1792563205641
+
+# DB copy from the backup tar, after WAL checkpoint on host (sqlite3 from platform-tools):
+# PRAGMA user_version = 25; checkpointed db file = 876544 B
+# api_cache rows: 10; sum(length(data)) = 65278 B
+#   Plex scope (…/~plex-profile/plex-home-plex.…): 8 rows, 58933 B
+#   silo: scope: 2 rows, 6345 B (kept by design, operator decision 2026-10-21)
+# connections: plex 1, silo 1; profiles (stored rows): local 1 (Silo A); profile_connections 2
+# downloaded_media: 1 (Plex, Taskmaster S1E1, Plex-profile scope); download_owners 1; music_sessions 0

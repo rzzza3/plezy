@@ -1,13 +1,13 @@
 import 'media_item.dart';
 
-/// A named, ordered list of items grouped on the home screen (Plex `Hub`,
-/// or a synthesized Jellyfin "Latest"/"Resume"/"NextUp" row).
+/// A named, ordered list of items grouped on the home screen (a server hub,
+/// or a Silo home section).
 class MediaHub {
-  /// Backend-opaque hub identifier (Plex `key`, synthesized for Jellyfin).
+  /// Backend-opaque hub identifier (e.g. a section id).
   final String id;
 
   /// Human-readable hub identifier for analytics and routing — e.g.
-  /// `home.continue`, `tv.recentlyadded`. Synthesized for Jellyfin.
+  /// `home.continue`, `tv.recentlyadded`.
   final String? identifier;
 
   final String title;

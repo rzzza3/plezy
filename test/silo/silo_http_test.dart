@@ -284,4 +284,59 @@ void main() {
       expect(fake.requests.single.url.path, '/api/v2/system/info');
     });
   });
+
+  group('cleartext consent, AuthInterceptorImpl.kt:398-407 and CleartextOriginConsent.kt:16-33', () {
+    final cleartext = Uri.parse('http://10.0.2.2:8090');
+
+    test('an unapproved http origin gets only unauthenticated GETs', () async {
+      final (session, _) = await signedInSession();
+      final fake = FakeSilo((_) => jsonResponse({'needs_setup': false}, 200));
+      final silo = SiloHttp(origin: cleartext, session: session, device: siloTestDevice, client: fake.client);
+
+      await silo.send(const SiloRequest.get('/api/v2/system/setup', auth: SiloAuth.none));
+      await expectLater(
+        silo.send(const SiloRequest.post('/api/v2/auth/login', body: {'username': 'u'}, auth: SiloAuth.none)),
+        throwsA(isA<SiloCleartextNotApprovedException>()),
+      );
+      await expectLater(
+        silo.send(const SiloRequest.get('/api/v2/profiles')),
+        throwsA(isA<SiloCleartextNotApprovedException>()),
+      );
+
+      expect(fake.requests.map((r) => r.url.path), ['/api/v2/system/setup']);
+    });
+
+    test('an approved http origin gets every call', () async {
+      final store = MemorySiloSessionStore();
+      final session = await SiloSessionController.load(store);
+      final fake = FakeSilo((_) => jsonResponse({}, 200));
+      final silo = SiloHttp(
+        origin: cleartext,
+        session: session,
+        device: siloTestDevice,
+        client: fake.client,
+        cleartextApproved: (origin) => origin == 'http://10.0.2.2:8090',
+      );
+
+      await silo.send(const SiloRequest.post('/api/v2/auth/device/start', auth: SiloAuth.none, single: true));
+
+      expect(fake.requests.single.url.toString(), 'http://10.0.2.2:8090/api/v2/auth/device/start');
+    });
+  });
+
+  test('account auth sends the bearer without profile headers (ProfileApi.kt:116-129)', () async {
+    final (session, _) = await signedInSession();
+    await session.selectProfile('3', 'pin-token');
+    final fake = FakeSilo((_) => jsonResponse({'valid': false}, 200));
+
+    await siloHttpFor(
+      fake,
+      session,
+    ).send(const SiloRequest.post('/api/v2/profiles/4/verify-pin', body: {'pin': '1'}, auth: SiloAuth.account));
+
+    final request = fake.requests.single;
+    expect(request.header('authorization'), 'Bearer access-A');
+    expect(request.header('x-profile-id'), isNull);
+    expect(request.header('x-profile-token'), isNull);
+  });
 }

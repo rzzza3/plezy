@@ -1,0 +1,20 @@
+17:18:35.017 : [I] [MPV:display] hdr=false dv=false current=#1 1920x1080@60.000004Hz supported=[#1 1920x1080@60.000004Hz]
+17:18:38.121 : [I] Perf: first frame
+17:20:04.604 : [I] Home: first hub frame, rows 1
+17:20:08.871 : [I] Home: rows repainted
+17:20:28.433 : [I] ActiveProfileBinder: rebinding for Silo A (local-f8d15736-7421-4e44-bb1b-441eab344ea9)
+17:20:28.433 : [I] ActiveProfileProvider: activated Silo A (local-f8d15736-7421-4e44-bb1b-441eab344ea9)
+17:20:29.151 : [I] Added Silo server: Silo (online)
+17:20:29.157 : [I] Silo events: fetchingTicket
+17:20:29.796 : [I] Silo events: connecting
+17:20:30.405 : [I] Silo: home sections 17
+17:20:30.463 : [I] Home: first hub frame, rows 1
+17:20:30.463 : [I] Home: rows repainted
+17:20:30.470 : [I] Silo events: subscribed
+17:20:30.470 : [I] Silo events: 2 channels, 0 rejected
+17:20:30.642 : [I] Home: rows repainted
+17:20:30.668 : [I] Silo events: subscribed
+17:20:30.668 : [I] Silo events: 2 channels, 0 rejected
+17:20:32.674 : [I] Silo events: home refetch
+17:20:33.378 : [I] Silo: home sections 17
+17:20:33.400 : [I] Home: rows repainted

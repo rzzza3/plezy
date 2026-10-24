@@ -440,8 +440,7 @@ class SyncRuleExecutor {
     required Map<String, MediaItem> metadata,
   }) async {
     // Page list calls so long collections/playlists don't truncate at the
-    // default limit. Plex collections use a distinct collections endpoint;
-    // Jellyfin's collection page implementation maps to its children API.
+    // default limit. Collections use a distinct endpoint.
     final rootItems = rule.targetType == ContentTypes.collection
         ? await _fetchAllCollectionItems(client, rule.ratingKey, source: metadata[rule.globalKey])
         : await _fetchAllPlaylistItems(client, rule.ratingKey);
@@ -460,7 +459,7 @@ class SyncRuleExecutor {
     return fetchAllPlaylistItems(client, playlistId);
   }
 
-  /// Page through every item in a collection. Plex requires
+  /// Page through every item in a collection. A backend may require
   /// [MediaServerClient.fetchCollectionPage] because collection children live
   /// under `/library/collections/{id}/children`, not metadata children.
   Future<List<MediaItem>> _fetchAllCollectionItems(

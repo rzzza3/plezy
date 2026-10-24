@@ -44,7 +44,7 @@ enum WatchStateChangeType { watched, unwatched, progressUpdate, removedFromConti
 
 /// Event representing a watch state change with parent chain for hierarchical invalidation
 class WatchStateEvent with HierarchicalEventMixin {
-  /// The id of the item that changed (Plex ratingKey, Jellyfin GUID, …).
+  /// The id of the item that changed (Silo content id, …).
   @override
   final String itemId;
 
@@ -59,7 +59,7 @@ class WatchStateEvent with HierarchicalEventMixin {
   /// Optional backend-private cache namespace for user-scoped servers.
   ///
   /// UI invalidation still uses [serverId], but cache writers should prefer
-  /// this when present so Jellyfin user data stays isolated per user.
+  /// this when present so per-user data stays isolated per user.
   final String? cacheServerId;
 
   /// Type of change
@@ -79,8 +79,8 @@ class WatchStateEvent with HierarchicalEventMixin {
   final bool? isNowWatched;
 
   /// Library section this item belongs to — used for per-tracker library
-  /// filtering. Null when emitted without full metadata. Plex sends a
-  /// numeric id, Jellyfin sends a UUID; both round-trip as strings.
+  /// filtering. Null when emitted without full metadata. A server can send a
+  /// numeric id; ids round-trip as strings.
   final String? librarySectionID;
 
   /// Whether the server had already accepted this exact state when the event

@@ -17,7 +17,7 @@ Future<void> _emit(WatchStateEvent event) async {
 WatchStateEvent _event({
   required WatchStateChangeType changeType,
   required bool? isNowWatched,
-  String serverId = 'jf-machine',
+  String serverId = 'media-machine',
   String itemId = 'item-1',
   String? cacheServerId,
   int? viewOffset,
@@ -41,11 +41,11 @@ var _testSequence = 0;
 
 final _episode = testMediaItem(
   id: 'episode-1',
-  backend: MediaBackend.jellyfin,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   parentId: 'season-1',
   grandparentId: 'show-1',
-  serverId: 'jf-machine',
+  serverId: 'media-machine',
 );
 
 void main() {
@@ -56,7 +56,7 @@ void main() {
     await _emit(_event(changeType: WatchStateChangeType.watched, isNowWatched: true));
     await _emit(_event(changeType: WatchStateChangeType.removedFromContinueWatching, isNowWatched: null));
 
-    final patch = provider.patchForGlobalKey('jf-machine:item-1');
+    final patch = provider.patchForGlobalKey('media-machine:item-1');
     expect(patch?.isWatched, isTrue);
     expect(patch?.viewOffsetMs, 0);
   });
@@ -64,14 +64,14 @@ void main() {
   test('known active scope resolves a newer legacy bare event into that scope', () async {
     final provider = WatchStateStore();
     addTearDown(provider.dispose);
-    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+    provider.setActiveClientScopesByServer({'media-machine': 'media-machine/user-a'});
 
     await _emit(
-      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'jf-machine/user-a'),
+      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'media-machine/user-a'),
     );
     await _emit(_event(changeType: WatchStateChangeType.unwatched, isNowWatched: false));
 
-    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isFalse);
+    expect(provider.patchForGlobalKey('media-machine:item-1')?.isWatched, isFalse);
   });
 
   test('unscoped patch remains visible when the active client scope arrives later', () async {
@@ -79,37 +79,37 @@ void main() {
     addTearDown(provider.dispose);
 
     await _emit(_event(changeType: WatchStateChangeType.watched, isNowWatched: true));
-    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+    provider.setActiveClientScopesByServer({'media-machine': 'media-machine/user-a'});
 
-    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);
+    expect(provider.patchForGlobalKey('media-machine:item-1')?.isWatched, isTrue);
   });
 
   test('newer active scoped patch wins over older unscoped patch', () async {
     final provider = WatchStateStore();
     addTearDown(provider.dispose);
-    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+    provider.setActiveClientScopesByServer({'media-machine': 'media-machine/user-a'});
 
     await _emit(_event(changeType: WatchStateChangeType.unwatched, isNowWatched: false));
     await _emit(
-      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'jf-machine/user-a'),
+      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'media-machine/user-a'),
     );
 
-    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);
+    expect(provider.patchForGlobalKey('media-machine:item-1')?.isWatched, isTrue);
   });
 
   test('explicit foreign scope is ignored when resolving the active scope', () async {
     final provider = WatchStateStore();
     addTearDown(provider.dispose);
-    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+    provider.setActiveClientScopesByServer({'media-machine': 'media-machine/user-a'});
 
     await _emit(
-      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'jf-machine/user-a'),
+      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'media-machine/user-a'),
     );
     await _emit(
-      _event(changeType: WatchStateChangeType.unwatched, isNowWatched: false, cacheServerId: 'jf-machine/user-b'),
+      _event(changeType: WatchStateChangeType.unwatched, isNowWatched: false, cacheServerId: 'media-machine/user-b'),
     );
 
-    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);
+    expect(provider.patchForGlobalKey('media-machine:item-1')?.isWatched, isTrue);
   });
 
   test('an ancestor patch reaches descendants through parentChain', () async {
@@ -149,14 +149,14 @@ void main() {
   test('ancestor patches resolve through the active client scope', () async {
     final store = WatchStateStore();
     addTearDown(store.dispose);
-    store.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+    store.setActiveClientScopesByServer({'media-machine': 'media-machine/user-a'});
 
     await _emit(
       _event(
         changeType: WatchStateChangeType.watched,
         isNowWatched: true,
         itemId: 'show-1',
-        cacheServerId: 'jf-machine/user-a',
+        cacheServerId: 'media-machine/user-a',
       ),
     );
 
@@ -171,10 +171,10 @@ void main() {
 
     final season = testMediaItem(
       id: 'season-1',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       kind: MediaKind.season,
       parentId: 'show-1',
-      serverId: 'jf-machine',
+      serverId: 'media-machine',
       leafCount: 10,
       viewedLeafCount: 3,
     );
@@ -188,13 +188,13 @@ void main() {
     addTearDown(store.dispose);
     store.setHydratedPatches(const [
       HydratedWatchStatePatch(
-        globalKey: 'jf-machine:show-1',
+        globalKey: 'media-machine:show-1',
         patch: WatchStateSnapshot(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0),
         updatedAt: 100,
         order: 1,
       ),
       HydratedWatchStatePatch(
-        globalKey: 'jf-machine:episode-1',
+        globalKey: 'media-machine:episode-1',
         patch: WatchStateSnapshot(isWatched: false, hasViewOffsetMs: true, viewOffsetMs: 0),
         updatedAt: 200,
         order: 2,
@@ -211,22 +211,22 @@ void main() {
     addTearDown(store.dispose);
     store.setHydratedPatches(const [
       HydratedWatchStatePatch(
-        globalKey: 'jf-machine/user-a:show-1',
+        globalKey: 'media-machine/user-a:show-1',
         patch: WatchStateSnapshot(isWatched: true),
         updatedAt: 100,
         order: 1,
       ),
       HydratedWatchStatePatch(
-        globalKey: 'jf-machine/user-b:show-1',
+        globalKey: 'media-machine/user-b:show-1',
         patch: WatchStateSnapshot(isWatched: false),
         updatedAt: 100,
         order: 2,
       ),
     ]);
 
-    store.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+    store.setActiveClientScopesByServer({'media-machine': 'media-machine/user-a'});
     expect(store.apply(_episode).isWatched, isTrue);
-    store.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-b'});
+    store.setActiveClientScopesByServer({'media-machine': 'media-machine/user-b'});
     expect(store.apply(_episode).isWatched, isFalse);
   });
 
@@ -443,11 +443,11 @@ void main() {
       final observed = _episode.copyWith(viewCount: 0);
       final sibling = testMediaItem(
         id: 'episode-2',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         parentId: 'season-1',
         grandparentId: 'show-1',
-        serverId: 'jf-machine',
+        serverId: 'media-machine',
       );
 
       store.recordObservations(
@@ -463,7 +463,7 @@ void main() {
     test('an observation under one client scope cannot suppress another scope', () async {
       final store = WatchStateStore();
       addTearDown(store.dispose);
-      store.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-b'});
+      store.setActiveClientScopesByServer({'media-machine': 'media-machine/user-b'});
 
       await _emit(
         _event(
@@ -471,7 +471,7 @@ void main() {
           isNowWatched: false,
           itemId: 'episode-1',
           viewOffset: 1800000,
-          cacheServerId: 'jf-machine/user-b',
+          cacheServerId: 'media-machine/user-b',
           serverAcknowledged: true,
         ),
       );
@@ -480,7 +480,7 @@ void main() {
       // User A's request returning after the switch back to B: the public
       // server id is shared, so keying by it would suppress B's watch state.
       store.recordObservations(
-        [(item: fresh, clientScope: 'jf-machine/user-a')],
+        [(item: fresh, clientScope: 'media-machine/user-a')],
         watermark: store.observationWatermark,
         epoch: store.observationEpoch,
       );
@@ -561,7 +561,7 @@ void main() {
       WatchPatchPromotionNotifier().promote(WatchPatchId.session(999999));
       await Future<void>.delayed(Duration.zero);
 
-      expect(store.patchForGlobalKey('jf-machine:item-1')?.viewOffsetMs, 1800000);
+      expect(store.patchForGlobalKey('media-machine:item-1')?.viewOffsetMs, 1800000);
     });
 
     test('a promoted hydrated patch stops outliving authoritative reads', () async {
@@ -573,7 +573,7 @@ void main() {
       final patchId = WatchPatchId.offlineAction(profileId: 'profile-a', rowId: 7, revision: 100);
       store.setHydratedPatches([
         HydratedWatchStatePatch(
-          globalKey: 'jf-machine:episode-1',
+          globalKey: 'media-machine:episode-1',
           patch: const WatchStateSnapshot(hasViewOffsetMs: true, viewOffsetMs: 1800000),
           updatedAt: 100,
           order: 7,
@@ -596,16 +596,17 @@ void main() {
     });
   });
 
-  // The reporter's setup: Plex on macOS, where the client's cache scope is a
-  // profile scope that differs from the public server id. The observation and
+  // The reporter's setup (#1829, first seen on macOS): the client's
+  // cache scope is a profile scope that differs from the public server id, as
+  // a Silo client's `silo:<server>/<profile>` scope does. The observation and
   // the patch must land on the same key or suppression silently never fires.
-  group("the reporter's Plex handoff (#1829)", () {
-    final plexScope = buildPlexProfileScopeId(serverId: ServerId('plex-machine'), profileId: 'profile-a');
-    final plexEpisode = testMediaItem(
+  group("the reporter's cross-device handoff (#1829)", () {
+    final siloScope = SiloProfileScopeId(serverId: ServerId('silo-machine'), profileId: 'profile-a');
+    final siloEpisode = testMediaItem(
       id: 'episode-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
-      serverId: 'plex-machine',
+      serverId: 'silo-machine',
       durationMs: 3600000,
     );
 
@@ -614,17 +615,17 @@ void main() {
       addTearDown(store.dispose);
       // Exactly how ProfileSessionScreen wires the map: serverId -> the
       // client's own cacheServerId.
-      store.setActiveClientScopesByServer({'plex-machine': plexScope});
+      store.setActiveClientScopesByServer({'silo-machine': siloScope});
 
-      // The Mac pauses with 30 minutes left. Plex persists position on every
-      // timeline report, so the tracker acknowledges it.
+      // The Mac pauses with 30 minutes left. The server persists position on
+      // every progress report, so the tracker acknowledges it.
       await _emit(
         _event(
           changeType: WatchStateChangeType.progressUpdate,
           isNowWatched: false,
-          serverId: 'plex-machine',
+          serverId: 'silo-machine',
           itemId: 'episode-1',
-          cacheServerId: plexScope,
+          cacheServerId: siloScope,
           viewOffset: 1800000,
           serverAcknowledged: true,
         ),
@@ -632,13 +633,13 @@ void main() {
 
       // Precondition: without an observation the local patch pins the row.
       // This is the bug as reported.
-      final serverRow = plexEpisode.copyWith(viewOffsetMs: 2700000);
+      final serverRow = siloEpisode.copyWith(viewOffsetMs: 2700000);
       expect(store.apply(serverRow).viewOffsetMs, 1800000);
 
       // The iPad advances the server to 15 minutes left; Refresh reads it back.
       final watermark = store.observationWatermark;
       store.recordObservations(
-        [(item: serverRow, clientScope: plexScope)],
+        [(item: serverRow, clientScope: siloScope)],
         watermark: watermark,
         epoch: store.observationEpoch,
       );
@@ -649,12 +650,12 @@ void main() {
     test('a pre-refresh pause still pins, so a later local action is not lost', () async {
       final store = WatchStateStore();
       addTearDown(store.dispose);
-      store.setActiveClientScopesByServer({'plex-machine': plexScope});
+      store.setActiveClientScopesByServer({'silo-machine': siloScope});
 
-      final serverRow = plexEpisode.copyWith(viewOffsetMs: 2700000);
+      final serverRow = siloEpisode.copyWith(viewOffsetMs: 2700000);
       final watermark = store.observationWatermark;
       store.recordObservations(
-        [(item: serverRow, clientScope: plexScope)],
+        [(item: serverRow, clientScope: siloScope)],
         watermark: watermark,
         epoch: store.observationEpoch,
       );
@@ -664,9 +665,9 @@ void main() {
         _event(
           changeType: WatchStateChangeType.progressUpdate,
           isNowWatched: false,
-          serverId: 'plex-machine',
+          serverId: 'silo-machine',
           itemId: 'episode-1',
-          cacheServerId: plexScope,
+          cacheServerId: siloScope,
           viewOffset: 3000000,
           serverAcknowledged: true,
         ),
@@ -679,7 +680,7 @@ void main() {
       final store = WatchStateStore();
       addTearDown(store.dispose);
       // DownloadMetadataStore replaces the scope map with only the servers it
-      // has downloads for, so a Plex server without downloads can end up
+      // has downloads for, so a server without downloads can end up
       // unscoped. The patch keys off the event's own cacheServerId, so both
       // sides miss together rather than leaving a stale pin behind.
       store.setActiveClientScopesByServer(const {});
@@ -688,15 +689,15 @@ void main() {
         _event(
           changeType: WatchStateChangeType.progressUpdate,
           isNowWatched: false,
-          serverId: 'plex-machine',
+          serverId: 'silo-machine',
           itemId: 'episode-1',
-          cacheServerId: plexScope,
+          cacheServerId: siloScope,
           viewOffset: 1800000,
           serverAcknowledged: true,
         ),
       );
 
-      final serverRow = plexEpisode.copyWith(viewOffsetMs: 2700000);
+      final serverRow = siloEpisode.copyWith(viewOffsetMs: 2700000);
       expect(store.apply(serverRow).viewOffsetMs, 2700000);
     });
   });

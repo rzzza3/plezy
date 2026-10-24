@@ -1,16 +1,14 @@
-import 'package:drift/native.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
-import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/navigation/profile_navigation_scope.dart';
 import 'package:plezy/navigation/profile_session_screen.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/profiles/silo_household_service.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/discover_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
@@ -25,6 +23,7 @@ import 'package:provider/provider.dart';
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_stack.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -57,14 +56,13 @@ void main() {
       await graph.dispose();
     });
 
-    final owner = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-    final kids = Profile.local(id: 'local-kids', displayName: 'Kids', createdAt: DateTime(2026, 1, 2));
-    await graph.profileRegistry.upsert(owner);
-    await graph.profileRegistry.upsert(kids);
+    await graph.stack.addServer('srv', testHousehold([('owner', 'Owner'), ('kids', 'Kids')]));
+    final owner = graph.stack.profile('srv', 'owner');
+    final kids = graph.stack.profile('srv', 'kids');
     await graph.storage.saveHiddenLibrariesForProfile(owner.id, {'srv:owner'});
     await graph.storage.saveHiddenLibrariesForProfile(kids.id, {'srv:kids'});
     await graph.storage.setActiveProfileId(owner.id);
-    await graph.activeProfile.initialize();
+    await graph.activeProfile.reloadFromStorage();
 
     await graph.pump(
       tester,
@@ -82,7 +80,7 @@ void main() {
     final ownerHttpClients = List<FakeHttpClient>.of(trackerHttpClients);
     _expectCloseCount(ownerHttpClients, 0);
 
-    expect(find.text('active:local-owner'), findsOneWidget);
+    expect(find.text('active:silo:srv/owner'), findsOneWidget);
     expect(SystemShelfService().debugActiveOwner, owner.id);
     expect(discoverProviders.single.profileId, owner.id);
     expect(discoverProviders, hasLength(1));
@@ -109,8 +107,8 @@ void main() {
     _expectCloseCount(kidsHttpClients, 0);
 
     expect(find.text('old profile route'), findsNothing);
-    expect(find.text('active:local-kids'), findsOneWidget);
-    expect(disposedActiveIds, contains('local-owner'));
+    expect(find.text('active:silo:srv/kids'), findsOneWidget);
+    expect(disposedActiveIds, contains('silo:srv/owner'));
     expect(discoverProviders, hasLength(2));
     expect(discoverProviders.last, isNot(same(ownerDiscover)));
     expect(hiddenProviders, hasLength(2));
@@ -162,10 +160,10 @@ void main() {
         await graph.dispose();
       });
 
-      final owner = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-      await graph.profileRegistry.upsert(owner);
+      await graph.stack.addServer('srv', testHousehold([('owner', 'Owner')]));
+      final owner = graph.stack.profile('srv', 'owner');
       await graph.storage.setActiveProfileId(owner.id);
-      await graph.activeProfile.initialize();
+      await graph.activeProfile.reloadFromStorage();
 
       await graph.pump(
         tester,
@@ -205,6 +203,61 @@ void main() {
       expect(content.hasPrimaryFocus, isTrue, reason: 'focus returns to the session leaf that had it');
     },
   );
+
+  testWidgets('a Back that closed a dialog on KeyDown does not also pop the screen under it on its platform back', (
+    tester,
+  ) async {
+    final graph = await _SessionGraph.create();
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await graph.dispose();
+    });
+
+    await graph.stack.addServer('srv', testHousehold([('owner', 'Owner')]));
+    final owner = graph.stack.profile('srv', 'owner');
+    await graph.storage.setActiveProfileId(owner.id);
+    await graph.activeProfile.reloadFromStorage();
+    await graph.pump(
+      tester,
+      httpClientFactory: () => FakeHttpClient(200, const <int>[]),
+      profileShellBuilder: (context) => _ProfileProbeShell(
+        discoverProviders: [],
+        hiddenProviders: [],
+        trackerProviders: [],
+        companionProviders: [],
+        disposedActiveIds: [],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('push-profile-route')));
+    await tester.pumpAndSettle();
+    unawaited(
+      // Version pickers open on the profile navigator (showScopedDialog).
+      showDialog<void>(
+        context: tester.element(find.text('old profile route')),
+        useRootNavigator: false,
+        builder: (_) => const Focus(autofocus: true, child: Text('version picker')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('version picker'), findsOneWidget);
+
+    // Android TV order: the dialog's DismissAction pops it on KeyDown, then
+    // the platform back for the same press arrives before the KeyUp.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('version picker'), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('old profile route'), findsOneWidget, reason: 'one press closes one thing');
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('old profile route'), findsNothing, reason: 'the next platform back still pops the screen');
+  });
 }
 
 void _expectCloseCount(Iterable<FakeHttpClient> clients, int expected) {
@@ -215,60 +268,31 @@ void _expectCloseCount(Iterable<FakeHttpClient> clients, int expected) {
 
 class _SessionGraph {
   _SessionGraph._({
-    required this.db,
-    required this.profileRegistry,
-    required this.connectionRegistry,
-    required this.profileConnectionRegistry,
-    required this.storage,
-    required this.plexHome,
-    required this.activeProfile,
+    required this.stack,
     required this.serverManager,
     required this.multiServer,
     required this.offlineWatch,
   });
 
-  final AppDatabase db;
-  final ProfileRegistry profileRegistry;
-  final ConnectionRegistry connectionRegistry;
-  final ProfileConnectionRegistry profileConnectionRegistry;
-  final StorageService storage;
-  final _FakePlexHomeService plexHome;
-  final ActiveProfileProvider activeProfile;
+  final ProfileStack stack;
   final MultiServerManager serverManager;
   final MultiServerProvider multiServer;
   final OfflineWatchSyncService offlineWatch;
 
+  AppDatabase get db => stack.db;
+  StorageService get storage => stack.storage;
+  ActiveProfileProvider get activeProfile => stack.active;
+
   static Future<_SessionGraph> create() async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final profileRegistry = ProfileRegistry(db);
-    final connectionRegistry = ConnectionRegistry(db);
-    final profileConnectionRegistry = ProfileConnectionRegistry(db);
-    final storage = await StorageService.getInstance();
-    final plexHome = _FakePlexHomeService(
-      connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
-      storage: storage,
-    );
+    final stack = await ProfileStack.create();
     final serverManager = MultiServerManager();
     return _SessionGraph._(
-      db: db,
-      profileRegistry: profileRegistry,
-      connectionRegistry: connectionRegistry,
-      profileConnectionRegistry: profileConnectionRegistry,
-      storage: storage,
-      plexHome: plexHome,
-      activeProfile: ActiveProfileProvider(
-        registry: profileRegistry,
-        plexHome: plexHome,
-        connections: connectionRegistry,
-        profileConnections: profileConnectionRegistry,
-        storage: storage,
-      ),
+      stack: stack,
       serverManager: serverManager,
       multiServer: testMultiServerProvider(serverManager),
       // The session tree instantiates MusicPlaybackServiceImpl (the mini-player
       // overlay watches it), which needs the database + offline watch service.
-      offlineWatch: OfflineWatchSyncService(database: db, serverManager: serverManager),
+      offlineWatch: OfflineWatchSyncService(database: stack.db, serverManager: serverManager),
     );
   }
 
@@ -282,9 +306,8 @@ class _SessionGraph {
       providers: [
         Provider<StorageService>.value(value: storage),
         Provider<AppDatabase>.value(value: db),
-        Provider<ConnectionRegistry>.value(value: connectionRegistry),
-        Provider<ProfileConnectionRegistry>.value(value: profileConnectionRegistry),
-        Provider<PlexHomeService>.value(value: plexHome),
+        Provider<ConnectionRegistry>.value(value: stack.connections),
+        Provider<SiloHouseholdService>.value(value: stack.households),
         ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
         ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
         ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
@@ -301,13 +324,10 @@ class _SessionGraph {
   );
 
   Future<void> dispose() async {
-    await activeProfile.resetForTesting();
-    activeProfile.dispose();
     multiServer.dispose();
     serverManager.dispose();
-    await plexHome.dispose();
     offlineWatch.dispose();
-    await db.close();
+    await stack.dispose();
   }
 }
 
@@ -383,24 +403,4 @@ class _ProfileProbeShellState extends State<_ProfileProbeShell> {
       ),
     );
   }
-}
-
-class _FakePlexHomeService extends PlexHomeService {
-  _FakePlexHomeService({required super.connections, required super.profileConnections, required StorageService storage})
-    : super(storage: storage, plexHomeUserFetcher: (_) async => const []);
-
-  @override
-  Map<String, List<PlexHomeUser>> get current => const {};
-
-  @override
-  Stream<Map<String, List<PlexHomeUser>>> get stream => Stream.value(const {});
-
-  @override
-  Future<void> start() async {}
-
-  @override
-  Future<void> reloadFromStorage() async {}
-
-  @override
-  Future<void> dispose() async {}
 }

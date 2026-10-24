@@ -20,7 +20,7 @@ import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
-// `TrackManager` orchestrates the player + Plex client + SettingsService
+// `TrackManager` orchestrates the player + server client + SettingsService
 // singleton. Most paths require a real (or fake) Player surface plus an
 // initialized SettingsService.
 //
@@ -43,7 +43,7 @@ import '../test_helpers/media_items.dart';
 //   - `onBackendSwitched` — wraps applyTrackSelectionWhenReady and is
 //     therefore gated on the same SettingsService dependency.
 
-MediaItem _meta() => testMediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie);
+MediaItem _meta() => testMediaItem(id: 'rk1', backend: MediaBackend.silo, kind: MediaKind.movie);
 
 /// Player that records calls and can be configured per-test.
 class _FakePlayer with PlayerStreamControllersMixin implements Player {
@@ -138,17 +138,13 @@ TrackManager _make({
   SubtitleTrack? preferredSubtitleTrack,
   void Function(String, {Duration? duration})? showMessage,
   TrackPreferencePersister? persister,
-  // The MediaBrowser shape: no per-part persister, picks ride the progress
-  // reports and only the account flag is settled here.
-  TrackSelectionMemoryEnabler? memoryEnabler,
   bool primarySubtitleIsServerRendered = false,
   SubtitleTrack? preferredSecondarySubtitleTrack,
 }) {
   return TrackManager(
     player: player,
     isActive: isActive ?? () => true,
-    persistTrackPreference: memoryEnabler != null ? null : persister ?? _noopPersister,
-    enableTrackSelectionMemory: memoryEnabler,
+    persistTrackPreference: persister ?? _noopPersister,
     getProfileSettings: () => null,
     waitForProfileSettings: waitForProfileSettings ?? () async {},
     metadata: metadata ?? _meta(),
@@ -220,7 +216,7 @@ void main() {
   setUp(resetSharedPreferencesForTest);
 
   group('applyTrackSelectionWhenReady', () {
-    test('waits for player subtitle tracks when Plex metadata advertises subtitles', () async {
+    test('waits for player subtitle tracks when server metadata advertises subtitles', () async {
       await SettingsService.getInstance();
       final player = _FakePlayer(
         tracks: const Tracks(
@@ -334,7 +330,7 @@ void main() {
     });
 
     test('a sidecar-backed secondary source row resolves against its loaded track', () async {
-      // The realistic Jellyfin transcode shape: the secondary is an embedded row delivered as a
+      // The realistic transcode shape: the secondary is an embedded row delivered as a
       // server-extracted file, so the preference carries a `source:` id while the loaded track is
       // external. A `source:` id skips URI matching entirely, so this pins that the source-row
       // matcher still pairs the two - if it did not, the carried secondary would wait out the
@@ -511,7 +507,7 @@ void main() {
       });
     });
 
-    test('waits through a partial catalog until the selected Plex subtitle arrives', () async {
+    test('waits through a partial catalog until the selected server subtitle arrives', () async {
       await SettingsService.getInstance();
       final player = _FakePlayer(
         tracks: const Tracks(
@@ -1884,103 +1880,6 @@ void main() {
       await mgr.onSubtitleTrackChanged(playerSubs[0]);
 
       expect(messages, isEmpty);
-    });
-  });
-
-  group('MediaBrowser track selection memory', () {
-    // No part id and no stream matching on this path: the pick itself rides
-    // the progress reports, and the only question is whether the account
-    // will keep it.
-    MediaItem meta() => testMediaItem(id: 'jf1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
-    const playerSubs = [SubtitleTrack(id: '1', language: 'eng', codec: 'subrip')];
-    const playerAudio = [AudioTrack(id: '1', language: 'eng', codec: 'aac')];
-
-    test('a pick asks the account to remember its track type and says nothing once it will', () async {
-      await SettingsService.getInstance();
-      final player = _FakePlayer(
-        tracks: const Tracks(audio: playerAudio, subtitle: playerSubs),
-      );
-      final asked = <String>[];
-      final messages = <String>[];
-      final mgr = _make(
-        player: player,
-        metadata: meta(),
-        mediaInfo: _mediaInfoWithSubtitles(),
-        memoryEnabler: (trackType) async {
-          asked.add(trackType);
-          return true;
-        },
-        showMessage: (message, {duration}) => messages.add(message),
-      );
-      addTearDown(mgr.dispose);
-
-      await mgr.onAudioTrackChanged(playerAudio[0]);
-      await mgr.onSubtitleTrackChanged(playerSubs[0]);
-
-      expect(asked, ['audio', 'subtitle']);
-      expect(messages, isEmpty);
-    });
-
-    test('an account that cannot remember picks (Emby) makes them session-only, said once', () async {
-      await SettingsService.getInstance();
-      final player = _FakePlayer(
-        tracks: const Tracks(audio: playerAudio, subtitle: playerSubs),
-      );
-      final messages = <String>[];
-      final mgr = _make(
-        player: player,
-        metadata: testMediaItem(id: 'emby1', backend: MediaBackend.emby, kind: MediaKind.movie),
-        mediaInfo: _mediaInfoWithSubtitles(),
-        memoryEnabler: (_) async => false,
-        showMessage: (message, {duration}) => messages.add(message),
-      );
-      addTearDown(mgr.dispose);
-
-      await mgr.onAudioTrackChanged(playerAudio[0]);
-      await mgr.onSubtitleTrackChanged(playerSubs[0]);
-
-      expect(messages, [t.messages.trackSelectionNotRemembered]);
-    });
-
-    test('an account write the server refused makes the pick session-only', () async {
-      await SettingsService.getInstance();
-      final player = _FakePlayer(tracks: const Tracks(subtitle: playerSubs));
-      final messages = <String>[];
-      final mgr = _make(
-        player: player,
-        metadata: meta(),
-        mediaInfo: _mediaInfoWithSubtitles(),
-        memoryEnabler: (_) async {
-          throw MediaServerHttpException(type: MediaServerHttpErrorType.unknown, statusCode: 500, message: 'HTTP 500');
-        },
-        showMessage: (message, {duration}) => messages.add(message),
-      );
-      addTearDown(mgr.dispose);
-
-      await mgr.onSubtitleTrackChanged(playerSubs[0]);
-
-      expect(messages, [t.messages.trackSelectionNotRemembered]);
-    });
-
-    test('the account is left alone when remembering track selections is off', () async {
-      resetSharedPreferencesForTest(initialAsync: {'remember_track_selections': false});
-      await SettingsService.getInstance();
-      final player = _FakePlayer(tracks: const Tracks(subtitle: playerSubs));
-      var asked = 0;
-      final mgr = _make(
-        player: player,
-        metadata: meta(),
-        mediaInfo: _mediaInfoWithSubtitles(),
-        memoryEnabler: (_) async {
-          asked++;
-          return true;
-        },
-      );
-      addTearDown(mgr.dispose);
-
-      await mgr.onSubtitleTrackChanged(playerSubs[0]);
-
-      expect(asked, 0);
     });
   });
 

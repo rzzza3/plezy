@@ -106,7 +106,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
 
   bool get _isBusy => _isCreating || _isJoining || _enteringRoomCode != null;
 
-  String? get _plexDisplayName => context.read<ActiveProfileProvider>().active?.displayName;
+  String? get _profileDisplayName => context.read<ActiveProfileProvider>().active?.displayName;
 
   List<RecentRoom> _loadRecentRooms() {
     final profileId = _profileId;
@@ -281,7 +281,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
         final sessionId = await widget.watchTogether.createSession(
           controlMode: controlMode,
           relayEndpoint: _relayEndpoint,
-          displayName: _plexDisplayName,
+          displayName: _profileDisplayName,
         );
         await _recordRecentRoom(sessionId, controlMode: controlMode);
       },
@@ -319,7 +319,11 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
       logMessage: 'Failed to join session',
       failureMessage: t.watchTogether.failedToJoin,
       action: () async {
-        await widget.watchTogether.joinSession(sessionId, relayEndpoint: _relayEndpoint, displayName: _plexDisplayName);
+        await widget.watchTogether.joinSession(
+          sessionId,
+          relayEndpoint: _relayEndpoint,
+          displayName: _profileDisplayName,
+        );
         await _recordRecentRoom(sessionId);
       },
     );
@@ -335,7 +339,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
           room.code,
           relayEndpoint: _relayEndpoint,
           controlMode: room.controlMode ?? ControlMode.anyone,
-          displayName: _plexDisplayName,
+          displayName: _profileDisplayName,
         );
         await _recordRecentRoom(room.code);
       },

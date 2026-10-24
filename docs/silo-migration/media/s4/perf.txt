@@ -1,0 +1,7 @@
+S4 perf lane, 2026-10-14, debug build of 68bc6a099 on Television_1080p, Plezy profile "Silo A".
+Ten watched/unwatched flips of movie-tmdb-1381078, 8 s apart, from tool/silo_probe.dart --actions.
+Clock offset host-device 35806374 ms before and 35806391 ms after (adb shell date).
+Baseline, 204 at host to "user_state.changed" on device (ms): -18 -19 -19 -19 -20 -18 -19 -20 -20 -20, median -19.
+Metric, 204 at host to "Home: rows repainted" (s): 3.68 2.95 2.58 2.52 2.55 2.60 2.57 2.56 2.53 2.54, median 2.561.
+Rule: median under 3 s including the 2 s debounce. PASS.
+Split for a typical run: 2.00 s debounce, about 0.55 s GET /home/sections with hydration, about 0.04 s to paint.

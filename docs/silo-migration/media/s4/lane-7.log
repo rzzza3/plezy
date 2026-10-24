@@ -1,0 +1,6 @@
+action watchlist-add movie-tmdb-1381078 204 done_ms=1791996471420
+clock offset host-device ms: 35806392
+         1791960665.018 12975 12975 I flutter : [I]  Silo events: user_state.changed (watchlist)
+         1791960667.020 12975 12975 I flutter : [I]  Silo events: home refetch
+         1791960668.646 12975 12975 I flutter : [I]  Silo: home sections 17
+         1791960668.707 12975 12975 I flutter : [I]  Home: rows repainted

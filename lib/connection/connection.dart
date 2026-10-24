@@ -1,15 +1,9 @@
 import '../media/media_backend.dart';
-import '../media/media_browser_dialect.dart';
-import '../models/plex/plex_home_user.dart';
-import '../services/plex_auth_service.dart';
-import '../utils/json_utils.dart';
-import '../utils/url_utils.dart';
 
 /// A media server connection — a unit of authentication the user added.
 ///
-/// A `PlexAccountConnection` carries one Plex account + its discovered servers + an
-/// optional active Home profile. A `JellyfinConnection` is a single server +
-/// user. Most users only ever add one connection.
+/// A [SiloConnection] is one Silo server the person signed in to. Most users
+/// only ever add one connection.
 sealed class Connection {
   String get id;
   MediaBackend get kind;
@@ -21,13 +15,11 @@ sealed class Connection {
   /// (badges, etc.).
   MediaBackend get backend => kind;
 
-  /// Primary label shown in connection-list UIs. Plex shows the active
-  /// profile/account name; Jellyfin shows the server name.
+  /// Primary label shown in connection-list UIs: the server name.
   String get displayLabel;
 
-  /// Secondary line shown beneath [displayLabel] in connection-list UIs.
-  /// Plex: server count; Jellyfin: `userName · baseUrl`. May be null when
-  /// no useful subtitle exists.
+  /// Secondary line shown beneath [displayLabel] in connection-list UIs:
+  /// `username · origin`. May be null when no useful subtitle exists.
   String? get displaySubtitle;
 
   /// Backend-specific config payload, persisted as JSON. Each subclass
@@ -35,13 +27,10 @@ sealed class Connection {
   Map<String, Object?> toConfigJson();
 }
 
-/// A Plex account connection.
-///
-/// Fields here mirror what [PlexAuthService] gathers during PIN OAuth: an
-/// account token (long-lived), the per-device client identifier (so plex.tv
-/// doesn't see a "new device" each launch), and the optional Home user the
-/// user has switched into.
-class PlexAccountConnection extends Connection {
+/// A Silo server the person signed in to. Holds no credential: the tokens and
+/// the selected profile's token live in the server's vault-protected session
+/// slot.
+class SiloConnection extends Connection {
   @override
   final String id;
 
@@ -51,317 +40,84 @@ class PlexAccountConnection extends Connection {
   @override
   final DateTime? lastAuthenticatedAt;
 
-  /// plex.tv account access token.
-  final String accountToken;
+  /// Canonical origin, e.g. `https://silo.example.com`.
+  final String origin;
 
-  /// Per-device client identifier. Stable across launches.
-  final String clientIdentifier;
+  /// `server_id` from `/api/v2/system/identity`.
+  final String serverId;
 
-  /// Display name shown for this connection (typically the Plex account email
-  /// or username, fallback "Plex").
-  final String accountLabel;
-
-  /// Active Home user, or `null` for the main account.
-  final PlexHomeUser? activeProfile;
-
-  /// Servers discovered for this account (cached). Populated by the auth
-  /// flow and refreshed periodically.
-  final List<PlexServer> servers;
-
-  PlexAccountConnection({
-    required this.id,
-    required this.accountToken,
-    required this.clientIdentifier,
-    required this.accountLabel,
-    this.activeProfile,
-    this.servers = const [],
-    required this.createdAt,
-    this.lastAuthenticatedAt,
-  });
-
-  @override
-  MediaBackend get kind => MediaBackend.plex;
-
-  @override
-  String get displayName => activeProfile != null && activeProfile!.title.isNotEmpty
-      ? '${activeProfile!.title} · $accountLabel'
-      : accountLabel;
-
-  @override
-  String get displayLabel => displayName;
-
-  @override
-  String? get displaySubtitle => servers.length == 1 ? '1 Plex server' : '${servers.length} Plex servers';
-
-  PlexAccountConnection copyWith({
-    String? id,
-    String? accountToken,
-    String? clientIdentifier,
-    String? accountLabel,
-    PlexHomeUser? activeProfile,
-    bool clearActiveProfile = false,
-    List<PlexServer>? servers,
-    DateTime? createdAt,
-    DateTime? lastAuthenticatedAt,
-  }) {
-    return PlexAccountConnection(
-      id: id ?? this.id,
-      accountToken: accountToken ?? this.accountToken,
-      clientIdentifier: clientIdentifier ?? this.clientIdentifier,
-      accountLabel: accountLabel ?? this.accountLabel,
-      activeProfile: clearActiveProfile ? null : (activeProfile ?? this.activeProfile),
-      servers: servers ?? this.servers,
-      createdAt: createdAt ?? this.createdAt,
-      lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
-    );
-  }
-
-  @override
-  Map<String, Object?> toConfigJson() {
-    return {
-      'accountToken': accountToken,
-      'clientIdentifier': clientIdentifier,
-      'accountLabel': accountLabel,
-      'activeProfile': activeProfile?.toJson(),
-      'servers': servers.map((s) => s.toJson()).toList(),
-    };
-  }
-
-  factory PlexAccountConnection.fromConfigJson({
-    required String id,
-    required Map<String, Object?> json,
-    required DateTime createdAt,
-    DateTime? lastAuthenticatedAt,
-  }) {
-    final profileJson = json['activeProfile'];
-    final activeProfile = profileJson is Map<String, dynamic> ? PlexHomeUser.fromJson(profileJson) : null;
-    final serversJson = json['servers'];
-    final servers = serversJson is List
-        ? serversJson.whereType<Map<String, dynamic>>().map(PlexServer.fromJson).toList()
-        : <PlexServer>[];
-    return PlexAccountConnection(
-      id: id,
-      accountToken: json['accountToken'] as String? ?? '',
-      clientIdentifier: json['clientIdentifier'] as String? ?? '',
-      accountLabel: json['accountLabel'] as String? ?? 'Plex',
-      activeProfile: activeProfile,
-      servers: servers,
-      createdAt: createdAt,
-      lastAuthenticatedAt: lastAuthenticatedAt,
-    );
-  }
-}
-
-/// A single-server connection to a MediaBrowser-family server — Jellyfin or its
-/// Emby ancestor. [dialect] selects which of the two wire dialects this
-/// connection speaks; every other field has the same meaning on both.
-class JellyfinConnection extends Connection {
-  @override
-  final String id;
-
-  @override
-  final DateTime createdAt;
-
-  @override
-  final DateTime? lastAuthenticatedAt;
-
-  /// Which MediaBrowser dialect this server speaks. Drives [kind], [backend]
-  /// and every route/capability delta in [JellyfinClient].
-  final MediaBrowserDialect dialect;
-
-  /// Active server base URL, no trailing slash. e.g. `https://jellyfin.home.lan`.
-  final String baseUrl;
-
-  /// Candidate server URLs for this server, with [baseUrl] first.
-  /// Existing installs only have [baseUrl]; deserialization backfills this.
-  final List<String> baseUrls;
-
-  /// Server's reported name (System/Info).
   final String serverName;
 
-  /// Server's machine identifier (System/Info `Id`).
-  final String serverMachineId;
+  /// The account's username, for display.
+  final String username;
 
-  /// Authenticated user id. A UUID on Jellyfin, an opaque hex string on Emby.
-  final String userId;
+  /// `id` from `/api/v2/account/me`. With [serverId] it keys the companion
+  /// remote's shared secret. Empty for connections persisted before S9 until
+  /// the next household read fills it in.
+  final String accountId;
 
-  final String userName;
-
-  /// Long-lived access token from `/Users/AuthenticateByName`.
-  final String accessToken;
-
-  /// Per-device client identifier (same value sent in the
-  /// `Authorization: MediaBrowser DeviceId="..."` header).
-  final String deviceId;
-
-  /// Whether this user is a server admin (`/Users/{id}.Policy.IsAdministrator`).
-  /// Captured at auth time so the UI can gate admin-only entries (delete,
-  /// match/unmatch, edit metadata) without an extra round-trip.
-  final bool isAdministrator;
-
-  /// The authenticated user's `PrimaryImageTag`, or `null` when they have no
-  /// profile picture. The server omits the key entirely in that case, and the
-  /// tag is `MD5(imagePath + lastModified)` so it changes on every upload —
-  /// which makes the derived avatar URL self-invalidating. Captured at auth
-  /// time and refreshed by [JellyfinClient.checkHealth].
-  final String? primaryImageTag;
-
-  JellyfinConnection({
-    required this.id,
-    required String baseUrl,
-    List<String>? baseUrls,
+  SiloConnection({
+    required this.origin,
+    required this.serverId,
     required this.serverName,
-    required this.serverMachineId,
-    required this.userId,
-    required this.userName,
-    required this.accessToken,
-    required this.deviceId,
-    this.dialect = MediaBrowserDialect.jellyfin,
-    this.isAdministrator = false,
-    this.primaryImageTag,
+    required this.username,
+    this.accountId = '',
     required this.createdAt,
     this.lastAuthenticatedAt,
-  }) : baseUrl = canonicalizeBaseUrl(baseUrl),
-       baseUrls = _normalizeBaseUrls(baseUrl, baseUrls);
+  }) : id = idFor(serverId);
+
+  SiloConnection copyWith({String? username, String? accountId, DateTime? lastAuthenticatedAt}) => SiloConnection(
+    origin: origin,
+    serverId: serverId,
+    serverName: serverName,
+    username: username ?? this.username,
+    accountId: accountId ?? this.accountId,
+    createdAt: createdAt,
+    lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
+  );
+
+  /// One account per server per device, like Silo's own per-server slot.
+  static String idFor(String serverId) => 'silo:$serverId';
 
   @override
-  MediaBackend get kind => dialect.backend;
+  MediaBackend get kind => MediaBackend.silo;
 
   @override
-  String get displayName => '$userName · $serverName';
+  String get displayName => username.isEmpty ? serverName : '$username · $serverName';
 
   @override
   String get displayLabel => serverName;
 
   @override
-  String? get displaySubtitle {
-    final extraCount = baseUrls.length - 1;
-    final suffix = extraCount > 0 ? ' +$extraCount' : '';
-    return '$userName · ${_truncateUrl(baseUrl)}$suffix';
-  }
+  String? get displaySubtitle => username.isEmpty ? origin : '$username · $origin';
 
-  static String _truncateUrl(String url) {
-    if (url.length <= 40) return url;
-    return '${url.substring(0, 37)}…';
-  }
-
-  static List<String> _normalizeBaseUrls(String activeBaseUrl, List<String>? urls) {
-    final result = <String>[];
-    final seen = <String>{};
-
-    void add(String url) {
-      final normalized = canonicalizeBaseUrl(url);
-      if (normalized.isEmpty || !seen.add(normalized)) return;
-      result.add(normalized);
-    }
-
-    add(activeBaseUrl);
-    for (final url in urls ?? const <String>[]) {
-      add(url);
-    }
-    return List.unmodifiable(result);
-  }
-
-  JellyfinConnection copyWith({
-    String? id,
-    String? baseUrl,
-    List<String>? baseUrls,
-    String? serverName,
-    String? serverMachineId,
-    String? userId,
-    String? userName,
-    String? accessToken,
-    String? deviceId,
-    MediaBrowserDialect? dialect,
-    bool? isAdministrator,
-    String? primaryImageTag,
-
-    /// Deleting a profile picture drops `PrimaryImageTag` from the user DTO, so
-    /// a refresh must be able to null the cached value — a bare
-    /// `primaryImageTag: null` is indistinguishable from "unchanged".
-    bool clearPrimaryImageTag = false,
-    DateTime? createdAt,
-    DateTime? lastAuthenticatedAt,
-  }) {
-    final nextBaseUrl = baseUrl ?? this.baseUrl;
-    return JellyfinConnection(
-      id: id ?? this.id,
-      baseUrl: nextBaseUrl,
-      baseUrls: baseUrls ?? this.baseUrls,
-      serverName: serverName ?? this.serverName,
-      serverMachineId: serverMachineId ?? this.serverMachineId,
-      userId: userId ?? this.userId,
-      userName: userName ?? this.userName,
-      accessToken: accessToken ?? this.accessToken,
-      deviceId: deviceId ?? this.deviceId,
-      dialect: dialect ?? this.dialect,
-      isAdministrator: isAdministrator ?? this.isAdministrator,
-      primaryImageTag: clearPrimaryImageTag ? null : (primaryImageTag ?? this.primaryImageTag),
-      createdAt: createdAt ?? this.createdAt,
-      lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
-    );
-  }
-
-  /// The persisted payload deliberately omits [dialect]: the `connections.kind`
-  /// column is the authoritative, indexed discriminator and
-  /// [JellyfinConnection.fromConfigJson] receives it from there.
   @override
-  Map<String, Object?> toConfigJson() {
-    return {
-      'baseUrl': baseUrl,
-      'baseUrls': baseUrls,
-      'serverName': serverName,
-      'serverMachineId': serverMachineId,
-      'userId': userId,
-      'userName': userName,
-      'accessToken': accessToken,
-      'deviceId': deviceId,
-      'isAdministrator': isAdministrator,
-      'primaryImageTag': primaryImageTag,
-    };
-  }
+  Map<String, Object?> toConfigJson() => {
+    'origin': origin,
+    'serverId': serverId,
+    'serverName': serverName,
+    'username': username,
+    if (accountId.isNotEmpty) 'accountId': accountId,
+  };
 
-  factory JellyfinConnection.fromConfigJson({
-    required String id,
+  /// Null when the row lacks the origin or server id, so the registry drops
+  /// it like any other undecodable row.
+  static SiloConnection? fromConfigJson({
     required Map<String, Object?> json,
     required DateTime createdAt,
     DateTime? lastAuthenticatedAt,
-    MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
   }) {
-    final rawBaseUrls = json['baseUrls'];
-    final baseUrls = rawBaseUrls is List ? rawBaseUrls.whereType<String>().toList(growable: false) : const <String>[];
-    final rawBaseUrl = json['baseUrl'] as String?;
-    final baseUrl = rawBaseUrl != null && rawBaseUrl.isNotEmpty
-        ? rawBaseUrl
-        : (baseUrls.isNotEmpty ? baseUrls.first : '');
-    return JellyfinConnection(
-      id: id,
-      baseUrl: baseUrl,
-      baseUrls: baseUrls,
-      dialect: dialect,
-      serverName: json['serverName'] as String? ?? dialect.productName,
-      serverMachineId: json['serverMachineId'] as String? ?? '',
-      userId: json['userId'] as String? ?? '',
-      userName: json['userName'] as String? ?? '',
-      accessToken: json['accessToken'] as String? ?? '',
-      deviceId: json['deviceId'] as String? ?? '',
-      isAdministrator: json['isAdministrator'] as bool? ?? false,
-      primaryImageTag: normalizePrimaryImageTag(json['primaryImageTag']),
+    final origin = json['origin'];
+    final serverId = json['serverId'];
+    if (origin is! String || origin.isEmpty || serverId is! String || serverId.isEmpty) return null;
+    return SiloConnection(
+      origin: origin,
+      serverId: serverId,
+      serverName: json['serverName'] as String? ?? 'Silo',
+      username: json['username'] as String? ?? '',
+      accountId: json['accountId'] as String? ?? '',
       createdAt: createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt,
     );
-  }
-
-  /// Tolerant read of a Jellyfin user DTO's `PrimaryImageTag`.
-  ///
-  /// The tag is decorative — a fork or a drifted scalar type must never brick
-  /// sign-in — so this coerces through [readStringField] rather than casting,
-  /// and collapses absent/blank to `null` ("no picture").
-  static String? readPrimaryImageTag(Map<String, Object?> userDto) =>
-      normalizePrimaryImageTag(readStringField(userDto, 'PrimaryImageTag'));
-
-  static String? normalizePrimaryImageTag(Object? raw) {
-    final tag = raw?.toString().trim();
-    return tag == null || tag.isEmpty ? null : tag;
   }
 }

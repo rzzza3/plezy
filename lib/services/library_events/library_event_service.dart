@@ -50,7 +50,7 @@ class LibraryEventService {
     if (_disposed || _suspended) return;
     final online = _serverManager.visibleOnlineClients;
 
-    // A healthy Plex client can commit a new profile/token in place. Its
+    // A healthy client can commit a new profile/token in place. Its
     // established websocket still belongs to the previous authentication
     // session even though the HTTP client and endpoint are unchanged.
     final stale = <String>[];
@@ -104,7 +104,7 @@ class LibraryEventService {
   static const int _maxPerItemRemovals = 25;
 
   void _handleEvent(LibraryChangeEvent event) {
-    // Exact carve-out (Plex Web parity): removals name items the app may be
+    // Exact carve-out (web client parity): removals name items the app may be
     // displaying, so drop them in place everywhere via the existing deletion
     // bus before the coarse event schedules its debounced refetch. The kind
     // and parent chain are unknown at this boundary — direct id matches and

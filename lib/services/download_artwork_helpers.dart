@@ -2,14 +2,13 @@ import '../media/download_resolution.dart';
 import '../media/media_item.dart';
 
 /// Maps a per-item image path/URL to the actual downloadable URL.
-/// Plex resolves paths through `getThumbnailUrl` (token-aware); Jellyfin
-/// stores absolute URLs already and passes them through. Returning `null`
-/// or an empty string skips the entry.
+/// Relative paths resolve through `getThumbnailUrl` (token-aware); absolute URLs
+/// pass through. Returning `null` or an empty string skips the entry.
 typedef ArtworkUrlResolver = String? Function(String path);
 
-/// Stable storage key for artwork. Jellyfin image URLs carry `api_key` for
-/// fetching, but persisted DB rows and hashed local filenames must not contain
-/// long-lived tokens.
+/// Stable storage key for artwork. Strips an `api_key` query credential:
+/// persisted DB rows and hashed local filenames must not contain long-lived
+/// tokens.
 String artworkStorageKey(String pathOrUrl) {
   final uri = Uri.tryParse(pathOrUrl);
   if (uri == null || !uri.hasQuery) return pathOrUrl;

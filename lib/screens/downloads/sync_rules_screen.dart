@@ -163,17 +163,11 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
     }
 
     for (final connection in connections) {
-      switch (connection) {
-        case PlexAccountConnection(:final servers):
-          for (final server in servers) {
-            if (server.clientIdentifier == rule.serverId && server.name.isNotEmpty) {
-              return _RuleServerInfo(label: server.name, isKnown: true);
-            }
-          }
-        case JellyfinConnection(:final serverMachineId, :final serverName):
-          if (serverMachineId == rule.serverId && serverName.isNotEmpty) {
-            return _RuleServerInfo(label: serverName, isKnown: true);
-          }
+      if (connection case SiloConnection(
+        :final serverId,
+        :final serverName,
+      ) when serverId == rule.serverId && serverName.isNotEmpty) {
+        return _RuleServerInfo(label: serverName, isKnown: true);
       }
     }
 

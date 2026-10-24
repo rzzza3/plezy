@@ -7,7 +7,6 @@ import '../services/settings_service.dart' show EpisodePosterMode;
 import '../utils/global_key_utils.dart';
 import '../utils/json_utils.dart';
 import 'media_backend.dart';
-import 'media_browser_dialect.dart';
 import 'media_kind.dart';
 import 'media_role.dart';
 import 'media_version.dart';
@@ -22,12 +21,8 @@ part 'media_item.g.dart';
 const double _squareHeroAspectRatio = 1.39;
 
 /// Backend-neutral media item shape used by UI, providers, persistence, and
-/// playback. Concrete variants retain backend-only fields without forcing the
-/// rest of the app to traffic in Plex/Jellyfin DTOs.
-///
-/// [JellyfinMediaItem] backs both MediaBrowser-family backends: Jellyfin and
-/// Emby return field-identical `BaseItemDto`s, so they share one variant and
-/// carry [JellyfinMediaItem.dialect] to tell them apart.
+/// playback. The Silo variant keeps the wire DTOs out of the rest of the app;
+/// the union stays so stored rows carry their `backend` discriminator.
 @Freezed(unionKey: 'backend', unionValueCase: FreezedUnionCase.none, equal: false, makeCollectionsUnmodifiable: false)
 sealed class MediaItem with _$MediaItem {
   const MediaItem._();
@@ -36,7 +31,7 @@ sealed class MediaItem with _$MediaItem {
   /// derived parents (show/season/album reconstructed from a child), and
   /// catalog entries that never came from a server payload. It declares only
   /// the fields those call sites populate; items mapped from real server
-  /// responses use [MediaItem.plex] / [MediaItem.jellyfin] directly.
+  /// responses use [MediaItem.silo] directly.
   factory MediaItem({
     required String id,
     required MediaBackend backend,
@@ -62,31 +57,7 @@ sealed class MediaItem with _$MediaItem {
     Map<String, Object?>? raw,
   }) {
     return switch (backend) {
-      MediaBackend.plex => PlexMediaItem(
-        id: id,
-        kind: kind,
-        title: title,
-        summary: summary,
-        year: year,
-        contentRating: contentRating,
-        parentId: parentId,
-        parentTitle: parentTitle,
-        index: index,
-        thumbPath: thumbPath,
-        artPath: artPath,
-        durationMs: durationMs,
-        leafCount: leafCount,
-        rating: rating,
-        ratings: ratings,
-        genres: genres,
-        libraryId: libraryId,
-        libraryTitle: libraryTitle,
-        serverId: serverId,
-        serverName: serverName,
-        raw: raw,
-      ),
-      MediaBackend.jellyfin || MediaBackend.emby => JellyfinMediaItem(
-        dialect: backend.dialect!,
+      MediaBackend.silo => SiloMediaItem(
         id: id,
         kind: kind,
         title: title,
@@ -112,107 +83,11 @@ sealed class MediaItem with _$MediaItem {
     };
   }
 
-  /// Backend-tagged concrete subclass for items sourced from a Plex server.
-  @FreezedUnionValue('plex')
+  /// Backend-tagged concrete subclass for items sourced from a Silo server.
+  /// Ids are Silo `content_id`s and artwork paths are absolute URLs.
+  @FreezedUnionValue('silo')
   @JsonSerializable(includeIfNull: false, explicitToJson: true)
-  const factory MediaItem.plex({
-    @JsonKey(readValue: readStringField, defaultValue: '') required String id,
-    @JsonKey(fromJson: _mediaKindFromJson, toJson: _mediaKindToJson) required MediaKind kind,
-    String? guid,
-    String? title,
-    String? titleSort,
-    String? summary,
-    String? tagline,
-    String? originalTitle,
-
-    /// Plex `editionTitle` distinguishes versions of the same movie.
-    String? editionTitle,
-    String? studio,
-    @JsonKey(fromJson: flexibleInt) int? year,
-    String? originallyAvailableAt,
-    String? contentRating,
-    String? parentId,
-    String? parentTitle,
-    String? parentThumbPath,
-    @JsonKey(fromJson: flexibleInt) int? parentIndex,
-    @JsonKey(fromJson: flexibleInt) int? index,
-    String? grandparentId,
-    String? grandparentTitle,
-    String? grandparentThumbPath,
-    String? grandparentArtPath,
-    List<String>? grandparentBackdropPaths,
-    String? thumbPath,
-    String? artPath,
-    List<String>? backdropPaths,
-    String? clearLogoPath,
-    String? backgroundSquarePath,
-    @JsonKey(fromJson: flexibleInt) int? durationMs,
-    @JsonKey(fromJson: flexibleInt) int? viewOffsetMs,
-    @JsonKey(fromJson: flexibleInt) int? viewCount,
-    @JsonKey(fromJson: flexibleInt) int? lastViewedAt,
-    @JsonKey(fromJson: flexibleInt) int? leafCount,
-    @JsonKey(fromJson: flexibleInt) int? viewedLeafCount,
-    @JsonKey(fromJson: flexibleInt) int? childCount,
-    @JsonKey(fromJson: flexibleInt) int? addedAt,
-    @JsonKey(fromJson: flexibleInt) int? updatedAt,
-    @JsonKey(fromJson: flexibleDouble) double? rating,
-    @JsonKey(fromJson: flexibleDouble) double? userRating,
-
-    /// Every attributed score the response carried, headline first. Plex
-    /// listings yield one or two (the `rating`/`audienceRating` pair with
-    /// their source images); `/library/metadata/{id}` adds the `Rating[]`
-    /// array, so IMDb and TMDB join Rotten Tomatoes on detail screens.
-    @JsonKey(fromJson: _mediaItemRatingsFromJson) List<MediaRatingSource>? ratings,
-    bool? isFavorite,
-    @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
-    @JsonKey(fromJson: _mediaItemStringList) List<String>? directors,
-    @JsonKey(fromJson: _mediaItemStringList) List<String>? writers,
-    @JsonKey(fromJson: _mediaItemStringList) List<String>? producers,
-    @JsonKey(fromJson: _mediaItemStringList) List<String>? countries,
-    @JsonKey(fromJson: _mediaItemStringList) List<String>? collections,
-    @JsonKey(fromJson: _mediaItemStringList) List<String>? labels,
-    @JsonKey(fromJson: _mediaItemStringList) List<String>? styles,
-    @JsonKey(fromJson: _mediaItemStringList) List<String>? moods,
-    @JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? roles,
-
-    /// The item's versions, one per Plex `Media`. Null means the response
-    /// carried none, so fetch the item; a non-empty list is complete.
-    /// Version pickers, saved-version resolution and delete impact trust it
-    /// without a detail fetch. Plex inlines every `Media` on list rows.
-    @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
-    String? libraryId,
-    String? libraryTitle,
-    String? trailerKey,
-    @JsonKey(fromJson: flexibleInt) int? playlistItemId,
-    @JsonKey(fromJson: flexibleInt) int? playQueueItemId,
-
-    /// Plex extra classification (`subtype="trailer"` etc.) — read by the
-    /// detail screen's trailer picker via pattern destructuring.
-    String? subtype,
-    String? serverId,
-    String? serverName,
-
-    /// Relative folder key (`/library/sections/{id}/folder?parent=…`) for
-    /// [MediaKind.folder] rows — what [MediaServerClient.fetchFolderChildren]
-    /// tunes into. Stamped by the folder fetchers, null elsewhere.
-    String? backendFolderKey,
-    @JsonKey(fromJson: _mediaItemRawFromJson) Map<String, Object?>? raw,
-  }) = PlexMediaItem;
-
-  /// Backend-tagged concrete subclass for items sourced from a MediaBrowser
-  /// server — Jellyfin or Emby, discriminated by [JellyfinMediaItem.dialect].
-  @FreezedUnionValue('jellyfin')
-  @JsonSerializable(includeIfNull: false, explicitToJson: true)
-  const factory MediaItem.jellyfin({
-    /// Which MediaBrowser dialect produced this item.
-    ///
-    /// Not serialized on its own: [MediaItem.toJson] already writes the
-    /// resolved [backend] id under the union key, and [MediaItem.fromJson]
-    /// restores the dialect from it. Keeping one discriminator on the wire
-    /// avoids the two disagreeing on a stale cache row.
-    @JsonKey(includeToJson: false, includeFromJson: false)
-    @Default(MediaBrowserDialect.jellyfin)
-    MediaBrowserDialect dialect,
+  const factory MediaItem.silo({
     @JsonKey(readValue: readStringField, defaultValue: '') required String id,
     @JsonKey(fromJson: _mediaKindFromJson, toJson: _mediaKindToJson) required MediaKind kind,
     String? guid,
@@ -252,8 +127,6 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: flexibleDouble) double? rating,
     @JsonKey(fromJson: flexibleDouble) double? userRating,
 
-    /// `CommunityRating` and the `CriticRating` Tomatometer, in that order.
-    /// Jellyfin exposes no per-source array, so this is at most two entries.
     @JsonKey(fromJson: _mediaItemRatingsFromJson) List<MediaRatingSource>? ratings,
     bool? isFavorite,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
@@ -267,45 +140,43 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemStringList) List<String>? moods,
     @JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? roles,
 
-    /// The item's versions, one per `MediaSources` entry. Same contract as
-    /// the Plex variant: null means not fetched, non-empty means complete.
-    /// Emby list rows are complete only when `AlternateMediaSources` is
-    /// requested beside `MediaSources` (#2474); the client adds it.
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
 
-    /// Jellyfin playlist entry id used by playlist write endpoints.
     String? playlistItemId,
     String? serverId,
     String? serverName,
 
-    /// Always null on Jellyfin — folder children are fetched by [id]. Exists
-    /// on both variants so the union exposes one neutral getter.
     String? backendFolderKey,
     @JsonKey(fromJson: _mediaItemRawFromJson) Map<String, Object?>? raw,
-  }) = JellyfinMediaItem;
+  }) = SiloMediaItem;
 
   MediaBackend get backend => switch (this) {
-    PlexMediaItem() => MediaBackend.plex,
-    JellyfinMediaItem(:final dialect) => dialect.backend,
+    SiloMediaItem() => MediaBackend.silo,
   };
 
-  /// Restore a [MediaItem] from a [toJson] payload. Missing/unknown backend
-  /// values use [MediaBackend.fromString] so old offline cache rows remain
-  /// readable instead of throwing before union dispatch.
+  /// Restore a [MediaItem] from a [toJson] payload. A missing or unknown
+  /// backend throws a [FormatException], so callers that decode stored rows
+  /// drop the row; [tryFromJson] returns `null` for it instead.
   factory MediaItem.fromJson(Map<String, dynamic> json) {
+    final item = tryFromJson(json);
+    if (item == null) throw FormatException('Unknown MediaBackend id: ${json['backend']}');
+    return item;
+  }
+
+  /// Like [MediaItem.fromJson], but `null` when the payload names an unknown
+  /// backend.
+  static MediaItem? tryFromJson(Map<String, dynamic> json) {
     return switch (MediaBackend.fromString(json['backend'] as String?)) {
-      MediaBackend.plex => _$PlexMediaItemFromJson(json),
-      MediaBackend.jellyfin => _$JellyfinMediaItemFromJson(json),
-      MediaBackend.emby => _$JellyfinMediaItemFromJson(json).copyWith(dialect: MediaBrowserDialect.emby),
+      MediaBackend.silo => _$SiloMediaItemFromJson(json),
+      null => null,
     };
   }
 
   Map<String, dynamic> toJson() {
     return switch (this) {
-      final PlexMediaItem item => {'backend': MediaBackend.plex.id, ..._$PlexMediaItemToJson(item)},
-      final JellyfinMediaItem item => {'backend': item.dialect.backend.id, ..._$JellyfinMediaItemToJson(item)},
+      final SiloMediaItem item => {'backend': MediaBackend.silo.id, ..._$SiloMediaItemToJson(item)},
     };
   }
 
@@ -334,8 +205,8 @@ sealed class MediaItem with _$MediaItem {
   /// `[seasonId, showId]`. For a season: `[showId]`. For a movie: `[]`.
   List<String> get parentChain => [?parentId, ?grandparentId];
 
-  /// Server-side file paths across every version of this item. Plex
-  /// represents a multi-episode file (`S02E24-E25.mkv`) as distinct episode
+  /// Server-side file paths across every version of this item. A
+  /// multi-episode file (`S02E24-E25.mkv`) is listed as distinct episode
   /// items whose parts have *different* part ids but the same file, so the
   /// file path — not the part id — is the "same underlying file" signal
   /// (#1500).
@@ -349,8 +220,8 @@ sealed class MediaItem with _$MediaItem {
   /// [playedPartId] — the part actually being played, when known — pins the
   /// comparison to that part's file, so an episode with multiple versions
   /// only matches against the file on screen; otherwise any file overlap
-  /// between the two items counts. Items without file metadata (Plex hides
-  /// paths from restricted users) or from a different server never match.
+  /// between the two items counts. Items without file metadata (the server can
+  /// hide paths from restricted users) or from a different server never match.
   bool sharesFileWith(MediaItem other, {String? playedPartId}) {
     if (other.serverId != serverId) return false;
     final otherFiles = other.allPartFiles;
@@ -425,9 +296,8 @@ sealed class MediaItem with _$MediaItem {
     return viewCount != null && viewCount! > 0;
   }
 
-  /// Unwatched leaf count for container badges. Falls back to Jellyfin's
-  /// `UserData.UnplayedItemCount` when leaf totals weren't requested
-  /// (e.g. the folder tree's slim field set).
+  /// Unwatched leaf count for container badges, or null when the leaf
+  /// totals weren't returned.
   int? get unwatchedCount {
     if (!kind.usesLeafWatchCounts) return null;
 
@@ -438,10 +308,7 @@ sealed class MediaItem with _$MediaItem {
       if (viewed >= total) return 0;
       return total - viewed;
     }
-
-    final userData = raw?['UserData'];
-    final unwatched = userData is Map<String, dynamic> ? flexibleInt(userData['UnplayedItemCount']) : null;
-    return unwatched != null && unwatched >= 0 ? unwatched : null;
+    return null;
   }
 
   /// Copy with the watched flag applied so [isWatched] reflects it for every
@@ -476,8 +343,7 @@ sealed class MediaItem with _$MediaItem {
   /// Track number within its disc, for [MediaKind.track] items.
   int? get trackNumber => kind == MediaKind.track ? index : null;
 
-  /// Disc number for [MediaKind.track] items (Plex `parentIndex`, Jellyfin
-  /// `ParentIndexNumber`). Null/1 on single-disc albums.
+  /// Disc number for [MediaKind.track] items (Silo `parentIndex`). Null/1 on single-disc albums.
   int? get discNumber => kind == MediaKind.track ? parentIndex : null;
 
   /// Album title for music items: a track's parent, an album's own title.
@@ -499,25 +365,9 @@ sealed class MediaItem with _$MediaItem {
     _ => null,
   };
 
-  /// Performing artist of a track. Falls back to [albumArtistTitle] — both
-  /// backends only populate a separate value when it differs (Plex stores a
-  /// compilation track's own artist in `originalTitle`; the Jellyfin mapper
-  /// mirrors that convention from `Artists`).
+  /// Performing artist of a track. Falls back to [albumArtistTitle]; a
+  /// compilation track's own artist is in `originalTitle`.
   String? get trackArtistTitle => kind == MediaKind.track ? (originalTitle ?? albumArtistTitle) : null;
-
-  /// Plex-only edition label. Jellyfin returns null.
-  String? get editionTitle => null;
-
-  /// Plex marks unmatched home-video items ("Other Videos" libraries, agent
-  /// `tv.plex.agents.none`) as `type="movie"` with `subtype="clip"`. They keep
-  /// [MediaKind.movie] so movie-only actions (downloads, add-to, delete from
-  /// server, detail navigation) stay available, but they render like clips:
-  /// 16:9 cards showing the generated video-frame thumb instead of a cropped
-  /// 2:3 poster (#2036).
-  bool get _isPlexHomeVideo {
-    if (this case PlexMediaItem(subtype: 'clip', kind: MediaKind.movie)) return true;
-    return false;
-  }
 
   /// Returns the appropriate poster path based on episode poster mode.
   String? posterThumb({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
@@ -539,9 +389,9 @@ sealed class MediaItem with _$MediaItem {
       }
     }
 
-    // Home videos and true clips identify by their generated 16:9 video-frame
-    // thumb; the movie branches below would prefer art that rarely exists.
-    if (kind == MediaKind.clip || _isPlexHomeVideo) return thumbPath ?? artPath;
+    // Clips identify by their generated 16:9 video-frame thumb; the movie
+    // branches below would prefer art that rarely exists.
+    if (kind == MediaKind.clip) return thumbPath ?? artPath;
 
     if (mixedHubContext &&
         mode == EpisodePosterMode.episodeThumbnail &&
@@ -568,7 +418,7 @@ sealed class MediaItem with _$MediaItem {
 
   /// True when the item should render in 16:9.
   bool usesWideAspectRatio(EpisodePosterMode mode, {bool mixedHubContext = false}) {
-    if (kind == MediaKind.clip || _isPlexHomeVideo) return true;
+    if (kind == MediaKind.clip) return true;
     if (kind == MediaKind.episode && mode == EpisodePosterMode.episodeThumbnail) {
       return true;
     }
@@ -588,7 +438,7 @@ sealed class MediaItem with _$MediaItem {
     return usesWideAspectRatio(mode, mixedHubContext: mixedHubContext) ? CardShape.wide : CardShape.poster;
   }
 
-  /// Every own-item backdrop in Jellyfin display order. Older persisted
+  /// Every own-item backdrop in server display order. Older persisted
   /// objects and backends with one backdrop fall back to [artPath].
   List<String> get resolvedBackdropPaths {
     final paths = backdropPaths;
@@ -597,7 +447,7 @@ sealed class MediaItem with _$MediaItem {
     return primary == null || primary.isEmpty ? const [] : [primary];
   }
 
-  /// Every inherited series backdrop in Jellyfin display order. Older
+  /// Every inherited series backdrop in server display order. Older
   /// persisted objects fall back to [grandparentArtPath].
   List<String> get resolvedGrandparentBackdropPaths {
     final paths = grandparentBackdropPaths;

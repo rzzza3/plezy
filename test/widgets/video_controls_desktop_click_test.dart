@@ -124,7 +124,7 @@ void main() {
         child: MaterialApp(
           theme: ThemeData(platform: TargetPlatform.linux, extensions: const [testMonoTokens]),
           home: Scaffold(
-            body: PlexVideoControls(
+            body: SiloVideoControls(
               player: player,
               volumeController: volume,
               metadata: testMediaItem(id: 'desktop-click', title: 'Desktop Click'),

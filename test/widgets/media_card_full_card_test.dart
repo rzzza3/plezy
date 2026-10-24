@@ -86,7 +86,7 @@ void main() {
   testWidgets('full bleed grid media cards hide text when constrained by a grid cell', (tester) async {
     final item = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Hidden Movie',
       year: 2024,
@@ -110,7 +110,7 @@ void main() {
   testWidgets('standard grid media cards still show text', (tester) async {
     final item = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Visible Movie',
     );
@@ -342,7 +342,7 @@ void main() {
   });
 
   testWidgets('full bleed flag does not hide list media card text', (tester) async {
-    final item = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'List Movie');
+    final item = testMediaItem(id: 'movie_1', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'List Movie');
 
     await tester.pumpWidget(
       _TestApp(
@@ -478,7 +478,7 @@ void main() {
     final semantics = tester.ensureSemantics();
     final item = testMediaItem(
       id: 'semantic_episode',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Decorative Episode Title',
       summary: 'Decorative episode summary',
@@ -680,7 +680,7 @@ void main() {
     final semantics = tester.ensureSemantics();
     final item = testMediaItem(
       id: 'semantic_movie',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Custom Semantic Movie',
       summary: 'Decorative movie summary',
@@ -714,7 +714,7 @@ void main() {
   testWidgets('custom tap owns pointer and programmatic activation', (tester) async {
     final item = testMediaItem(
       id: 'custom_tap',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Custom Tap Movie',
     );
@@ -747,7 +747,7 @@ void main() {
   testWidgets('custom long press owns pointer and programmatic activation', (tester) async {
     final item = testMediaItem(
       id: 'custom_long_press',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Custom Long Press Movie',
     );
@@ -779,7 +779,7 @@ void main() {
 }
 
 Widget _fullCardHarness({required FocusNode focusNode, required bool fullBleed}) {
-  final item = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Focused Movie');
+  final item = testMediaItem(id: 'movie_1', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Focused Movie');
   return InputModeTracker(
     child: _TestApp(
       child: SizedBox(

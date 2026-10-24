@@ -21,9 +21,9 @@ sealed class LibrarySort with _$LibrarySort {
 
 /// Comparison carried by a [LibraryFilter].
 ///
-/// [wireSuffix] is Plex's own operator spelling minus its trailing `=`, which
+/// [wireSuffix] is the wire operator spelling minus its trailing `=`, which
 /// doubles as the query-string separator: `year>>=2015` is the key `year>>`
-/// with the value `2015`. Percent-encoding the suffix is fine (Plex decodes
+/// with the value `2015`. Percent-encoding the suffix is fine (servers decode
 /// query keys); the separator itself must stay literal.
 ///
 /// [id] is the persisted form; never rename it.
@@ -71,7 +71,7 @@ enum LibraryFilterOperator {
 
 /// A single filter clause: one field, one comparison, one or more values.
 ///
-/// Values inside a clause are OR-ed (Plex `genre=1,2`, Jellyfin `Genres=a|b`).
+/// Values inside a clause are OR-ed (e.g. `genre=1,2`).
 /// Separate clauses AND, including two clauses on the same field — that is how
 /// a range (`year>>=2000` plus `year<<=2010`) and an intersection
 /// (`genre=1&genre=2`) are expressed.
@@ -110,8 +110,8 @@ sealed class LibraryFilter with _$LibraryFilter {
 }
 
 /// Backend-neutral library content query. Each backend's adapter translates
-/// these into its own query DSL (Plex `/library/sections/{id}/all?type=...`
-/// or Jellyfin `/Items?ParentId=...&Filters=...`).
+/// these into its own query DSL (e.g.
+/// `/library/sections/{id}/all?type=...`).
 @freezed
 sealed class LibraryQuery with _$LibraryQuery {
   const factory LibraryQuery({

@@ -9,7 +9,7 @@ import 'base_library_tab.dart';
 import 'paginated_card_grid_tab.dart';
 
 /// Collections tab for library screen.
-/// Plex scopes collections to the library; Jellyfin exposes a shared BoxSets root.
+/// Collections are scoped to the library.
 class LibraryCollectionsTab extends BaseLibraryTab<MediaItem> {
   const LibraryCollectionsTab({
     super.key,
@@ -60,8 +60,6 @@ class _LibraryCollectionsTabState extends PaginatedCardGridTabState<MediaItem, L
     return loaded.isNotEmpty && loaded.every(_isMusicCollection);
   }
 
-  // Plex collection rows are library-scoped, so their container kind is a
-  // safe fallback. Jellyfin BoxSets are server-wide and must opt in per item.
-  bool _isMusicCollection(MediaItem item) =>
-      item.kind.isMusic || (item is PlexMediaItem && widget.library.kind.isMusic);
+  // Collections must opt in per item.
+  bool _isMusicCollection(MediaItem item) => item.kind.isMusic;
 }

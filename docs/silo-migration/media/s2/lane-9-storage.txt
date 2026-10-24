@@ -1,0 +1,10 @@
+Lane 9 storage check, 2026-10-13 14:20, while signed in to Silo (build 74d4e0d7f).
+Pref keys mentioning silo or the vault:
+credential_vault_key_v1
+silo_device_id
+silo_session_v1.2b68c785-0de2-4e9f-b921-251ad12591b3
+silo_session_v1 value starts with: enc:v1:{"n" (ciphertext; nonce and ciphertext fields only)
+Plain token field names anywhere in prefs: 0
+After Log out at 14:21:27 (logout status 204), the remaining keys mentioning silo or the vault:
+credential_vault_key_v1
+silo_device_id

@@ -1,15 +1,10 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
 
-import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
-import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_filter_result.dart';
@@ -22,16 +17,12 @@ import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_sort.dart';
 import 'package:plezy/media/server_capabilities.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/alpha_jump_bar.dart';
-import 'package:plezy/screens/libraries/alpha_scroll_handle.dart';
 import 'package:plezy/screens/libraries/sort_bottom_sheet.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
-import 'package:plezy/services/jellyfin_mappers.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
@@ -40,7 +31,6 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_filter_chip.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 
-import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/library_tab_scaffold.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
@@ -207,25 +197,6 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('mixed library all grouping applies its explicit root kinds', (tester) async {
-    final client = _BrowseClient('server-a', 'Mixed');
-    final harness = _BrowseHarness(clientA: client);
-    addTearDown(harness.dispose);
-    harness.selectedLibrary.value = JellyfinMappers.library({
-      'Id': 'mixed-library',
-      'Name': 'Mixed',
-      'Type': 'CollectionFolder',
-      'IsFolder': true,
-    }, serverId: client.serverId)!;
-
-    await _pumpHarness(tester, harness);
-
-    expect(client.pageQueries, hasLength(1));
-    expect(client.pageQueries.single.kind, MediaKind.folder);
-    expect(client.pageQueries.single.includeKinds, const [MediaKind.movie, MediaKind.show]);
-    expect(client.pageLibraryKinds.single, MediaKind.folder);
-  });
-
   testWidgets('a server push repopulates the visible grid in place (#1646)', (tester) async {
     final client = _BrowseClient('server-a', 'Library A');
     final harness = _BrowseHarness(clientA: client);
@@ -329,60 +300,22 @@ void main() {
     });
   }
 
-  testWidgets('phone landscape keeps the alpha handle and grid clear of the trailing system inset', (tester) async {
-    // A landscape iPhone: the nav rail consumes the leading inset, but the
-    // trailing one (notch / rounded corner) reaches the browse tab untouched.
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    const size = Size(900, 410);
-    const devicePixelRatio = 3.0;
-    const trailingInset = 48.0;
-    tester.view.padding = const FakeViewPadding(right: trailingInset * devicePixelRatio);
-    addTearDown(tester.view.reset);
-
-    final harness = _PlexBrowseHarness();
-    addTearDown(harness.dispose);
-
-    await pumpLibraryTab(
-      tester,
-      provider: harness.provider,
-      size: size,
-      devicePixelRatio: devicePixelRatio,
-      tab: LibraryBrowseTab(library: harness.library, canGroupByFolders: true, isActive: true),
-    );
-    await _pumpUntil(tester, () => harness.pageRequestCount >= 1 && harness.firstCharacterRequestCount >= 1);
-    await pumpRequestFrames(tester);
-
-    final handle = find.byType(AlphaScrollHandle);
-    expect(handle, findsOneWidget);
-    final handleRight = tester.getRect(handle).right;
-    final cardRights = [
-      for (final card in find.byType(FocusableMediaCard).evaluate()) tester.getRect(find.byWidget(card.widget)).right,
-    ];
-    // Foundation debug variables must be restored before the framework's
-    // end-of-test invariant check, which runs ahead of tear-downs.
-    debugDefaultTargetPlatformOverride = null;
-
-    expect(handleRight, size.width - trailingInset);
-    expect(cardRights, isNotEmpty);
-    expect(cardRights, everyElement(lessThanOrEqualTo(size.width - trailingInset)));
-  });
-
   testWidgets('TV keeps the alpha bar off the screen edge and clear of a focused last-column card', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
     await SettingsService.instance.write(SettingsService.tvFullCardLayout, true);
     const size = Size(1280, 720);
 
-    final harness = _PlexBrowseHarness();
+    final harness = _LargeLibraryHarness();
     addTearDown(harness.dispose);
 
     await pumpLibraryTab(
       tester,
       provider: harness.provider,
       size: size,
-      tab: LibraryBrowseTab(library: harness.library, canGroupByFolders: true, isActive: true),
+      tab: LibraryBrowseTab(library: harness.library, canGroupByFolders: false, isActive: true),
     );
-    await _pumpUntil(tester, () => harness.pageRequestCount >= 1 && harness.firstCharacterRequestCount >= 1);
+    await _pumpUntil(tester, () => harness.pageRequestCount >= 1);
     await pumpRequestFrames(tester);
 
     final bar = tester.getRect(find.byType(AlphaJumpBar));
@@ -401,44 +334,6 @@ void main() {
         lastColumn.width * (FocusTheme.fullCardFocusScale - 1) / 2 +
         FocusTheme.focusBorderWidth * FocusTheme.fullCardFocusScale;
     expect(focusedRight, lessThanOrEqualTo(bar.left));
-  });
-
-  testWidgets('folder grouping loads only the tree and reports its own readiness', (tester) async {
-    final harness = _PlexBrowseHarness();
-    addTearDown(harness.dispose);
-    final storage = await StorageService.getInstance();
-    await storage.saveLibraryGrouping(harness.library.globalKey, 'folders');
-    var readyNotifications = 0;
-
-    await pumpLibraryTab(
-      tester,
-      provider: harness.provider,
-      tab: LibraryBrowseTab(
-        library: harness.library,
-        canGroupByFolders: true,
-        isActive: true,
-        onDataLoaded: () => readyNotifications++,
-      ),
-    );
-    await _pumpUntil(tester, () => readyNotifications >= 1);
-    await pumpRequestFrames(tester);
-
-    expect(find.text('Folder One'), findsOneWidget);
-    expect(harness.folderRequestCount, greaterThanOrEqualTo(1));
-    // The tree is the rendered surface, so the flat page and the alpha
-    // character buckets are never fetched.
-    expect(harness.pageRequestCount, 0);
-    expect(harness.firstCharacterRequestCount, 0);
-    // Discovery still runs (the chips come back when the grouping changes),
-    // but it only asks for the filter schema.
-    expect(harness.filterMetadataRequestCount, 1);
-    // An assertion inside the mock handler could not fail this test: the HTTP
-    // client rewraps anything thrown there as a transport error, which
-    // discovery catches and answers from `/filters`.
-    expect(harness.filterMetadataRequests.single.queryParameters['X-Plex-Container-Size'], '0');
-    // A lone `Size=0` makes PMS return the whole section, so the schema probe
-    // has to carry the start offset too.
-    expect(harness.filterMetadataRequests.single.queryParameters['X-Plex-Container-Start'], '0');
   });
 }
 
@@ -463,7 +358,7 @@ Future<void> _pushNewFirstItem(WidgetTester tester, _BrowseClient client, {Futur
       items: [
         testMediaItem(
           id: 'fresh-item',
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
           kind: MediaKind.artist,
           title: 'Fresh Arrival',
           serverId: client.serverId.value,
@@ -471,7 +366,7 @@ Future<void> _pushNewFirstItem(WidgetTester tester, _BrowseClient client, {Futur
         ),
         testMediaItem(
           id: '${client.serverId.value}-item',
-          backend: MediaBackend.jellyfin,
+          backend: MediaBackend.silo,
           kind: MediaKind.artist,
           title: client.itemTitle,
           serverId: client.serverId.value,
@@ -525,7 +420,7 @@ LibraryPage<MediaItem> _pageFor(_BrowseClient client, String title) {
     items: [
       testMediaItem(
         id: '${client.serverId.value}-item',
-        backend: MediaBackend.jellyfin,
+        backend: MediaBackend.silo,
         kind: MediaKind.artist,
         title: title,
         serverId: client.serverId.value,
@@ -561,7 +456,7 @@ class _BrowseHarness {
   MediaLibrary _libraryFor(_BrowseClient client) {
     return MediaLibrary(
       id: '${client.serverId.value}-library',
-      backend: MediaBackend.jellyfin,
+      backend: MediaBackend.silo,
       title: client.itemTitle,
       kind: MediaKind.artist,
       serverId: client.serverId,
@@ -575,152 +470,95 @@ class _BrowseHarness {
   }
 }
 
-/// A Plex movie library large enough for the alpha bar strategy to show the
-/// phone scroll handle (≥ 80 items, ≥ 6 first-character buckets).
-class _PlexBrowseHarness {
+/// A Silo movie library large enough for the alpha bar strategy to show the
+/// bar (≥ 80 items).
+class _LargeLibraryHarness {
   static const _itemCount = 100;
-  static final _serverId = ServerId('plex-server');
+  static final _serverId = ServerId('silo-server');
 
-  final AppDatabase database;
   late final MediaLibrary library;
+  late final _LargeLibraryClient client;
   late final MultiServerManager manager;
   late final MultiServerProvider provider;
-  var pageRequestCount = 0;
-  var firstCharacterRequestCount = 0;
-  var folderRequestCount = 0;
-  var filterMetadataRequestCount = 0;
-  final filterMetadataRequests = <Uri>[];
 
-  _PlexBrowseHarness() : database = AppDatabase.forTesting(NativeDatabase.memory()) {
-    PlexApiCache.initialize(database);
+  int get pageRequestCount => client.pageRequestCount;
+
+  _LargeLibraryHarness() {
     library = MediaLibrary(
       id: 'movies',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       title: 'Movies',
       kind: MediaKind.movie,
       serverId: _serverId,
     );
-    final client = testPlexClient(
-      config: PlexConfig(
-        baseUrl: 'https://plex.example.com',
-        token: 'token',
-        clientIdentifier: 'client-id',
-        product: 'Plezy',
-        version: 'test',
-      ),
-      serverId: _serverId,
-      httpClient: MockClient(_handle),
-    );
+    client = _LargeLibraryClient(_serverId, _itemCount);
     manager = MultiServerManager()..debugRegisterClientForTesting(client);
     provider = testMultiServerProvider(manager);
-  }
-
-  Future<http.Response> _handle(http.Request request) async {
-    Map<String, Object?> container;
-    switch (request.url.path) {
-      case '/library/sections/movies/all':
-        // Filter discovery reads the same endpoint with `includeMeta=1` and
-        // an explicit zero page size: it asks for the field/operator schema,
-        // never for items, so it is not a page request.
-        if (request.url.queryParameters['includeMeta'] == '1') {
-          filterMetadataRequestCount++;
-          filterMetadataRequests.add(request.url);
-          return http.Response(
-            jsonEncode({
-              'MediaContainer': {
-                'size': 0,
-                'totalSize': _itemCount,
-                'Meta': {
-                  'Type': [
-                    {
-                      'type': 'movie',
-                      'active': true,
-                      'Field': [
-                        {'key': 'genre', 'title': 'Genre', 'type': 'tag'},
-                        {'key': 'year', 'title': 'Year', 'type': 'integer'},
-                        {'key': 'unwatched', 'title': 'Unwatched', 'type': 'boolean'},
-                      ],
-                    },
-                  ],
-                  'FieldType': [
-                    {
-                      'type': 'tag',
-                      'Operator': [
-                        {'key': '=', 'title': 'is'},
-                        {'key': '!=', 'title': 'is not'},
-                      ],
-                    },
-                    {
-                      'type': 'integer',
-                      'Operator': [
-                        {'key': '=', 'title': 'is'},
-                        {'key': '>>=', 'title': 'is greater than'},
-                        {'key': '<<=', 'title': 'is less than'},
-                      ],
-                    },
-                    {
-                      'type': 'boolean',
-                      'Operator': [
-                        {'key': '=', 'title': 'is'},
-                        {'key': '!=', 'title': 'is not'},
-                      ],
-                    },
-                  ],
-                },
-              },
-            }),
-            200,
-            headers: const {'content-type': 'application/json'},
-          );
-        }
-        pageRequestCount++;
-        final start = int.tryParse(request.url.queryParameters['X-Plex-Container-Start'] ?? '') ?? 0;
-        final requested = int.tryParse(request.url.queryParameters['X-Plex-Container-Size'] ?? '') ?? _itemCount;
-        final end = (start + requested).clamp(0, _itemCount);
-        container = {
-          'size': end - start,
-          'totalSize': _itemCount,
-          'offset': start,
-          'Metadata': [
-            for (var i = start; i < end; i++) {'ratingKey': 'movie-$i', 'type': 'movie', 'title': 'Movie $i'},
-          ],
-        };
-      case '/library/sections/movies/firstCharacter':
-        firstCharacterRequestCount++;
-        container = {
-          'Directory': [
-            for (final letter in const ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'])
-              {'key': letter, 'title': letter, 'size': '${_itemCount ~/ 8}'},
-          ],
-        };
-      case '/library/sections/movies/folder':
-        folderRequestCount++;
-        container = {
-          'Directory': [
-            {'key': '/library/sections/movies/folder?parent=1', 'type': 'folder', 'title': 'Folder One'},
-          ],
-        };
-      case '/library/sections/movies/sorts':
-        container = {
-          'Directory': [
-            {'key': 'titleSort', 'descKey': 'titleSort:desc', 'title': 'Title', 'defaultDirection': 'asc'},
-          ],
-        };
-      default:
-        return http.Response('{}', 200, headers: const {'content-type': 'application/json'});
-    }
-    return http.Response(
-      jsonEncode({'MediaContainer': container}),
-      200,
-      headers: const {'content-type': 'application/json'},
-    );
   }
 
   Future<void> dispose() async {
     provider.dispose();
     manager.dispose();
-    await database.close();
   }
+}
+
+/// Serves [itemCount] movies, paged by the query's offset and limit.
+class _LargeLibraryClient implements MediaServerClient {
+  _LargeLibraryClient(this.serverId, this.itemCount);
+
+  @override
+  final ServerId serverId;
+  final int itemCount;
+  var pageRequestCount = 0;
+
+  @override
+  String get serverName => 'Silo';
+
+  @override
+  MediaBackend get backend => MediaBackend.silo;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
+
+  @override
+  Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) async => const [];
+
+  @override
+  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
+    return LibraryFilterResult.empty;
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchLibraryPagedContent(
+    String libraryId, {
+    required LibraryQuery query,
+    MediaKind? libraryKind,
+    AbortController? abort,
+  }) async {
+    pageRequestCount++;
+    final end = (query.offset + query.limit).clamp(0, itemCount);
+    return LibraryPage<MediaItem>(
+      items: [
+        for (var i = query.offset; i < end; i++)
+          testMediaItem(
+            id: 'movie-$i',
+            backend: MediaBackend.silo,
+            kind: MediaKind.movie,
+            title: 'Movie $i',
+            libraryId: libraryId,
+            serverId: serverId.value,
+          ),
+      ],
+      totalCount: itemCount,
+      offset: query.offset,
+    );
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _BrowseClient implements MediaServerClient {
@@ -740,10 +578,10 @@ class _BrowseClient implements MediaServerClient {
   String get serverName => itemTitle;
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) {

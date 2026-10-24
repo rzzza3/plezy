@@ -41,10 +41,10 @@ class _GatedLibrariesClient implements MediaServerClient {
   String get serverName => 'Server A';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<MediaLibrary>> fetchLibraries() => libraries.future;
@@ -70,7 +70,7 @@ MediaLibrary _library({
 }) {
   return MediaLibrary(
     id: id,
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     title: title,
     kind: MediaKind.movie,
     serverId: serverId,

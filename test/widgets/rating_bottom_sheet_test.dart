@@ -51,7 +51,7 @@ void main() {
     await _pumpRatingSheet(
       tester,
       viewport: const Size(1280, 800),
-      serverClient: _StubServerClient(ServerCapabilities.plex),
+      serverClient: _StubServerClient(ServerCapabilities.silo),
       profileUuid: _profileUuid,
       item: testMediaItem(id: 'ep-1', kind: MediaKind.episode, serverId: 'server-1', serverName: 'Living Room'),
     );
@@ -71,12 +71,42 @@ void main() {
     expect(tester.getRect(find.text(t.rateSheet.server)).top, serverRowTop);
   });
 
+  for (final (caps, expected) in [(ServerCapabilities.silo, 6.0)]) {
+    testWidgets('a half-star tap rates ${expected / 2} stars when wholeStarRating is ${caps.wholeStarRating}', (
+      tester,
+    ) async {
+      final client = _StubServerClient(caps);
+      await _pumpRatingSheet(tester, viewport: const Size(1280, 800), serverClient: client);
+
+      final stars = tester.getRect(
+        find.descendant(
+          of: _sheetFinder,
+          matching: find.byWidgetPredicate((w) => w is GestureDetector && w.onPanUpdate != null),
+        ),
+      );
+      await tester.tapAt(Offset(stars.left + stars.width * 0.5, stars.center.dy));
+      await tester.pumpAndSettle();
+
+      expect(client.rated, [expected]);
+    });
+  }
+
+  testWidgets('a Silo server row names Silo', (tester) async {
+    await _pumpRatingSheet(
+      tester,
+      viewport: const Size(1280, 800),
+      serverClient: _StubServerClient(ServerCapabilities.silo, backend: MediaBackend.silo),
+    );
+
+    expect(find.text('Silo - Living Room'), findsOneWidget);
+  });
+
   testWidgets('tracker rows settle with an error when the item ids cannot be resolved', (tester) async {
     await _seedAllTrackerSessions(_profileUuid);
     await _pumpRatingSheet(
       tester,
       viewport: const Size(1280, 800),
-      serverClient: _StubServerClient(ServerCapabilities.plex, externalIdsError: StateError('server unreachable')),
+      serverClient: _StubServerClient(ServerCapabilities.silo, externalIdsError: StateError('server unreachable')),
       profileUuid: _profileUuid,
       item: testMediaItem(id: 'movie-1', kind: MediaKind.movie, serverId: 'server-1', serverName: 'Living Room'),
     );
@@ -190,13 +220,18 @@ void _resetTrackerBindings() {
 /// [capabilities] (which decides whether the server row renders at all),
 /// [backend], [serverName], and [serverId].
 class _StubServerClient implements MediaServerClient {
-  _StubServerClient(this.capabilities, {this.externalIdsError});
+  _StubServerClient(this.capabilities, {this.externalIdsError, this.backend = MediaBackend.silo});
 
   @override
   final ServerCapabilities capabilities;
 
   /// Thrown by [fetchExternalIds] when set — the server failing the lookup.
   final Object? externalIdsError;
+
+  final List<double> rated = [];
+
+  @override
+  Future<void> rate(MediaItem item, double rating) async => rated.add(rating);
 
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async {
@@ -211,7 +246,7 @@ class _StubServerClient implements MediaServerClient {
   String? get serverName => 'Living Room';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  final MediaBackend backend;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

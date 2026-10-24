@@ -4,7 +4,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 
 void main() {
-  MediaItem album(String id) => MediaItem.plex(id: id, kind: MediaKind.album, title: id);
+  MediaItem album(String id) => MediaItem.silo(id: id, kind: MediaKind.album, title: id);
 
   final kinds = <String, DiscographyGroupKind>{
     'ep-1': DiscographyGroupKind.singlesAndEps,

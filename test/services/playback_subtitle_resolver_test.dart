@@ -2,10 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
-import 'package:plezy/media/account_preferences.dart';
-import 'package:plezy/models/jellyfin/jellyfin_account_preferences.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_subtitle_resolver.dart';
 import 'package:plezy/services/subtitle_preference.dart';
@@ -31,8 +28,8 @@ MediaSubtitleTrack _sourceSubtitle(
     title: title ?? 'Subtitle $id',
     selected: selected,
     forced: forced,
-    // Mirrors JellyfinFileInfoStreamReader: the server ships a delivery URL
-    // with every row it marks external, and _sidecar's URL contains it.
+    // A row marked external carries a delivery URL, and _sidecar's URL
+    // contains it.
     key: key ?? (external || usesExternalDelivery ? '/subtitles/$id.srt' : null),
     external: external,
     usesExternalDelivery: usesExternalDelivery,
@@ -71,6 +68,21 @@ MediaSourceInfo _mediaInfo(List<MediaSubtitleTrack> subtitles) {
 }
 
 void main() {
+  test('a pending choice of a stored subtitle equals the plain choice of its id', () {
+    final stored = MediaSubtitleTrack(
+      id: 10001,
+      language: 'fra',
+      usesExternalDelivery: true,
+      selected: false,
+      forced: false,
+    );
+    final pending = PlaybackSourceSubtitleChoice.pending(stored);
+
+    expect(pending, const PlaybackSourceSubtitleChoice.source(10001));
+    expect(pending.pendingTrack, same(stored));
+    expect(PlaybackSubtitleResolver.subtitleTrackForSource(stored).id, 'source:10001');
+  });
+
   group('source subtitle routing', () {
     test('matches an embedded source to its loaded native track', () {
       final source = _sourceSubtitle(2, language: 'eng');
@@ -139,9 +151,9 @@ void main() {
       );
     });
 
-    test('fuzzy-matches a Jellyfin external-delivery row once direct play strips its sidecar identity', () {
-      // JellyfinClient.getPlaybackInitialization normalizes rows it did not
-      // fetch as sidecars, which is what makes the embedded stream reachable.
+    test('fuzzy-matches an external-delivery row once its sidecar identity is stripped', () {
+      // Stripping the identity of a row that was not fetched as a sidecar is
+      // what makes the embedded stream reachable.
       final source = _sourceSubtitle(2, language: 'eng', usesExternalDelivery: true).withoutSidecarIdentity();
       const native = SubtitleTrack(id: '7', language: 'eng', codec: 'srt');
 
@@ -209,7 +221,7 @@ void main() {
     });
   });
 
-  final metadata = testMediaItem(id: 'movie-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
+  final metadata = testMediaItem(id: 'movie-1', backend: MediaBackend.silo, kind: MediaKind.movie);
 
   test('attaches only the server-selected sidecar from the full catalog', () {
     final result = PlaybackSubtitleResolver.resolve(
@@ -289,58 +301,6 @@ void main() {
 
     expect(result.isOff, isTrue);
     expect(result.sidecarsAtOpen, isEmpty);
-  });
-
-  group('Jellyfin server subtitle answer', () {
-    // Verbatim shape of a direct-played episode from a real Jellyfin server:
-    // the container flags one row default+forced, and the response carries the
-    // index the server picked for this user (null when it picked none).
-    MediaSourceInfo jellyfinInfo({Object? defaultSubtitleStreamIndex}) => jellyfinMediaSourceToMediaSourceInfo({
-      'Id': 'src-1',
-      'DefaultSubtitleStreamIndex': defaultSubtitleStreamIndex,
-      'MediaStreams': [
-        {'Index': 1, 'Type': 'Audio', 'Language': 'eng', 'IsDefault': true},
-        {'Index': 3, 'Type': 'Subtitle', 'Language': 'eng', 'Codec': 'ass', 'IsDefault': true, 'IsForced': true},
-        {'Index': 4, 'Type': 'Subtitle', 'Language': 'eng', 'Codec': 'ass'},
-      ],
-    });
-
-    AccountPreferences profileWithMode(String mode) =>
-        JellyfinAccountPreferences.fromConfiguration({'SubtitleMode': mode, 'PlayDefaultAudioTrack': true});
-
-    test('a user who turned subtitles off on the server gets none (#1779)', () {
-      final result = PlaybackSubtitleResolver.resolve(
-        metadata: metadata,
-        mediaInfo: jellyfinInfo(),
-        sidecars: const [],
-        profileSettings: profileWithMode('None'),
-      );
-
-      expect(result.isOff, isTrue);
-    });
-
-    test('the stream the server did pick still plays', () {
-      final result = PlaybackSubtitleResolver.resolve(
-        metadata: metadata,
-        mediaInfo: jellyfinInfo(defaultSubtitleStreamIndex: 3),
-        sidecars: const [],
-        profileSettings: profileWithMode('Default'),
-      );
-
-      expect(result.isOff, isFalse);
-      expect(result.primarySourceStreamId, 3);
-    });
-
-    test('an off persisted through progress reports plays nothing', () {
-      final result = PlaybackSubtitleResolver.resolve(
-        metadata: metadata,
-        mediaInfo: jellyfinInfo(defaultSubtitleStreamIndex: -1),
-        sidecars: const [],
-        profileSettings: profileWithMode('Default'),
-      );
-
-      expect(result.isOff, isTrue);
-    });
   });
 
   test('retains each source metadata row for a shared preloaded container', () {
@@ -657,7 +617,7 @@ void main() {
     });
 
     test('same-language rows are told apart by their titles across episodes (#1785)', () {
-      // Real-world shape (Madoka Magica on Plex): both rows English ASS with
+      // Real-world shape (Madoka Magica): both rows English ASS with
       // the bare displayTitle "English"; only Title separates the full
       // dialogue track from the signs/songs track.
       MediaSubtitleTrack row(int id, String title, {bool selected = false}) => MediaSubtitleTrack(
@@ -691,53 +651,6 @@ void main() {
       );
 
       expect(result.primarySourceStreamId, 53194);
-      expect(result.declinedPreference, isNull);
-    });
-
-    test('a Jellyfin signs pick beats the server per-episode default on the next episode (#1785)', () {
-      // Verbatim shape from a live Jellyfin server (Attack on Titan): both
-      // rows English ASS, discriminated by Title, and the server names the
-      // full-dialogue row (DefaultSubtitleStreamIndex 3) on every episode.
-      MediaSourceInfo episodeInfo() => jellyfinMediaSourceToMediaSourceInfo({
-        'Id': 'src-1',
-        'DefaultSubtitleStreamIndex': 3,
-        'MediaStreams': [
-          {'Index': 1, 'Type': 'Audio', 'Language': 'jpn', 'IsDefault': true},
-          {
-            'Index': 3,
-            'Type': 'Subtitle',
-            'Language': 'eng',
-            'Codec': 'ass',
-            'Title': 'Full Subtitles',
-            'DisplayTitle': 'Full Subtitles - English - Default - ASS',
-            'IsDefault': true,
-          },
-          {
-            'Index': 4,
-            'Type': 'Subtitle',
-            'Language': 'eng',
-            'Codec': 'ass',
-            'Title': 'Signs & Songs',
-            'DisplayTitle': 'Signs & Songs - English - ASS',
-          },
-        ],
-      });
-
-      final e1 = episodeInfo();
-      final picked = e1.subtitleTracks.firstWhere((row) => row.id == 4);
-      final committed = PlaybackSubtitleResolver.subtitleTrackForSource(picked);
-      expect(committed.title, 'Signs & Songs');
-
-      final carried = SubtitlePreference.demoteToIntent(SubtitlePreference.track(committed));
-      final result = PlaybackSubtitleResolver.resolve(
-        metadata: metadata,
-        mediaInfo: episodeInfo(),
-        sidecars: const [],
-        preferredSubtitleTrack: carried,
-        preserveSourceIdentity: false,
-      );
-
-      expect(result.primarySourceStreamId, 4);
       expect(result.declinedPreference, isNull);
     });
   });

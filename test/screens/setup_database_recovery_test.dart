@@ -32,7 +32,6 @@ void main() {
         child: MaterialApp(
           home: SetupScreen(
             databaseRecoveryOutcome: TvosDatabaseRecoveryOutcome.recoveryRequired,
-            initializeAuthServices: false,
             debugRecoveryRequiredRouter: (_, message) {
               routedMessage = message;
             },
@@ -48,33 +47,31 @@ void main() {
     expect(prefs.getString('current_user_uuid'), 'legacy-user');
   });
 
-  testWidgets('AuthScreen visibly renders recovery notice with Plex and Jellyfin actions', (tester) async {
+  testWidgets('AuthScreen renders the recovery notice with the Silo action only', (tester) async {
     await tester.pumpWidget(
       TranslationProvider(
         child: MaterialApp(
-          home: AuthScreen(
-            initialErrorMessage: t.auth.localDataRecoveryRequired,
-            initializeServices: false,
-            databaseRecoveryRequired: true,
-          ),
+          home: AuthScreen(initialErrorMessage: t.auth.localDataRecoveryRequired, databaseRecoveryRequired: true),
         ),
       ),
     );
     await tester.pump();
 
     expect(find.text(t.auth.localDataRecoveryRequired), findsOneWidget);
-    expect(find.text(t.auth.signInWithPlex), findsOneWidget);
-    expect(find.text(t.auth.connectToMediaBrowser(product: 'Jellyfin')), findsOneWidget);
-    expect(find.text(t.auth.connectToMediaBrowser(product: 'Emby')), findsOneWidget);
+    _expectSiloOnly();
   });
 
-  testWidgets('fresh AuthScreen has normal actions without recovery notice', (tester) async {
-    await tester.pumpWidget(TranslationProvider(child: const MaterialApp(home: AuthScreen(initializeServices: false))));
+  testWidgets('fresh AuthScreen offers Silo only, without the recovery notice', (tester) async {
+    await tester.pumpWidget(TranslationProvider(child: const MaterialApp(home: AuthScreen())));
     await tester.pump();
 
     expect(find.text(t.auth.localDataRecoveryRequired), findsNothing);
-    expect(find.text(t.auth.signInWithPlex), findsOneWidget);
-    expect(find.text(t.auth.connectToMediaBrowser(product: 'Jellyfin')), findsOneWidget);
-    expect(find.text(t.auth.connectToMediaBrowser(product: 'Emby')), findsOneWidget);
+    _expectSiloOnly();
   });
+}
+
+void _expectSiloOnly() {
+  expect(find.text(t.silo.connectCard), findsOneWidget);
+  expect(find.byType(ElevatedButton), findsOneWidget);
+  expect(find.byType(OutlinedButton), findsNothing);
 }

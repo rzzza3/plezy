@@ -23,7 +23,6 @@ import 'wakelock_controller.dart';
 /// Plain State-owned helper in the established player pattern.
 class SpuriousEofRecovery {
   SpuriousEofRecovery({
-    required this.isLive,
     required this._isOffline,
     required this._isTranscoding,
     required this._transitionGate,
@@ -46,7 +45,6 @@ class SpuriousEofRecovery {
   /// `.strm` pointing at a playlist.
   static const Set<String> manifestFormats = {'hls', 'dash'};
 
-  final bool isLive;
   final bool Function() _isOffline;
   final bool Function() _isTranscoding;
   final PlaybackTransitionGate _transitionGate;
@@ -126,10 +124,10 @@ class SpuriousEofRecovery {
   /// handled here (recovery started, or playback stays parked); false lets
   /// the caller run the normal completion flow.
   Future<bool> interceptEof(Player currentPlayer) async {
-    // Live EOFs have their own handling, an offline file can't lose its
-    // stream, and in-flight transitions already produce expected EOFs that
-    // the completion flow ignores — all fall through untouched.
-    if (isLive || _isOffline()) return false;
+    // An offline file can't lose its stream, and in-flight transitions
+    // already produce expected EOFs that the completion flow ignores — both
+    // fall through untouched.
+    if (_isOffline()) return false;
     if (_transitionGate.transition != PlaybackTransition.idle) return false;
     // Already parked: swallow duplicate EOF signals without burning budget
     // or re-toasting.
@@ -171,7 +169,7 @@ class SpuriousEofRecovery {
       return false;
     }
 
-    // A server stop (a Plex admin stop) ends the transfer too, so the buffer
+    // A server stop (an admin stop) ends the transfer too, so the buffer
     // running dry is that stop taking effect, not a network fault to heal:
     // an automatic rebuild would open a new session nobody asked for. Park;
     // a viewer play/seek still retries.

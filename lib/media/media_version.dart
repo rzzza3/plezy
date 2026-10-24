@@ -36,9 +36,7 @@ class MediaVersion {
   final List<MediaPart> parts;
 
   /// Human-readable name for this version (e.g. "Director's Cut").
-  /// Plex doesn't surface a name on `Media` entries, so this is null on the
-  /// Plex path and set from `MediaSource.Name` on the Jellyfin path when the
-  /// names differ across sources.
+  /// Null when the server names no version.
   final String? name;
 
   const MediaVersion({
@@ -57,14 +55,14 @@ class MediaVersion {
 
   Map<String, dynamic> toJson() => _$MediaVersionToJson(this);
 
-  /// Defaults to true when file-access fields are absent. Plex only populates
+  /// Defaults to true when file-access fields are absent. A server only populates
   /// them when metadata is fetched with `checkFiles=1`.
   bool get isPlayable => parts.isEmpty || parts.any((part) => part.isPlayable);
 
   /// Approximate vertical resolution, for ordering versions best-first.
   ///
-  /// Plex reports either a numeric height (`"1080"`) or a named tier
-  /// (`"sd"`, `"4k"`) and usually both; Jellyfin reports [height] directly.
+  /// A server reports either a numeric height (`"1080"`) or a named tier
+  /// (`"sd"`, `"4k"`) and usually both.
   /// Null when the backend gave neither.
   int? get resolutionHeight {
     final reported = height;

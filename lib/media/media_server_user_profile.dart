@@ -24,16 +24,16 @@ enum SubtitlePlaybackMode {
 /// the implementation, so playback reads the same cache the Account
 /// preferences screen writes.
 ///
-/// Language strings are server-shaped (Plex returns 639-2/B like "fre",
-/// Jellyfin returns 639-2/T like "fra"); [LanguageCodes.getVariations]
-/// handles either when matching against mpv-reported track languages.
+/// Language strings are server-shaped (a server may return 639-2/B like "fre",
+/// other servers may return 639-2/T like "fra");
+/// [LanguageCodes.getVariations] handles either when matching against mpv-reported track languages.
 abstract class MediaServerUserProfile {
   /// Whether the player should auto-pick an audio track based on the
   /// language preferences. False means "keep the file's default track".
   bool get autoSelectAudio;
 
   /// Preferred audio language. May be null when the user has no preference
-  /// set. Plex also stores a ranked list, but PMS applies that itself when
+  /// set. A server may also store a ranked list and apply it itself when
   /// stamping `selected`; the client only needs the primary as a fallback.
   String? get defaultAudioLanguage;
 
@@ -41,8 +41,8 @@ abstract class MediaServerUserProfile {
   String? get defaultSubtitleLanguage;
 
   /// Server-side subtitle mode when the backend leaves auto-selection to the
-  /// client (MediaBrowser). Plex exposes `autoSelectSubtitle` too, but PMS
-  /// applies it itself when stamping `selected` on streams, so
-  /// [TrackSelectionService] ignores the mode for Plex items.
+  /// client. A server that applies its own mode when stamping `selected` on
+  /// streams leaves this null, so [TrackSelectionService] does not apply it
+  /// twice.
   SubtitlePlaybackMode? get subtitleMode => null;
 }

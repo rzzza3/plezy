@@ -236,7 +236,7 @@ class _FakeCatalogLibraryMatcher extends CatalogLibraryMatcher {
 }
 
 /// Matches only items that carry an external id, the way a real lookup for a
-/// Plex Discover row does (#1715): the bare rating-key form misses, the
+/// catalog row does (#1715): the bare form misses, the
 /// detail-enriched form hits.
 class _ExternalIdGatedMatcher extends CatalogLibraryMatcher {
   _ExternalIdGatedMatcher(super.multiServer, this.hit);
@@ -267,7 +267,7 @@ class _ScriptedMatcher extends CatalogLibraryMatcher {
   }
 }
 
-/// A Plex Discover row whose bare form carries only its own id; the detail
+/// A catalog row whose bare form carries only its own id; the detail
 /// body adds the external ids (#1715), which is what triggers a second pass.
 const _bareRow = CatalogItem(
   source: CatalogSourceId.trakt,
@@ -409,8 +409,8 @@ void main() {
   });
 
   testWidgets('detail enrichment that adds external ids re-resolves library matches', (tester) async {
-    // #1715: the row form of a Plex Discover item carries only its rating
-    // key and the first lookup misses; the detail body brings the external
+    // #1715: the row form of a catalog item carries only its own
+    // id and the first lookup misses; the detail body brings the external
     // ids, which must trigger a second lookup instead of leaving the screen
     // on "Not in your library".
     const bare = CatalogItem(
@@ -479,8 +479,8 @@ void main() {
 
   group('Seerr request action', () {
     testWidgets('appears once the detail load supplies the tmdb id', (tester) async {
-      // #1959: Plex Discover's hub/search/related endpoints ignore
-      // includeGuids, so a row item carries no tmdb id until fetchDetail
+      // #1959: some catalog row endpoints omit
+      // ids, so a row item carries no tmdb id until fetchDetail
       // brings one. The Request gate must read the enriched item, not the
       // row form the screen opened with.
       final detailCompleter = Completer<CatalogDetail>();
@@ -779,7 +779,7 @@ void main() {
   });
 
   testWidgets('a re-resolve that lost its library stamp keeps the one already shown', (tester) async {
-    // Jellyfin stamps a copy's library with a best-effort ancestors lookup
+    // A backend may stamp a copy's library with a best-effort ancestors lookup
     // that returns the item bare when it fails. A row that fell back to the
     // server name would be indistinguishable from its sibling in the same
     // server's other library.
@@ -803,8 +803,8 @@ void main() {
   });
 
   testWidgets('a re-resolve that finds another library adds it to the list', (tester) async {
-    // The exact `plex://` guid only sees libraries on the modern agent; a
-    // legacy-agent sibling arrives with the enriched imdb/tmdb pass (#1754).
+    // One id form only sees some libraries; a
+    // sibling copy arrives with the enriched imdb/tmdb pass (#1754).
     // The first pass being non-empty must not suppress the second.
     late _ScriptedMatcher matcher;
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));

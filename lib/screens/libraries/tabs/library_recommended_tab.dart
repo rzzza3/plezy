@@ -188,8 +188,8 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   Future<void> loadItems() => runLoadTransaction(_loadRecommendedHubs);
 
   Future<List<MediaHub>> _loadRecommendedHubs() async {
-    // Backend-aware fetch: Plex hits /hubs/sections, Jellyfin synthesises
-    // Continue Watching + Next Up + Recently Added.
+    // Backend-aware fetch: the library's hubs; other
+    // backends synthesise their own per-library hubs.
     final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
     final hubs = client == null
         ? <MediaHub>[]

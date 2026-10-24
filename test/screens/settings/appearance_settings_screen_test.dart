@@ -41,9 +41,6 @@ void main() {
     ]) {
       expect(find.text(group), findsOneWidget, reason: 'group $group missing');
     }
-    final scrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(find.text(t.settings.liveTv), 500, scrollable: scrollable);
-    expect(find.text(t.settings.liveTvDefaultFavorites), findsOneWidget);
     // Moved away: profile prompt and performance overlay no longer live here.
     expect(find.text(t.settings.requireProfileSelectionOnOpen), findsNothing);
     expect(find.text(t.settings.autoHidePerformanceOverlay), findsNothing);

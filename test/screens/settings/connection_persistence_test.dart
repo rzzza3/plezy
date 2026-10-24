@@ -1,468 +1,223 @@
-import 'dart:async';
-
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/profiles/active_profile_binder.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/profiles/profile_connection.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/profiles/silo_household_service.dart';
 import 'package:plezy/screens/settings/connection_persistence.dart';
-import 'package:plezy/services/credential_vault.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/profile_stack.dart';
 
-final class _AfterStatementFailure implements Exception {
-  const _AfterStatementFailure(this.stage);
+enum _Activation { succeed, reject, fail }
 
-  final String stage;
+class _ScriptedActiveProfileProvider extends ActiveProfileProvider {
+  _ScriptedActiveProfileProvider({required super.households, required super.connections, required super.storage});
 
-  @override
-  String toString() => 'after $stage statement';
-}
-
-class _FailingProfileRegistry extends ProfileRegistry {
-  _FailingProfileRegistry(super.db);
+  _Activation activation = _Activation.succeed;
 
   @override
-  Future<void> upsert(Profile profile) async {
-    await super.upsert(profile);
-    throw const _AfterStatementFailure('profile');
-  }
-}
-
-class _FailingConnectionRegistry extends ConnectionRegistry {
-  _FailingConnectionRegistry(super.db);
-
-  @override
-  Future<void> upsert(Connection connection, {void Function()? checkCurrent, Connection? expected}) async {
-    await super.upsert(connection, checkCurrent: checkCurrent, expected: expected);
-    throw const _AfterStatementFailure('connection');
-  }
-}
-
-class _FailingProfileConnectionRegistry extends ProfileConnectionRegistry {
-  _FailingProfileConnectionRegistry(super.db);
-
-  @override
-  Future<void> upsert(ProfileConnection connection, {bool makeDefault = false}) async {
-    await super.upsert(connection, makeDefault: makeDefault);
-    throw const _AfterStatementFailure('join');
-  }
-}
-
-class _GatedProfileConnectionRegistry extends ProfileConnectionRegistry {
-  _GatedProfileConnectionRegistry(super.db, {required this.fail});
-
-  final bool fail;
-  final started = Completer<void>();
-  final release = Completer<void>();
-
-  @override
-  Future<void> upsert(ProfileConnection connection, {bool makeDefault = false}) async {
-    await super.upsert(connection, makeDefault: makeDefault);
-    started.complete();
-    await release.future;
-    if (fail) throw const _AfterStatementFailure('gated join');
-  }
-}
-
-class _RejectingActiveProfileProvider extends ActiveProfileProvider {
-  _RejectingActiveProfileProvider({
-    required super.registry,
-    required super.plexHome,
-    required super.connections,
-    required super.profileConnections,
-    required super.storage,
-  });
-
-  @override
-  Future<bool> activate(Profile profile, {String? pin}) async => false;
-}
-
-class _ThrowingActiveProfileProvider extends ActiveProfileProvider {
-  _ThrowingActiveProfileProvider({
-    required super.registry,
-    required super.plexHome,
-    required super.connections,
-    required super.profileConnections,
-    required super.storage,
-  });
-
-  @override
-  Future<bool> activate(Profile profile, {String? pin}) async {
-    await super.activate(profile, pin: pin);
-    throw const _AfterStatementFailure('active marker');
-  }
-}
-
-class _NoTimerPlexHomeService extends PlexHomeService {
-  _NoTimerPlexHomeService({required super.connections, required super.profileConnections, required super.storage});
-
-  @override
-  Future<void> start() async {}
-
-  @override
-  Future<void> reloadFromStorage() async {}
-}
-
-JellyfinConnection _connection({String token = 'opaque-token-current', String userName = 'Fixture User'}) {
-  return JellyfinConnection(
-    id: 'fixture-machine/fixture-user',
-    baseUrl: 'https://media.invalid',
-    serverName: 'Fixture Server',
-    serverMachineId: 'fixture-machine',
-    userId: 'fixture-user',
-    userName: userName,
-    accessToken: token,
-    deviceId: 'fixture-device',
-    createdAt: DateTime.utc(2026, 1, 2),
-  );
-}
-
-Profile _profile(String id, {String name = 'Fixture Profile'}) {
-  return Profile.local(id: id, displayName: name, createdAt: DateTime.utc(2026, 1, 1));
-}
-
-Future<Object?> _runProvisioning(WidgetTester tester, Future<void> Function() command) {
-  return tester.runAsync<Object?>(() async {
-    try {
-      await command();
-      return null;
-    } catch (error) {
-      return error;
+  Future<bool> activate(Profile profile) async {
+    switch (activation) {
+      case _Activation.succeed:
+        return super.activate(profile);
+      case _Activation.reject:
+        return false;
+      case _Activation.fail:
+        throw StateError('synthetic activation failure');
     }
-  });
+  }
 }
 
-ProfileConnection _join(Profile profile, JellyfinConnection connection) {
-  return ProfileConnection(
-    profileId: profile.id,
-    connectionId: connection.id,
-    userToken: connection.accessToken,
-    userIdentifier: connection.userId,
-    tokenAcquiredAt: DateTime.utc(2026, 1, 2),
-  );
+class _Binder implements ActiveProfileBinder {
+  final List<String> events = [];
+
+  @override
+  void markUserInitiatedActivation(String profileId) => events.add('mark:$profileId');
+
+  @override
+  Future<void> rebindIfActive(String profileId) async => events.add('rebind:$profileId');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-void main() {
-  late AppDatabase db;
-  late StorageService storage;
-  late ProfileRegistry profiles;
-  late ConnectionRegistry connections;
-  late ProfileConnectionRegistry profileConnections;
-  late PlexHomeService plexHome;
-  late ActiveProfileProvider activeProfiles;
-  BuildContext? hostContext;
+class _Harness {
+  _Harness(this.db, this.connections, this.households, this.active, this.storage, this.binder);
 
-  Future<void> mountHost(
-    WidgetTester tester, {
-    ProfileRegistry? profileRegistry,
-    ConnectionRegistry? connectionRegistry,
-    ProfileConnectionRegistry? joinRegistry,
-    bool initializeActive = false,
-    ActiveProfileProvider Function(
-      ProfileRegistry profiles,
-      PlexHomeService plexHome,
-      ConnectionRegistry connections,
-      StorageService storage,
-    )?
-    activeFactory,
-  }) async {
-    await tester.runAsync(() => CredentialVault.protect('opaque-vault-warmup'));
-    profiles = profileRegistry ?? ProfileRegistry(db);
-    connections = connectionRegistry ?? ConnectionRegistry(db);
-    profileConnections = joinRegistry ?? ProfileConnectionRegistry(db);
-    plexHome = _NoTimerPlexHomeService(
-      connections: connections,
-      profileConnections: profileConnections,
-      storage: storage,
-    );
-    activeProfiles =
-        activeFactory?.call(profiles, plexHome, connections, storage) ??
-        ActiveProfileProvider(
-          registry: profiles,
-          plexHome: plexHome,
-          connections: connections,
-          profileConnections: profileConnections,
-          storage: storage,
-        );
-    if (initializeActive) await tester.runAsync(activeProfiles.initialize);
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          Provider<AppDatabase>.value(value: db),
-          Provider<StorageService>.value(value: storage),
-          Provider<ProfileRegistry>.value(value: profiles),
-          Provider<ConnectionRegistry>.value(value: connections),
-          Provider<ProfileConnectionRegistry>.value(value: profileConnections),
-          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfiles),
-        ],
-        child: MaterialApp(
-          home: Builder(
+  final AppDatabase db;
+  final ConnectionRegistry connections;
+  final SiloHouseholdService households;
+  final _ScriptedActiveProfileProvider active;
+  final StorageService storage;
+  final _Binder binder;
+  late BuildContext context;
+
+  static Future<_Harness> create() async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final connections = ConnectionRegistry(db);
+    final households = SiloHouseholdService(connections: connections, loader: (_) async => null);
+    final storage = await StorageService.getInstance();
+    final active = _ScriptedActiveProfileProvider(households: households, connections: connections, storage: storage);
+    await active.initialize();
+    return _Harness(db, connections, households, active, storage, _Binder());
+  }
+
+  Widget app({Widget? child}) => MultiProvider(
+    providers: [
+      Provider<ConnectionRegistry>.value(value: connections),
+      Provider<SiloHouseholdService>.value(value: households),
+      ChangeNotifierProvider<ActiveProfileProvider>.value(value: active),
+      Provider<ActiveProfileBinder>.value(value: binder),
+      Provider<StorageService>.value(value: storage),
+    ],
+    child: MaterialApp(
+      home:
+          child ??
+          Builder(
             builder: (context) {
-              hostContext = context;
+              this.context = context;
               return const SizedBox.shrink();
             },
           ),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 
-  Future<void> expectEmptyAttempt(Profile profile, JellyfinConnection connection) async {
-    expect(await _hasProfile(db, profile.id), isFalse);
-    expect(await ConnectionRegistry(db).get(connection.id), isNull);
-    expect(await ProfileConnectionRegistry(db).get(profile.id, connection.id), isNull);
-    expect(storage.getActiveProfileId(), isNull);
-    expect(storage.getProfileLastUsed(profile.id), isNull);
-  }
-
-  setUp(() async {
-    resetSharedPreferencesForTest();
-    CredentialVault.resetKeyForTesting();
-    db = AppDatabase.forTesting(NativeDatabase.memory());
-    storage = await StorageService.getInstance();
-    hostContext = null;
-  });
-
-  tearDown(() async {
-    if (hostContext != null) {
-      await activeProfiles.resetForTesting();
-      activeProfiles.dispose();
-      await plexHome.dispose();
-    }
+  Future<void> dispose() async {
+    await active.resetForTesting();
+    active.dispose();
+    households.dispose();
     await db.close();
-  });
-
-  testWidgets('profile statement failure rolls back the complete first-run bundle', (tester) async {
-    final profile = _profile('fixture-new-profile');
-    final connection = _connection();
-    await mountHost(tester, profileRegistry: _FailingProfileRegistry(db));
-
-    final error = await _runProvisioning(
-      tester,
-      () => persistAndBindConnection(
-        context: hostContext!,
-        connection: connection,
-        bindToProfile: _join(profile, connection),
-        firstRunProfile: profile,
-      ),
-    );
-    expect(error, isA<_AfterStatementFailure>());
-
-    await expectEmptyAttempt(profile, connection);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('connection statement failure rolls back the complete first-run bundle', (tester) async {
-    final profile = _profile('fixture-new-profile');
-    final connection = _connection();
-    await mountHost(tester, connectionRegistry: _FailingConnectionRegistry(db));
-
-    final error = await _runProvisioning(
-      tester,
-      () => persistAndBindConnection(
-        context: hostContext!,
-        connection: connection,
-        bindToProfile: _join(profile, connection),
-        firstRunProfile: profile,
-      ),
-    );
-    expect(error, isA<_AfterStatementFailure>());
-
-    await expectEmptyAttempt(profile, connection);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('join statement failure rolls back the complete first-run bundle', (tester) async {
-    final profile = _profile('fixture-new-profile');
-    final connection = _connection();
-    await mountHost(tester, joinRegistry: _FailingProfileConnectionRegistry(db));
-
-    final error = await _runProvisioning(
-      tester,
-      () => persistAndBindConnection(
-        context: hostContext!,
-        connection: connection,
-        bindToProfile: _join(profile, connection),
-        firstRunProfile: profile,
-      ),
-    );
-    expect(error, isA<_AfterStatementFailure>());
-
-    await expectEmptyAttempt(profile, connection);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('existing connection update is restored when join statement fails', (tester) async {
-    final target = _profile('fixture-existing-profile');
-    final priorConnection = _connection(token: 'opaque-token-prior', userName: 'Prior User');
-    final updatedConnection = _connection(token: 'opaque-token-updated', userName: 'Updated User');
-    await ProfileRegistry(db).upsert(target);
-    await tester.runAsync(() => ConnectionRegistry(db).upsert(priorConnection));
-    await storage.setActiveProfileId(target.id);
-    await mountHost(tester, joinRegistry: _FailingProfileConnectionRegistry(db));
-
-    final error = await _runProvisioning(
-      tester,
-      () => persistAndBindConnection(
-        context: hostContext!,
-        connection: updatedConnection,
-        bindToProfile: _join(target, updatedConnection),
-      ),
-    );
-    expect(error, isA<_AfterStatementFailure>());
-
-    final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as JellyfinConnection;
-    expect(restored.accessToken, priorConnection.accessToken);
-    expect(restored.userName, priorConnection.userName);
-    expect(await _hasProfile(db, target.id), isTrue);
-    expect(await ProfileConnectionRegistry(db).get(target.id, priorConnection.id), isNull);
-    expect(storage.getActiveProfileId(), target.id);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('activation rejection compensates relational and preference state', (tester) async {
-    final priorProfile = _profile('fixture-prior-profile', name: 'Prior Profile');
-    final newProfile = _profile('fixture-new-profile');
-    final connection = _connection();
-    await ProfileRegistry(db).upsert(priorProfile);
-    await storage.setActiveProfileId(priorProfile.id);
-    await mountHost(
-      tester,
-      initializeActive: true,
-      activeFactory: (profiles, plexHome, connections, storage) => _RejectingActiveProfileProvider(
-        registry: profiles,
-        plexHome: plexHome,
-        connections: connections,
-        profileConnections: profileConnections,
-        storage: storage,
-      ),
-    );
-
-    final error = await _runProvisioning(
-      tester,
-      () => persistAndBindConnection(
-        context: hostContext!,
-        connection: connection,
-        bindToProfile: _join(newProfile, connection),
-        firstRunProfile: newProfile,
-      ),
-    );
-    expect(error, isA<StateError>());
-
-    expect(await _hasProfile(db, newProfile.id), isFalse);
-    expect(await ConnectionRegistry(db).get(connection.id), isNull);
-    expect(await ProfileConnectionRegistry(db).get(newProfile.id, connection.id), isNull);
-    expect(storage.getProfileLastUsed(newProfile.id), isNull);
-    expect(storage.getActiveProfileId(), priorProfile.id);
-    expect(activeProfiles.activeId, priorProfile.id);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('activation throw restores a prior same-id connection and original active state', (tester) async {
-    final priorProfile = _profile('fixture-prior-profile', name: 'Prior Profile');
-    final newProfile = _profile('fixture-new-profile');
-    final priorConnection = _connection(token: 'opaque-token-prior', userName: 'Prior User');
-    final updatedConnection = _connection(token: 'opaque-token-updated', userName: 'Updated User');
-    await ProfileRegistry(db).upsert(priorProfile);
-    await tester.runAsync(() => ConnectionRegistry(db).upsert(priorConnection));
-    await storage.setActiveProfileId(priorProfile.id);
-    await mountHost(
-      tester,
-      initializeActive: true,
-      activeFactory: (profiles, plexHome, connections, storage) => _ThrowingActiveProfileProvider(
-        registry: profiles,
-        plexHome: plexHome,
-        connections: connections,
-        profileConnections: profileConnections,
-        storage: storage,
-      ),
-    );
-
-    final error = await _runProvisioning(
-      tester,
-      () => persistAndBindConnection(
-        context: hostContext!,
-        connection: updatedConnection,
-        bindToProfile: _join(newProfile, updatedConnection),
-        firstRunProfile: newProfile,
-      ),
-    );
-    expect(error, isA<_AfterStatementFailure>());
-
-    final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as JellyfinConnection;
-    expect(restored.accessToken, priorConnection.accessToken);
-    expect(restored.userName, priorConnection.userName);
-    expect(await _hasProfile(db, newProfile.id), isFalse);
-    expect(await ProfileConnectionRegistry(db).get(newProfile.id, priorConnection.id), isNull);
-    expect(storage.getProfileLastUsed(newProfile.id), isNull);
-    expect(storage.getActiveProfileId(), priorProfile.id);
-    expect(activeProfiles.activeId, priorProfile.id);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('durable command completes after route unmount', (tester) async {
-    final profile = _profile('fixture-new-profile');
-    final connection = _connection(token: '');
-    final gated = _GatedProfileConnectionRegistry(db, fail: false);
-    await mountHost(tester, joinRegistry: gated);
-
-    final pending = persistAndBindConnection(
-      context: hostContext!,
-      connection: connection,
-      bindToProfile: _join(profile, connection),
-      firstRunProfile: profile,
-    );
-    await gated.started.future;
-    await tester.pumpWidget(const SizedBox.shrink());
-    gated.release.complete();
-
-    await pending;
-    expect(await _hasProfile(db, profile.id), isTrue);
-    expect(await ConnectionRegistry(db).get(connection.id), isNotNull);
-    expect(await ProfileConnectionRegistry(db).get(profile.id, connection.id), isNotNull);
-    expect(storage.getActiveProfileId(), profile.id);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('failed durable command rolls back after route unmount', (tester) async {
-    final profile = _profile('fixture-new-profile');
-    final connection = _connection(token: '');
-    final gated = _GatedProfileConnectionRegistry(db, fail: true);
-    await mountHost(tester, joinRegistry: gated);
-
-    final pending = persistAndBindConnection(
-      context: hostContext!,
-      connection: connection,
-      bindToProfile: _join(profile, connection),
-      firstRunProfile: profile,
-    ).then<Object?>((_) => null, onError: (Object error, StackTrace _) => error);
-    await gated.started.future;
-    await tester.pumpWidget(const SizedBox.shrink());
-    gated.release.complete();
-
-    expect(await pending, isA<_AfterStatementFailure>());
-    await expectEmptyAttempt(profile, connection);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
+  }
 }
 
-Future<bool> _hasProfile(AppDatabase db, String id) async =>
-    (await ProfileRegistry(db).list()).any((profile) => profile.id == id);
+final _household = testHousehold([('p-1', 'Owner'), ('p-2', 'Kids')], accountId: 'acct-7');
+
+void main() {
+  setUp(resetSharedPreferencesForTest);
+
+  Future<_Harness> pump(WidgetTester tester) async {
+    final harness = (await tester.runAsync(_Harness.create))!;
+    addTearDown(() => tester.runAsync(harness.dispose));
+    await tester.pumpWidget(harness.app());
+    return harness;
+  }
+
+  testWidgets('a first sign-in stores the connection, caches the household and enters the profile', (tester) async {
+    final harness = await pump(tester);
+    final connection = testSiloConnection('srv', accountId: 'acct-7');
+
+    await tester.runAsync(
+      () => persistSiloSignIn(
+        context: harness.context,
+        connection: connection,
+        household: _household,
+        entered: _household.profiles[1],
+      ),
+    );
+
+    final stored = await tester.runAsync(() => harness.connections.get(connection.id));
+    expect(stored, isA<SiloConnection>().having((c) => c.accountId, 'accountId', 'acct-7'));
+    expect(harness.households.current[connection.id]?.profiles.map((p) => p.id), ['p-1', 'p-2']);
+    expect(harness.active.activeId, 'silo:srv/p-2');
+    expect(harness.storage.getActiveProfileId(), 'silo:srv/p-2');
+    expect(harness.binder.events, ['mark:silo:srv/p-2'], reason: 'a first sign-in has no stale binding to redo');
+  });
+
+  testWidgets('signing in again to a stored server rebinds the active profile', (tester) async {
+    final harness = await pump(tester);
+    final connection = testSiloConnection('srv', accountId: 'acct-7');
+    await tester.runAsync(() => harness.connections.upsert(connection));
+
+    await tester.runAsync(
+      () => persistSiloSignIn(
+        context: harness.context,
+        connection: connection,
+        household: _household,
+        entered: _household.profiles.first,
+      ),
+    );
+
+    expect(harness.binder.events, ['mark:silo:srv/p-1', 'rebind:silo:srv/p-1']);
+  });
+
+  testWidgets('a rejected activation removes the new connection and restores the active marker', (tester) async {
+    final harness = await pump(tester);
+    await tester.runAsync(() => harness.storage.setActiveProfileId('silo:other/p-9'));
+    harness.active.activation = _Activation.reject;
+    final connection = testSiloConnection('srv');
+
+    final error = await tester.runAsync(() async {
+      try {
+        await persistSiloSignIn(
+          context: harness.context,
+          connection: connection,
+          household: _household,
+          entered: _household.profiles.first,
+        );
+        return null;
+      } on StateError catch (error) {
+        return error;
+      }
+    });
+
+    expect(error, isNotNull);
+    expect(await tester.runAsync(() => harness.connections.get(connection.id)), isNull);
+    expect(harness.storage.getActiveProfileId(), 'silo:other/p-9');
+  });
+
+  testWidgets('a failed activation restores the prior same-id connection', (tester) async {
+    final harness = await pump(tester);
+    final prior = testSiloConnection('srv', accountId: 'acct-old');
+    await tester.runAsync(() => harness.connections.upsert(prior));
+    harness.active.activation = _Activation.fail;
+
+    final error = await tester.runAsync(() async {
+      try {
+        await persistSiloSignIn(
+          context: harness.context,
+          connection: testSiloConnection('srv', accountId: 'acct-7'),
+          household: _household,
+          entered: _household.profiles.first,
+        );
+        return null;
+      } on StateError catch (error) {
+        return error;
+      }
+    });
+
+    expect(error, isNotNull);
+    final stored = await tester.runAsync(() => harness.connections.get(prior.id));
+    expect(stored, isA<SiloConnection>().having((c) => c.accountId, 'accountId', 'acct-old'));
+    expect(harness.storage.getActiveProfileId(), isNull);
+  });
+
+  testWidgets('the command completes after its route unmounts', (tester) async {
+    final harness = await pump(tester);
+    final connection = testSiloConnection('srv');
+
+    // Started in the real zone (drift work never completes in fake async),
+    // wrapped so runAsync hands the future back unawaited.
+    final pending = (await tester.runAsync(
+      () async => (
+        persistSiloSignIn(
+          context: harness.context,
+          connection: connection,
+          household: _household,
+          entered: _household.profiles.first,
+        ),
+      ),
+    ))!.$1;
+    await tester.pumpWidget(harness.app(child: const SizedBox.shrink()));
+    await tester.runAsync(() => pending);
+
+    expect(harness.active.activeId, 'silo:srv/p-1');
+    expect(await tester.runAsync(() => harness.connections.get(connection.id)), isNotNull);
+  });
+}

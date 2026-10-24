@@ -260,7 +260,7 @@ class _VersionBlock extends StatelessWidget {
     ];
   }
 
-  /// Jellyfin encodes "start with subtitles off" as index -1.
+  /// A negative index encodes "start with subtitles off".
   String? _streamIndexLabel(int? index) {
     if (index == null) return null;
     return index < 0 ? t.fileInfo.subtitlesOff : '#$index';

@@ -12,6 +12,15 @@ import '../helpers/track_filter_helper.dart';
 
 enum SubtitleDownloadApplyOutcome { applied, timedOut, busy, superseded, unavailable, failed }
 
+/// Selects a subtitle the server stored for the playing item. [track] is its
+/// row in the replanned source, or null when the replan did not list it.
+typedef SubtitleDownloadedCallback =
+    Future<SubtitleDownloadApplyOutcome> Function({
+      required String serverId,
+      required String ratingKey,
+      required MediaSubtitleTrack? track,
+    });
+
 /// Immutable configuration for track/chapter control widgets.
 class TrackControlsState {
   final List<MediaVersion> availableVersions;
@@ -65,21 +74,21 @@ class TrackControlsState {
   final bool isAmbientLightingEnabled;
   final VoidCallback? onToggleAmbientLighting;
   final bool canControl;
-  final bool isLive;
   final bool subtitlesVisible;
   final bool showQueueButton;
   final Function(MediaItem)? onQueueItemSelected;
   final String ratingKey;
-  final String? mediaTitle;
+
+  /// Where the player is, for the replan that mounts a stored subtitle.
+  final Duration Function()? playerPosition;
 
   /// Item currently playing, used to key scope-persisted player settings
   /// ([ScopedPlayerPrefs]). Null only for embedders without item identity.
   final MediaItem? metadata;
-  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
-  onSubtitleDownloaded;
+  final SubtitleDownloadedCallback? onSubtitleDownloaded;
 
-  /// Whether OpenSubtitles search is reachable for this server. The Plex
-  /// server proxies the OpenSubtitles plugin; Jellyfin doesn't expose an
+  /// Whether OpenSubtitles search is reachable for this server. The
+  /// server proxies the OpenSubtitles plugin; other backends don't expose an
   /// equivalent. The track sheet hides the "Search subtitles" tile when
   /// this is false.
   final bool subtitleSearchSupported;
@@ -130,34 +139,27 @@ class TrackControlsState {
     this.isAmbientLightingEnabled = false,
     this.onToggleAmbientLighting,
     this.canControl = true,
-    this.isLive = false,
     this.subtitlesVisible = true,
     this.showQueueButton = false,
     this.onQueueItemSelected,
     this.ratingKey = '',
-    this.mediaTitle,
+    this.playerPosition,
     this.onSubtitleDownloaded,
     this.subtitleSearchSupported = true,
   });
 
   /// Transcoded subtitle choices must be negotiated with the server and
-  /// therefore replace the native rendition track list. A live session's
-  /// server-side tracks work the same way — the stream is rebuilt with the
-  /// chosen track burned in (Plex live DVB subtitles, issue #1983) — while a
-  /// live stream that exposes none keeps the native list (in-band CEA
-  /// captions, issue #1590).
-  bool get canUseSourceSubtitles =>
-      (isTranscoding || isLive) && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitle != null;
+  /// therefore replace the native rendition track list.
+  bool get canUseSourceSubtitles => isTranscoding && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitle != null;
 
   /// Whether the selected source subtitle reaches the screen as burned-in
-  /// pixels rather than as a native track. Rationale, including why live
-  /// counts as a transcode, on [PlaybackSubtitleResolver.burnsCurrentSelection].
+  /// pixels rather than as a native track. Rationale on
+  /// [PlaybackSubtitleResolver.burnsCurrentSelection].
   ///
   /// When this is true the engine exposes no subtitle track for the selection
   /// and can never confirm it, so an engine cross-check must not be applied.
   bool get burnsSelectedSubtitle => PlaybackSubtitleResolver.burnsCurrentSelection(
     isTranscoding: isTranscoding,
-    isLive: isLive,
     choice: selectedSubtitleChoice,
     sidecars: sourceSubtitleSidecars,
   );

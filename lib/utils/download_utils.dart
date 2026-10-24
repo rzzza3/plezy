@@ -355,8 +355,8 @@ Future<void> fetchAndQueueListDownload(
 }
 
 /// Download [playlist]: page through its items via the backend-neutral
-/// interface (so Jellyfin playlists download too), synthesise the [MediaItem]
-/// view the download pipeline expects, and run [fetchAndQueueListDownload].
+/// interface, synthesise the [MediaItem] view the download pipeline expects,
+/// and run [fetchAndQueueListDownload].
 /// Shared by the playlist detail screen and the context menu.
 Future<void> downloadPlaylist(
   BuildContext context, {

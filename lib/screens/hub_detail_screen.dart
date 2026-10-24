@@ -7,7 +7,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../media/library_query.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
-import '../media/media_server_client.dart';
 import '../media/media_sort.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
@@ -16,8 +15,6 @@ import '../utils/app_logger.dart';
 import '../utils/continuation_pagination_coordinator.dart';
 import '../utils/error_message_utils.dart';
 import '../utils/platform_detector.dart';
-import '../utils/media_server_http_client.dart';
-import '../utils/plex_library_section_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_card_sliver_layout.dart';
@@ -27,7 +24,6 @@ import '../widgets/overlay_sheet.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
-import '../mixins/paginated_item_loader.dart';
 import 'libraries/sort_bottom_sheet.dart';
 import 'libraries/content_state_builder.dart';
 import '../mixins/refreshable.dart';
@@ -56,18 +52,16 @@ class HubDetailScreen extends StatefulWidget {
 }
 
 class _HubDetailScreenState extends State<HubDetailScreen>
-    with Refreshable, GridFocusNodeMixin, FocusableDetailScreenMixin, PaginatedItemLoader<MediaItem, HubDetailScreen> {
+    with Refreshable, GridFocusNodeMixin, FocusableDetailScreenMixin {
   static const int _pageSize = 200;
 
   List<MediaItem> _items = [];
   List<MediaItem> _filteredItems = [];
-  List<MediaSort> _sortOptions = [];
+  late List<MediaSort> _sortOptions;
   MediaSort? _selectedSort;
   bool _isSortDescending = false;
   bool _isLoading = false;
   String? _errorMessage;
-  bool _replaceContinuationItems = false;
-  bool _usesPaginatedLoader = false;
 
   late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
     loadPage: _fetchContinuationPage,
@@ -101,63 +95,23 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   void initState() {
     super.initState();
-    scrollController.addListener(_maybeLoadNextHubPage);
     _items = widget.hub.items;
     _filteredItems = widget.hub.items;
     if (widget.hub.more) {
       _loadMoreItems();
     }
-    _loadSorts();
+    // Sorting runs client-side over the loaded items. Hubs name no library
+    // section, so they offer the default sorts.
+    _sortOptions = _getDefaultSortOptions();
     autoFocusFirstItemAfterLoad();
   }
 
   @override
   void dispose() {
-    scrollController.removeListener(_maybeLoadNextHubPage);
-    disposePagination();
     _continuation.dispose();
     _continuationRetryFocusNode.dispose();
     disposeFocusResources();
     super.dispose();
-  }
-
-  Future<void> _loadSorts() async {
-    List<MediaSort> sorts = const [];
-    try {
-      // Hub ids can have various formats:
-      // - /hubs/sections/1/... (Plex)
-      // - /library/sections/1/all?... (Plex)
-      // - /hubs/home/recentlyAdded?type=2&sectionID=1 (Plex home hubs — id in query)
-      // - home.recent / library.<id>.continue (Jellyfin synthesized)
-      // - continue_watching / explore:… (aggregated and catalog rows; no server)
-      // Only a Plex library-scoped key names a section whose sort options can
-      // be fetched; every other shape falls back to the default sorts by design.
-      final hubKey = widget.hub.id;
-      final sectionId = plexLibrarySectionIdFromString(hubKey);
-      final serverId = widget.hub.serverId;
-      if (sectionId == null) {
-        appLogger.d('Hub $hubKey has no library section; using default sort options');
-      } else if (serverId == null) {
-        appLogger.w('Hub $hubKey names section $sectionId but has no serverId; using default sort options');
-      } else {
-        final client = context.tryGetMediaClientForServer(ServerId(serverId));
-        sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions('$sectionId');
-        appLogger.d('Loaded ${sorts.length} sorts for section $sectionId');
-      }
-    } catch (e, stackTrace) {
-      appLogger.e('Failed to load sorts', error: e, stackTrace: stackTrace);
-    }
-    if (!mounted) return;
-    // Sorting runs client-side over the loaded items, so offer only the
-    // section sorts it can honor instead of ones that would silently fall
-    // back to title order.
-    final supported = [
-      for (final sort in sorts)
-        if (_comparatorFor(sort.key) != null) sort,
-    ];
-    setState(() {
-      _sortOptions = supported.isNotEmpty ? supported : _getDefaultSortOptions();
-    });
   }
 
   /// Catalog hubs (Explore View All) hold synthesized items with no library
@@ -175,10 +129,8 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     ];
   }
 
-  /// Orders items by the field a sort [key] names — the default sorts' keys
-  /// and the Plex section sort keys alike — or null for a key naming nothing
-  /// the items carry (Plex's resolution, bitrate, random or latest-episode
-  /// sorts), which [_loadSorts] leaves out of the options.
+  /// Orders items by the field a sort [key] names, or null for a key naming
+  /// nothing the items carry.
   static Comparator<MediaItem>? _comparatorFor(String key) {
     Comparator<MediaItem> by(Comparable<Object> Function(MediaItem item) value) =>
         (a, b) => value(a).compareTo(value(b));
@@ -254,29 +206,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         });
   }
 
-  bool _shouldUsePaginatedLoader(MediaServerClient client) =>
-      client.backend.usesMediaBrowserApi && widget.hub.id.endsWith('.recent');
-
-  @override
-  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) async {
-    final serverId = widget.hub.serverId;
-    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
-    if (client == null) throw StateError('No media client available for paginated hub');
-    return client.fetchMoreHubItemsPage(widget.hub.id, start: start, size: size, abort: abort);
-  }
-
-  @override
-  void onPageLoaded(int start, List<MediaItem> items) {
-    if (!_usesPaginatedLoader || start == 0 || !mounted) return;
-    _replaceItems(List.of(_items)..addAll(items));
-    _scheduleNextHubPageCheck();
-  }
-
-  @override
-  void onPaginationStateChanged() {
-    if (mounted) setState(() {});
-  }
-
   Future<void> _loadMoreItems() async {
     if (_isLoading) return;
 
@@ -289,28 +218,18 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
     final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
     final usesCustomLoader = loader != null;
-    _usesPaginatedLoader = !usesCustomLoader && client != null && _shouldUsePaginatedLoader(client);
 
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      if (_usesPaginatedLoader) resetPaginationState();
     });
 
     try {
       List<MediaItem> items = const [];
       var totalCount = 0;
       var loadedCount = 0;
-      var initialPageApplied = true;
       final applied = await _continuation.runNewGeneration(() async {
-        if (_usesPaginatedLoader) {
-          final result = await loadInitialPageWithStatus(_pageSize);
-          initialPageApplied = result.applied;
-          if (!result.applied) return;
-          items = result.page.items;
-          totalCount = result.page.totalCount;
-          loadedCount = result.page.items.length;
-        } else if (loader == null) {
+        if (loader == null) {
           final page = client == null
               ? const LibraryPage<MediaItem>(items: [], totalCount: 0)
               : await client.fetchMoreHubItemsPage(widget.hub.id, start: 0, size: _pageSize);
@@ -324,7 +243,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         }
       });
 
-      if (!mounted || !applied || !initialPageApplied) return;
+      if (!mounted || !applied) return;
       setState(() {
         _items = List.of(items);
         _filteredItems = List.of(items);
@@ -332,16 +251,9 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       });
 
       _applySort();
-      if (!usesCustomLoader && !_usesPaginatedLoader && client != null && loadedCount < totalCount) {
-        _replaceContinuationItems = !client.backend.usesMediaBrowserApi;
-        if (_replaceContinuationItems) {
-          _continuation.setContinuation(startIndex: 0, totalCount: 1);
-        } else {
-          _continuation.setContinuation(startIndex: loadedCount, totalCount: totalCount);
-        }
+      if (!usesCustomLoader && client != null && loadedCount < totalCount) {
+        _continuation.setContinuation(startIndex: 0, totalCount: 1);
         unawaited(_continuation.loadRemaining());
-      } else if (_usesPaginatedLoader && loadedCount < totalCount) {
-        _scheduleNextHubPageCheck();
       }
 
       appLogger.d('Loaded ${items.length} items for hub: ${widget.hub.title}');
@@ -360,25 +272,16 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null) throw StateError('No media client available for hub continuation');
 
-    if (_replaceContinuationItems) {
-      final items = _applySectionFilter(await client.fetchMoreHubItems(widget.hub.id));
-      if (items.isEmpty && _items.isNotEmpty) {
-        throw StateError('Hub continuation returned no items');
-      }
-      return ContinuationPage(items: items, totalCount: 1, consumedCount: 1);
+    final items = _applySectionFilter(await client.fetchMoreHubItems(widget.hub.id));
+    if (items.isEmpty && _items.isNotEmpty) {
+      throw StateError('Hub continuation returned no items');
     }
-
-    final page = await client.fetchMoreHubItemsPage(widget.hub.id, start: startIndex, size: _pageSize);
-    return ContinuationPage(
-      items: _applySectionFilter(page.items),
-      totalCount: page.totalCount,
-      consumedCount: page.items.length,
-    );
+    return ContinuationPage(items: items, totalCount: 1, consumedCount: 1);
   }
 
   void _applyContinuationPage(ContinuationPage<MediaItem> page) {
     if (!mounted) return;
-    _replaceItems(_replaceContinuationItems ? List.of(page.items) : (List.of(_items)..addAll(page.items)));
+    _replaceItems(List.of(page.items));
   }
 
   /// Swap in the merged item list and re-derive the sorted view from it.
@@ -388,34 +291,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       _filteredItems = List.of(_items);
     });
     _applySort();
-  }
-
-  void _scheduleNextHubPageCheck() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _maybeLoadNextHubPage();
-    });
-  }
-
-  /// Whether the offset-paged loader has another page to request.
-  bool get _canRequestNextHubPage =>
-      _usesPaginatedLoader && loadedItems.length < totalSize && !isPaginationLoading && paginationError == null;
-
-  void _maybeLoadNextHubPage() {
-    if (!_canRequestNextHubPage || !scrollController.hasClients) return;
-    final position = scrollController.position;
-    if (position.extentAfter <= position.viewportDimension) {
-      _requestNextHubPage();
-    }
-  }
-
-  void _requestNextHubPage() {
-    if (!_canRequestNextHubPage) return;
-    ensureIndexLoaded(loadedItems.length, pageSize: _pageSize);
-  }
-
-  void _handleGridItemFocusChange(int index, bool hasFocus, {required bool isLastRow}) {
-    trackGridItemFocus(index, hasFocus);
-    if (hasFocus && isLastRow) _requestNextHubPage();
   }
 
   /// Reconcile all realized items, including references captured under a cover.
@@ -430,13 +305,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     }
   }
 
-  void _retryHubContinuation() {
-    if (_usesPaginatedLoader) {
-      ensureIndexLoaded(loadedItems.length, pageSize: _pageSize);
-    } else {
-      unawaited(_continuation.retry());
-    }
-  }
+  void _retryHubContinuation() => unawaited(_continuation.retry());
 
   List<MediaItem> _applySectionFilter(List<MediaItem> items) {
     final sectionFilter = int.tryParse(widget.hub.libraryId ?? '');
@@ -468,8 +337,8 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     unawaited(_loadMoreItems());
   }
 
-  Object? get _pageLoadError => _usesPaginatedLoader ? paginationError : _continuation.error;
-  bool get _isLoadingPage => _usesPaginatedLoader ? isPaginationLoading : _continuation.isLoading;
+  Object? get _pageLoadError => _continuation.error;
+  bool get _isLoadingPage => _continuation.isLoading;
 
   @override
   void refresh() {
@@ -571,11 +440,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                               : null,
                           onNavigateLeft: position.isGrid && position.isFirstColumn ? () {} : null,
                           onBack: handleBackFromContent,
-                          onFocusChange: (hasFocus) => _handleGridItemFocusChange(
-                            index,
-                            hasFocus,
-                            isLastRow: position.index >= position.itemCount - position.columnCount,
-                          ),
+                          onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
                           mixedHubContext: isMixedHub,
                           fullBleedImage: fullCardLayout && position.isGrid,
                         );

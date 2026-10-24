@@ -27,19 +27,11 @@ enum ImageType {
 /// Backend-neutral image URL helper.
 ///
 /// Builds optimally-sized image URLs that go through the right server-side
-/// transcode path:
-/// - **Plex**: `/photo/:/transcode?width=W&height=H&url=...&X-Plex-Token=...`
-///   constructed by [MediaServerClient.thumbnailUrl] (PlexClient impl).
-/// - **Jellyfin**: `/Items/{id}/Images/{type}?MaxWidth=W&MaxHeight=H&api_key=...`
-///   constructed by [MediaServerClient.thumbnailUrl] (JellyfinClient impl).
+/// transcode path, constructed by [MediaServerClient.thumbnailUrl].
 ///
-/// Self-contained absolute URLs (Jellyfin items pre-absolutized at the
-/// model layer) get sized via query-param append so they pick up the same
-/// DPR scaling and cache-bucket rounding as Plex.
-///
-/// External URLs (EPG provider images, etc.) that the local server doesn't
-/// host get proxied through Plex's photo transcoder when a Plex client is
-/// available; otherwise they pass through unchanged.
+/// External URLs that the local server doesn't host get proxied through the
+/// server's image transcoder when it has one; otherwise they pass through
+/// unchanged.
 class MediaImageHelper {
   static const int _widthRoundingFactor = 40;
   static const int _heightRoundingFactor = 60;
@@ -64,7 +56,7 @@ class MediaImageHelper {
   /// the worst case: the kernel degenerates into a two-tap blend of
   /// neighbouring texels. A 7% size mismatch therefore costs far more than 7%
   /// of the detail, and an exact 1∶1 fetch is no better, because the phase
-  /// still shifts it. RMSE against an ideal area-average of a 1000×1500 Plex
+  /// still shifts it. RMSE against an ideal area-average of a 1000×1500
   /// poster in a 186×279 slot, averaged over sub-pixel phases (lower is
   /// sharper, each ratio under its best filter):
   ///
@@ -225,7 +217,7 @@ class MediaImageHelper {
 
   /// Whether [type] fills its slot ([BoxFit.cover]) or sits inside it
   /// ([BoxFit.contain]), which is what [MediaServerClient.thumbnailUrl]'s
-  /// `cover` flag selects. Logos are the contain case: asking Plex to cover
+  /// `cover` flag selects. Logos are the contain case: asking the server to cover
   /// their slot overshoots the long axis by 20-30% in bytes, and the decode
   /// bounds throw those pixels away again.
   static bool _coversSlot(ImageType type) => switch (type) {
@@ -250,31 +242,8 @@ class MediaImageHelper {
     final basePath = thumbPath;
 
     if (basePath.startsWith('http://') || basePath.startsWith('https://')) {
-      // Self-contained Jellyfin URLs already carry their own auth
-      // (`api_key=...`). Append `maxWidth/maxHeight` so we still get DPR
-      // scaling and cache-bucket rounding — Jellyfin's image endpoint
-      // honours those query params.
-      if (basePath.contains('api_key=')) {
-        final (width, height) = calculateOptimalDimensions(
-          maxWidth: maxWidth,
-          maxHeight: maxHeight,
-          pixelRatio: pixelRatio,
-          imageType: imageType,
-        );
-        final uri = Uri.parse(basePath);
-        final params = Map<String, String>.from(uri.queryParameters);
-        final lowerKeys = params.keys.map((k) => k.toLowerCase()).toSet();
-        if (!lowerKeys.contains('maxwidth') && !lowerKeys.contains('width')) {
-          params['maxWidth'] = '$width';
-        }
-        if (!lowerKeys.contains('maxheight') && !lowerKeys.contains('height')) {
-          params['maxHeight'] = '$height';
-        }
-        return uri.replace(queryParameters: params).toString();
-      }
-
-      // EPG / external URL — proxy through the server's transcoder. Plex
-      // implements [externalImageUrl] via `/photo/:/transcode?url=...`;
+      // External URL — proxy through the server's transcoder. A backend may
+      // implement [externalImageUrl] via a `transcode?url=...` endpoint;
       // backends without a comparable endpoint return the URL unchanged.
       if (client == null) return basePath;
       final (width, height) = calculateOptimalDimensions(
@@ -287,8 +256,7 @@ class MediaImageHelper {
     }
 
     // Relative path — let the client build the sized URL using its native
-    // size-hint params (`/photo/:/transcode` for Plex, `MaxWidth/MaxHeight`
-    // for Jellyfin). The interface guarantees both honour width/height.
+    // size-hint params.
     if (client == null) {
       // Offline + relative path: the cached entry already exists under the
       // URL originally fetched, so returning '' matches pre-refactor behaviour.
@@ -406,7 +374,7 @@ class MediaImageHelper {
     final provider = CachedNetworkImageProvider(
       imageUrl,
       cacheKey: _serverArtworkCacheKey(imageUrl),
-      cacheManager: PlexImageCacheManager.instance,
+      cacheManager: ArtworkCacheManager.instance,
       headers: const {'User-Agent': 'Plezy'},
     );
     final bounded = boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);

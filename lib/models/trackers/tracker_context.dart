@@ -4,9 +4,9 @@ import 'anime_ids.dart';
 /// Immutable per-playback context passed from the coordinator to each
 /// tracker. Built once at `startPlayback`.
 ///
-/// Carries both Plex external IDs (tvdb/tmdb/imdb, always present when the
+/// Carries both the item's external IDs (tvdb/tmdb/imdb, always present when the
 /// item has any GUIDs) and Fribb-derived anime IDs (null when the item isn't
-/// in the Fribb mapping). General-purpose trackers (Simkl) prefer Plex IDs;
+/// in the Fribb mapping). General-purpose trackers (Simkl) prefer those IDs;
 /// anime-only trackers (MAL, AniList) no-op when [anime] is null.
 class TrackerContext {
   final ExternalIds external;
@@ -17,7 +17,7 @@ class TrackerContext {
   final int? episodeNumber;
   final int? animeProgress;
 
-  /// Plex ratingKey of the item being played. Used only for logging — not
+  /// Server id of the item being played. Used only for logging — not
   /// sent to any tracker.
   final String ratingKey;
 

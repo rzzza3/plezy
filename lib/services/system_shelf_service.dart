@@ -12,8 +12,6 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
-import 'jellyfin_client.dart';
-import 'plex_client.dart';
 import 'settings_service.dart' show EpisodePosterMode;
 
 /// Syncs Continue Watching content to platform launcher surfaces.
@@ -301,37 +299,10 @@ class SystemShelfService {
   }
 
   /// Backend-specific escape hatch: the Top Shelf extension talks to servers
-  /// directly, which needs the raw connection credentials the neutral
-  /// [MediaServerClient] interface deliberately hides. Unknown client types
-  /// and clients without a usable base URL or token are skipped.
-  static Map<String, dynamic>? _describeServerSource(MediaServerClient client) {
-    final String kind;
-    final String baseUrl;
-    final String? token;
-    String? userId;
-    if (client is PlexClient) {
-      kind = 'plex';
-      baseUrl = client.config.baseUrl;
-      token = client.config.token;
-    } else if (client is JellyfinClient) {
-      final connection = client.connection;
-      kind = connection.dialect.name;
-      baseUrl = connection.baseUrl;
-      token = connection.accessToken;
-      userId = connection.userId;
-    } else {
-      return null;
-    }
-    if (baseUrl.isEmpty || token == null || token.isEmpty) return null;
-    return {
-      'serverId': client.serverId,
-      'kind': kind,
-      'name': client.serverName ?? '',
-      'baseUrl': baseUrl,
-      'token': token,
-      'userId': ?userId,
-    };
-  }
+  /// directly, which needs raw connection credentials the neutral
+  /// [MediaServerClient] interface deliberately hides. Silo hands the
+  /// extension no credentials, so no client is described yet.
+  static Map<String, dynamic>? _describeServerSource(MediaServerClient client) => null;
 
   /// Build a content ID. Format: plezy_{serverId}_{ratingKey}
   static String _buildContentId(ServerId? serverId, String ratingKey) {

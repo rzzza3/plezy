@@ -197,7 +197,7 @@ class PlayerNative extends PlayerBase {
   /// earlier pair — so all headers ride ONE list value; one `-append` pair
   /// per header collapsed to the last header (#2511). mpv's list splitter
   /// drops a backslash directly before a `,` and keeps every other one, so a
-  /// comma in a value (`X-Plex-Device: Mac17,9`) is sent as `\,`, and an item
+  /// comma in a value (`X-Device: Mac17,9`) is sent as `\,`, and an item
   /// ending in `\` gets a trailing space (optional whitespace HTTP strips) so
   /// it cannot escape the separator after it. The fixed-length quote shields
   /// the list from the outer key/value split. No headers clears the list: a
@@ -454,13 +454,13 @@ class PlayerNative extends PlayerBase {
 
     // Rebuild the header list via `change-list` items — a plain
     // `setProperty('http-header-fields', joined)` splits on commas inside
-    // header VALUES (`X-Plex-Device: Mac17,9` on Apple hardware), producing a
-    // malformed request Plex rejects with 400. `append` takes each item
+    // header VALUES (`X-Device: Mac17,9` on Apple hardware), producing a
+    // malformed request a server rejects with 400. `append` takes each item
     // verbatim. Always clear first so a previous open's headers never leak
     // into header-less media. The commands are pipelined — dispatched without
     // awaiting between sends — because the method channel delivers messages in
     // send order and the native side executes them in arrival order; awaiting
-    // each round trip serially cost ~12 round trips per open with Plex's
+    // each round trip serially cost ~12 round trips per open with a server's
     // identity headers.
     final headerCommands = <Future<void>>[
       command(['change-list', 'http-header-fields', 'clr', '']),

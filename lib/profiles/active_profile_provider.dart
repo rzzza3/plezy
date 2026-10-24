@@ -5,54 +5,42 @@ import 'package:flutter/foundation.dart';
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
-import '../models/plex/plex_home_user.dart';
 import '../services/storage_service.dart';
+import '../silo/silo_profiles.dart';
+import '../utils/active_client_scope.dart';
 import '../utils/app_logger.dart';
-import 'plex_home_service.dart';
 import 'profile.dart';
-import 'profile_avatar_source.dart';
-import 'profile_connection.dart';
-import 'profile_connection_registry.dart';
-import 'profile_merge.dart';
-import 'profile_registry.dart';
+import 'silo_household_service.dart';
 
-/// Holds the currently active [Profile] and a merged list of all available
-/// profiles — local rows from [ProfileRegistry] plus virtual Plex Home
-/// profiles built from [PlexHomeService]'s live cache.
+/// Holds the currently active [Profile] and the list of every profile the
+/// signed-in Silo servers offer, built from [SiloHouseholdService]'s cached
+/// households.
 ///
-/// The active id (in storage) can reference either a local row or a Plex
-/// Home virtual id like `plex-home-{connId}-{uuid}`. Resolution checks
-/// local profiles first, then live home users; if neither matches we fall
-/// back to the first profile in the merged list.
+/// The active id (in storage) is a Silo client scope
+/// `silo:<server_id>/<profile_id>`. When it is missing or predates Silo
+/// profiles, the provider adopts the profile the server's session already
+/// has selected. A household that loads without the active profile clears
+/// the selection so the picker opens.
 class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   ActiveProfileProvider({
-    required this._registry,
-    required this._plexHome,
+    required this._households,
     required this._connections,
-    required this._profileConnections,
     this._storage,
     this._activeProfileIdWriter,
   });
 
-  final ProfileRegistry _registry;
-  final PlexHomeService _plexHome;
+  final SiloHouseholdService _households;
   final ConnectionRegistry _connections;
-  final ProfileConnectionRegistry _profileConnections;
   StorageService? _storage;
   final Future<void> Function(String profileId)? _activeProfileIdWriter;
 
   Profile? _active;
   List<Profile> _profiles = const [];
-  List<Profile> _localProfiles = const [];
-  Map<String, List<PlexHomeUser>> _plexHomeUsers = const {};
-  Map<String, Connection> _connectionsById = const {};
-  Map<String, List<ProfileConnection>> _connectionsByProfile = const {};
-  Map<String, String?> _avatarUrls = const {};
+  Map<String, SiloHousehold> _householdsByConnection = const {};
+  Map<String, SiloConnection> _connectionsById = const {};
 
-  StreamSubscription<List<Profile>>? _localSub;
   StreamSubscription<List<Connection>>? _connSub;
-  StreamSubscription<List<ProfileConnection>>? _pcSub;
-  StreamSubscription<Map<String, List<PlexHomeUser>>>? _plexHomeSub;
+  StreamSubscription<Map<String, SiloHousehold>>? _householdSub;
   Future<void>? _initializeFuture;
   Future<void>? _reloadFromStorageFuture;
   bool _initialized = false;
@@ -70,21 +58,34 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   String? get activeId => _active?.id;
   List<Profile> get profiles => _profiles;
 
-  /// Derived picture URL for [profileId], or null when initials should render.
-  String? avatarUrlFor(String profileId) => _avatarUrls[profileId];
+  /// Picture URL for [profileId], or null when initials should render.
+  String? avatarUrlFor(String profileId) {
+    for (final profile in _profiles) {
+      if (profile.id == profileId) return _absoluteAvatarUrl(profile);
+    }
+    return null;
+  }
 
-  /// Per-profile borrowed connections. Does **not** include the Plex Home
-  /// parent — that's implicit via [Profile.parentConnectionId]. Plex Home
-  /// profiles can have entries here too (e.g. borrowed Jellyfin servers).
-  Map<String, List<ProfileConnection>> get connectionsByProfile => _connectionsByProfile;
+  String? _absoluteAvatarUrl(Profile profile) {
+    final url = profile.avatarThumbUrl;
+    if (url == null || url.isEmpty) return null;
+    final parsed = Uri.tryParse(url);
+    if (parsed == null) return null;
+    if (parsed.hasScheme) return url;
+    final origin = _connectionsById[profile.connectionId]?.origin;
+    return origin == null ? null : Uri.parse(origin).resolveUri(parsed).toString();
+  }
 
-  Map<String, Connection> get connectionsById => _connectionsById;
+  /// Signed-in Silo servers by connection id.
+  Map<String, SiloConnection> get connectionsById => _connectionsById;
 
-  /// Live Plex Home users per account connection id. Chip/label UI needs it
-  /// to turn a [ProfileConnection.userIdentifier] uuid into the Home user's
-  /// name; without it a borrowed Plex connection can only name the account
-  /// owner, which reads as the wrong identity.
-  Map<String, List<PlexHomeUser>> get plexHomeByConnectionId => _plexHomeUsers;
+  /// The connection [profile] signs in through, or null when it was removed.
+  SiloConnection? connectionFor(Profile profile) => _connectionsById[profile.connectionId];
+
+  /// Cached household per connection id.
+  Map<String, SiloHousehold> get householdsByConnection => _householdsByConnection;
+
+  SiloHouseholdService get households => _households;
 
   bool get hasMultipleProfiles => _profiles.length > 1;
   bool get isInitialized => _initialized;
@@ -96,13 +97,11 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
 
   int get identityMutationGeneration => _identityMutationGeneration;
 
-  /// True while [ActiveProfileBinder] is wiring servers/tokens for the
-  /// active profile. The picker reads this so it can stay open (and stay
-  /// behind any PIN dialog the binder pops) until binding settles.
+  /// True while [ActiveProfileBinder] is wiring the active profile's server.
+  /// The picker reads this so it can stay open until binding settles.
   bool get isBinding => _isBinding;
 
-  /// Outcome of the most recent settled bind. False after a PIN cancel,
-  /// failed `/home/users/{uuid}/switch`, or any error inside the binder.
+  /// Outcome of the most recent settled bind.
   bool get lastBindingSucceeded => _lastBindingSucceeded;
 
   /// Called by [ActiveProfileBinder] at the start of a rebind cycle.
@@ -115,9 +114,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   }
 
   /// Called by [ActiveProfileBinder] when the rebind settles. [success]
-  /// means the active profile was applied successfully. A local profile with
-  /// no connections is successful and intentionally exposes no servers; false
-  /// covers the "user cancelled the PIN" path and real binding errors.
+  /// means the active profile's server was reached.
   void markBindingFinished({required bool success}) {
     if (!_isBinding && _lastBindingSucceeded == success) return;
     _isBinding = false;
@@ -130,9 +127,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   /// the moment binding settles, so the picker can decide whether to
   /// dismiss or surface an error.
   ///
-  /// Pending completers are tracked so [dispose] can settle them — without
-  /// that, awaiters (picker, user-profile refresh, post-bind hooks) hang
-  /// indefinitely when the provider is torn down mid-rebind.
+  /// Pending completers are tracked so [dispose] can settle them.
   Future<bool> awaitBindingSettle() {
     if (!_isBinding) return Future.value(_lastBindingSucceeded);
     final completer = Completer<bool>();
@@ -162,10 +157,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     return future;
   }
 
-  /// Re-read connections, Plex Home cache, local profiles, and active id.
-  ///
-  /// Provider initialization starts before boot-time migration, so the first
-  /// snapshot can legitimately miss the migrated connection/profile state.
+  /// Re-read connections, cached households, and the active id.
   Future<void> reloadFromStorage() {
     final pending = _reloadFromStorageFuture;
     if (pending != null) return pending;
@@ -178,7 +170,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   Future<void> _reloadFromStorage() async {
     try {
       await initialize();
-      await _plexHome.reloadFromStorage();
+      await _households.reloadFromStorage();
       await _reloadSnapshot();
       safeNotifyListeners();
     } finally {
@@ -189,36 +181,18 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   Future<void> _initialize() async {
     await _reloadSnapshot();
 
-    // Every listener diffs its snapshot first: drift re-emits on any table
-    // write (including no-op upserts like the binder's server refresh), and
-    // each unchecked pass rebuilds every Profile and notifies the whole
-    // listener tree (binder, MainScreen, pickers).
-    _localSub = _registry.watchProfiles().listen((list) {
-      if (listEquals(list, _localProfiles)) return;
-      _localProfiles = list;
-      _recomputeProfiles();
-      _resolveActive();
-      safeNotifyListeners();
-    });
+    // Both listeners diff first: drift re-emits on any table write.
     _connSub = _connections.watchConnections().listen((list) {
-      final byId = {for (final c in list) c.id: c};
+      final byId = _siloConnections(list);
       if (_sameConnections(byId, _connectionsById)) return;
       _connectionsById = byId;
       _recomputeProfiles();
       _resolveActive();
       safeNotifyListeners();
     });
-    _pcSub = _profileConnections.watchAll().listen((list) {
-      final byProfile = groupConnectionsByProfile(list);
-      if (_sameProfileConnections(byProfile, _connectionsByProfile)) return;
-      _connectionsByProfile = byProfile;
-      _recomputeProfiles();
-      _resolveActive();
-      safeNotifyListeners();
-    });
-    _plexHomeSub = _plexHome.stream.listen((cache) {
-      if (_samePlexHomeUsers(cache, _plexHomeUsers)) return;
-      _plexHomeUsers = cache;
+    _householdSub = _households.stream.listen((households) {
+      if (mapEquals(households, _householdsByConnection)) return;
+      _householdsByConnection = households;
       _recomputeProfiles();
       _resolveActive();
       safeNotifyListeners();
@@ -229,102 +203,68 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   }
 
   Future<void> _reloadSnapshot() async {
-    _storage ??= await StorageService.getInstance();
-    // Hydrate the Plex Home cache before we read it — `_plexHome.current`
-    // is only populated after the disk-cache load finishes.
-    await _plexHome.hydrate();
-
-    _localProfiles = await _registry.list();
-    final initialConns = await _connections.list();
-    _connectionsById = {for (final c in initialConns) c.id: c};
-    _connectionsByProfile = groupConnectionsByProfile(await _profileConnections.listAll());
-    _plexHomeUsers = _plexHome.current;
+    final storage = _storage ??= await StorageService.getInstance();
+    await _households.hydrate();
+    _connectionsById = _siloConnections(await _connections.list());
+    _householdsByConnection = _households.current;
+    await _adoptSessionProfileIfNeeded(storage);
     _recomputeProfiles();
     _resolveActive();
   }
 
-  /// The decrypted persisted config is a faithful comparison projection for
-  /// the handful of rows involved. [ConnectionRegistry] retains that
-  /// projection alongside each decoded model, avoiding rebuilt config maps
-  /// and JSON strings on every Drift emit.
-  ///
-  /// `createdAt` is compared separately because it is a real column rather
-  /// than part of the config, and avatar selection reads it: a profile shows
-  /// the picture of its oldest linked connection. `ConnectionRegistry` pins
-  /// creation order across re-authentication, so this costs no extra
-  /// notifications — it only stops a genuine correction (a restore, a
-  /// backfill) from being swallowed until the next launch.
-  bool _sameConnections(Map<String, Connection> a, Map<String, Connection> b) {
+  static Map<String, SiloConnection> _siloConnections(List<Connection> list) => {
+    for (final connection in list.whereType<SiloConnection>()) connection.id: connection,
+  };
+
+  /// An upgrade from a build with Plezy-owned profiles, or a sign-in that
+  /// stored no choice, leaves no Silo profile id in storage. The server's
+  /// session already names the profile it entered, so adopt that one rather
+  /// than ask again.
+  Future<void> _adoptSessionProfileIfNeeded(StorageService storage) async {
+    final stored = storage.getActiveProfileId();
+    if (stored != null && SiloProfileScopeId.tryParse(stored) != null) return;
+    for (final connection in _connectionsById.values) {
+      final profileId = await _households.sessionProfileId(connection);
+      if (profileId == null || profileId.isEmpty) continue;
+      final scope = SiloProfileScopeId.tryParse('silo:${connection.serverId}/$profileId');
+      if (scope == null) continue;
+      await _writeActiveProfileId(storage, scope);
+      appLogger.i('ActiveProfileProvider: adopted the session profile of ${connection.serverName}');
+      return;
+    }
+    if (stored != null) await storage.clearActiveProfileId();
+  }
+
+  bool _sameConnections(Map<String, SiloConnection> a, Map<String, SiloConnection> b) {
     if (a.length != b.length) return false;
     for (final entry in a.entries) {
       final other = b[entry.key];
       if (other == null) return false;
       if (identical(entry.value, other)) continue;
-      if (entry.value.kind != other.kind) return false;
-      if (entry.value.createdAt != other.createdAt) return false;
       if (!_connections.hasSameConfig(entry.value, other)) return false;
     }
     return true;
   }
 
-  static bool _sameProfileConnections(Map<String, List<ProfileConnection>> a, Map<String, List<ProfileConnection>> b) {
-    if (a.length != b.length) return false;
-    for (final entry in a.entries) {
-      final other = b[entry.key];
-      if (other == null || entry.value.length != other.length) return false;
-      for (final row in entry.value) {
-        var hasSameFingerprint = false;
-        for (final candidate in other) {
-          if (row.profileId == candidate.profileId &&
-              row.connectionId == candidate.connectionId &&
-              row.userIdentifier == candidate.userIdentifier) {
-            hasSameFingerprint = true;
-            break;
-          }
-        }
-        // Only these identity fields affect avatar selection. Deliberately
-        // ignore tokens, default status, and binder-maintained timestamps.
-        if (!hasSameFingerprint) return false;
+  void _recomputeProfiles() {
+    final storage = _storage;
+    final out = <Profile>[];
+    for (final connection in _connectionsById.values) {
+      final household = _householdsByConnection[connection.id];
+      if (household == null) continue;
+      for (final (index, profile) in household.profiles.indexed) {
+        final built = Profile.fromSilo(serverId: connection.serverId, profile: profile, sortOrder: index);
+        out.add(built.copyWith(lastUsedAt: storage?.getProfileLastUsed(built.id)));
       }
     }
-    return true;
-  }
-
-  static bool _samePlexHomeUsers(Map<String, List<PlexHomeUser>> a, Map<String, List<PlexHomeUser>> b) {
-    if (a.length != b.length) return false;
-    for (final entry in a.entries) {
-      final other = b[entry.key];
-      if (other == null || !listEquals(entry.value, other)) return false;
-    }
-    return true;
-  }
-
-  void _recomputeProfiles() {
-    _profiles = mergeLocalWithPlexHome(
-      locals: _localProfiles,
-      plexHomeByConnectionId: _plexHomeUsers,
-      connectionsById: _connectionsById,
-      storage: _storage,
-    );
-    _avatarUrls = resolveProfileAvatarUrls(
-      profiles: _profiles,
-      connectionsByProfile: _connectionsByProfile,
-      connectionsById: _connectionsById,
-      plexHomeByConnectionId: _plexHomeUsers,
-    );
+    _profiles = sortProfilesByLastUsed(out);
   }
 
   void _resolveActive() {
     if (_pendingIdentityMutations > 0) return;
-    if (_profiles.isEmpty) {
-      _active = null;
-      return;
-    }
     final id = _storage?.getActiveProfileId();
     // No saved id means "fresh state" — leave the active profile null so
-    // MainScreen prompts the user via the picker. Auto-falling back to
-    // `_profiles.first` would let the binder bind (and possibly PIN-prompt)
-    // a profile the user never picked.
+    // MainScreen prompts the user via the picker.
     if (id == null) {
       _active = null;
       return;
@@ -335,13 +275,30 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
         return;
       }
     }
-    // Saved id no longer matches anything. Keep the persisted id: this
-    // resolver runs on every stream emission, and early/partial snapshots
-    // (boot before migration, a Plex Home cache that hasn't hydrated yet)
-    // must not irreversibly wipe the user's selection. Genuinely
-    // unresolvable states clear the id at their decision points — the boot
-    // guard and the post-removal settle flow.
-    _active = null;
+    final scope = SiloProfileScopeId.tryParse(id);
+    final connection = scope == null ? null : _connectionsById[SiloConnection.idFor(scope.publicServerId)];
+    if (scope == null || connection == null) {
+      // Keep the persisted id: an early snapshot (boot before connections
+      // load) must not wipe the selection. Unresolvable states clear it at
+      // their decision points.
+      _active = null;
+      return;
+    }
+    if (_householdsByConnection.containsKey(connection.id)) {
+      // The server's own list no longer has the profile.
+      appLogger.i('ActiveProfileProvider: the active profile left ${connection.serverName}; opening the picker');
+      _active = null;
+      unawaited(_storage?.clearActiveProfileId());
+      return;
+    }
+    // Household not read yet: bind the stored profile under a provisional
+    // name until the first read lands.
+    _active = Profile(
+      serverId: connection.serverId,
+      siloProfileId: scope.profileId,
+      displayName: connection.username.isEmpty ? connection.serverName : connection.username,
+      lastUsedAt: _storage?.getProfileLastUsed(id),
+    );
   }
 
   /// Claims ownership for an identity change that must perform asynchronous
@@ -363,16 +320,9 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     if (reservation != null && !reservation.isCompleted) reservation.complete();
   }
 
-  /// Activate [profile]. PIN-protected local profiles must supply a matching
-  /// PIN; for Plex Home profiles the binder enforces the PIN via
-  /// `/home/users/{uuid}/switch` after activation.
-  Future<bool> activate(Profile profile, {String? pin}) async {
-    if (profile.isLocal && profile.isPinProtected) {
-      final hash = profile.pinHash;
-      if (pin == null || hash == null || !verifyPin(pin, hash)) {
-        return false;
-      }
-    }
+  /// Activate [profile]. The caller has already entered it on the server
+  /// ([enterSiloProfile]), which checks a PIN.
+  Future<bool> activate(Profile profile) async {
     final storage = _storage;
     if (storage == null) return false;
     return _serializeIdentityMutation<bool>((generation) async {
@@ -398,15 +348,6 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       _profiles = sortProfilesByLastUsed([for (final p in _profiles) p.id == profile.id ? activated : p]);
       safeNotifyListeners();
       appLogger.i('ActiveProfileProvider: activated ${profile.displayName} (${profile.id})');
-      if (profile.isLocal) {
-        // Local rows also bump the DB's lastUsedAt so the in-DB sortable column
-        // stays accurate — the in-memory mark above keeps the picker snappy.
-        unawaited(
-          _registry.markUsed(profile.id, now).catchError((Object e, StackTrace s) {
-            appLogger.w('markUsed failed for ${profile.id}', error: e, stackTrace: s);
-          }),
-        );
-      }
       return true;
     });
   }
@@ -571,20 +512,13 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
 
   @visibleForTesting
   Future<void> resetForTesting() async {
-    await _localSub?.cancel();
     await _connSub?.cancel();
-    await _plexHomeSub?.cancel();
-    await _pcSub?.cancel();
-    _localSub = null;
+    await _householdSub?.cancel();
     _connSub = null;
-    _plexHomeSub = null;
-    _pcSub = null;
+    _householdSub = null;
     _profiles = const [];
-    _localProfiles = const [];
-    _plexHomeUsers = const {};
+    _householdsByConnection = const {};
     _connectionsById = const {};
-    _connectionsByProfile = const {};
-    _avatarUrls = const {};
     _active = null;
     _initializeFuture = null;
     _initialized = false;
@@ -613,10 +547,24 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     }
     _identityMutationReservations.clear();
     _initializeFuture = null;
-    _localSub?.cancel();
     _connSub?.cancel();
-    _plexHomeSub?.cancel();
-    _pcSub?.cancel();
+    _householdSub?.cancel();
     super.dispose();
   }
+}
+
+/// Most recently used first; never-used profiles keep their input order.
+List<Profile> sortProfilesByLastUsed(List<Profile> profiles) {
+  final indexed = profiles.indexed.toList();
+  indexed.sort((a, b) {
+    final aLastUsed = a.$2.lastUsedAt;
+    final bLastUsed = b.$2.lastUsedAt;
+    if (aLastUsed == null && bLastUsed == null) return a.$1.compareTo(b.$1);
+    if (aLastUsed == null) return 1;
+    if (bLastUsed == null) return -1;
+    final byLastUsed = bLastUsed.compareTo(aLastUsed);
+    if (byLastUsed != 0) return byLastUsed;
+    return a.$1.compareTo(b.$1);
+  });
+  return [for (final entry in indexed) entry.$2];
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Fallback for user-entered hosts only: a self-hosted Plex/Jellyfin/Seerr
+    <!-- Fallback for user-entered hosts only: a self-hosted Silo or Seerr
          server, or a custom Watch Together relay, may be plain HTTP or fronted
          by a private CA the device owner installed. Their hostnames are not
          knowable at build time, so they can only be covered here.
@@ -23,12 +23,6 @@
          and in CertificateTrust.fixedEndpointDomains. Pinned by
          test/android/network_security_config_test.dart. -->
     <domain-config>
-        <!-- plex.tv, clients.plex.tv, app.plex.tv, discover.provider.plex.tv,
-             epg.provider.plex.tv (lib/services/plex_auth_service.dart:53-54,167,
-             lib/services/plex_discover_client.dart:57,
-             lib/services/plex_client/parts/live_tv.dart:3).
-             Does NOT match *.plex.direct — user PMS keeps base-config. -->
-        <domain includeSubdomains="true">plex.tv</domain>
         <!-- ice.plezy.app: relay + /auth OAuth proxy + /posters
              (lib/watch_together/services/watch_together_relay_endpoint.dart:8,
              lib/services/trackers/oauth_proxy_client.dart:22,

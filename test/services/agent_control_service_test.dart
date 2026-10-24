@@ -7,10 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/profiles/silo_household_service.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/agent_control_protocol.dart';
 import 'package:plezy/services/agent_control_service.dart';
@@ -23,6 +20,7 @@ import 'package:provider/provider.dart';
 
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_stack.dart';
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -186,21 +184,9 @@ class _Harness {
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     final storage = await StorageService.getInstance();
     final settings = await SettingsService.getInstance();
-    final profiles = ProfileRegistry(database);
     final connections = ConnectionRegistry(database);
-    final profileConnections = ProfileConnectionRegistry(database);
-    final plexHome = PlexHomeService(
-      connections: connections,
-      profileConnections: profileConnections,
-      storage: storage,
-    );
-    final active = ActiveProfileProvider(
-      registry: profiles,
-      plexHome: plexHome,
-      connections: connections,
-      profileConnections: profileConnections,
-      storage: storage,
-    );
+    final serverHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
+    final active = ActiveProfileProvider(households: serverHome, connections: connections, storage: storage);
     final manager = MultiServerManager();
     final multi = testMultiServerProvider(manager);
     final harness = _Harness(active);
@@ -210,12 +196,13 @@ class _Harness {
       active.dispose();
       multi.dispose();
       manager.dispose();
-      await plexHome.dispose();
+      serverHome.dispose();
       await database.close();
     });
-    final profile = Profile.local(id: 'agent-test', displayName: 'Agent', createdAt: DateTime(2026));
-    await profiles.upsert(profile);
-    await storage.setActiveProfileId(profile.id);
+    final connection = testSiloConnection('agent-srv');
+    await connections.upsert(connection);
+    await serverHome.put(connection, testHousehold([('agent-test', 'Agent')]));
+    await storage.setActiveProfileId('silo:agent-srv/agent-test');
     await active.initialize();
     await tester.pumpWidget(
       MultiProvider(

@@ -61,7 +61,7 @@ void main() {
   testWidgets('dashboard spotlight badges every rating the listing carried', (tester) async {
     await _pumpSpotlight(
       tester,
-      const MediaItem.plex(
+      const MediaItem.silo(
         id: 'movie_1',
         kind: MediaKind.movie,
         title: 'Spotlight Movie',
@@ -81,7 +81,7 @@ void main() {
   testWidgets('dashboard spotlight still shows one badge for a single-score listing', (tester) async {
     await _pumpSpotlight(
       tester,
-      const MediaItem.jellyfin(
+      const MediaItem.silo(
         id: 'movie_2',
         kind: MediaKind.movie,
         title: 'Community Only',
@@ -99,7 +99,7 @@ void main() {
   testWidgets('dashboard spotlight omits the rating slot when the item has no score', (tester) async {
     await _pumpSpotlight(
       tester,
-      const MediaItem.plex(id: 'movie_3', kind: MediaKind.movie, title: 'Unrated', year: 2024),
+      const MediaItem.silo(id: 'movie_3', kind: MediaKind.movie, title: 'Unrated', year: 2024),
     );
 
     expect(find.text('2024'), findsOneWidget);
@@ -111,7 +111,7 @@ void main() {
 
     await _pumpSpotlight(
       tester,
-      const MediaItem.plex(
+      const MediaItem.silo(
         id: 'movie_4',
         kind: MediaKind.movie,
         title: 'Announced Movie',

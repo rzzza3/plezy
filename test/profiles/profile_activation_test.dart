@@ -9,29 +9,42 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/profiles/active_profile_binder.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_activation.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/profiles/silo_household_service.dart';
+import 'package:plezy/screens/profile/pin_entry_dialog.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/system_shelf_service.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_stack.dart';
 
-class _PlexHome extends PlexHomeService {
-  _PlexHome({required super.connections, required super.profileConnections, required super.storage})
-    : super(plexHomeUserFetcher: (_) async => const []);
+const _server = 'srv';
 
-  @override
-  Future<void> start() async {}
+/// The client scope of the Silo profile [name] on [_server].
+String _id(String name) => 'silo:$_server/$name';
 
-  @override
-  Future<void> reloadFromStorage() async {}
+Profile _profile(String name, String displayName, int sortOrder) =>
+    Profile(serverId: _server, siloProfileId: name, displayName: displayName, sortOrder: sortOrder);
 
-  @override
-  Future<void> dispose() async {}
+/// The household of [_server], cached as sign-in leaves it.
+Future<SiloHouseholdService> _households(ConnectionRegistry connections) async {
+  final connection = testSiloConnection(_server);
+  final household = testHousehold([('owner', 'Owner'), ('target', 'Target'), ('newer', 'Newer'), ('latest', 'Latest')]);
+  final households = SiloHouseholdService(connections: connections, loader: (_) async => household);
+  await connections.upsert(connection);
+  await households.put(connection, household);
+  return households;
+}
+
+/// Stands in for the server: a PIN profile asks through the real PIN dialog
+/// and is entered with 1234; backing out cancels.
+Future<SiloProfileEntryOutcome> _enterWithoutServer(BuildContext context, Profile profile) async {
+  if (!profile.hasPin) return SiloProfileEntryOutcome.entered;
+  final pin = await pinPromptFor(context, profile.displayName)(null);
+  if (pin == null) return SiloProfileEntryOutcome.cancelled;
+  return pin == '1234' ? SiloProfileEntryOutcome.entered : SiloProfileEntryOutcome.failed;
 }
 
 class _Binder implements ActiveProfileBinder {
@@ -70,16 +83,11 @@ class _RollbackBinder implements ActiveProfileBinder {
     events.add('mark:$profileId');
   }
 
-  @override
-  void markPlexHomePreVerified(String profileId) {
-    events.add('preverified:$profileId');
-  }
-
   void _handleActiveChanged() {
-    if (active.activeId == 'target' && !_targetFailed) {
+    if (active.activeId == _id('target') && !_targetFailed) {
       _targetFailed = true;
       boundClientProfileId = null;
-      SystemShelfService().beginProfileSession('target');
+      SystemShelfService().beginProfileSession(_id('target'));
       active.markBindingStarted();
       targetBindingStarted.complete();
       final release = targetBindingRelease;
@@ -88,7 +96,7 @@ class _RollbackBinder implements ActiveProfileBinder {
       } else {
         unawaited(
           release.future.then((_) {
-            if (active.activeId == 'target') {
+            if (active.activeId == _id('target')) {
               active.markBindingFinished(success: false);
             }
           }),
@@ -97,7 +105,7 @@ class _RollbackBinder implements ActiveProfileBinder {
       return;
     }
     final profileId = active.activeId;
-    if ((profileId == 'newer' || profileId == 'latest') && _successfullyBoundProfileIds.add(profileId!)) {
+    if ((profileId == _id('newer') || profileId == _id('latest')) && _successfullyBoundProfileIds.add(profileId!)) {
       boundClientProfileId = profileId;
       SystemShelfService().beginProfileSession(profileId);
       active.markBindingStarted();
@@ -126,10 +134,8 @@ class _RollbackBinder implements ActiveProfileBinder {
 
 class _ThrowingActiveProfileProvider extends ActiveProfileProvider {
   _ThrowingActiveProfileProvider({
-    required super.registry,
-    required super.plexHome,
+    required super.households,
     required super.connections,
-    required super.profileConnections,
     required super.storage,
     super.activeProfileIdWriter,
   });
@@ -137,9 +143,9 @@ class _ThrowingActiveProfileProvider extends ActiveProfileProvider {
   bool throwOnActivation = false;
 
   @override
-  Future<bool> activate(Profile profile, {String? pin}) {
+  Future<bool> activate(Profile profile) {
     if (throwOnActivation) throw StateError('synthetic activation failure');
-    return super.activate(profile, pin: pin);
+    return super.activate(profile);
   }
 }
 
@@ -148,8 +154,12 @@ void main() {
   const channel = MethodChannel('test/profile_activation_shelf');
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
-  setUp(resetSharedPreferencesForTest);
+  setUp(() {
+    resetSharedPreferencesForTest();
+    debugSiloProfileEntryOverride = _enterWithoutServer;
+  });
   tearDown(() {
+    debugSiloProfileEntryOverride = null;
     messenger.setMockMethodCallHandler(channel, null);
     SystemShelfService.debugOverrideInstance(null);
   });
@@ -163,7 +173,7 @@ void main() {
     final activated = await switchProfileFromUi(harness.context, harness.target);
 
     expect(activated, isTrue);
-    expect(events, ['clear:owner', 'mark:target', 'active:target']);
+    expect(events, ['clear:${_id('owner')}', 'mark:${_id('target')}', 'active:${_id('target')}']);
     expect(SystemShelfService().debugActiveOwner, isNull);
   });
 
@@ -176,7 +186,7 @@ void main() {
       if (call.method == 'clear') {
         final ownerId = (call.arguments as Map)['ownerId'];
         harness.events.add('clear:$ownerId');
-        if (ownerId == 'owner') {
+        if (ownerId == _id('owner')) {
           ownerClearStarted.complete();
           await allowOwnerClear.future;
         }
@@ -188,19 +198,19 @@ void main() {
     await ownerClearStarted.future;
 
     expect(await switchProfileFromUi(harness.context, harness.newer), isTrue);
-    expect(harness.active.activeId, 'newer');
-    expect(harness.rollbackBinder!.boundClientProfileId, 'newer');
-    expect(harness.events, contains('mark:newer'));
-    expect(harness.events, isNot(contains('mark:target')));
+    expect(harness.active.activeId, _id('newer'));
+    expect(harness.rollbackBinder!.boundClientProfileId, _id('newer'));
+    expect(harness.events, contains('mark:${_id('newer')}'));
+    expect(harness.events, isNot(contains('mark:${_id('target')}')));
 
     allowOwnerClear.complete();
     expect(await olderSwitch, isFalse);
     await tester.pump();
 
-    expect(harness.active.activeId, 'newer');
-    expect((await StorageService.getInstance()).getActiveProfileId(), 'newer');
-    expect(SystemShelfService().debugActiveOwner, 'newer');
-    expect(harness.events, isNot(contains('rebind:target')));
+    expect(harness.active.activeId, _id('newer'));
+    expect((await StorageService.getInstance()).getActiveProfileId(), _id('newer'));
+    expect(SystemShelfService().debugActiveOwner, _id('newer'));
+    expect(harness.events, isNot(contains('rebind:${_id('target')}')));
     expect(find.byType(SnackBar), findsNothing);
   });
 
@@ -209,14 +219,9 @@ void main() {
     addTearDown(harness.dispose);
 
     expect(await switchProfileFromUi(harness.context, harness.active.active!), isTrue);
-    expect(harness.events, ['mark:owner']);
+    expect(harness.events, ['mark:${_id('owner')}']);
 
-    final protected = Profile.local(
-      id: 'protected',
-      displayName: 'Protected',
-      pinHash: computePinHash('1234'),
-      createdAt: DateTime(2026, 1, 3),
-    );
+    const protected = Profile(serverId: _server, siloProfileId: 'protected', displayName: 'Protected', hasPin: true);
     final attempt = switchProfileFromUi(harness.context, protected);
     await tester.pumpAndSettle();
     Navigator.of(harness.context, rootNavigator: true).pop();
@@ -233,9 +238,9 @@ void main() {
     final activated = await switchProfileFromUi(harness.context, harness.target);
 
     expect(activated, isFalse);
-    expect(harness.active.activeId, 'owner');
-    expect(SystemShelfService().debugActiveOwner, 'owner');
-    expect(harness.events, ['clear:owner', 'mark:target']);
+    expect(harness.active.activeId, _id('owner'));
+    expect(SystemShelfService().debugActiveOwner, _id('owner'));
+    expect(harness.events, ['clear:${_id('owner')}', 'mark:${_id('target')}']);
   });
 
   testWidgets('failed target binding explicitly restores prior clients before returning', (tester) async {
@@ -250,15 +255,15 @@ void main() {
     });
     await binder.rebindStarted.future;
 
-    expect(harness.active.activeId, 'owner');
+    expect(harness.active.activeId, _id('owner'));
     expect(binder.boundClientProfileId, isNull);
     expect(switchCompleted, isFalse);
 
     binder.allowRebind.complete();
     expect(await switchFuture, isFalse);
-    expect(binder.boundClientProfileId, 'owner');
+    expect(binder.boundClientProfileId, _id('owner'));
     expect(harness.active.lastBindingSucceeded, isTrue);
-    expect(SystemShelfService().debugActiveOwner, 'owner');
+    expect(SystemShelfService().debugActiveOwner, _id('owner'));
   });
 
   testWidgets('connectivity-only bind failure keeps a downloads-owning profile active offline', (tester) async {
@@ -266,16 +271,16 @@ void main() {
     addTearDown(harness.dispose);
     final binder = harness.rollbackBinder!;
     binder.lastBindFailureConnectivityOnly = true;
-    await harness.database.addDownloadOwner(profileId: 'target', globalKey: 'srv-1/episode-1');
+    await harness.database.addDownloadOwner(profileId: _id('target'), globalKey: 'srv-1/episode-1');
 
     final activated = await switchProfileFromUi(harness.context, harness.target);
 
     expect(activated, isTrue);
-    expect(harness.active.activeId, 'target');
-    expect(SystemShelfService().debugActiveOwner, 'target');
-    expect((await StorageService.getInstance()).getActiveProfileId(), 'target');
+    expect(harness.active.activeId, _id('target'));
+    expect(SystemShelfService().debugActiveOwner, _id('target'));
+    expect((await StorageService.getInstance()).getActiveProfileId(), _id('target'));
     expect(binder.rebindStarted.isCompleted, isFalse);
-    expect(harness.events, isNot(contains('rebind:owner')));
+    expect(harness.events, isNot(contains('rebind:${_id('owner')}')));
     await tester.pump();
     expect(find.byType(SnackBar), findsNothing);
   });
@@ -287,7 +292,7 @@ void main() {
     addTearDown(harness.dispose);
     final binder = harness.rollbackBinder!;
     binder.lastBindFailureConnectivityOnly = true;
-    await harness.database.addDownloadOwner(profileId: 'target', globalKey: 'srv-1/episode-1');
+    await harness.database.addDownloadOwner(profileId: _id('target'), globalKey: 'srv-1/episode-1');
 
     final switchFuture = switchProfileFromUi(harness.context, harness.target);
     await binder.targetBindingStarted.future;
@@ -298,26 +303,8 @@ void main() {
     binder.targetBindingRelease!.complete();
 
     expect(await switchFuture, isTrue);
-    expect(harness.active.activeId, 'target');
+    expect(harness.active.activeId, _id('target'));
     expect(binder.rebindStarted.isCompleted, isFalse);
-  });
-
-  testWidgets('rollback to a Plex Home profile reuses its verified token instead of asking for its PIN', (
-    tester,
-  ) async {
-    final harness = await _pumpHarness(tester, channel, simulateBindingRollback: true);
-    addTearDown(harness.dispose);
-    final binder = harness.rollbackBinder!;
-    final homeOwner = Profile.plexHome(id: 'home-owner', displayName: 'Home Owner', createdAt: DateTime(2026, 1, 1));
-    expect(await harness.active.activate(homeOwner), isTrue);
-
-    final switchFuture = switchProfileFromUi(harness.context, harness.target);
-    await binder.rebindStarted.future;
-    expect(harness.events, containsAllInOrder(['mark:home-owner', 'preverified:home-owner', 'rebind:home-owner']));
-
-    binder.allowRebind.complete();
-    expect(await switchFuture, isFalse);
-    expect(harness.active.activeId, 'home-owner');
   });
 
   testWidgets('connectivity-only bind failure without owned downloads still rolls back', (tester) async {
@@ -331,9 +318,9 @@ void main() {
     binder.allowRebind.complete();
 
     expect(await switchFuture, isFalse);
-    expect(harness.active.activeId, 'owner');
-    expect(binder.boundClientProfileId, 'owner');
-    expect(SystemShelfService().debugActiveOwner, 'owner');
+    expect(harness.active.activeId, _id('owner'));
+    expect(binder.boundClientProfileId, _id('owner'));
+    expect(SystemShelfService().debugActiveOwner, _id('owner'));
     await tester.pump();
     expect(find.byType(SnackBar), findsOneWidget);
   });
@@ -342,16 +329,16 @@ void main() {
     final harness = await _pumpHarness(tester, channel, simulateBindingRollback: true);
     addTearDown(harness.dispose);
     final binder = harness.rollbackBinder!;
-    await harness.database.addDownloadOwner(profileId: 'target', globalKey: 'srv-1/episode-1');
+    await harness.database.addDownloadOwner(profileId: _id('target'), globalKey: 'srv-1/episode-1');
 
     final switchFuture = switchProfileFromUi(harness.context, harness.target);
     await binder.rebindStarted.future;
     binder.allowRebind.complete();
 
     expect(await switchFuture, isFalse);
-    expect(harness.active.activeId, 'owner');
-    expect(binder.boundClientProfileId, 'owner');
-    expect(SystemShelfService().debugActiveOwner, 'owner');
+    expect(harness.active.activeId, _id('owner'));
+    expect(binder.boundClientProfileId, _id('owner'));
+    expect(SystemShelfService().debugActiveOwner, _id('owner'));
     await tester.pump();
     expect(find.byType(SnackBar), findsOneWidget);
   });
@@ -360,21 +347,16 @@ void main() {
     final harness = await _pumpHarness(tester, channel, simulateBindingRollback: true, gateTargetBindingFailure: true);
     addTearDown(harness.dispose);
     final binder = harness.rollbackBinder!;
-    final protectedTarget = Profile.local(
-      id: harness.target.id,
-      displayName: 'Protected Target',
-      pinHash: computePinHash('1234'),
-      createdAt: harness.target.createdAt,
-    );
+    final protectedTarget = harness.target.copyWith(displayName: 'Protected Target', hasPin: true);
 
     final pendingProtectedSwitch = switchProfileFromUi(harness.context, protectedTarget);
     await tester.pumpAndSettle();
     expect(find.text('Protected Target'), findsOneWidget);
-    expect(harness.active.activeId, 'owner');
+    expect(harness.active.activeId, _id('owner'));
 
     expect(await switchProfileFromUi(harness.context, harness.newer), isTrue);
-    expect(harness.active.activeId, 'newer');
-    expect(binder.boundClientProfileId, 'newer');
+    expect(harness.active.activeId, _id('newer'));
+    expect(binder.boundClientProfileId, _id('newer'));
 
     final pinField = find.byType(TextField);
     if (pinField.evaluate().isNotEmpty) {
@@ -394,11 +376,11 @@ void main() {
     expect(await pendingProtectedSwitch, isFalse);
     await tester.pump();
 
-    expect(restoredProfileId, 'newer');
-    expect(harness.active.activeId, 'newer');
-    expect(binder.boundClientProfileId, 'newer');
-    expect(SystemShelfService().debugActiveOwner, 'newer');
-    expect((await StorageService.getInstance()).getActiveProfileId(), 'newer');
+    expect(restoredProfileId, _id('newer'));
+    expect(harness.active.activeId, _id('newer'));
+    expect(binder.boundClientProfileId, _id('newer'));
+    expect(SystemShelfService().debugActiveOwner, _id('newer'));
+    expect((await StorageService.getInstance()).getActiveProfileId(), _id('newer'));
   });
 
   testWidgets('newer activation supersedes a failed switch while rollback shelf clear is pending', (tester) async {
@@ -411,7 +393,7 @@ void main() {
       if (call.method == 'clear') {
         final ownerId = (call.arguments as Map)['ownerId'];
         harness.events.add('clear:$ownerId');
-        if (ownerId == 'target') {
+        if (ownerId == _id('target')) {
           targetClearStarted.complete();
           await allowTargetClear.future;
         }
@@ -423,18 +405,18 @@ void main() {
     await targetClearStarted.future;
 
     expect(await switchProfileFromUi(harness.context, harness.newer), isTrue);
-    expect(harness.active.activeId, 'newer');
-    expect(binder.boundClientProfileId, 'newer');
+    expect(harness.active.activeId, _id('newer'));
+    expect(binder.boundClientProfileId, _id('newer'));
 
     allowTargetClear.complete();
     expect(await failedSwitch, isFalse);
-    expect(harness.active.activeId, 'newer');
-    expect(binder.boundClientProfileId, 'newer');
-    expect(SystemShelfService().debugActiveOwner, 'newer');
+    expect(harness.active.activeId, _id('newer'));
+    expect(binder.boundClientProfileId, _id('newer'));
+    expect(SystemShelfService().debugActiveOwner, _id('newer'));
     expect(binder.rebindStarted.isCompleted, isFalse);
-    expect(harness.events, isNot(contains('mark:owner')));
-    expect(harness.events, isNot(contains('rebind:owner')));
-    expect((await StorageService.getInstance()).getActiveProfileId(), 'newer');
+    expect(harness.events, isNot(contains('mark:${_id('owner')}')));
+    expect(harness.events, isNot(contains('rebind:${_id('owner')}')));
+    expect((await StorageService.getInstance()).getActiveProfileId(), _id('newer'));
     await tester.pump();
     expect(find.byType(SnackBar), findsNothing);
   });
@@ -452,7 +434,7 @@ void main() {
       if (call.method == 'clear') {
         final ownerId = (call.arguments as Map)['ownerId'];
         harness.events.add('clear:$ownerId');
-        if (ownerId == 'target') {
+        if (ownerId == _id('target')) {
           targetClearCount++;
           if (targetClearCount == 1) {
             firstTargetClearStarted.complete();
@@ -472,34 +454,36 @@ void main() {
     await firstTargetClearStarted.future;
 
     // Model the still-authoritative target binder reasserting its shelf marker
-    // while the first native clear is pending. The next request now reserves
-    // C synchronously and blocks behind that clear before entering the identity
-    // queue.
-    SystemShelfService().beginProfileSession('target');
+    // while the first native clear is pending. The next request reserves C
+    // synchronously, enters its profile, and blocks behind that clear before
+    // entering the identity queue.
+    SystemShelfService().beginProfileSession(_id('target'));
     final middleSwitch = switchProfileFromUi(harness.context, harness.newer);
     final middleReservation = harness.active.identityMutationGeneration;
+    // Let its server entry finish so it queues the shelf clear.
+    await tester.pump();
 
     final latestSwitch = switchProfileFromUi(harness.context, harness.latest);
     expect(harness.active.identityMutationGeneration, greaterThan(middleReservation));
     expect(await latestSwitch, isTrue);
-    expect(harness.active.activeId, 'latest');
-    expect(binder.boundClientProfileId, 'latest');
+    expect(harness.active.activeId, _id('latest'));
+    expect(binder.boundClientProfileId, _id('latest'));
 
     allowFirstTargetClear.complete();
     await secondTargetClearStarted.future;
     expect(await failedSwitch, isFalse);
-    expect(harness.active.activeId, 'latest');
-    expect(harness.events, isNot(contains('mark:owner')));
-    expect(harness.events, isNot(contains('rebind:owner')));
+    expect(harness.active.activeId, _id('latest'));
+    expect(harness.events, isNot(contains('mark:${_id('owner')}')));
+    expect(harness.events, isNot(contains('rebind:${_id('owner')}')));
 
     allowSecondTargetClear.complete();
     expect(await middleSwitch, isFalse);
     await tester.pump();
 
     expect(targetClearCount, 2);
-    expect((await StorageService.getInstance()).getActiveProfileId(), 'latest');
-    expect(SystemShelfService().debugActiveOwner, 'latest');
-    expect(harness.events, isNot(contains('mark:newer')));
+    expect((await StorageService.getInstance()).getActiveProfileId(), _id('latest'));
+    expect(SystemShelfService().debugActiveOwner, _id('latest'));
+    expect(harness.events, isNot(contains('mark:${_id('newer')}')));
     expect(find.byType(SnackBar), findsNothing);
   });
 
@@ -512,7 +496,7 @@ void main() {
 
     final failedSwitch = switchProfileFromUi(harness.context, harness.target);
     await harness.restoreWriteStarted.future;
-    expect(harness.active.activeId, 'target');
+    expect(harness.active.activeId, _id('target'));
     final restoreGeneration = harness.active.identityMutationGeneration;
 
     final newerSwitch = switchProfileFromUi(harness.context, harness.newer);
@@ -522,13 +506,13 @@ void main() {
     harness.allowRestoreWrite.complete();
     expect(await newerSwitch, isTrue);
     expect(await failedSwitch, isFalse);
-    expect(harness.active.activeId, 'newer');
-    expect(binder.boundClientProfileId, 'newer');
-    expect(publishedProfileIds, isNot(contains('owner')));
-    expect(harness.events, isNot(contains('mark:owner')));
-    expect(harness.events, isNot(contains('rebind:owner')));
-    expect((await StorageService.getInstance()).getActiveProfileId(), 'newer');
-    expect(harness.identityWrites, ['target', 'owner', 'target', 'newer']);
+    expect(harness.active.activeId, _id('newer'));
+    expect(binder.boundClientProfileId, _id('newer'));
+    expect(publishedProfileIds, isNot(contains(_id('owner'))));
+    expect(harness.events, isNot(contains('mark:${_id('owner')}')));
+    expect(harness.events, isNot(contains('rebind:${_id('owner')}')));
+    expect((await StorageService.getInstance()).getActiveProfileId(), _id('newer'));
+    expect(harness.identityWrites, [_id('target'), _id('owner'), _id('target'), _id('newer')]);
   });
 
   testWidgets('cancelled newer PIN attempt does not suppress pending failed-switch rollback', (tester) async {
@@ -538,11 +522,11 @@ void main() {
     final failedSwitch = switchProfileFromUi(harness.context, harness.target);
     await binder.targetBindingStarted.future;
     final failedGeneration = harness.active.identityMutationGeneration;
-    final protectedNewer = Profile.local(
-      id: 'protected-newer',
+    const protectedNewer = Profile(
+      serverId: _server,
+      siloProfileId: 'protected-newer',
       displayName: 'Protected Newer',
-      pinHash: computePinHash('1234'),
-      createdAt: DateTime(2026, 1, 4),
+      hasPin: true,
     );
 
     final cancelledSwitch = switchProfileFromUi(harness.context, protectedNewer);
@@ -556,8 +540,8 @@ void main() {
     await binder.rebindStarted.future;
     binder.allowRebind.complete();
     expect(await failedSwitch, isFalse);
-    expect(harness.active.activeId, 'owner');
-    expect(binder.boundClientProfileId, 'owner');
+    expect(harness.active.activeId, _id('owner'));
+    expect(binder.boundClientProfileId, _id('owner'));
     await tester.pump();
     expect(find.byType(SnackBar), findsOneWidget);
   });
@@ -587,22 +571,27 @@ void main() {
     binder.allowRebind.complete();
     expect(await failedSwitch, isFalse);
 
-    expect(harness.active.activeId, 'owner');
-    expect(binder.boundClientProfileId, 'owner');
+    expect(harness.active.activeId, _id('owner'));
+    expect(binder.boundClientProfileId, _id('owner'));
     expect(harness.active.committedIdentityGeneration, greaterThan(restoreGeneration));
-    expect(harness.events, contains('mark:owner'));
-    expect(harness.events, contains('rebind:owner'));
-    expect((await StorageService.getInstance()).getActiveProfileId(), 'owner');
-    expect(harness.identityWrites, ['target', 'owner', 'target', 'newer', 'target', 'owner']);
+    expect(harness.events, contains('mark:${_id('owner')}'));
+    expect(harness.events, contains('rebind:${_id('owner')}'));
+    expect((await StorageService.getInstance()).getActiveProfileId(), _id('owner'));
+    expect(harness.identityWrites, [
+      _id('target'),
+      _id('owner'),
+      _id('target'),
+      _id('newer'),
+      _id('target'),
+      _id('owner'),
+    ]);
   });
 
   test('superseded failing profile write cannot overwrite the newer committed profile', () async {
     final database = AppDatabase.forTesting(NativeDatabase.memory());
-    final profiles = ProfileRegistry(database);
     final connections = ConnectionRegistry(database);
-    final profileConnections = ProfileConnectionRegistry(database);
     final storage = await StorageService.getInstance();
-    final plexHome = _PlexHome(connections: connections, profileConnections: profileConnections, storage: storage);
+    final households = await _households(connections);
     final targetWriteStarted = Completer<void>();
     final allowTargetWriteToFail = Completer<void>();
     final newerWriteStarted = Completer<void>();
@@ -610,33 +599,28 @@ void main() {
     Future<void> writer(String profileId) async {
       identityWrites.add(profileId);
       await storage.setActiveProfileId(profileId);
-      if (profileId == 'target') {
+      if (profileId == _id('target')) {
         targetWriteStarted.complete();
         await allowTargetWriteToFail.future;
         throw StateError('synthetic target persistence failure');
       }
-      if (profileId == 'newer') newerWriteStarted.complete();
+      if (profileId == _id('newer')) newerWriteStarted.complete();
     }
 
     final active = _ThrowingActiveProfileProvider(
-      registry: profiles,
-      plexHome: plexHome,
+      households: households,
       connections: connections,
-      profileConnections: profileConnections,
       storage: storage,
       activeProfileIdWriter: writer,
     );
     addTearDown(() async {
       active.dispose();
-      await plexHome.dispose();
+      households.dispose();
       await database.close();
     });
-    final owner = Profile.local(id: 'owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-    final target = Profile.local(id: 'target', displayName: 'Target', createdAt: DateTime(2026, 1, 2));
-    final newer = Profile.local(id: 'newer', displayName: 'Newer', createdAt: DateTime(2026, 1, 3));
-    await profiles.upsert(owner);
-    await profiles.upsert(target);
-    await profiles.upsert(newer);
+    final owner = _profile('owner', 'Owner', 0);
+    final target = _profile('target', 'Target', 1);
+    final newer = _profile('newer', 'Newer', 2);
     await storage.setActiveProfileId(owner.id);
     await active.initialize();
 
@@ -647,7 +631,7 @@ void main() {
 
     expect(newerWriteStarted.isCompleted, isFalse);
     expect(storage.getActiveProfileId(), target.id);
-    expect(identityWrites, ['target']);
+    expect(identityWrites, [_id('target')]);
 
     allowTargetWriteToFail.complete();
     await targetFailure;
@@ -655,7 +639,7 @@ void main() {
     expect(newerWriteStarted.isCompleted, isTrue);
     expect(active.activeId, newer.id);
     expect(storage.getActiveProfileId(), newer.id);
-    expect(identityWrites, ['target', 'owner', 'newer']);
+    expect(identityWrites, [_id('target'), _id('owner'), _id('newer')]);
   });
 }
 
@@ -667,7 +651,7 @@ class _Harness {
     required this.newer,
     required this.events,
     required this.latest,
-    required this.plexHome,
+    required this.households,
     required this.rollbackBinder,
     required this.database,
     required this.restoreWriteStarted,
@@ -681,7 +665,7 @@ class _Harness {
   final Profile newer;
   final Profile latest;
   final List<String> events;
-  final PlexHomeService plexHome;
+  final SiloHouseholdService households;
   final _RollbackBinder? rollbackBinder;
   final AppDatabase database;
   final Completer<void> restoreWriteStarted;
@@ -691,7 +675,7 @@ class _Harness {
   Future<void> dispose() async {
     rollbackBinder?.dispose();
     active.dispose();
-    await plexHome.dispose();
+    households.dispose();
     await database.close();
   }
 }
@@ -708,41 +692,33 @@ Future<_Harness> _pumpHarness(
   final events = <String>[];
   final identityWrites = <String>[];
   final database = AppDatabase.forTesting(NativeDatabase.memory());
-  final profiles = ProfileRegistry(database);
   final connections = ConnectionRegistry(database);
-  final profileConnections = ProfileConnectionRegistry(database);
   final storage = await StorageService.getInstance();
+  final households = await _households(connections);
   final restoreWriteStarted = Completer<void>();
   final allowRestoreWrite = Completer<void>();
   Future<void> activeProfileIdWriter(String profileId) async {
     identityWrites.add(profileId);
     await storage.setActiveProfileId(profileId);
-    if (gateOwnerRestoreWrite && profileId == 'owner') {
+    if (gateOwnerRestoreWrite && profileId == _id('owner')) {
       if (!restoreWriteStarted.isCompleted) restoreWriteStarted.complete();
       await allowRestoreWrite.future;
     }
-    if (failNewerIdentityWrite && profileId == 'newer') {
+    if (failNewerIdentityWrite && profileId == _id('newer')) {
       throw StateError('synthetic newer identity write failure');
     }
   }
 
-  final plexHome = _PlexHome(connections: connections, profileConnections: profileConnections, storage: storage);
   final active = _ThrowingActiveProfileProvider(
-    registry: profiles,
-    plexHome: plexHome,
+    households: households,
     connections: connections,
-    profileConnections: profileConnections,
     storage: storage,
     activeProfileIdWriter: gateOwnerRestoreWrite || failNewerIdentityWrite ? activeProfileIdWriter : null,
   );
-  final owner = Profile.local(id: 'owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-  final target = Profile.local(id: 'target', displayName: 'Target', createdAt: DateTime(2026, 1, 2));
-  final newer = Profile.local(id: 'newer', displayName: 'Newer', createdAt: DateTime(2026, 1, 3));
-  final latest = Profile.local(id: 'latest', displayName: 'Latest', createdAt: DateTime(2026, 1, 4));
-  await profiles.upsert(owner);
-  await profiles.upsert(target);
-  await profiles.upsert(newer);
-  await profiles.upsert(latest);
+  final owner = _profile('owner', 'Owner', 0);
+  final target = _profile('target', 'Target', 1);
+  final newer = _profile('newer', 'Newer', 2);
+  final latest = _profile('latest', 'Latest', 3);
   await storage.setActiveProfileId(owner.id);
   await active.initialize();
   active.throwOnActivation = throwOnTargetActivation;
@@ -789,7 +765,7 @@ Future<_Harness> _pumpHarness(
     latest: latest,
     rollbackBinder: rollbackBinder,
     events: events,
-    plexHome: plexHome,
+    households: households,
     restoreWriteStarted: restoreWriteStarted,
     allowRestoreWrite: allowRestoreWrite,
     identityWrites: identityWrites,

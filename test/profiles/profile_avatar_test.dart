@@ -27,13 +27,13 @@ void main() {
     );
   }
 
-  Profile localProfile({String? avatarThumbUrl, String? pinHash}) {
-    return Profile.local(
-      id: 'local-owner',
+  Profile localProfile({String? avatarThumbUrl, bool hasPin = false}) {
+    return Profile(
+      serverId: 'srv',
+      siloProfileId: 'owner',
       displayName: 'Owner',
       avatarThumbUrl: avatarThumbUrl,
-      pinHash: pinHash,
-      createdAt: DateTime(2026, 1, 1),
+      hasPin: hasPin,
     );
   }
 
@@ -53,7 +53,7 @@ void main() {
   }
 
   testWidgets('avatarUrl renders the derived network image', (tester) async {
-    const avatarUrl = 'https://jellyfin.example/Users/user-1/Images/Primary?tag=derived';
+    const avatarUrl = 'https://silo.example/avatars/user-1?tag=derived';
 
     await pumpAvatar(tester, profile: localProfile(), avatarUrl: avatarUrl);
 
@@ -61,8 +61,8 @@ void main() {
   });
 
   testWidgets('avatarUrl takes precedence over the profile thumbnail', (tester) async {
-    const derivedUrl = 'https://jellyfin.example/Users/user-1/Images/Primary?tag=derived';
-    const profileThumbUrl = 'https://plex.example/profile-thumb.jpg';
+    const derivedUrl = 'https://silo.example/avatars/user-1?tag=derived';
+    const profileThumbUrl = 'https://media.example/profile-thumb.jpg';
 
     await pumpAvatar(
       tester,
@@ -74,7 +74,7 @@ void main() {
   });
 
   testWidgets('a null avatarUrl preserves the profile thumbnail fallback', (tester) async {
-    const profileThumbUrl = 'https://plex.example/profile-thumb.jpg';
+    const profileThumbUrl = 'https://media.example/profile-thumb.jpg';
 
     await pumpAvatar(tester, profile: localProfile(avatarThumbUrl: profileThumbUrl));
 
@@ -91,17 +91,17 @@ void main() {
   });
 
   testWidgets('an empty avatarUrl falls through to the profile picture rather than suppressing it', (tester) async {
-    const plexThumb = 'https://plex.tv/users/abc/avatar';
+    const serverThumb = 'https://media.example/api/v2/profiles/abc/avatar';
 
     // An empty override means "nothing derived". Treating it as a value would
-    // blank out a Plex Home profile that owns a perfectly good thumb.
+    // blank out a profile that owns a perfectly good thumb.
     await pumpAvatar(
       tester,
-      profile: localProfile(avatarThumbUrl: plexThumb),
+      profile: localProfile(avatarThumbUrl: serverThumb),
       avatarUrl: '',
     );
 
-    expect(avatarUrlOf(tester), plexThumb);
+    expect(avatarUrlOf(tester), serverThumb);
   });
 
   testWidgets('an empty avatarUrl renders initials instead of requesting an empty URL', (tester) async {
@@ -120,7 +120,7 @@ void main() {
     await pumpAvatar(
       tester,
       profile: localProfile(),
-      avatarUrl: 'https://jellyfin.example/Users/user-1/Images/Primary?tag=large-original',
+      avatarUrl: 'https://silo.example/avatars/user-1?tag=large-original',
       size: size,
       devicePixelRatio: devicePixelRatio,
     );
@@ -133,8 +133,8 @@ void main() {
   testWidgets('a derived avatar keeps the PIN lock badge visible', (tester) async {
     await pumpAvatar(
       tester,
-      profile: localProfile(pinHash: 'stored-pin-hash'),
-      avatarUrl: 'https://jellyfin.example/Users/user-1/Images/Primary?tag=derived',
+      profile: localProfile(hasPin: true),
+      avatarUrl: 'https://silo.example/avatars/user-1?tag=derived',
     );
 
     expect(find.byType(Image), findsOneWidget);

@@ -12,7 +12,6 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
-import 'package:plezy/services/live_seek_accumulator.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -20,7 +19,6 @@ import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:plezy/focus/transport_keys.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/app_icon.dart';
-import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/double_tap_feedback.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
@@ -86,8 +84,6 @@ void main() {
       WidgetTester tester, {
       List<MediaChapter>? chapters,
       bool wireTransportCallback = false,
-      bool isLive = false,
-      LiveSeekBy? onLiveSeekBy,
       String itemId = 'transient-feedback',
     }) async {
       transportCommands = [];
@@ -104,7 +100,7 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: PlexVideoControls(
+                child: SiloVideoControls(
                   player: player,
                   volumeController: volume,
                   metadata: testMediaItem(id: itemId),
@@ -112,8 +108,6 @@ void main() {
                   chromeController: chrome,
                   initialChapters: chapters,
                   canNavigateMediaItems: false,
-                  isLive: isLive,
-                  onLiveSeekBy: onLiveSeekBy,
                   onPlayPauseRequested: wireTransportCallback
                       ? (command) async {
                           transportCommands.add(command);
@@ -555,78 +549,6 @@ void main() {
       await settleFeedback(tester);
     });
 
-    testWidgets('a live hold resets its acceleration tier when the key is released', (tester) async {
-      // Live seeks bypass the accumulator entirely, so nothing is ever pending;
-      // the release must still reset the tier or the next hold in the same
-      // direction resumes mid-acceleration.
-      final liveOffsets = <int>[];
-      await pumpControls(tester, isLive: true, onLiveSeekBy: _acceptingLiveSeek(liveOffsets));
-
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      for (var i = 0; i < 6; i++) {
-        await tester.sendKeyRepeatEvent(LogicalKeyboardKey.arrowRight);
-        await tester.pump();
-      }
-      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-
-      expect(liveOffsets, [10, 15, 15, 15, 15, 15, 30], reason: 'the first hold climbs through the tiers');
-
-      liveOffsets.clear();
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      await tester.sendKeyRepeatEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-
-      expect(liveOffsets, [10, 15], reason: 'a fresh hold restarts at the slowest tier');
-      expect(chrome.controlsVisible, isFalse);
-
-      await settleFeedback(tester);
-    });
-
-    testWidgets('a live skip badge reports what the seekable window let through', (tester) async {
-      // #2425 on live TV: the parent accumulator clamps to the capture buffer,
-      // and a fast-forward at the live edge is the everyday case. The badge
-      // may only claim the seconds the accumulator says it applied.
-      final liveOffsets = <int>[];
-      var headroom = 0; // seconds between the playhead and the live edge
-      await pumpControls(
-        tester,
-        isLive: true,
-        onLiveSeekBy: (offset) {
-          liveOffsets.add(offset);
-          final applied = math.min(offset, headroom);
-          headroom -= applied;
-          return applied;
-        },
-      );
-
-      Future<void> pressRight() async {
-        await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
-        await tester.pump();
-        await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
-        await tester.pump();
-      }
-
-      await pressRight();
-      expect(liveOffsets, [10], reason: 'the request still reaches the accumulator');
-      expect(find.byType(DoubleTapFeedback), findsNothing, reason: 'nothing was applied at the edge');
-
-      headroom = 4;
-      await pressRight();
-      expect(find.text('4s'), findsOneWidget);
-
-      await pressRight();
-      expect(find.text('4s'), findsOneWidget, reason: 'pinned at the edge, the total holds');
-      expect(find.text('14s'), findsNothing);
-      expect(chrome.controlsVisible, isFalse);
-
-      await settleFeedback(tester);
-    });
-
     testWidgets('a directed pause on an already-paused video neither resumes nor rewinds', (tester) async {
       player.setPlaying(false);
       await pumpControls(tester, wireTransportCallback: true);
@@ -715,7 +637,7 @@ void main() {
       );
       // Centred in the frame, clear of both subtitle bands.
       final disc = tester.getRect(find.byType(TransportFeedbackIndicator));
-      final surface = tester.getRect(find.byType(PlexVideoControls));
+      final surface = tester.getRect(find.byType(SiloVideoControls));
       expect(disc.center.dx, moreOrLessEquals(surface.center.dx, epsilon: 1));
       expect(disc.center.dy, moreOrLessEquals(surface.center.dy, epsilon: 1));
       // Still announced, so assistive tech and the E2E tree keep reading it.
@@ -820,7 +742,7 @@ void main() {
         reason: 'chevron and amount share one line',
       );
 
-      final surface = tester.getRect(find.byType(PlexVideoControls));
+      final surface = tester.getRect(find.byType(SiloVideoControls));
       expect(arrow.right, lessThan(surface.right), reason: 'inside the overscan-safe inset');
       expect(label.left, greaterThan(surface.center.dx), reason: 'anchored to the right half, not centred');
       expect(label.center.dy, moreOrLessEquals(surface.center.dy, epsilon: 2));
@@ -995,9 +917,6 @@ void main() {
     Future<void> pumpDesktopControls(
       WidgetTester tester, {
       _RecordingPlayer? withPlayer,
-      bool isLive = false,
-      LiveSeekBy? onLiveSeekBy,
-      ValueChanged<int>? onLiveSeek,
       VoidCallback? onNext,
       bool canNavigateMediaItems = false,
     }) async {
@@ -1015,16 +934,13 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: PlexVideoControls(
+                child: SiloVideoControls(
                   player: active,
                   volumeController: volume,
                   metadata: testMediaItem(id: 'desktop-keyboard-seek'),
                   toastController: toast,
                   chromeController: chrome,
                   canNavigateMediaItems: canNavigateMediaItems,
-                  isLive: isLive,
-                  onLiveSeekBy: onLiveSeekBy,
-                  onLiveSeek: onLiveSeek,
                   onNext: onNext,
                 ),
               ),
@@ -1186,63 +1102,6 @@ void main() {
 
       await settleFeedback(tester);
     });
-
-    testWidgets('an absolute live seek takes down the badge a live skip raised', (tester) async {
-      // Live relative skips go to the parent epoch accumulator, not _hiddenSeek
-      // (#1253), so no playhead jump can retire this badge. The absolute seek
-      // cancels the queued skip, so its promised total is going nowhere.
-      final liveOffsets = <int>[];
-      final absoluteSeeks = <int>[];
-      await pumpDesktopControls(
-        tester,
-        isLive: true,
-        onLiveSeekBy: _acceptingLiveSeek(liveOffsets),
-        onLiveSeek: absoluteSeeks.add,
-      );
-
-      await pressKey(tester, LogicalKeyboardKey.arrowRight);
-      expect(liveOffsets, [10]);
-      expect(find.text('10s'), findsOneWidget);
-
-      chrome.show();
-      await tester.pump();
-      final live = tester.widget<DesktopVideoControls>(find.byType(DesktopVideoControls));
-      live.onLiveSeek!(120);
-      await tester.pump();
-
-      expect(absoluteSeeks, [120], reason: 'the wrapper still delegates to the screen');
-      expect(find.byType(DoubleTapFeedback), findsNothing, reason: 'the skip it promised was cancelled with it');
-
-      await settleFeedback(tester);
-    });
-
-    testWidgets('switching what is playing takes the badge with the old timeline', (tester) async {
-      // A live channel switch cancels the queued live offset, and an item
-      // change re-keys the whole timeline. Neither runs through _hiddenSeek, so
-      // nothing else would retire a readout that now describes nothing.
-      final liveOffsets = <int>[];
-      var nextPresses = 0;
-      await pumpDesktopControls(
-        tester,
-        isLive: true,
-        onLiveSeekBy: _acceptingLiveSeek(liveOffsets),
-        onNext: () => nextPresses++,
-      );
-
-      await pressKey(tester, LogicalKeyboardKey.arrowRight);
-      expect(liveOffsets, [10]);
-      expect(find.text('10s'), findsOneWidget);
-
-      chrome.show();
-      await tester.pump();
-      tester.widget<DesktopVideoControls>(find.byType(DesktopVideoControls)).onNext!();
-      await tester.pump();
-
-      expect(nextPresses, 1, reason: 'the wrapper still delegates to the screen');
-      expect(find.byType(DoubleTapFeedback), findsNothing);
-
-      await settleFeedback(tester);
-    });
   });
 
   group('formatSkipFeedbackLabel', () {
@@ -1275,13 +1134,6 @@ Future<void> _holdMediaKey(WidgetTester tester, LogicalKeyboardKey key) async {
   expect(await tester.sendKeyUpEvent(key), isTrue, reason: '$key up');
   await tester.pump();
 }
-
-/// A live accumulator with unbounded headroom: records every requested offset
-/// and reports it applied in full.
-LiveSeekBy _acceptingLiveSeek(List<int> offsets) => (offset) {
-  offsets.add(offset);
-  return offset;
-};
 
 /// Minimal [Player] that records transport calls and keeps a settable
 /// playing/position state so intent-dependent behaviour can be asserted.

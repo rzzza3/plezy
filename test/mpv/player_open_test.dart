@@ -988,9 +988,9 @@ void main() {
           final player = PlayerNative();
           try {
             final headers = <String, String>{
-              'X-Plex-Token': 'secret',
-              'X-Plex-Device': 'Mac17,9',
-              'X-Plex-Platform': 'macOS',
+              'X-Token': 'secret',
+              'X-Device': 'Mac17,9',
+              'X-Platform': 'macOS',
               'User-Agent': 'Plezy',
             };
             await player.open(Media('https://example.test/movie.mkv', headers: headers));
@@ -1042,7 +1042,7 @@ void main() {
         testBody: () async {
           final player = PlayerNative();
           try {
-            const subtitleUri = 'https://example.test/movie.mkv?X-Plex-Token=secret';
+            const subtitleUri = 'https://example.test/movie.mkv?access_token=secret';
             await player.open(
               Media('https://example.test/transcode.m3u8'),
               externalSubtitles: const [
@@ -1082,7 +1082,7 @@ void main() {
               {
                 'type': 'sub',
                 'id': '1',
-                'title': 'movie.mkv?X-Plex-Token=secret',
+                'title': 'movie.mkv?access_token=secret',
                 'default': false,
                 'forced': false,
                 'external': true,
@@ -1091,7 +1091,7 @@ void main() {
               {
                 'type': 'sub',
                 'id': '2',
-                'title': 'movie.mkv?X-Plex-Token=secret',
+                'title': 'movie.mkv?access_token=secret',
                 'default': false,
                 'forced': false,
                 'external': true,

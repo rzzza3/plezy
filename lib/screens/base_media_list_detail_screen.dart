@@ -95,9 +95,8 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   /// Internal helper to play items with optional shuffle.
   ///
   /// Dispatches to the right launcher implementation based on the item's
-  /// backend — Plex uses server-side `/playQueues`, Jellyfin builds an
-  /// in-memory queue client-side. Both show the loading indicator while
-  /// their round trips are in flight.
+  /// backend; queues are built client-side. The loading indicator
+  /// shows while the round trips are in flight.
   Future<void> _playWithShuffle(bool shuffle) async {
     if (items.isEmpty) {
       if (mounted) {
@@ -123,10 +122,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   /// of the playlist it sits in. Carry the playlist entry id across so the
   /// next remove or move still addresses this entry.
   static MediaItem _keepPlaylistEntry(MediaItem previous, MediaItem updated) => switch ((previous, updated)) {
-    (PlexMediaItem(:final playlistItemId?), final PlexMediaItem refreshed) when refreshed.playlistItemId == null =>
-      refreshed.copyWith(playlistItemId: playlistItemId),
-    (JellyfinMediaItem(:final playlistItemId?), final JellyfinMediaItem refreshed)
-        when refreshed.playlistItemId == null =>
+    (SiloMediaItem(:final playlistItemId?), final SiloMediaItem refreshed) when refreshed.playlistItemId == null =>
       refreshed.copyWith(playlistItemId: playlistItemId),
     _ => updated,
   };
@@ -176,7 +172,7 @@ mixin StandardItemLoader<T extends StatefulWidget> on BaseMediaListDetailScreen<
     }
 
     try {
-      // Items are automatically tagged with server info by PlexClient
+      // Items are automatically tagged with server info by the client
       final newItems = await fetchItems();
 
       if (mounted) {

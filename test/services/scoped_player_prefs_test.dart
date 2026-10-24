@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/player_setting_scope.dart';
@@ -91,8 +90,8 @@ void main() {
     });
 
     test('an item without a library falls back to the global pref', () async {
-      // Jellyfin/Emby downloads never get a library stamped.
-      final offline = testMediaItem(backend: MediaBackend.jellyfin, id: 'ep-1', serverId: 'server-a');
+      // A download that never got a library stamped.
+      final offline = testMediaItem(id: 'ep-1', serverId: 'server-a');
       await ScopedPlayerPrefs.write(ScopedPlayerPrefs.shaderPreset, offline, 'nvscaler');
 
       expect(settings.read(SettingsService.globalShaderPreset), 'nvscaler');

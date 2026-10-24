@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/app_logger.dart';
 import 'base_shared_preferences_service.dart';
@@ -132,6 +133,9 @@ class CredentialVault {
   static String? _tokenKeyForKind(String kind) => switch (kind) {
     'plex' => 'accountToken',
     'jellyfin' || 'emby' => 'accessToken',
+    // A Silo config holds no credential: its tokens live in the
+    // vault-protected session slot (`VaultSiloSessionStore`).
+    'silo' => null,
     _ => null,
   };
 
@@ -178,36 +182,41 @@ class CredentialVault {
       // The cached snapshot can predate a key written by another isolate
       // (background downloader, first-run migration); generating "fresh" over
       // it would clobber the real key and orphan every stored ciphertext.
-      // Reload before deciding, and after writing re-read and adopt whatever
-      // actually landed so all isolates converge on a single key.
-      try {
-        await prefs.reloadCache();
-      } catch (e) {
-        appLogger.d('CredentialVault: prefs reload before key check failed', error: e);
-      }
-      // Tolerant read: a wrong-typed key must surface as a repairable
-      // failure, not be mistaken for 'no key yet' and silently replaced —
-      // that would orphan every ciphertext in the database (#1732).
-      final stored = readTolerantString(prefs, _keyPref);
+      // Read the store before deciding, and after writing re-read and adopt
+      // whatever actually landed so all isolates converge on a single key.
+      final stored = await _readDurableKey(prefs);
       if (stored != null && stored.isNotEmpty) {
         return SecretKey(base64Decode(stored));
       }
       final bytes = List<int>.generate(32, (_) => Random.secure().nextInt(256));
       await prefs.setString(_keyPref, base64Encode(bytes));
-      try {
-        await prefs.reloadCache();
-      } catch (e) {
-        appLogger.d('CredentialVault: prefs re-read after key write failed', error: e);
-      }
-      // Outside the catch: if another isolate raced us and left a wrong-typed
-      // value, swallowing it here would return a key that never durably
-      // landed, and every ciphertext written under it would be unreadable on
-      // the next launch. Surface it for repair instead (#1732).
-      final settled = readTolerantString(prefs, _keyPref);
+      // If another isolate raced us and left a wrong-typed value, this
+      // throws rather than return a key that never durably landed, so every
+      // ciphertext written under it stays readable on the next launch (#1732).
+      final settled = await _readDurableKey(prefs);
       if (settled != null && settled.isNotEmpty) {
         return SecretKey(base64Decode(settled));
       }
       return SecretKey(bytes);
     }();
+  }
+
+  /// Reads the key from the preference store itself, not the app-wide cache.
+  /// `reloadCache` would also pick up another isolate's key, but it empties
+  /// the shared cache until the store answers, and every preference read in
+  /// that window comes back null. The first reveal of a session then dropped
+  /// the active profile id while a profile switch was binding.
+  static Future<String?> _readDurableKey(SharedPreferencesWithCache prefs) async {
+    final Object? durable;
+    try {
+      durable = (await SharedPreferencesAsync().getAll(allowList: {_keyPref}))[_keyPref];
+    } catch (e) {
+      appLogger.d('CredentialVault: durable key read failed', error: e);
+      return readTolerantString(prefs, _keyPref);
+    }
+    // Tolerant read: a wrong-typed key must surface as a repairable failure,
+    // not be mistaken for 'no key yet' and silently replaced — that would
+    // orphan every ciphertext in the database (#1732).
+    return readPreferenceTolerantly(prefs, _keyPref, () => durable as String?);
   }
 }

@@ -5,79 +5,32 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
-import '../../media/media_browser_dialect.dart';
 import '../../theme/mono_tokens.dart';
-import '../../profiles/profile.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
-import '../profile/borrow_connection_screen.dart';
-import 'add_jellyfin_screen.dart';
-import 'add_plex_account_screen.dart';
+import '../auth/silo_server_screen.dart';
 
-/// Picker shown when the user taps "Add connection".
-///
-/// When [targetProfile] is provided, also offers a "Borrow from another
-/// profile" option that opens [BorrowConnectionScreen] for the target. The
-/// global Connections screen invokes this without a target — Plex auto-
-/// surfaces its Home users as new profiles, while MediaBrowser servers bind
-/// to the active profile via [AddJellyfinScreen].
+/// Picker shown when the user taps "Add connection". Silo is the only
+/// backend it offers.
 ///
 /// Pops with `true` after the underlying flow succeeds so the parent list
 /// refreshes; pops with `null` (the default) when the user backs out.
 class AddConnectionScreen extends StatelessWidget {
-  final Profile? targetProfile;
-
-  const AddConnectionScreen({super.key, this.targetProfile});
+  const AddConnectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final scoped = targetProfile != null;
-    const jellyfinDialect = MediaBrowserDialect.jellyfin;
-    const embyDialect = MediaBrowserDialect.emby;
     final options = <_BackendOption>[
       _BackendOption(
-        backend: MediaBackend.plex,
-        title: t.addServer.signInWithPlexCard,
-        subtitle: scoped ? t.addServer.signInWithPlexCardSubtitleScoped : t.addServer.signInWithPlexCardSubtitle,
-        builder: (_) => AddPlexAccountScreen(targetProfile: targetProfile),
+        backend: MediaBackend.silo,
+        title: t.silo.connectCard,
+        subtitle: t.silo.connectCardSubtitle,
+        builder: (_) => const SiloServerScreen(),
       ),
-      _BackendOption(
-        backend: MediaBackend.jellyfin,
-        title: t.addServer.connectToMediaBrowserCard(product: jellyfinDialect.productName),
-        subtitle: scoped
-            ? t.addServer.connectToMediaBrowserCardSubtitleScoped(
-                product: jellyfinDialect.productName,
-                name: targetProfile!.displayName,
-              )
-            : t.addServer.connectToMediaBrowserCardSubtitle,
-        builder: (_) => AddJellyfinScreen(targetProfile: targetProfile, dialect: jellyfinDialect),
-      ),
-      _BackendOption(
-        backend: MediaBackend.emby,
-        title: t.addServer.connectToMediaBrowserCard(product: embyDialect.productName),
-        subtitle: scoped
-            ? t.addServer.connectToMediaBrowserCardSubtitleScoped(
-                product: embyDialect.productName,
-                name: targetProfile!.displayName,
-              )
-            : t.addServer.connectToMediaBrowserCardSubtitle,
-        builder: (_) => AddJellyfinScreen(targetProfile: targetProfile, dialect: embyDialect),
-      ),
-      if (scoped)
-        _BackendOption(
-          backend: null,
-          title: t.addServer.borrowFromAnotherProfile,
-          subtitle: t.addServer.borrowFromAnotherProfileSubtitle,
-          builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile!),
-        ),
     ];
     final tokensRef = tokens(context);
     return FocusedScrollScaffold(
-      title: Text(
-        scoped
-            ? t.addServer.addConnectionTitleScoped(name: targetProfile!.displayName)
-            : t.addServer.addConnectionTitle,
-      ),
+      title: Text(t.addServer.addConnectionTitle),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.all(16),
@@ -87,9 +40,7 @@ class AddConnectionScreen extends StatelessWidget {
                 if (i > 0) SizedBox(height: tokensRef.groupGap),
                 _BackendCard(
                   borderRadius: groupItemRadii(context, i, options.length),
-                  leading: options[i].backend != null
-                      ? BackendBadge(backend: options[i].backend!, size: 28)
-                      : const AppIcon(Symbols.share_rounded, fill: 1, size: 28),
+                  leading: BackendBadge(backend: options[i].backend, size: 28),
                   title: options[i].title,
                   subtitle: options[i].subtitle,
                   onTap: () async {
@@ -109,8 +60,7 @@ class AddConnectionScreen extends StatelessWidget {
 }
 
 class _BackendOption {
-  /// Null for the borrow option (renders a share icon instead of a badge).
-  final MediaBackend? backend;
+  final MediaBackend backend;
   final String title;
   final String subtitle;
   final WidgetBuilder builder;

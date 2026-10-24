@@ -8,7 +8,7 @@ import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import 'filter_operator_row.dart';
 
-/// Free-text page for a field with no enumerable values: Plex's `title`,
+/// Free-text page for a field with no enumerable values: `title`,
 /// `studio`, and the file-path field.
 ///
 /// The match mode is a radio list rather than a segmented control: four

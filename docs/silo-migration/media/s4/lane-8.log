@@ -1,0 +1,21 @@
+action watched movie-tmdb-1381078 204 done_ms=1791996510721
+same process 12975 before and after; resumed at device 1791960710.049
+         1791960697.933 12975 12975 I flutter : [I]  Silo events: idle
+         1791960697.934 12975 12975 I flutter : [I]  Silo events: closed
+         1791960710.521 12975 12975 I flutter : [I]  Silo events: fetchingTicket
+         1791960711.277 12975 12975 I flutter : [I]  Silo events: connecting
+         1791960712.026 12975 12975 I flutter : [I]  Silo: home sections 17
+         1791960712.031 12975 12975 I flutter : [I]  Silo events: subscribed
+         1791960712.031 12975 12975 I flutter : [I]  Silo events: 2 channels, 0 rejected
+         1791960712.069 12975 12975 I flutter : [I]  Home: rows repainted
+         1791960712.278 12975 12975 I flutter : [I]  Silo events: subscribed
+         1791960712.278 12975 12975 I flutter : [I]  Silo events: 2 channels, 0 rejected
+         1791960714.279 12975 12975 I flutter : [I]  Silo events: home refetch
+         1791960714.826 12975 12975 I flutter : [I]  Silo: home sections 17
+         1791960714.875 12975 12975 I flutter : [I]  Home: rows repainted
+         1791960732.801 12975 12975 I flutter : [I]  Silo events: catalog event
+         1791960732.801 12975 12975 I flutter : [I]  Silo events: catalog event
+         1791960732.802 12975 12975 I flutter : [I]  Silo events: catalog event
+         1791960734.803 12975 12975 I flutter : [I]  Silo events: home refetch
+         1791960736.454 12975 12975 I flutter : [I]  Silo: home sections 17
+         1791960736.496 12975 12975 I flutter : [I]  Home: rows repainted

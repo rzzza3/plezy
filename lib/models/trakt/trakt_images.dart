@@ -6,7 +6,7 @@ part 'trakt_images.g.dart';
 ///
 /// URLs are protocol-less (`walter-r2.trakt.tv/...`) and must be prefixed
 /// with `https://`. Trakt requires clients to cache these images; loading
-/// them through [PlexImageCacheManager]'s disk cache satisfies that.
+/// them through [ArtworkCacheManager]'s disk cache satisfies that.
 @JsonSerializable(createToJson: false)
 class TraktImages {
   final List<String>? poster;

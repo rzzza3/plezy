@@ -12,9 +12,8 @@ import 'package:plezy/models/download_models.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/media_items.dart';
@@ -33,7 +32,7 @@ class _CollectionsClient implements MediaServerClient {
   ServerId get serverId => ServerId('srv');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<List<CollectionMembership>> fetchCollectionMemberships(Set<String> itemIds, {AbortController? abort}) async {
@@ -84,8 +83,7 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(db);
-    JellyfinApiCache.initialize(db);
+    SiloApiCache.initialize(db);
     downloadManager = DownloadManagerService(
       database: db,
       storageService: DownloadStorageService.instance,
@@ -115,7 +113,7 @@ void main() {
     final grouped = provider.groupDownloadsByCollection(provider.downloadedMovies);
     expect([for (final item in grouped) item.id]..sort(), ['dune', 'other']);
     expect([for (final item in provider.downloadedCollectionItems('srv:dune')) item.id], ['dune-1', 'dune-2']);
-    final stored = await db.getDownloadCollections('test-profile');
+    final stored = await db.getDownloadCollections('silo:srv/test-profile');
     expect(stored.single.collectionId, 'dune');
     expect(stored.single.memberIds, ['dune-1', 'dune-2']);
   });
@@ -142,7 +140,7 @@ void main() {
     await sync();
 
     expect([for (final item in provider.downloadedCollectionItems('srv:dune')) item.id], ['dune-1', 'dune-2']);
-    expect((await db.getDownloadCollections('test-profile')).single.memberIds, ['dune-1', 'dune-2']);
+    expect((await db.getDownloadCollections('silo:srv/test-profile')).single.memberIds, ['dune-1', 'dune-2']);
     // The failed pass recorded nothing, so the next connect looks up again.
     client.failure = null;
     await sync();

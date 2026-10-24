@@ -1,10 +1,7 @@
 import 'media_item.dart';
 
-/// Client-only play queue used by Jellyfin and any backend without a
-/// server-side queue concept.
-///
-/// Plex server-side queues (`/playQueues`) flow through the Plex
-/// `PlayQueueResponse` model instead and never materialize as this type.
+/// Client-only play queue. Every queue is built client-side; there is no
+/// server queue model.
 class LocalPlayQueue {
   final List<MediaItem> items;
   final int? currentIndex;

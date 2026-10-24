@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:http/http.dart';
 
-/// Sealed base for backend-agnostic media-server exceptions. Both Plex and
-/// Jellyfin auth/HTTP layers throw subtypes from this hierarchy so consumers
-/// can catch with one filter and match exhaustively when they care which
-/// failure mode it is.
+/// Sealed base for backend-agnostic media-server exceptions. Every backend's
+/// auth/HTTP layers throw subtypes from this hierarchy so consumers can catch
+/// with one filter and match exhaustively when they care which failure mode
+/// it is.
 ///
 /// [message] is English for stable logs and Sentry grouping. [display] is the
 /// localized user-facing text when this failure is rendered in the UI.
@@ -21,7 +21,7 @@ sealed class MediaServerException implements Exception {
 
 /// The supplied base URL is unreachable, returns the wrong shape, or doesn't
 /// look like the expected backend at all. Surfaces in onboarding probes
-/// (Jellyfin `/System/Info/Public`, Plex resource discovery).
+/// (server discovery).
 class MediaServerUrlException extends MediaServerException {
   const MediaServerUrlException(super.message, {super.display});
 }
@@ -43,7 +43,7 @@ class MediaServerPinExpiredException extends MediaServerAuthException {
 
 /// HTTP transport / non-2xx errors. Carries the status code (when known),
 /// the parsed response body, and the originating URI so callers can log
-/// useful diagnostics. Both Plex and Jellyfin route their HTTP failures
+/// useful diagnostics. Silo routes its HTTP failures
 /// through this type — it's the canonical backend-agnostic transport
 /// exception.
 enum MediaServerHttpErrorType { connectionTimeout, receiveTimeout, connectionError, cancelled, unknown }
@@ -121,11 +121,11 @@ class MediaServerHttpException extends MediaServerException {
 
 /// The backend already has a recording scheduled for the requested airing.
 ///
-/// Plex signals duplicates with a bare 409, which UI maps by status code.
-/// Jellyfin/Emby answer `POST /LiveTv/Timers` duplicates with a 400 that is
-/// indistinguishable from a malformed request by status alone — only the DVR
-/// adapter knows that call site's semantics, so it rethrows this type and UI
-/// maps it to the "already scheduled" outcome without a backend check.
+/// A server signals duplicates with a bare 409, which UI maps by status code.
+/// When a duplicate is indistinguishable from a malformed request by status
+/// alone, only the DVR adapter knows that call site's semantics, so it
+/// rethrows this type and UI maps it to the "already scheduled" outcome
+/// without a backend check.
 class RecordingConflictException extends MediaServerException {
   const RecordingConflictException(super.message, {super.display});
 }
@@ -133,8 +133,8 @@ class RecordingConflictException extends MediaServerException {
 /// The server explicitly terminated the client's playback session (admin
 /// "stop stream", paused-too-long auto-termination, concurrent-stream limit).
 ///
-/// Plex signals this with `terminationCode`/`terminationText` on the
-/// MediaContainer of a timeline report response. The MediaBrowser backends
+/// A server signals this with `terminationCode`/`terminationText` on the
+/// MediaContainer of a timeline report response. Other backends
 /// deliver admin stops as a WebSocket remote-control command Plezy does not
 /// subscribe to, so they never throw this — intentionally unsupported there.
 ///
@@ -142,7 +142,7 @@ class RecordingConflictException extends MediaServerException {
 /// loop re-registers the session server-side as a zombie row the admin can no
 /// longer clear (#1916).
 class PlaybackSessionTerminatedException extends MediaServerException {
-  /// Server-defined termination code (e.g. Plex 2006 for an admin stop).
+  /// Server-defined termination code (e.g. 2006 for an admin stop).
   final int code;
 
   /// Human-readable server-supplied reason; may carry an admin message.

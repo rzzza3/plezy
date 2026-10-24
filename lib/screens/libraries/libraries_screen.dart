@@ -39,7 +39,8 @@ enum LibraryTabType { recommended, browse, collections, playlists }
 
 List<LibraryTabType> visibleLibraryTabs(MediaLibrary library) {
   if (library.isShared) return [LibraryTabType.browse, LibraryTabType.playlists];
-  return LibraryTabType.values;
+  // SiloClient reads no collections or playlists yet.
+  return [LibraryTabType.recommended, LibraryTabType.browse];
 }
 
 class LibrariesScreen extends StatefulWidget {

@@ -4,13 +4,11 @@ import '../../../media/ids.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
 import '../../../media/library_first_character.dart';
 import '../../../media/library_query.dart';
 import '../../../media/media_item.dart';
 import '../../../media/media_kind.dart';
 import '../../../media/media_library.dart';
-import '../../../providers/multi_server_provider.dart';
 import '../../../utils/media_server_http_client.dart';
 import '../../../focus/dpad_navigator.dart';
 import '../../../focus/input_mode_tracker.dart';
@@ -18,7 +16,6 @@ import '../../../media/media_filter.dart';
 import '../../../media/media_sort.dart';
 import '../../../widgets/settings_builder.dart';
 import '../../../services/library_query_translator.dart';
-import '../../../services/plex_constants.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/grid_size_calculator.dart';
@@ -202,13 +199,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   int get itemCount => totalSize;
 
-  /// Live in-place repopulation while a scroll/jump is running would fight
-  /// the user; the blocked-retry timer picks it up once the grid is idle.
+  /// Live in-place repopulation while a scroll is running would fight the
+  /// user; the blocked-retry timer picks it up once the grid is idle.
   @override
-  bool get isLiveRefreshBlocked => _isJumpScrolling || (_innerPosition?.isScrollingNotifier.value ?? false);
+  bool get isLiveRefreshBlocked => _innerPosition?.isScrollingNotifier.value ?? false;
 
   /// Server push while this grid is visible: refetch the loaded span in
-  /// place (Plex Web's `repopulateRange`) so new items materialize at their
+  /// place (a web client's `repopulateRange`) so new items materialize at their
   /// sorted positions and metadata updates land, then keep the first visible
   /// item stationary by compensating the scroll offset for any index shift
   /// the merge caused, and carry the D-pad highlight to wherever the focused
@@ -288,16 +285,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   // Alpha jump bar state
   List<LibraryFirstCharacter> _firstCharacters = [];
   AlphaJumpHelper _alphaHelper = AlphaJumpHelper(const []);
-  late LibraryAlphaBarStrategy _alphaStrategy = _createAlphaStrategy();
+  static const _alphaStrategy = LibraryAlphaBarStrategy();
 
-  /// On MediaBrowser libraries the alpha bar acts as a filter. Holds the
-  /// active letter (`#`, `A`–`Z`) or null when no filter is applied.
-  String? _mediaBrowserAlphaPrefix;
+  /// The alpha bar acts as a filter. Holds the active letter (`#`, `A`–`Z`)
+  /// or null when no filter is applied.
+  String? _alphaPrefix;
 
-  /// Pre-fetched filter values for MediaBrowser libraries — populated by
-  /// `_loadContent` and consumed by the FiltersBottomSheet so the sheet
-  /// doesn't need to call back into a Plex client for value listings.
-  Map<String, List<MediaFilterValue>> _mediaBrowserFilterValues = const {};
+  /// Pre-fetched filter values — populated by `_loadContent` and consumed by
+  /// the FiltersBottomSheet so the sheet doesn't refetch value listings.
+  Map<String, List<MediaFilterValue>> _filterValues = const {};
   final ValueNotifier<int> _currentFirstVisibleIndex = ValueNotifier<int>(0);
   LibraryAlphaScrollMetrics _scrollMetrics = LibraryAlphaScrollMetrics.empty;
 
@@ -315,14 +311,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   bool? _listMetricsUsesWideRatio;
   CardShape? _listMetricsShape;
   final FocusNode _alphaJumpBarFocusNode = FocusNode(debugLabel: 'alpha_jump_bar');
-  // When the user taps a letter, pin the highlight so scroll-based recalculation
-  // doesn't immediately override it (e.g. when the letter has fewer items than a full row).
-  bool _hasJumpPin = false;
-  // True while a jump-triggered animateTo is in progress — suppresses all
-  // scroll-based letter recalculation to prevent flashing.
-  bool _isJumpScrolling = false;
-  // Incremented on each jump so that overlapping animations don't clobber each other.
-  int _jumpScrollGeneration = 0;
 
   // Scroll activity tracking (for phone scroll handle and range-load gating)
   final ValueNotifier<bool> _isScrollActive = ValueNotifier<bool>(false);
@@ -334,38 +322,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   int _firstCharactersRequestId = 0;
   static const int _fetchSize = 200;
-  static const int _mediaBrowserFetchSize = 72;
   Timer? _scrollIdleTimer;
   bool _rangeLoadScheduled = false;
   bool _topScrollResetScheduled = false;
 
-  LibraryAlphaBarStrategy _createAlphaStrategy() {
-    final library = widget.library;
-    return LibraryAlphaBarStrategy.forBackend(
-      library.backend,
-      // Resolved on demand and only invoked by [PlexAlphaBarStrategy], which is
-      // only constructed when the library's backend is Plex — the bang is safe.
-      plexClientProvider: () {
-        final manager = context.read<MultiServerProvider>().serverManager;
-        final serverId = serverIdOrNull(library.serverId);
-        if (serverId == null) throw StateError('Plex library ${library.id} is missing a serverId');
-        return manager.getPlexClient(serverId)!;
-      },
-      libraryKey: library.id,
-      isShared: library.isShared,
-    );
-  }
-
   @override
   void didUpdateWidget(covariant LibraryBrowseTab oldWidget) {
-    // BaseLibraryTabState reloads during super.didUpdateWidget; refresh this
-    // first so first-character requests target the new backend/library.
     if (oldWidget.library.globalKey != widget.library.globalKey ||
         oldWidget.library.id != widget.library.id ||
         oldWidget.library.backend != widget.library.backend ||
         oldWidget.library.serverId != widget.library.serverId ||
         oldWidget.library.isShared != widget.library.isShared) {
-      _alphaStrategy = _createAlphaStrategy();
       cleanupGridFocusNodes(0);
       _cardMemo.clear();
     }
@@ -385,8 +352,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
   }
 
-  bool get _isMediaBrowserLibrary => widget.library.backend.usesMediaBrowserApi;
-  int get _activeFetchSize => _isMediaBrowserLibrary ? _mediaBrowserFetchSize : _fetchSize;
+  int get _activeFetchSize => _fetchSize;
 
   // Focus nodes for filter chips
   final FocusNode _groupingChipFocusNode = FocusNode(debugLabel: 'grouping_chip');
@@ -558,9 +524,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _scrollActivityTimer?.cancel();
     _scrollIdleTimer?.cancel();
     _isScrollActive.value = false;
-    _hasJumpPin = false;
-    _isJumpScrolling = false;
-    _jumpScrollGeneration++;
     _currentFirstVisibleIndex.value = 0;
     _measuredListRowHeight = null;
 
@@ -600,10 +563,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _resetTopOfPageState();
     _currentFirstVisibleIndex.value = 0;
 
-    // Plex returns categories from its published filter schema + `/sorts`;
-    // MediaBrowser clients map their filter endpoints into the same
-    // shape with values pre-cached and a hardcoded client-side sort list. Both
-    // flow through [MediaServerClient.fetchLibraryFiltersWithValues].
+    // The server returns categories and sorts;
+    // other clients map their filter endpoints into the same shape with
+    // values pre-cached. All flow through
+    // [MediaServerClient.fetchLibraryFiltersWithValues].
     try {
       final client = context.getMediaClientForLibrary(library);
       final storage = await StorageService.getInstance();
@@ -617,37 +580,29 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final restoredGrouping = _normalizeGrouping(savedGrouping);
       final sortLibraryType = _sortOptionsLibraryType(restoredGrouping);
 
-      final LoadedFiltersAndSorts loaded;
-      if (library.backend.usesMediaBrowserApi) {
-        // MediaBrowser filter discovery can be much slower than the paged
-        // `/Items` browse request on large libraries. Load only the local sort
-        // list before page 1, then fill filter values in the background.
-        final sorts = await client.fetchSortOptions(library.id, libraryType: sortLibraryType);
-        loaded = LoadedFiltersAndSorts(filters: const [], sorts: sorts);
-      } else {
-        // Plex filters+sorts must resolve before items so saved-sort restoration
-        // can match a saved key against the just-loaded sort list, and so the
-        // first item fetch already includes the restored sort param.
-        final filtersFuture = client.fetchLibraryFiltersWithValues(library.id, libraryKind: library.kind);
-        final sortsFuture = client.fetchSortOptions(library.id, libraryType: sortLibraryType);
-        // Settle both before reading either so a dual failure can't leave an
-        // unhandled error; the first error propagates as-is.
-        await Future.wait([filtersFuture, sortsFuture]);
-        final filterResult = await filtersFuture;
-        loaded = LoadedFiltersAndSorts(
-          filters: filterResult.filters,
-          sorts: await sortsFuture,
-          cachedValues: filterResult.cachedValues,
-        );
-      }
+      // Filters+sorts must resolve before items so saved-sort restoration
+      // can match a saved key against the just-loaded sort list, and so the
+      // first item fetch already includes the restored sort param.
+      final filtersFuture = client.fetchLibraryFiltersWithValues(library.id, libraryKind: library.kind);
+      final sortsFuture = client.fetchSortOptions(library.id, libraryType: sortLibraryType);
+      // Settle both before reading either so a dual failure can't leave an
+      // unhandled error; the first error propagates as-is.
+      await Future.wait([filtersFuture, sortsFuture]);
+      final filterResult = await filtersFuture;
+      final loaded = LoadedFiltersAndSorts(
+        filters: filterResult.filters,
+        sorts: await sortsFuture,
+        cachedValues: filterResult.cachedValues,
+      );
 
       if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       setState(() {
         _filters = loaded.filters;
         _sortOptions = loaded.sorts;
-        // Plex returns no cached values (filters fetched lazily per-category);
-        // assigning the empty map is a no-op for Plex and a real payload for MediaBrowser libraries.
-        _mediaBrowserFilterValues = loaded.cachedValues;
+        // A backend may return no cached values (filters fetched lazily);
+        // assigning the empty map is a no-op then and a real payload for
+        // clients that pre-cache values.
+        _filterValues = loaded.cachedValues;
         _selectedFilters = savedFilters;
         _selectedGrouping = restoredGrouping;
 
@@ -664,10 +619,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
       });
       _notifyFiltersActive();
-
-      if (library.backend.usesMediaBrowserApi) {
-        _loadMediaBrowserFiltersInBackground(generation, libraryGlobalKey, library);
-      }
 
       // Folder grouping renders the tree, not the flat page or the alpha
       // bar: the tree is the sole owner of readiness, error and epoch credit
@@ -745,30 +696,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
   }
 
-  void _loadMediaBrowserFiltersInBackground(int generation, String libraryGlobalKey, MediaLibrary library) {
-    final client = context.tryGetMediaClientForServer(serverIdOrNull(library.serverId));
-    if (client == null) return;
-    unawaited(
-      client
-          .fetchLibraryFiltersWithValues(library.id, libraryKind: library.kind)
-          .then((result) {
-            if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
-            setState(() {
-              _filters = result.filters;
-              _mediaBrowserFilterValues = result.cachedValues;
-            });
-          })
-          .catchError((Object e, StackTrace st) {
-            if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
-            appLogger.w(
-              'MediaBrowser library filters failed; browse content remains available',
-              error: e,
-              stackTrace: st,
-            );
-          }),
-    );
-  }
-
   /// Reports `_selectedFilters.isNotEmpty` to the parent post-frame, since
   /// filter state also mutates during load paths driven by initState /
   /// didUpdateWidget where a synchronous parent setState would throw.
@@ -783,7 +710,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     });
   }
 
-  /// Initial UI state both Plex and MediaBrowser paths need before fetching:
+  /// Initial UI state needed before fetching:
   /// loading flag set, lists cleared, filter/sort caches reset.
   void _resetTopOfPageState() {
     setState(() {
@@ -793,8 +720,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       resetPaginationState();
       _filters = [];
       _sortOptions = [];
-      _mediaBrowserFilterValues = const {};
-      _mediaBrowserAlphaPrefix = null;
+      _filterValues = const {};
+      _alphaPrefix = null;
       _selectedFilters = const [];
       _selectedSort = null;
       _isSortDescending = false;
@@ -807,39 +734,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _notifyFiltersActive();
   }
 
-  /// Plex metadata type the active grouping browses, or null when the
-  /// grouping does not pin one.
-  String? _browseTypeParam() {
-    if (_selectedGrouping != 'all' && _selectedGrouping != 'folders') {
-      final typeId = _getGroupingTypeId();
-      return typeId.isEmpty ? null : typeId;
-    }
-    if (_selectedGrouping == 'all' && widget.library.isShared) {
-      // Shared libraries: video content only (exclude library section entries).
-      return PlexMetadataType.videoCsv;
-    }
-    return null;
-  }
-
   /// The query the grid runs, for [clauses] rather than the committed
   /// selection so the filter editor can count a pending edit.
   LibraryQuery _buildQuery({required List<LibraryFilter> clauses, required int offset, required int limit}) {
-    final typeParam = _browseTypeParam();
-    final baseQuery = libraryQueryFromSelection(
+    return libraryQueryFromSelection(
       clauses: clauses,
-      libraryKind: typeParam != null ? null : widget.library.kind,
-      typeParam: typeParam,
+      kind: _groupingKind() ?? widget.library.kind,
       sortParam: _selectedSort?.getSortKey(descending: _isSortDescending),
-      alphaPrefix: _mediaBrowserAlphaPrefix,
+      alphaPrefix: _alphaPrefix,
       offset: offset,
       limit: limit,
     );
-    return (baseQuery.kind == null || baseQuery.kind == MediaKind.folder) &&
-            baseQuery.includeKinds.isEmpty &&
-            _selectedGrouping == browseGroupingAll &&
-            widget.library.defaultBrowseKinds.isNotEmpty
-        ? baseQuery.copyWith(includeKinds: widget.library.defaultBrowseKinds)
-        : baseQuery;
   }
 
   /// Fetch the first flat page. [epoch] is the snapshot of the full load that
@@ -937,28 +842,20 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return normalizeLibraryBrowseGrouping(widget.library, grouping, canGroupByFolders: widget.canGroupByFolders);
   }
 
-  String _getGroupingTypeId() {
-    switch (_selectedGrouping) {
-      case 'movies':
-        return '1';
-      case 'shows':
-        return '2';
-      case 'seasons':
-        return '3';
-      case 'episodes':
-        return '4';
-      case 'artists':
-        return '8';
-      case 'albums':
-        return '9';
-      case 'tracks':
-        return '10';
-      default:
-        return '';
-    }
-  }
+  /// The kind the active grouping browses, or null when the grouping does
+  /// not pin one.
+  MediaKind? _groupingKind() => switch (_selectedGrouping) {
+    'movies' => MediaKind.movie,
+    'shows' => MediaKind.show,
+    'seasons' => MediaKind.season,
+    'episodes' => MediaKind.episode,
+    'artists' => MediaKind.artist,
+    'albums' => MediaKind.album,
+    'tracks' => MediaKind.track,
+    _ => null,
+  };
 
-  /// `libraryType` for sort-option fetches. Plex music sections serve a
+  /// `libraryType` for sort-option fetches. Music libraries can serve a
   /// distinct sort list per type (`?type=9|10` for albums/tracks), so the
   /// active grouping picks the type; every other grouping shares the
   /// library's own list.
@@ -1193,9 +1090,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       libraryKey: widget.library.globalKey,
       loadFilterValues: _loadFilterValues,
       onBack: onBack,
-      // Pre-populated values arrive from MediaBrowser filter discovery. The
-      // empty map for Plex libraries falls through to lazy `getFilterValues`.
-      cachedValues: _mediaBrowserFilterValues.isEmpty ? null : _mediaBrowserFilterValues,
+      // Pre-populated values arrive from filter discovery.
+      cachedValues: _filterValues.isEmpty ? null : _filterValues,
       onFiltersChanged: onChanged,
     );
   }
@@ -1219,17 +1115,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// chip counts what the viewer set, not how many clauses that took.
   int get _activeFilterFieldCount => _selectedFilters.map((clause) => clause.field).toSet().length;
 
-  Future<List<MediaFilterValue>> _loadFilterValues(MediaFilter filter) async {
-    if (!mounted) return const [];
-
-    final client = context.tryGetPlexClientForServer(serverIdOrNull(widget.library.serverId));
-    if (client != null) return client.getFilterValues(filter.key);
-
-    // MediaBrowser canonical filter values come from the cached filter
-    // discovery payload. If that payload missed a category, there is no
-    // neutral endpoint to query, so don't route to a Plex-only API.
-    return const [];
-  }
+  /// Filter values come from the cached filter discovery payload. If that
+  /// payload missed a category, there is no endpoint to query.
+  Future<List<MediaFilterValue>> _loadFilterValues(MediaFilter filter) async => const [];
 
   /// Desktop counterpart of the filter sheet: the same editor hosted in a
   /// popup anchored to the chip. Edits stage into [pending] and commit once
@@ -1245,7 +1133,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       serverId: widget.library.serverId!,
       libraryKey: widget.library.globalKey,
       loadFilterValues: _loadFilterValues,
-      cachedValues: _mediaBrowserFilterValues,
+      cachedValues: _filterValues,
     );
     if (!mounted || listEquals(pending, _selectedFilters)) return;
     await _applyFilters(pending);
@@ -1441,8 +1329,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// The letter currently visible at the top of the grid, determined by
   /// how many items we've scrolled past relative to the API's cumulative
   /// firstCharacter counts.
-  String _alphaLetterFor(int index) =>
-      _alphaStrategy.currentLetter(index, _alphaHelper, mediaBrowserAlphaPrefix: _mediaBrowserAlphaPrefix);
+  String _alphaLetterFor(int index) => _alphaStrategy.currentLetter(index, _alphaHelper, alphaPrefix: _alphaPrefix);
 
   /// Whether the alpha jump bar should be shown.
   /// Only shown when sorting by title (titleSort) and not in folders mode.
@@ -1458,21 +1345,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     loadedCharacterCount: _firstCharacters.length,
     sortKey: _selectedSort?.key,
     isFolderGrouping: _selectedGrouping == 'folders',
-    mediaBrowserAlphaPrefix: _mediaBrowserAlphaPrefix,
+    alphaPrefix: _alphaPrefix,
     isPhone: _isPhone(context),
   );
 
   /// Fetch first characters for the current library/filter state
   Future<void> _loadFirstCharacters({int? requestId}) async {
     final currentRequestId = requestId ?? ++_firstCharactersRequestId;
-    final typeId = _getGroupingTypeId();
 
     try {
-      final result = await _alphaStrategy.loadCharacters(
-        filters: plexFilterQueryParameters(_selectedFilters),
-        typeId: typeId.isNotEmpty ? int.tryParse(typeId) : null,
-        descending: _isTitleSortDescending,
-      );
+      final result = await _alphaStrategy.loadCharacters(descending: _isTitleSortDescending);
       if (!mounted || currentRequestId != _firstCharactersRequestId) return;
       setState(() {
         _firstCharacters = result.chars;
@@ -1521,16 +1403,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     if (!_shouldShowAlphaJumpBar || !_scrollMetrics.isUsable) return;
 
-    // During a jump animation, skip alpha bar processing to avoid flashing.
-    if (_isJumpScrolling) return;
-
-    // If pinned from a completed jump, the next scroll event must be
-    // user-initiated (touch drag, mouse wheel, etc.) — clear the pin
-    // and resume normal tracking.
-    if (_hasJumpPin) {
-      _hasJumpPin = false;
-    }
-
     // Throttle alpha bar updates to ~50fps, with a trailing-edge timer
     // so the final scroll position always gets an update
     final now = DateTime.now();
@@ -1572,40 +1444,22 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   double get _contentStartScrollOffset => (_usesMobileBrowseOptions ? 0.0 : _chipsBarHeight) + _effectiveTopPadding;
 
-  /// Handle a tap on the letter at [targetIndex] in the alpha bar. The
-  /// active [LibraryAlphaBarStrategy] owns the per-backend behaviour and
-  /// invokes one of the two callbacks — Plex scrolls the grid to the
-  /// cumulative item offset, while MediaBrowser backends toggle a
-  /// `NameStartsWith` filter.
+  /// Handle a tap on the letter at [targetIndex] in the alpha bar: toggle
+  /// the name-prefix filter.
   void _jumpToIndex(int targetIndex) {
     _alphaStrategy.onLetterPressed(
       targetIndex,
       _alphaHelper,
-      currentMediaBrowserPrefix: _mediaBrowserAlphaPrefix,
-      onPlexJump: _scrollGridToIndex,
-      onMediaBrowserPrefixChange: _applyMediaBrowserAlphaPrefix,
+      currentPrefix: _alphaPrefix,
+      onPrefixChange: _applyAlphaPrefix,
     );
   }
 
-  /// Scroll the current layout so the item at [targetIndex] becomes the first visible
-  /// row. Used by [PlexAlphaBarStrategy] via [_jumpToIndex].
-  void _scrollGridToIndex(int targetIndex) {
-    _jumpScrollGeneration++;
-    _isJumpScrolling = true;
-
-    _hasJumpPin = true;
-    final clamped = targetIndex.clamp(0, totalSize > 0 ? totalSize - 1 : 0);
-    _currentFirstVisibleIndex.value = clamped;
-
-    _scrollToItemIndex(clamped);
-  }
-
-  /// Apply a MediaBrowser `NameStartsWith` prefix from the alpha bar and
-  /// refetch from the top of the now-filtered dataset. Used by
-  /// [MediaBrowserAlphaBarStrategy] via [_jumpToIndex].
-  void _applyMediaBrowserAlphaPrefix(String? nextPrefix) {
+  /// Apply a name prefix from the alpha bar and refetch from the top of the
+  /// now-filtered dataset.
+  void _applyAlphaPrefix(String? nextPrefix) {
     setState(() {
-      _mediaBrowserAlphaPrefix = nextPrefix;
+      _alphaPrefix = nextPrefix;
       // Clear loaded items + total so the grid blanks while the new filtered
       // page loads. PaginatedItemLoader internals will repopulate from
       // offset 0 once the next fetchPage call returns.
@@ -1614,41 +1468,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     });
     _scheduleTopScrollReset();
     _loadItems(preserveFocus: _alphaJumpBarFocusNode.hasFocus && nextPrefix != null);
-  }
-
-  /// Scroll the current layout so that [index] is visible just below the chrome.
-  void _scrollToItemIndex(int index) {
-    final pos = _innerPosition;
-    if (!_scrollMetrics.isUsable || pos == null) {
-      _isJumpScrolling = false;
-      return;
-    }
-
-    // Position the target row at the top of the viewport. Inline chips, when
-    // present, and grid top padding both precede items in scroll coordinates.
-    final offset = _scrollMetrics.scrollOffsetForItemIndex(index, contentStartOffset: _contentStartScrollOffset);
-
-    final gen = _jumpScrollGeneration;
-    final maxExtent = pos.maxScrollExtent;
-    if (!maxExtent.isFinite) {
-      _isJumpScrolling = false;
-      return;
-    }
-    final clampedOffset = offset.clamp(0.0, maxExtent);
-
-    // If a newer jump already superseded this one, skip the animation
-    // entirely — the next call will handle the final position.
-    if (gen != _jumpScrollGeneration) {
-      pos.jumpTo(clampedOffset);
-      return;
-    }
-
-    pos.animateTo(clampedOffset, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut).then((_) {
-      // Only clear the flag if no newer jump has started.
-      if (mounted && gen == _jumpScrollGeneration) {
-        _isJumpScrolling = false;
-      }
-    });
   }
 
   @override
@@ -1835,9 +1654,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       if (rowHeight <= 0) return _activeFetchSize;
       final visibleRows = (screenSize.height / rowHeight).ceil() + 1;
       final visibleCount = visibleRows * columnCount;
-      if (_isMediaBrowserLibrary) {
-        return (visibleCount * 2).clamp(36, _mediaBrowserFetchSize).toInt();
-      }
       return (visibleCount * 3).clamp(100, 500).toInt();
     } catch (_) {
       return _activeFetchSize;
@@ -2099,7 +1915,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         _selectedGrouping == browseGroupingArtists ||
         _selectedGrouping == browseGroupingAlbums ||
         _selectedGrouping == browseGroupingTracks;
-    // Clip libraries (MediaBrowser home videos, Plex "Other Videos") hold
+    // Clip libraries (home videos) hold
     // homogeneous 16:9 items, so the flat grid uses wide cells; poster cells
     // would letterbox every card (#2036).
     final isClipLibrary = widget.library.kind == MediaKind.clip;
@@ -2282,12 +2098,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
 /// Combined filter + sort listing loaded for a [MediaLibrary].
 ///
-/// Plex returns categories from `/library/sections/{id}/filters` and sort
+/// The server returns categories and sort
 /// options from `/library/sections/{id}/sorts` separately, with values
-/// fetched lazily per-category via `FiltersBottomSheet`. Jellyfin returns
-/// categories *and* values together via `/Items/Filters` (so [cachedValues]
-/// is populated up-front) and has no sort-listing endpoint, so its sorts
-/// come from a client-side hardcoded list.
+/// fetched lazily per-category via `FiltersBottomSheet`. Silo returns
+/// categories *and* values together via `GET /catalog/filters` (so
+/// [cachedValues] is populated up-front), and its sorts come from a
+/// client-side hardcoded list.
 class LoadedFiltersAndSorts {
   final List<MediaFilter> filters;
   final List<MediaSort> sorts;

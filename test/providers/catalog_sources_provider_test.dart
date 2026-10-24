@@ -9,7 +9,6 @@ import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/providers/trackers_provider.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
-import 'package:plezy/services/plex_discover_client.dart';
 import 'package:plezy/services/trackers/mdblist/mdblist_tracker.dart';
 import 'package:plezy/services/trackers/tracker_account_store.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
@@ -25,74 +24,6 @@ void main() {
 
   setUp(resetSharedPreferencesForTest);
 
-  test('profile hydration exposes Plex when Discover credentials are available', () async {
-    var calls = 0;
-    final provider = CatalogSourcesProvider(
-      plexSessionSupplier: () async {
-        calls++;
-        return const PlexDiscoverSession(accessToken: 'profile-token', clientIdentifier: 'client-id');
-      },
-    );
-    addTearDown(provider.dispose);
-
-    await provider.onActiveProfileChanged('profile-1');
-
-    expect(calls, 1);
-    expect(provider.connectedSources.map((source) => source.id), [CatalogSourceId.plex]);
-    expect(provider.activeSource?.displayName, 'Plex');
-    expect(provider.watchlistCapableSource?.id, CatalogSourceId.plex);
-  });
-
-  test('profile hydration omits Plex when the active profile has no Plex identity', () async {
-    final provider = CatalogSourcesProvider(plexSessionSupplier: () async => null);
-    addTearDown(provider.dispose);
-
-    await provider.onActiveProfileChanged('profile-1');
-
-    expect(provider.connectedSources, isEmpty);
-    expect(provider.hasAnySource, isFalse);
-  });
-
-  test('Plex session lookup failure does not abort profile hydration', () async {
-    final provider = CatalogSourcesProvider(plexSessionSupplier: () async => throw StateError('vault unavailable'));
-    addTearDown(provider.dispose);
-    var notifications = 0;
-    provider.addListener(() => notifications++);
-
-    await provider.onActiveProfileChanged('profile-1');
-
-    expect(provider.connectedSources, isEmpty);
-    expect(notifications, 1);
-  });
-
-  test('same-profile binding completion refreshes Plex connection state', () async {
-    PlexDiscoverSession? session;
-    var calls = 0;
-    final provider = CatalogSourcesProvider(
-      plexSessionSupplier: () async {
-        calls++;
-        return session;
-      },
-    );
-    addTearDown(provider.dispose);
-
-    await provider.onActiveProfileChanged('profile-1');
-    await provider.onProfileBindingStateChanged(false);
-    expect(calls, 1);
-    expect(provider.connectedSources, isEmpty);
-
-    await provider.onProfileBindingStateChanged(true);
-    session = const PlexDiscoverSession(accessToken: 'connected', clientIdentifier: 'client-id');
-    await provider.onProfileBindingStateChanged(false);
-    expect(calls, 2);
-    expect(provider.connectedSources.map((source) => source.id), [CatalogSourceId.plex]);
-
-    await provider.onProfileBindingStateChanged(true);
-    session = null;
-    await provider.onProfileBindingStateChanged(false);
-    expect(calls, 3);
-    expect(provider.connectedSources, isEmpty);
-  });
   test('tracker rebind exposes and removes the MDBList catalog source', () async {
     const userUuid = 'profile-mdblist';
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -110,7 +41,7 @@ void main() {
 
     final trackers = TrackersProvider();
     final seerr = SeerrAccountProvider();
-    final sources = CatalogSourcesProvider(plexSessionSupplier: () async => null);
+    final sources = CatalogSourcesProvider();
     addTearDown(() {
       sources.dispose();
       trackers.dispose();
@@ -211,24 +142,6 @@ void main() {
       );
       expect(candidates, hasLength(1));
     });
-
-    test('a source rebind invalidates cached candidates', () async {
-      PlexDiscoverSession? session = const PlexDiscoverSession(accessToken: 'a', clientIdentifier: 'client-id');
-      final provider = _FakeSourcesProvider([
-        _FakeWatchlistSource(CatalogSourceId.trakt),
-      ], plexSessionSupplier: () async => session);
-      addTearDown(provider.dispose);
-      await provider.onActiveProfileChanged('profile-1');
-
-      await provider.watchlistCandidatesFor(item, client: _ExternalIdsClient(const ExternalIds(imdb: 'tt1')));
-      expect(provider.cachedWatchlistCandidatesFor(item), isNotNull);
-
-      await provider.onProfileBindingStateChanged(true);
-      session = const PlexDiscoverSession(accessToken: 'b', clientIdentifier: 'client-id');
-      await provider.onProfileBindingStateChanged(false);
-
-      expect(provider.cachedWatchlistCandidatesFor(item), isNull);
-    });
   });
 }
 
@@ -275,9 +188,9 @@ class _FakeWatchlistSource implements CatalogSource {
 }
 
 /// Overrides the bound-client source list so the cache can be exercised with
-/// fake sources; the invalidation paths (Plex session rebinds) stay real.
+/// fake sources; the invalidation paths (session rebinds) stay real.
 class _FakeSourcesProvider extends CatalogSourcesProvider {
-  _FakeSourcesProvider(this.sources, {super.plexSessionSupplier});
+  _FakeSourcesProvider(this.sources);
 
   final List<CatalogSource> sources;
 

@@ -36,7 +36,7 @@ class _FakeMediaServerClient implements MediaServerClient {
 
 MediaItem _season(int number, {int? watched, int? total, int? childCount}) => testMediaItem(
   id: 'season-$number',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.season,
   title: 'Season $number',
   index: number,
@@ -47,7 +47,7 @@ MediaItem _season(int number, {int? watched, int? total, int? childCount}) => te
 
 MediaItem _episode({int season = 2, int number = 6, String showId = 'show-1', int? viewCount}) => testMediaItem(
   id: 'episode-$season-$number',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode $number',
   grandparentId: showId,

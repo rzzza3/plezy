@@ -12,16 +12,25 @@ import 'track_selection_service.dart';
 /// A source-catalog subtitle choice.
 ///
 /// Keeping "off" distinct from a numeric stream id prevents backend wire
-/// conventions (notably Plex's `0`) from colliding with real Jellyfin ids.
+/// conventions (such as a `0` for off) from colliding with real stream ids.
 final class PlaybackSourceSubtitleChoice {
   final bool isOff;
   final int? sourceStreamId;
+
+  /// The source row, for a track the playing source does not list yet: a
+  /// subtitle the server just stored arrives only with the reload. Not part
+  /// of equality.
+  final MediaSubtitleTrack? pendingTrack;
 
   const PlaybackSourceSubtitleChoice.off() : this._(isOff: true);
 
   const PlaybackSourceSubtitleChoice.source(int sourceStreamId) : this._(isOff: false, sourceStreamId: sourceStreamId);
 
-  const PlaybackSourceSubtitleChoice._({required this.isOff, this.sourceStreamId});
+  /// A choice of [track], which the reload's source will list.
+  PlaybackSourceSubtitleChoice.pending(MediaSubtitleTrack track)
+    : this._(isOff: false, sourceStreamId: track.id, pendingTrack: track);
+
+  const PlaybackSourceSubtitleChoice._({required this.isOff, this.sourceStreamId, this.pendingTrack});
 
   @override
   bool operator ==(Object other) =>
@@ -149,7 +158,7 @@ class PlaybackSubtitleResolver {
         }
         // Same-item raw native/uri reference: identity-match it back to this
         // item's own rows so the selection is source-backed where possible.
-        final sourceMatch = findPlexTrackForMpvSubtitle(
+        final sourceMatch = findServerTrackForMpvSubtitle(
           track,
           mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
         );
@@ -202,7 +211,7 @@ class PlaybackSubtitleResolver {
     final service = TrackSelectionService(
       profileSettings: profileSettings,
       metadata: metadata,
-      plexMediaInfo: mediaInfo,
+      serverMediaInfo: mediaInfo,
     );
     final selectedAudio = service.selectAudioTrack(audioTracksForSource(mediaInfo), preferredAudioTrack)?.track;
     final primaryPreference = _sourceBackedPreference(
@@ -306,21 +315,16 @@ class PlaybackSubtitleResolver {
   /// server's hand and a selection delivered as a file stays an ordinary
   /// native track the player can hide itself.
   ///
-  /// A live source selection is always delivered by rebuilding the stream with
-  /// the track burned in (`isLive` never has sidecars), so it counts as a
-  /// transcode here even though no transcoding session is tracked for live.
-  ///
   /// When this is true the engine exposes no subtitle track for the selection
   /// and can never confirm it, so an engine cross-check must not be applied.
   static bool burnsCurrentSelection({
     required bool isTranscoding,
-    required bool isLive,
     required PlaybackSourceSubtitleChoice? choice,
     required List<PlaybackSubtitleSidecar> sidecars,
   }) {
     final sourceStreamId = choice != null && !choice.isOff ? choice.sourceStreamId : null;
     return burnRequiresRenegotiation(
-      isTranscoding: isTranscoding || isLive,
+      isTranscoding: isTranscoding,
       currentSourceStreamId: sourceStreamId,
       currentSelectionHasSidecar:
           sourceStreamId != null && sidecars.any((sidecar) => sidecar.sourceStreamId == sourceStreamId),
@@ -360,7 +364,7 @@ class PlaybackSubtitleResolver {
 
   /// Resolve a server source row to a track already loaded by the player.
   /// Standalone sidecars match only by their stable URL key (or current source
-  /// identity), while a container sidecar uses normal Plex/native metadata
+  /// identity), while a container sidecar uses normal server/native metadata
   /// matching across the subtitle tracks extracted from that container.
   static SubtitleTrack? nativeTrackForSource({
     required MediaSubtitleTrack sourceTrack,
@@ -374,7 +378,7 @@ class PlaybackSubtitleResolver {
     if (isResolvedSidecar) {
       if (isContainerSidecar) {
         final containerTracks = nativeTracks.where((track) => track.isContainer).toList(growable: false);
-        return findMpvTrackForPlexSubtitle(sourceTrack, containerTracks, allPlexTracks: allSourceTracks);
+        return findMpvTrackForServerSubtitle(sourceTrack, containerTracks, allServerTracks: allSourceTracks);
       }
       final key = sourceTrack.key;
       if (key != null && key.isNotEmpty) {
@@ -390,7 +394,7 @@ class PlaybackSubtitleResolver {
       }
       return null;
     }
-    return findMpvTrackForPlexSubtitle(sourceTrack, nativeTracks, allPlexTracks: allSourceTracks);
+    return findMpvTrackForServerSubtitle(sourceTrack, nativeTracks, allServerTracks: allSourceTracks);
   }
 
   static PlaybackSourceSubtitleChoice advanceSourceChoice(

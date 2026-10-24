@@ -11,7 +11,7 @@ import '../test_helpers/media_items.dart';
 
 PlaybackContext _context(PlaybackInitializationResult result) {
   return PlaybackContext(
-    metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+    metadata: testMediaItem(id: 'item-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
     result: result,
     sourceKind: result.usesLocalMedia ? PlaybackSourceKind.localFile : PlaybackSourceKind.remoteDirect,
     reportingMode: PlaybackReportingMode.online,

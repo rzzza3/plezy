@@ -630,7 +630,7 @@ class DownloadedMediaItem extends DataClass
   final String? videoFilePath;
 
   /// Stored paths of the files after the first when the downloaded version is
-  /// stacked across several files (Plex `Part 2`, `Part 3`), as a JSON array in
+  /// stacked across several files (`Part 2`, `Part 3`), as a JSON array in
   /// playback order. Each entry has the same stored form as [videoFilePath]
   /// (relative path or SAF `content://` URI), or is null while that file is
   /// not stored yet. Null for single-file downloads and rows from before v24.
@@ -645,8 +645,7 @@ class DownloadedMediaItem extends DataClass
   final String? mediaSourceId;
 
   /// Owning library identity, stamped at enqueue time so downloads can be
-  /// grouped/filtered by library while offline. Plex items carry
-  /// librarySectionID/Title natively; Jellyfin resolves them via ancestors.
+  /// grouped/filtered by library while offline.
   /// Null for rows enqueued before v23 or when resolution was skipped/failed.
   final String? libraryId;
   final String? libraryTitle;
@@ -2300,8 +2299,8 @@ class $ApiCacheTable extends ApiCache
 }
 
 class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
-  /// Composite key: serverId:endpoint (e.g., "abc123:/library/metadata/12345"
-  /// for Plex, "abc123:/Users/.../Items/..." for Jellyfin)
+  /// Composite key: scope:endpoint (e.g.
+  /// "silo:abc123/p-1:/silo/items/12345")
   final String cacheKey;
   final String data;
 
@@ -5300,11 +5299,10 @@ class $ConnectionsTable extends Connections
 }
 
 class ConnectionRow extends DataClass implements Insertable<ConnectionRow> {
-  /// Stable identifier for the connection. For Plex it's a generated UUID
-  /// (one per account); for Jellyfin it's the server's machineId.
+  /// Stable identifier for the connection: `silo:<server_id>`.
   final String id;
 
-  /// Backend kind: `'plex'`, `'jellyfin'`, or `'emby'`.
+  /// Backend kind: `'silo'`. Rows of a removed backend are dropped on read.
   final String kind;
 
   /// User-visible label (account email, server name).
@@ -5793,20 +5791,15 @@ class $ProfilesTable extends Profiles
 }
 
 class ProfileRow extends DataClass implements Insertable<ProfileRow> {
-  /// Stable identifier. For Plex Home profiles: `plex-home-{accountId}-{homeUserUuid}`
-  /// (deterministic so re-discovery is idempotent). For locals: `local-{uuid}`.
+  /// Stable identifier, e.g. `local-{uuid}`.
   final String id;
 
-  /// `'local'` | `'plex_home'`.
+  /// Profile kind, e.g. `'local'`.
   final String kind;
   final String displayName;
-
-  /// Plex Home users have a thumb URL; locals fall back to initials/colour.
   final String? avatarThumbUrl;
 
-  /// Per-kind config:
-  /// - `local`: `{ "pinHash": "..." }`
-  /// - `plex_home`: `{ "restricted": bool, "admin": bool, "hasPassword": bool, "parentConnectionId": "..." }`
+  /// Per-kind config, e.g. `{ "pinHash": "..." }` for a local profile.
   final String configJson;
   final int sortOrder;
   final int createdAt;

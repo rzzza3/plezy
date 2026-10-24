@@ -1,0 +1,107 @@
+11:47:00 [I]  Silo events: user_state.changed (watched)
+11:47:02 [I]  Silo events: home refetch
+11:47:46 [I]  Silo playback: started, SiloPlayable
+11:47:46 [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=1 version=0 effective=0
+11:48:01 [I]  Silo playback: progress 1 at 5 s
+11:48:11 [I]  Silo playback: progress 2 at 2414 s
+11:48:21 [I]  Silo playback: progress 3 at 2421 s
+11:48:31 [I]  Silo playback: progress 4 at 2431 s
+11:48:41 [I]  Silo playback: progress 5 at 2441 s
+11:48:45 [I]  Silo events: backingOff
+11:48:46 [I]  Silo events: fetchingTicket
+11:48:46 [I]  Silo events: connecting
+11:48:47 [I]  Silo events: subscribed
+11:48:47 [I]  Silo events: 2 channels, 0 rejected
+11:48:47 [I]  Silo events: subscribed
+11:48:47 [I]  Silo events: 2 channels, 0 rejected
+11:48:49 [I]  Silo events: home refetch
+11:48:51 [I]  Silo playback: progress 6 at 2829 s
+11:49:01 [I]  Silo playback: progress 7 at 2839 s
+11:49:11 [I]  Silo playback: progress 8 at 2849 s
+11:49:21 [I]  Silo playback: progress 9 at 3158 s
+11:49:31 [I]  Silo playback: progress 10 at 3327 s
+11:49:41 [I]  Silo playback: progress 11 at 3337 s
+11:49:51 [I]  Silo playback: progress 12 at 3437 s
+11:50:01 [I]  Silo playback: progress 13 at 3446 s
+11:50:11 [I]  Silo playback: progress 14 at 3457 s
+11:50:21 [I]  Silo playback: progress 15 at 3466 s
+11:50:31 [I]  Silo playback: progress 16 at 3477 s
+11:50:41 [I]  Silo playback: progress 17 at 3486 s
+11:50:51 [I]  Silo playback: progress 18 at 3497 s
+11:51:01 [I]  Silo playback: progress 19 at 3507 s
+11:51:11 [I]  Silo playback: progress 20 at 3517 s
+11:51:21 [I]  Silo playback: progress 21 at 3527 s
+11:51:27 [W]  Spurious EOF at 3537200ms (playerDuration=3537408ms, metadataDuration=3600000ms, cacheEnd=3537387ms, transportFault=true, transcoding=false, source=unread), recovery attempt 1/2
+11:51:27 [I]  Silo playback: progress 22 at 3537 s
+11:51:27 [I]  Silo playback: new session (same item true, file true, quality auto to auto, audio 0 to 0)
+11:51:27 [I]  Silo playback: stopped (status 200)
+11:51:28 [I]  Silo playback: started, SiloPlayable
+11:51:28 [I]  Silo playback: plan delivery=original_http protocol=http_progressive reason=validated_original_playback subtitles=1 version=0 effective=0
+11:51:31 [I]  EOF at 3537240ms short of the duration (playerDuration=3537408ms, metadataDuration=3600000ms) with no transport fault on a 1453521522-byte mkv source: the container ends here; treating as complete
+11:51:31 [I]  Video completed: action=presentNext prompt (position=3537240ms duration=3537408ms)
+11:51:32 [I]  Silo playback: progress 1 at 3537 s
+11:51:34 [I]  Silo playback: stopped (status 200)
+11:53:47 [I]  Silo events: backingOff
+11:53:48 [I]  Silo events: fetchingTicket
+11:53:48 [I]  Silo events: connecting
+11:53:49 [I]  Silo events: subscribed
+11:53:49 [I]  Silo events: 2 channels, 0 rejected
+11:53:49 [I]  Silo events: subscribed
+11:53:49 [I]  Silo events: 2 channels, 0 rejected
+11:53:51 [I]  Silo events: home refetch
+11:55:08 [I]  Silo events: catalog event
+11:55:08 [I]  Silo events: catalog event
+11:55:08 [I]  Silo events: catalog event
+11:55:08 [I]  Silo events: catalog event
+11:55:08 [I]  Silo events: catalog event
+11:55:10 [I]  Silo events: home refetch
+11:55:41 [I]  Silo events: catalog event
+11:55:41 [I]  Silo events: catalog event
+11:55:41 [I]  Silo events: catalog event
+11:55:43 [I]  Silo events: home refetch
+11:56:16 [I]  Silo events: catalog event
+11:56:16 [I]  Silo events: catalog event
+11:56:16 [I]  Silo events: catalog event
+11:56:18 [I]  Silo events: home refetch
+11:58:21 [I]  Silo events: catalog event
+11:58:21 [I]  Silo events: catalog event
+11:58:21 [I]  Silo events: catalog event
+11:58:21 [I]  Silo events: catalog event
+11:58:21 [I]  Silo events: catalog event
+11:58:23 [I]  Silo events: home refetch
+11:58:49 [I]  Silo events: backingOff
+11:58:50 [I]  Silo events: fetchingTicket
+11:58:51 [I]  Silo events: connecting
+11:58:51 [I]  Silo events: subscribed
+11:58:51 [I]  Silo events: 2 channels, 0 rejected
+11:58:51 [I]  Silo events: subscribed
+11:58:51 [I]  Silo events: 2 channels, 0 rejected
+11:58:53 [I]  Silo events: home refetch
+12:00:08 [I]  Silo events: catalog event
+12:00:08 [I]  Silo events: catalog event
+12:00:08 [I]  Silo events: catalog event
+12:00:10 [I]  Silo events: home refetch
+12:00:43 [I]  Silo events: catalog event
+12:00:43 [I]  Silo events: catalog event
+12:00:43 [I]  Silo events: catalog event
+12:00:45 [I]  Silo events: home refetch
+12:01:19 [I]  Silo events: catalog event
+12:01:19 [I]  Silo events: catalog event
+12:01:19 [I]  Silo events: catalog event
+12:01:21 [I]  Silo events: home refetch
+12:01:39 [I]  Silo events: catalog event
+12:01:39 [I]  Silo events: catalog event
+12:01:39 [I]  Silo events: catalog event
+12:01:41 [I]  Silo events: home refetch
+12:02:15 [I]  Silo events: catalog event
+12:02:15 [I]  Silo events: catalog event
+12:02:15 [I]  Silo events: catalog event
+12:02:17 [I]  Silo events: home refetch
+12:03:51 [I]  Silo events: backingOff
+12:03:52 [I]  Silo events: fetchingTicket
+12:03:53 [I]  Silo events: connecting
+12:03:53 [I]  Silo events: subscribed
+12:03:53 [I]  Silo events: 2 channels, 0 rejected
+12:03:54 [I]  Silo events: subscribed
+12:03:54 [I]  Silo events: 2 channels, 0 rejected
+12:03:56 [I]  Silo events: home refetch

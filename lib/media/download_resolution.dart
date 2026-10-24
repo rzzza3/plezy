@@ -1,15 +1,15 @@
 /// Backend-neutral download resolution types.
 ///
 /// Returned by [MediaServerClient] download-resolution methods so the
-/// [DownloadManagerService] doesn't need to know whether it's talking to
-/// Plex or Jellyfin.
+/// [DownloadManagerService] doesn't need to know which backend it's talking
+/// to.
 library;
 
 /// Spec for a single external subtitle track that should be downloaded
 /// alongside the video file.
 ///
 /// `id` is a backend-stable integer used in the on-disk filename
-/// (Plex stream id, Jellyfin stream index).
+/// (e.g. a server stream id).
 class DownloadSubtitleSpec {
   final int id;
   final String url;
@@ -31,10 +31,9 @@ class DownloadSubtitleSpec {
 }
 
 /// Spec for a single artwork file. `localKey` is the deterministic key the
-/// storage service hashes to compute the on-disk filename — Plex passes the
+/// storage service hashes to compute the on-disk filename — the client passes the
 /// backend-relative path so cache deduplication works across items that
-/// reference the same blob; Jellyfin passes the absolute URL since artwork
-/// URLs are already unique per item after stripping auth query parameters.
+/// reference the same blob.
 class DownloadArtworkSpec {
   final String localKey;
   final String url;
@@ -42,7 +41,7 @@ class DownloadArtworkSpec {
   const DownloadArtworkSpec({required this.localKey, required this.url});
 }
 
-/// A file after the first of an item stacked across several files (Plex
+/// A file after the first of an item stacked across several files (as
 /// `Part 2`, `Part 3`), with the subtitle sidecars that belong to that file.
 class DownloadPartResolution {
   final String url;

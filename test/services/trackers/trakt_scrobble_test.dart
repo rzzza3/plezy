@@ -40,7 +40,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     : serverId = ServerId('server-1');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async {
@@ -89,7 +89,7 @@ class _TraktRecorder {
 
 MediaItem _episode({int? viewOffsetMs, int? durationMs}) => testMediaItem(
   id: 'episode-1-3',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode 3',
   serverId: ServerId('server-1'),
@@ -371,7 +371,7 @@ void main() {
       await coordinator.startPlayback(
         testMediaItem(
           id: 'episode-2-1',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.episode,
           title: 'Episode 1',
           serverId: ServerId('server-1'),

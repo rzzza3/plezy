@@ -15,7 +15,7 @@ import '../test_helpers/media_items.dart';
 
 MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCount, int? childCount}) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.season,
   title: 'Season $index',
   index: index,
@@ -37,7 +37,7 @@ MediaItem _episode(
   String? originallyAvailableAt,
 }) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode',
   mediaVersions: versions,
@@ -51,7 +51,7 @@ MediaItem _episode(
   originallyAvailableAt: originallyAvailableAt,
 );
 
-MediaItem _clip(String id) => testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.clip, title: 'Clip');
+MediaItem _clip(String id) => testMediaItem(id: id, backend: MediaBackend.silo, kind: MediaKind.clip, title: 'Clip');
 
 class _RecordingClient implements MediaServerClient {
   _RecordingClient({this.childrenByParent = const {}, this.childrenPageByParent = const {}, this.itemsById = const {}});
@@ -80,26 +80,6 @@ class _RecordingClient implements MediaServerClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _SeasonPagingRecordingClient extends _RecordingClient implements SeasonEpisodePagingClient {
-  _SeasonPagingRecordingClient({this.seasonPageBySeason = const {}});
-
-  final Map<({String seriesId, String seasonId}), List<MediaItem>> seasonPageBySeason;
-  final seasonEpisodePageCalls = <({String seriesId, String seasonId, int? start, int? size})>[];
-
-  @override
-  Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
-    String seriesId,
-    String seasonId, {
-    int? start,
-    int? size,
-    abort,
-  }) async {
-    seasonEpisodePageCalls.add((seriesId: seriesId, seasonId: seasonId, start: start, size: size));
-    final all = seasonPageBySeason[(seriesId: seriesId, seasonId: seasonId)] ?? const <MediaItem>[];
-    return fakeLibraryPage(all, start: start, size: size);
-  }
 }
 
 class _LeavesClient implements MediaServerClient {
@@ -230,7 +210,7 @@ void main() {
   test('sortEpisodesByWatchOrder interleaves Specials into aired order by air date', () {
     // Mirrors a real interleaved-Specials show (e.g. The Eminence in Shadow):
     // S00E01 aired between S01E02 and S01E05, so it plays there — not after the
-    // whole season. This is what Plex's own play queue returns (#1416).
+    // whole season. This is what server play queues return (#1416).
     final s1e1 = _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05');
     final s1e2 = _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-10-12');
     final s0e1 = _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27');
@@ -389,25 +369,10 @@ void main() {
     expect(client.childrenPageCalls, [(parentId: 'season-1', start: 0, size: 1)]);
   });
 
-  test('fetchFirstEpisodeForSeason uses season episode paging when available', () async {
-    final episode = _episode('episode-1');
-    final client = _SeasonPagingRecordingClient(
-      seasonPageBySeason: {
-        (seriesId: 'show-1', seasonId: 'season-1'): [episode, _episode('episode-2')],
-      },
-    );
-
-    final result = await fetchFirstEpisodeForSeason(client, 'season-1', seriesId: 'show-1');
-
-    expect(result, same(episode));
-    expect(client.childrenPageCalls, isEmpty);
-    expect(client.seasonEpisodePageCalls, [(seriesId: 'show-1', seasonId: 'season-1', start: 0, size: 1)]);
-  });
-
   test('fetchSeasonEpisodePage normalizes show and season identity', () async {
     final show = testMediaItem(
       id: 'show-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'Show',
       serverId: 'server-1',
@@ -437,25 +402,8 @@ void main() {
     expect(page.items.single.libraryId, show.libraryId);
   });
 
-  test('fetchSeasonEpisodePage uses season episode paging when available', () async {
-    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
-    final season = _season('season-1');
-    final row = _episode('episode-1');
-    final client = _SeasonPagingRecordingClient(
-      seasonPageBySeason: {
-        (seriesId: show.id, seasonId: season.id): [row],
-      },
-    );
-
-    final page = await fetchSeasonEpisodePage(client, show: show, season: season, start: 0, size: 10);
-
-    expect(client.childrenPageCalls, isEmpty);
-    expect(client.seasonEpisodePageCalls, [(seriesId: show.id, seasonId: season.id, start: 0, size: 10)]);
-    expect(page.items.single.id, row.id);
-  });
-
   test('normalizeSeasonEpisodes ignores non-episode rows', () {
-    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.silo, kind: MediaKind.show, title: 'Show');
     final season = _season('season-1');
 
     final normalized = normalizeSeasonEpisodes([_clip('extra-1'), _episode('episode-1')], show: show, season: season);
@@ -483,7 +431,7 @@ void main() {
 
   test('fetchRepresentativeVersions keeps full season lookup but pages selected season episodes', () async {
     final versions = [const MediaVersion(id: '1080', videoResolution: '1080')];
-    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.silo, kind: MediaKind.show, title: 'Show');
     final special = _season('specials', index: 0);
     final firstRegularSeason = _season('season-1');
     final episodeRow = _episode('episode-1');
@@ -506,7 +454,7 @@ void main() {
   });
 
   group('same-file adjacency (#1500)', () {
-    // Episodes of a Plex multi-episode file (S02E24-E25.mkv) are distinct
+    // Episodes of a multi-episode file (S02E24-E25.mkv) are distinct
     // items with distinct part ids but the same Part.file: e24/e25 here.
     // e23 and e26 are their own files.
     MediaVersion version(String key, String file) => MediaVersion(

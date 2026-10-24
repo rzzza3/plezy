@@ -1,5 +1,4 @@
 import 'dart:convert';
-import '../media/ids.dart';
 import '../media/playback_rate.dart';
 import '../media/media_version_preference.dart';
 import 'dart:io';
@@ -86,17 +85,14 @@ enum EpisodeAction { play, details }
 /// How Specials (season 0) are placed in the episode watch order — the
 /// sequence auto-advance, offline next/prev, and "download next N" walk.
 enum SpecialsOrdering {
-  /// Follow the backend's own ordering: Plex builds its server-side show
-  /// queue from `/allLeaves` (aired order, Specials interleaved); Jellyfin's
-  /// `/Shows/{id}/Episodes` order is preserved as returned (Specials placed
-  /// only by explicit `AirsBefore*` metadata, per the server-wide
-  /// `DisplaySpecialsWithinSeasons` setting). Client-side selections with no
-  /// server order (offline queue, downloads, offline OnDeck) fall back to
-  /// Specials-last.
+  /// Follow the backend's own ordering: the episode order is preserved as
+  /// returned. Client-side selections
+  /// with no server order (offline queue, downloads, offline OnDeck) fall back
+  /// to Specials-last.
   respectServer,
 
   /// Interleave Specials between regular episodes by air date on every
-  /// surface (#1416), the way Plex's own play queue orders a show.
+  /// surface (#1416), the way server play queues order a show.
   airDate,
 
   /// Specials strictly after the regular seasons on every surface (#1952).
@@ -687,14 +683,6 @@ class SettingsService extends BaseSharedPreferencesService {
     values: TranscodeQualityPreset.values,
   );
 
-  /// Serve a source that already fits under the selected quality preset by
-  /// direct playing the file instead of transcoding it (#2152). Off restores
-  /// the pre-#2152 behavior — any non-original preset always transcodes — for
-  /// users who deliberately request a server encode to sidestep a decoder
-  /// limitation (#2193). Plex-only by design: MediaBrowser servers make the
-  /// equivalent direct-play-vs-transcode call server-side.
-  static const directPlayCoveredQuality = BoolPref('direct_play_covered_quality', defaultValue: true);
-
   /// Ids of the [RankedVideoCodec]s the user refused: the server transcodes
   /// them instead of sending them, and never picks them as a transcode output
   /// (#2443). Desktop-only because desktop has no hardware-decode probe; kept
@@ -753,9 +741,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const playerAlwaysOnTop = BoolPref('player_always_on_top');
 
   /// Where Specials (season 0) land in the episode watch order (#1416/#1952).
-  /// Consumed by [sortEpisodesByWatchOrder] (Jellyfin online queue, offline
-  /// next/prev, download/sync "next N", offline OnDeck, Plex fallback queue)
-  /// and by the Plex show play-queue source URI.
+  /// Consumed by [sortEpisodesByWatchOrder] (offline next/prev, download/sync
+  /// "next N", offline OnDeck, the local episode queue).
   static const specialsOrdering = EnumPref<SpecialsOrdering>(
     'specials_ordering',
     values: SpecialsOrdering.values,
@@ -777,7 +764,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: NavigationTabId.discover,
   );
 
-  /// Whether the Explore tab (Plex Discover / tracker catalog rows) is shown
+  /// Whether the Explore tab (tracker catalog rows) is shown
   /// at all. UI-only: catalog sources stay connected so watchlist surfaces
   /// keep working while the tab is hidden.
   static const showExploreTab = BoolPref('show_explore_tab', defaultValue: true);
@@ -818,7 +805,6 @@ class SettingsService extends BaseSharedPreferencesService {
     legacyFalse: AudioChannelLimit.original,
   );
   static const audioDownmixNormalize = BoolPref('audio_downmix_normalize', defaultValue: true);
-  static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');
   static const matchDynamicRange = BoolPref('match_dynamic_range');
   static const appLocale = _AppLocalePref();
@@ -986,14 +972,6 @@ class SettingsService extends BaseSharedPreferencesService {
     encode: (v) => json.encode(v.map((p) => p.toJson()).toList()),
     decode: _decodeMpvPresets,
   );
-
-  static IntPref watchedThresholdPref(ServerId serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
-
-  /// Library section the user last picked as a DVR recording target, keyed by
-  /// subscription type (movie/show) so the two don't clobber each other.
-  /// 0 = unset (only explicit picks are written; the server template default
-  /// keeps applying until the user chooses).
-  static IntPref dvrTargetSectionPref(ServerId serverId, int type) => IntPref('dvr_target_section_${type}_$serverId');
 
   /// Per-service "scrobble to this tracker" toggle. Trakt's second toggle
   /// ([enableTraktWatchedSync]) has no counterpart on the other services and
@@ -1408,7 +1386,6 @@ class SettingsService extends BaseSharedPreferencesService {
     gestureVolumeSwipe,
     gesturePinchToZoom,
     rememberBrightnessLevel,
-    directPlayCoveredQuality,
     deinterlace,
     playerAlwaysOnTop,
     specialsOrdering,
@@ -1489,7 +1466,6 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultQualityPreset,
     cellularQualityPreset,
     musicQualityPreset,
-    liveTvDefaultFavorites,
     matchRefreshRate,
     matchDynamicRange,
     displaySwitchDelay,
@@ -1590,12 +1566,7 @@ class SettingsService extends BaseSharedPreferencesService {
       }
     }
     if (pref == startupSection &&
-        ![
-          NavigationTabId.discover,
-          NavigationTabId.libraries,
-          NavigationTabId.liveTv,
-          NavigationTabId.search,
-        ].contains(value)) {
+        ![NavigationTabId.discover, NavigationTabId.libraries, NavigationTabId.search].contains(value)) {
       throw const FormatException('Unsupported startup section');
     }
     if (pref is StringListPref) {
@@ -1641,6 +1612,6 @@ class SettingsService extends BaseSharedPreferencesService {
   Future<void> clearImageCache() async {
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
-    await PlexImageCacheManager.instance.emptyCache();
+    await ArtworkCacheManager.instance.emptyCache();
   }
 }

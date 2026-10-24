@@ -2,7 +2,6 @@ import 'dart:async';
 
 import '../mpv/mpv.dart';
 
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_server_user_profile.dart';
 import '../media/media_source_info.dart';
@@ -12,31 +11,31 @@ import '../utils/language_codes.dart';
 import '../utils/subtitle_forced_semantics.dart';
 import 'subtitle_preference.dart';
 
-// These functions match MPV tracks to Plex tracks by properties (language,
+// These functions match MPV tracks to server tracks by properties (language,
 // codec, title, etc.) instead of list index, since the two may be ordered
 // differently.
 
-/// Score how well an MPV subtitle track matches a Plex subtitle track.
+/// Score how well an MPV subtitle track matches a server subtitle track.
 /// Language (+10 / +1 exact) and codec (+5) carry the most weight; title,
 /// forced flag, and identical ordinal position (only when [ordinalMatches]
 /// is true) add smaller nudges.
-int _scoreSubtitleMatch(SubtitleTrack mpvTrack, MediaSubtitleTrack plexTrack, {required bool ordinalMatches}) {
+int _scoreSubtitleMatch(SubtitleTrack mpvTrack, MediaSubtitleTrack serverTrack, {required bool ordinalMatches}) {
   int score = 0;
 
-  if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
+  if (_languagesMatch(mpvTrack.language, serverTrack.languageCode)) {
     score += 10;
-    if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
+    if (_languageCodesExactMatch(mpvTrack.language, serverTrack.languageCode)) {
       score += 1;
     }
   }
 
-  if (_subtitleCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+  if (_subtitleCodecsMatch(mpvTrack.codec, serverTrack.codec)) {
     score += 5;
   }
 
-  score += _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle);
+  score += _titleScore(mpvTrack.title, serverTrack.title, serverTrack.displayTitle);
 
-  if (mpvTrack.effectiveForced == plexTrack.effectiveForced) {
+  if (mpvTrack.effectiveForced == serverTrack.effectiveForced) {
     score += 2;
   }
 
@@ -47,29 +46,29 @@ int _scoreSubtitleMatch(SubtitleTrack mpvTrack, MediaSubtitleTrack plexTrack, {r
   return score;
 }
 
-/// Score how well an MPV audio track matches a Plex audio track.
+/// Score how well an MPV audio track matches a server audio track.
 /// Language (+10 / +1 exact) and codec (+5) dominate; channel count (+3),
 /// title match (+2), and identical ordinal position ([ordinalMatches], +1)
 /// act as tiebreakers.
-int _scoreAudioMatch(AudioTrack mpvTrack, MediaAudioTrack plexTrack, {required bool ordinalMatches}) {
+int _scoreAudioMatch(AudioTrack mpvTrack, MediaAudioTrack serverTrack, {required bool ordinalMatches}) {
   int score = 0;
 
-  if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
+  if (_languagesMatch(mpvTrack.language, serverTrack.languageCode)) {
     score += 10;
-    if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
+    if (_languageCodesExactMatch(mpvTrack.language, serverTrack.languageCode)) {
       score += 1;
     }
   }
 
-  if (_audioCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+  if (_audioCodecsMatch(mpvTrack.codec, serverTrack.codec)) {
     score += 5;
   }
 
-  if (mpvTrack.channels != null && plexTrack.channels != null && mpvTrack.channels == plexTrack.channels) {
+  if (mpvTrack.channels != null && serverTrack.channels != null && mpvTrack.channels == serverTrack.channels) {
     score += 3;
   }
 
-  if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
+  if (_titlesMatch(mpvTrack.title, serverTrack.title, serverTrack.displayTitle)) {
     score += 2;
   }
 
@@ -82,7 +81,7 @@ int _scoreAudioMatch(AudioTrack mpvTrack, MediaAudioTrack plexTrack, {required b
 
 enum _DirectEmbeddedSubtitleCatalog { incomplete, complete }
 
-bool _isDirectEmbeddedPlexSubtitle(MediaSubtitleTrack track) => !track.isExternal;
+bool _isDirectEmbeddedServerSubtitle(MediaSubtitleTrack track) => !track.isExternal;
 
 bool _isDirectEmbeddedMpvSubtitle(SubtitleTrack track) =>
     track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id && !track.isExternal && !track.isContainer;
@@ -91,12 +90,12 @@ bool _isDirectEmbeddedMpvSubtitle(SubtitleTrack track) =>
 /// subtitles and native container tracks have independent arrival semantics
 /// and cannot prove that this catalog is complete.
 _DirectEmbeddedSubtitleCatalog _classifyDirectEmbeddedSubtitleCatalog(
-  List<MediaSubtitleTrack> plexTracks,
+  List<MediaSubtitleTrack> serverTracks,
   List<SubtitleTrack> mpvTracks,
 ) {
-  var plexTrackCount = 0;
-  for (final track in plexTracks) {
-    if (_isDirectEmbeddedPlexSubtitle(track)) plexTrackCount++;
+  var serverTrackCount = 0;
+  for (final track in serverTracks) {
+    if (_isDirectEmbeddedServerSubtitle(track)) serverTrackCount++;
   }
 
   var mpvTrackCount = 0;
@@ -104,57 +103,57 @@ _DirectEmbeddedSubtitleCatalog _classifyDirectEmbeddedSubtitleCatalog(
     if (_isDirectEmbeddedMpvSubtitle(track)) mpvTrackCount++;
   }
 
-  return plexTrackCount > 0 && plexTrackCount == mpvTrackCount
+  return serverTrackCount > 0 && serverTrackCount == mpvTrackCount
       ? _DirectEmbeddedSubtitleCatalog.complete
       : _DirectEmbeddedSubtitleCatalog.incomplete;
 }
 
 bool _hasSubtitleFact(String? value) => value != null && value.trim().isNotEmpty;
 
-bool _lowMetadataSubtitleFactsAreCompatible(SubtitleTrack mpvTrack, MediaSubtitleTrack plexTrack) {
-  final plexLanguage = plexTrack.languageCode;
+bool _lowMetadataSubtitleFactsAreCompatible(SubtitleTrack mpvTrack, MediaSubtitleTrack serverTrack) {
+  final serverLanguage = serverTrack.languageCode;
   if (_hasSubtitleFact(mpvTrack.language) &&
-      _hasSubtitleFact(plexLanguage) &&
-      !_languagesMatch(mpvTrack.language, plexLanguage)) {
+      _hasSubtitleFact(serverLanguage) &&
+      !_languagesMatch(mpvTrack.language, serverLanguage)) {
     return false;
   }
 
   if (_hasSubtitleFact(mpvTrack.codec) &&
-      _hasSubtitleFact(plexTrack.codec) &&
-      !_subtitleCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+      _hasSubtitleFact(serverTrack.codec) &&
+      !_subtitleCodecsMatch(mpvTrack.codec, serverTrack.codec)) {
     return false;
   }
 
-  final plexHasTitle = _hasSubtitleFact(plexTrack.title) || _hasSubtitleFact(plexTrack.displayTitle);
+  final serverHasTitle = _hasSubtitleFact(serverTrack.title) || _hasSubtitleFact(serverTrack.displayTitle);
   if (_hasSubtitleFact(mpvTrack.title) &&
-      plexHasTitle &&
-      _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle) == 0) {
+      serverHasTitle &&
+      _titleScore(mpvTrack.title, serverTrack.title, serverTrack.displayTitle) == 0) {
     return false;
   }
 
-  return mpvTrack.effectiveForced == plexTrack.effectiveForced;
+  return mpvTrack.effectiveForced == serverTrack.effectiveForced;
 }
 
-int _scoreLowMetadataSubtitleFacts(SubtitleTrack mpvTrack, MediaSubtitleTrack plexTrack) {
+int _scoreLowMetadataSubtitleFacts(SubtitleTrack mpvTrack, MediaSubtitleTrack serverTrack) {
   var score = 0;
-  final plexLanguage = plexTrack.languageCode;
+  final serverLanguage = serverTrack.languageCode;
   if (_hasSubtitleFact(mpvTrack.language) &&
-      _hasSubtitleFact(plexLanguage) &&
-      _languagesMatch(mpvTrack.language, plexLanguage)) {
+      _hasSubtitleFact(serverLanguage) &&
+      _languagesMatch(mpvTrack.language, serverLanguage)) {
     score += 10;
-    if (_languageCodesExactMatch(mpvTrack.language, plexLanguage)) score++;
+    if (_languageCodesExactMatch(mpvTrack.language, serverLanguage)) score++;
   }
   if (_hasSubtitleFact(mpvTrack.codec) &&
-      _hasSubtitleFact(plexTrack.codec) &&
-      _subtitleCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+      _hasSubtitleFact(serverTrack.codec) &&
+      _subtitleCodecsMatch(mpvTrack.codec, serverTrack.codec)) {
     score += 5;
   }
   if (_hasSubtitleFact(mpvTrack.title) &&
-      (_hasSubtitleFact(plexTrack.title) || _hasSubtitleFact(plexTrack.displayTitle)) &&
-      _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle) > 0) {
+      (_hasSubtitleFact(serverTrack.title) || _hasSubtitleFact(serverTrack.displayTitle)) &&
+      _titleScore(mpvTrack.title, serverTrack.title, serverTrack.displayTitle) > 0) {
     score += 3;
   }
-  if (mpvTrack.effectiveForced == plexTrack.effectiveForced) score += 2;
+  if (mpvTrack.effectiveForced == serverTrack.effectiveForced) score += 2;
   return score;
 }
 
@@ -182,14 +181,14 @@ T? _findUniqueBestLowMetadataMatch<T extends Object>(
   return bestIsUnique ? bestMatch : null;
 }
 
-/// Find the MPV subtitle track that matches a Plex subtitle track
-SubtitleTrack? findMpvTrackForPlexSubtitle(
-  MediaSubtitleTrack plexTrack,
+/// Find the MPV subtitle track that matches a server subtitle track
+SubtitleTrack? findMpvTrackForServerSubtitle(
+  MediaSubtitleTrack serverTrack,
   List<SubtitleTrack> mpvTracks, {
-  List<MediaSubtitleTrack>? allPlexTracks,
+  List<MediaSubtitleTrack>? allServerTracks,
 }) {
   if (mpvTracks.isEmpty) return null;
-  final sourceId = int.tryParse(plexTrack.id.toString());
+  final sourceId = int.tryParse(serverTrack.id.toString());
   if (sourceId != null) {
     final exactSourceTrack = mpvTracks.where((track) => track.id == 'source:$sourceId').firstOrNull;
     if (exactSourceTrack != null) return exactSourceTrack;
@@ -197,10 +196,10 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
 
   // Keyed subtitles have a stable identity. Do not let a sidecar that has not
   // arrived yet fall through to fuzzy language/title scoring.
-  final plexKey = plexTrack.key;
-  if (plexKey != null && plexKey.isNotEmpty) {
+  final serverKey = serverTrack.key;
+  if (serverKey != null && serverKey.isNotEmpty) {
     for (final mpvTrack in mpvTracks) {
-      if (mpvTrack.isExternal && mpvTrack.uri?.contains(plexKey) == true) {
+      if (mpvTrack.isExternal && mpvTrack.uri?.contains(serverKey) == true) {
         return mpvTrack;
       }
     }
@@ -214,28 +213,28 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
 
   // Ordinal identity: container sidecars expose embedded subtitle tracks as
   // external media, but retain the source container's subtitle ordering.
-  final containerPlexTracks = allPlexTracks
+  final containerServerTracks = allServerTracks
       ?.where((track) => track.key == null || track.key!.isEmpty)
       .toList(growable: false);
-  final internalMpvTracks = allPlexTracks == null
+  final internalMpvTracks = allServerTracks == null
       ? null
       : mpvTracks.where((track) => !track.isExternal || track.isContainer).toList(growable: false);
-  final plexOrdinal = containerPlexTracks?.indexOf(plexTrack) ?? -1;
+  final serverOrdinal = containerServerTracks?.indexOf(serverTrack) ?? -1;
 
   for (final mpvTrack in mpvTracks) {
-    // A container sidecar's subtitle tracks map to internal Plex streams.
-    if (!plexTrack.isExternal && mpvTrack.isExternal && !mpvTrack.isContainer) continue;
+    // A container sidecar's subtitle tracks map to internal server streams.
+    if (!serverTrack.isExternal && mpvTrack.isExternal && !mpvTrack.isContainer) continue;
 
     final ordinalMatches =
-        internalMpvTracks != null && plexOrdinal >= 0 && internalMpvTracks.indexOf(mpvTrack) == plexOrdinal;
+        internalMpvTracks != null && serverOrdinal >= 0 && internalMpvTracks.indexOf(mpvTrack) == serverOrdinal;
 
     // A container track has no stable native ID. Its source-container ordinal
     // is authoritative; a metadata-identical earlier track is not a match.
-    // Narrower than the guard in [findPlexTrackForMpvSubtitle]: a Plex stream
+    // Narrower than the guard in [findServerTrackForMpvSubtitle]: a server stream
     // carrying no container ordinal still falls back to metadata scoring.
-    if (mpvTrack.isContainer && plexOrdinal >= 0 && !ordinalMatches) continue;
+    if (mpvTrack.isContainer && serverOrdinal >= 0 && !ordinalMatches) continue;
 
-    final score = _scoreSubtitleMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
+    final score = _scoreSubtitleMatch(mpvTrack, serverTrack, ordinalMatches: ordinalMatches);
 
     if (score > bestScore) {
       bestScore = score;
@@ -248,10 +247,10 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
   // codec at all, so their stable subtitle order is the last-resort identity.
   if (bestScore >= 10 || bestMatchUsesContainerOrdinal) return bestMatch;
 
-  final plexTracks = allPlexTracks;
-  if (plexTracks == null ||
-      !_isDirectEmbeddedPlexSubtitle(plexTrack) ||
-      _classifyDirectEmbeddedSubtitleCatalog(plexTracks, mpvTracks) != _DirectEmbeddedSubtitleCatalog.complete) {
+  final serverTracks = allServerTracks;
+  if (serverTracks == null ||
+      !_isDirectEmbeddedServerSubtitle(serverTrack) ||
+      _classifyDirectEmbeddedSubtitleCatalog(serverTracks, mpvTracks) != _DirectEmbeddedSubtitleCatalog.complete) {
     return null;
   }
 
@@ -259,33 +258,33 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
   // only from their facts. Native order is deliberately not an identity.
   return _findUniqueBestLowMetadataMatch(
     mpvTracks.where(_isDirectEmbeddedMpvSubtitle),
-    isCompatible: (candidate) => _lowMetadataSubtitleFactsAreCompatible(candidate, plexTrack),
-    score: (candidate) => _scoreLowMetadataSubtitleFacts(candidate, plexTrack),
+    isCompatible: (candidate) => _lowMetadataSubtitleFactsAreCompatible(candidate, serverTrack),
+    score: (candidate) => _scoreLowMetadataSubtitleFacts(candidate, serverTrack),
   );
 }
 
-/// Find the Plex subtitle track that matches an MPV subtitle track
-MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
+/// Find the server subtitle track that matches an MPV subtitle track
+MediaSubtitleTrack? findServerTrackForMpvSubtitle(
   SubtitleTrack mpvTrack,
-  List<MediaSubtitleTrack> plexTracks, {
+  List<MediaSubtitleTrack> serverTracks, {
   List<SubtitleTrack>? allMpvTracks,
 }) {
-  if (plexTracks.isEmpty) return null;
+  if (serverTracks.isEmpty) return null;
   if (mpvTrack.id.startsWith('source:')) {
     final sourceId = int.tryParse(mpvTrack.id.substring('source:'.length));
     if (sourceId != null) {
-      final exactSourceTrack = plexTracks.where((track) => track.id == sourceId).firstOrNull;
+      final exactSourceTrack = serverTracks.where((track) => track.id == sourceId).firstOrNull;
       if (exactSourceTrack != null) return exactSourceTrack;
     }
   }
 
-  // A standalone keyed subtitle maps back only by its stable Plex key.
+  // A standalone keyed subtitle maps back only by its stable server key.
   // Container sidecars may continue to the source-container matcher below.
   if (mpvTrack.isExternal && mpvTrack.uri != null) {
-    for (final plexTrack in plexTracks) {
-      final plexKey = plexTrack.key;
-      if (plexKey != null && plexKey.isNotEmpty && mpvTrack.uri!.contains(plexKey)) {
-        return plexTrack;
+    for (final serverTrack in serverTracks) {
+      final serverKey = serverTrack.key;
+      if (serverKey != null && serverKey.isNotEmpty && mpvTrack.uri!.contains(serverKey)) {
+        return serverTrack;
       }
     }
     if (!mpvTrack.isContainer) return null;
@@ -299,45 +298,45 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
   // Ordinal identity: container-sidecar tracks map back to source-container
   // streams even though the native player marks their source as external.
   final mpvIsInternal = !mpvTrack.isExternal || mpvTrack.isContainer;
-  final containerPlexTracks = allMpvTracks == null
+  final containerServerTracks = allMpvTracks == null
       ? null
-      : plexTracks.where((track) => track.key == null || track.key!.isEmpty).toList(growable: false);
+      : serverTracks.where((track) => track.key == null || track.key!.isEmpty).toList(growable: false);
   final mpvOrdinal = allMpvTracks == null
       ? -1
       : allMpvTracks.where((track) => !track.isExternal || track.isContainer).toList().indexOf(mpvTrack);
 
-  for (final plexTrack in plexTracks) {
-    if (mpvIsInternal && plexTrack.isExternal) continue;
+  for (final serverTrack in serverTracks) {
+    if (mpvIsInternal && serverTrack.isExternal) continue;
 
     final ordinalMatches =
-        containerPlexTracks != null && mpvOrdinal >= 0 && containerPlexTracks.indexOf(plexTrack) == mpvOrdinal;
+        containerServerTracks != null && mpvOrdinal >= 0 && containerServerTracks.indexOf(serverTrack) == mpvOrdinal;
 
     // The probe fixes isContainer here, so once a container ordinal list exists
     // a container track matches at its own ordinal or not at all.
-    if (mpvTrack.isContainer && containerPlexTracks != null && !ordinalMatches) continue;
+    if (mpvTrack.isContainer && containerServerTracks != null && !ordinalMatches) continue;
 
-    final score = _scoreSubtitleMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
+    final score = _scoreSubtitleMatch(mpvTrack, serverTrack, ordinalMatches: ordinalMatches);
 
     if (score > bestScore) {
       bestScore = score;
-      bestMatch = plexTrack;
+      bestMatch = serverTrack;
       bestMatchUsesContainerOrdinal = mpvTrack.isContainer && ordinalMatches;
     }
   }
 
   // Prefer metadata matches, with container order as the symmetric fallback
-  // needed to persist a metadata-free native track back to its Plex stream.
+  // needed to persist a metadata-free native track back to its server stream.
   if (bestScore >= 10 || bestMatchUsesContainerOrdinal) return bestMatch;
 
   final mpvTracks = allMpvTracks;
   if (mpvTracks == null ||
       !_isDirectEmbeddedMpvSubtitle(mpvTrack) ||
-      _classifyDirectEmbeddedSubtitleCatalog(plexTracks, mpvTracks) != _DirectEmbeddedSubtitleCatalog.complete) {
+      _classifyDirectEmbeddedSubtitleCatalog(serverTracks, mpvTracks) != _DirectEmbeddedSubtitleCatalog.complete) {
     return null;
   }
 
   return _findUniqueBestLowMetadataMatch(
-    plexTracks.where(_isDirectEmbeddedPlexSubtitle),
+    serverTracks.where(_isDirectEmbeddedServerSubtitle),
     isCompatible: (candidate) => _lowMetadataSubtitleFactsAreCompatible(mpvTrack, candidate),
     score: (candidate) => _scoreLowMetadataSubtitleFacts(mpvTrack, candidate),
   );
@@ -345,7 +344,7 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
 
 /// Find the source-catalog row that serves a cross-item subtitle intent.
 ///
-/// Identity matching ([findPlexTrackForMpvSubtitle]) answers "which row IS
+/// Identity matching ([findServerTrackForMpvSubtitle]) answers "which row IS
 /// this track"; this answers "which row of a DIFFERENT item serves the same
 /// intent". Effective forced-ness is a hard requirement, and so is language
 /// when both sides declare one: the intent's class is preserved or the match
@@ -422,7 +421,7 @@ AudioTrack? findNativeAudioTrackForIntent(AudioTrack carried, List<AudioTrack> t
 }
 
 /// Sentinel id for a cross-item audio carry. Native player ids ('1', '2', …)
-/// and Jellyfin `source:<Index>` ids are reused per item, so a carried track
+/// and backend `source:<Index>` ids are reused per item, so a carried track
 /// with its original id can identity-match a DIFFERENT track that happens to
 /// sit at the same position on the next episode — bypassing the evidence
 /// bands and their ambiguity decline.
@@ -498,8 +497,8 @@ int _compareEvidenceKeys(List<int> a, List<int> b) {
   return 0;
 }
 
-/// Scored-match loop shared by [findMpvTrackForPlexAudio] and
-/// [findPlexTrackForMpvAudio]. Ordinal identity is cross-side: the probe's
+/// Scored-match loop shared by [findMpvTrackForServerAudio] and
+/// [findServerTrackForMpvAudio]. Ordinal identity is cross-side: the probe's
 /// index in its own list ([probeOrdinal], -1 when unknown) against the
 /// candidate's index in [candidates]. The score arguments stay MPV-first
 /// whichever side is being searched.
@@ -521,26 +520,26 @@ T? _findBestScoredAudioMatch<T>(
   return bestScore >= 10 ? bestMatch : null;
 }
 
-/// Find the MPV audio track that matches a Plex audio track
-AudioTrack? findMpvTrackForPlexAudio(
-  MediaAudioTrack plexTrack,
+/// Find the MPV audio track that matches a server audio track
+AudioTrack? findMpvTrackForServerAudio(
+  MediaAudioTrack serverTrack,
   List<AudioTrack> mpvTracks, {
-  List<MediaAudioTrack>? allPlexTracks,
+  List<MediaAudioTrack>? allServerTracks,
 }) => _findBestScoredAudioMatch(
   mpvTracks,
-  probeOrdinal: allPlexTracks?.indexOf(plexTrack) ?? -1,
-  score: (mpvTrack, ordinalMatches) => _scoreAudioMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches),
+  probeOrdinal: allServerTracks?.indexOf(serverTrack) ?? -1,
+  score: (mpvTrack, ordinalMatches) => _scoreAudioMatch(mpvTrack, serverTrack, ordinalMatches: ordinalMatches),
 );
 
-/// Find the Plex audio track that matches an MPV audio track
-MediaAudioTrack? findPlexTrackForMpvAudio(
+/// Find the server audio track that matches an MPV audio track
+MediaAudioTrack? findServerTrackForMpvAudio(
   AudioTrack mpvTrack,
-  List<MediaAudioTrack> plexTracks, {
+  List<MediaAudioTrack> serverTracks, {
   List<AudioTrack>? allMpvTracks,
 }) => _findBestScoredAudioMatch(
-  plexTracks,
+  serverTracks,
   probeOrdinal: allMpvTracks?.indexOf(mpvTrack) ?? -1,
-  score: (plexTrack, ordinalMatches) => _scoreAudioMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches),
+  score: (serverTrack, ordinalMatches) => _scoreAudioMatch(mpvTrack, serverTrack, ordinalMatches: ordinalMatches),
 );
 
 /// The source audio row the engine is currently playing, or null when mpv's
@@ -548,7 +547,7 @@ MediaAudioTrack? findPlexTrackForMpvAudio(
 ///
 /// Three ladders, weakest evidence last: the selected track's ordinal in the
 /// real (non-`auto`/`no`) mpv list against the source list, then the scored
-/// [findPlexTrackForMpvAudio] match, then an mpv id that literally parses to a
+/// [findServerTrackForMpvAudio] match, then an mpv id that literally parses to a
 /// source stream id. [mpvTracks] is the raw engine list — the scored match
 /// needs it unfiltered for its cross-side ordinal rule.
 MediaAudioTrack? playingSourceAudioTrack({
@@ -562,7 +561,7 @@ MediaAudioTrack? playingSourceAudioTrack({
   final ordinal = realMpvTracks.indexOf(selectedMpvTrack);
   if (ordinal >= 0 && ordinal < sourceTracks.length) return sourceTracks[ordinal];
 
-  final matched = findPlexTrackForMpvAudio(selectedMpvTrack, sourceTracks, allMpvTracks: mpvTracks);
+  final matched = findServerTrackForMpvAudio(selectedMpvTrack, sourceTracks, allMpvTracks: mpvTracks);
   if (matched != null) return matched;
 
   final parsedId = int.tryParse(selectedMpvTrack.id);
@@ -578,17 +577,17 @@ bool _languageCodesExactMatch(String? a, String? b) {
 
 /// Check if two language codes refer to the same language
 /// Handles both ISO 639-1 (2-letter) and ISO 639-2 (3-letter) codes
-bool _languagesMatch(String? mpvLang, String? plexLang) {
-  if (mpvLang == null || plexLang == null) return false;
+bool _languagesMatch(String? mpvLang, String? serverLang) {
+  if (mpvLang == null || serverLang == null) return false;
 
   final mpvNormalized = mpvLang.toLowerCase().split('-').first;
-  final plexNormalized = plexLang.toLowerCase().split('-').first;
+  final serverNormalized = serverLang.toLowerCase().split('-').first;
 
   // Direct match
-  if (mpvNormalized == plexNormalized) return true;
+  if (mpvNormalized == serverNormalized) return true;
 
   final mpvVariations = LanguageCodes.getVariations(mpvNormalized);
-  return mpvVariations.contains(plexNormalized);
+  return mpvVariations.contains(serverNormalized);
 }
 
 /// Common subtitle codec aliases (e.g., subrip/srt, ass/ssa)
@@ -623,46 +622,45 @@ const Map<String, List<String>> _audioCodecAliases = {
 };
 
 /// Check if two codec strings match: case-insensitively equal, or the MPV
-/// codec's [aliases] row lists the Plex codec.
-bool _codecsMatch(String? mpvCodec, String? plexCodec, Map<String, List<String>> aliases) {
-  if (mpvCodec == null || plexCodec == null) return false;
+/// codec's [aliases] row lists the server codec.
+bool _codecsMatch(String? mpvCodec, String? serverCodec, Map<String, List<String>> aliases) {
+  if (mpvCodec == null || serverCodec == null) return false;
 
   final mpvNorm = mpvCodec.toLowerCase();
-  final plexNorm = plexCodec.toLowerCase();
+  final serverNorm = serverCodec.toLowerCase();
 
-  if (mpvNorm == plexNorm) return true;
-  return aliases[mpvNorm]?.contains(plexNorm) ?? false;
+  if (mpvNorm == serverNorm) return true;
+  return aliases[mpvNorm]?.contains(serverNorm) ?? false;
 }
 
-bool _subtitleCodecsMatch(String? mpvCodec, String? plexCodec) =>
-    _codecsMatch(mpvCodec, plexCodec, _subtitleCodecAliases);
+bool _subtitleCodecsMatch(String? mpvCodec, String? serverCodec) =>
+    _codecsMatch(mpvCodec, serverCodec, _subtitleCodecAliases);
 
-bool _audioCodecsMatch(String? mpvCodec, String? plexCodec) => _codecsMatch(mpvCodec, plexCodec, _audioCodecAliases);
+bool _audioCodecsMatch(String? mpvCodec, String? serverCodec) =>
+    _codecsMatch(mpvCodec, serverCodec, _audioCodecAliases);
 
 /// Score how well titles match.
 /// Returns 3 for a real text match, 1 for null/empty (non-contradicting), 0 for mismatch.
-int _titleScore(String? mpvTitle, String? plexTitle, String? plexDisplayTitle) {
+int _titleScore(String? mpvTitle, String? serverTitle, String? serverDisplayTitle) {
   if (mpvTitle == null || mpvTitle.isEmpty) return 1; // No title to contradict — mild bonus
 
   final mpvNorm = mpvTitle.toLowerCase().trim();
 
-  // Check exact match with either Plex title
-  if (plexTitle != null && plexTitle.toLowerCase().trim() == mpvNorm) return 3;
-  if (plexDisplayTitle != null && plexDisplayTitle.toLowerCase().trim() == mpvNorm) return 3;
+  // Check exact match with either server title
+  if (serverTitle != null && serverTitle.toLowerCase().trim() == mpvNorm) return 3;
+  if (serverDisplayTitle != null && serverDisplayTitle.toLowerCase().trim() == mpvNorm) return 3;
 
   // Check if one contains the other (partial match)
-  if (plexTitle != null && plexTitle.toLowerCase().contains(mpvNorm)) return 3;
-  if (plexDisplayTitle != null && plexDisplayTitle.toLowerCase().contains(mpvNorm)) return 3;
+  if (serverTitle != null && serverTitle.toLowerCase().contains(mpvNorm)) return 3;
+  if (serverDisplayTitle != null && serverDisplayTitle.toLowerCase().contains(mpvNorm)) return 3;
 
   return 0;
 }
 
 /// Check if titles match (fuzzy comparison) — used by audio matching
-bool _titlesMatch(String? mpvTitle, String? plexTitle, String? plexDisplayTitle) {
-  return _titleScore(mpvTitle, plexTitle, plexDisplayTitle) > 0;
+bool _titlesMatch(String? mpvTitle, String? serverTitle, String? serverDisplayTitle) {
+  return _titleScore(mpvTitle, serverTitle, serverDisplayTitle) > 0;
 }
-
-int _mediaTrackStreamIndex(int id, int? index) => index ?? id;
 
 /// Priority levels for track selection. Per-item language overrides are not a
 /// level: every backend folds them into the source's selected/default stream,
@@ -690,9 +688,9 @@ class TrackSelectionService {
   final Player? player;
   final MediaServerUserProfile? profileSettings;
   final MediaItem metadata;
-  final MediaSourceInfo? plexMediaInfo;
+  final MediaSourceInfo? serverMediaInfo;
 
-  TrackSelectionService({this.player, this.profileSettings, required this.metadata, this.plexMediaInfo});
+  TrackSelectionService({this.player, this.profileSettings, required this.metadata, this.serverMediaInfo});
 
   /// The profile's preferred language for one track kind, or null when unset.
   static String? _preferredLanguage(MediaServerUserProfile profile, {required bool isAudio}) {
@@ -794,11 +792,6 @@ class TrackSelectionService {
     List<SubtitleTrack> availableTracks,
     AudioTrack? selectedAudioTrack,
   ) {
-    // PMS already applies the account's `autoSelectSubtitle` when it stamps
-    // `selected` on the item's streams (Plex Web reads nothing else), so
-    // re-applying the mode here would second-guess a decision the server has
-    // made — and Plex's 0 means "manually selected", not "off".
-    if (metadata.backend == MediaBackend.plex) return null;
     final profile = profileSettings;
     final mode = profile?.subtitleMode;
     if (profile == null || mode == null || mode == SubtitlePlaybackMode.defaultMode) return null;
@@ -845,7 +838,7 @@ class TrackSelectionService {
   MediaSubtitleTrack? _sourceSubtitleTrack(String nativeId) {
     if (!nativeId.startsWith('source:')) return null;
     final sourceId = int.tryParse(nativeId.substring('source:'.length));
-    return sourceId == null ? null : plexMediaInfo?.subtitleTracks.where((track) => track.id == sourceId).firstOrNull;
+    return sourceId == null ? null : serverMediaInfo?.subtitleTracks.where((track) => track.id == sourceId).firstOrNull;
   }
 
   /// Whether the source catalog can prove it has already delivered every
@@ -856,10 +849,10 @@ class TrackSelectionService {
   /// the container can reach completeness. Rows delivered as sidecars never
   /// can, because they arrive on their own schedule.
   bool _hasCompleteDirectSourceCatalogFor(MediaSubtitleTrack? sourceTrack, List<SubtitleTrack> availableTracks) {
-    final info = plexMediaInfo;
+    final info = serverMediaInfo;
     return info != null &&
         sourceTrack != null &&
-        _isDirectEmbeddedPlexSubtitle(sourceTrack) &&
+        _isDirectEmbeddedServerSubtitle(sourceTrack) &&
         _classifyDirectEmbeddedSubtitleCatalog(info.subtitleTracks, availableTracks) ==
             _DirectEmbeddedSubtitleCatalog.complete;
   }
@@ -872,7 +865,7 @@ class TrackSelectionService {
 
     if (preferred.id.startsWith('source:')) {
       // A source row delivered as its own *file* carries that file's URL on the preference, and the
-      // loaded track is external. `findMpvTrackForPlexSubtitle` pairs a source row with the
+      // loaded track is external. `findMpvTrackForServerSubtitle` pairs a source row with the
       // container's own tracks by metadata, so it cannot see that external track at all - which
       // left an extracted secondary waiting out the deadline and never appearing. The URL is both
       // stronger and unambiguous, so it is tried first; a unique hit is the same file by
@@ -890,7 +883,11 @@ class TrackSelectionService {
       }
       final sourceTrack = _sourceSubtitleTrack(preferred.id);
       if (sourceTrack == null) return null;
-      return findMpvTrackForPlexSubtitle(sourceTrack, availableTracks, allPlexTracks: plexMediaInfo?.subtitleTracks);
+      return findMpvTrackForServerSubtitle(
+        sourceTrack,
+        availableTracks,
+        allServerTracks: serverMediaInfo?.subtitleTracks,
+      );
     }
 
     final preferredUri = preferred.uri;
@@ -975,38 +972,19 @@ class TrackSelectionService {
     }
 
     // Priority 2: Check server-selected track from media info
-    final info = plexMediaInfo;
+    final info = serverMediaInfo;
     if (info != null && availableTracks.isNotEmpty) {
       final serverSelectedTrack = info.audioTracks.where((t) => t.selected).firstOrNull;
 
       if (serverSelectedTrack != null) {
-        final matchedMpvTrack = findMpvTrackForPlexAudio(
+        final matchedMpvTrack = findMpvTrackForServerAudio(
           serverSelectedTrack,
           availableTracks,
-          allPlexTracks: info.audioTracks,
+          allServerTracks: info.audioTracks,
         );
 
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
-        }
-      } else if (metadata.backend.usesMediaBrowserApi) {
-        final defaultStreamIndex = info.defaultAudioStreamIndex;
-        final defaultTrack = defaultStreamIndex != null
-            ? info.audioTracks
-                  .where((track) => _mediaTrackStreamIndex(track.id, track.index) == defaultStreamIndex)
-                  .firstOrNull
-            : null;
-
-        if (defaultTrack != null) {
-          final matchedMpvTrack = findMpvTrackForPlexAudio(
-            defaultTrack,
-            availableTracks,
-            allPlexTracks: info.audioTracks,
-          );
-
-          if (matchedMpvTrack != null) {
-            return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
-          }
         }
       }
     }
@@ -1087,7 +1065,7 @@ class TrackSelectionService {
           // means its native track may not have arrived yet. An unservable
           // intent resolves the same way on every retry — decline immediately
           // and let the ladder decide.
-          final servableRow = findSourceTrackForIntent(intent, plexMediaInfo?.subtitleTracks ?? const []);
+          final servableRow = findSourceTrackForIntent(intent, serverMediaInfo?.subtitleTracks ?? const []);
           if (servableRow != null && !_hasCompleteDirectSourceCatalogFor(servableRow, availableTracks)) {
             return null;
           }
@@ -1095,17 +1073,17 @@ class TrackSelectionService {
         appLogger.d('Subtitle intent declined: $intent');
     }
 
-    // Priority 2: Trust the server's selected track. Plex computes this from
-    // account/show/per-item prefs; MediaBrowser exposes DefaultSubtitleStreamIndex.
-    final info = plexMediaInfo;
+    // Priority 2: Trust the server's selected track. The server computes this from
+    // account/show/per-item prefs.
+    final info = serverMediaInfo;
     if (info != null) {
       final serverSelectedTrack = info.subtitleTracks.where((track) => track.selected).firstOrNull;
 
       if (serverSelectedTrack != null) {
-        final matchedMpvTrack = findMpvTrackForPlexSubtitle(
+        final matchedMpvTrack = findMpvTrackForServerSubtitle(
           serverSelectedTrack,
           availableTracks,
-          allPlexTracks: info.subtitleTracks,
+          allServerTracks: info.subtitleTracks,
         );
 
         if (matchedMpvTrack != null) {
@@ -1118,40 +1096,12 @@ class TrackSelectionService {
         if (waitForPendingSource && !_hasCompleteDirectSourceCatalogFor(serverSelectedTrack, availableTracks)) {
           return null;
         }
-      } else if (metadata.backend.usesMediaBrowserApi) {
-        final defaultStreamIndex = info.defaultSubtitleStreamIndex;
-        if (defaultStreamIndex == -1) {
-          return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
-        }
-
-        final defaultTrack = defaultStreamIndex != null && availableTracks.isNotEmpty
-            ? info.subtitleTracks
-                  .where((track) => _mediaTrackStreamIndex(track.id, track.index) == defaultStreamIndex)
-                  .firstOrNull
-            : null;
-
-        if (defaultTrack != null) {
-          final matchedMpvTrack = findMpvTrackForPlexSubtitle(
-            defaultTrack,
-            availableTracks,
-            allPlexTracks: info.subtitleTracks,
-          );
-
-          if (matchedMpvTrack != null) {
-            return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
-          }
-        }
-      } else if (metadata.backend == MediaBackend.plex && info.subtitleTracks.isNotEmpty) {
-        if (availableTracks.isEmpty && waitForPendingSource) return null;
-        // Native tracks exist and none maps to a server-selected stream.
-        return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
       }
       if (waitForPendingSource && availableTracks.isEmpty && info.subtitleTracks.isNotEmpty) return null;
     }
 
     // Priority 3: Apply the server profile's subtitle mode where the server
-    // does not pre-select for us (MediaBrowser). Plex never reaches this with
-    // a mode: PMS already folded it into `selected` above.
+    // does not pre-select for us.
     final profileSelectedTrack = _selectSubtitleTrackByProfile(availableTracks, selectedAudioTrack);
     if (profileSelectedTrack != null) return profileSelectedTrack;
 
@@ -1228,7 +1178,7 @@ class TrackSelectionService {
       await audioMutation;
       if (!canMutatePlayer()) return false;
 
-      // Save to Plex if this was user's navigation preference (Priority 1)
+      // Save to the server if this was user's navigation preference (Priority 1)
       if (audioResult.priority == TrackSelectionPriority.navigation && onAudioTrackChanged != null) {
         onAudioTrackChanged(selectedAudioTrack);
       }
@@ -1254,7 +1204,7 @@ class TrackSelectionService {
       await subtitleMutation;
       if (!canMutatePlayer()) return false;
 
-      // Save to Plex if this was user's navigation preference (Priority 1)
+      // Save to the server if this was user's navigation preference (Priority 1)
       if (subtitleResult.priority == TrackSelectionPriority.navigation && onSubtitleTrackChanged != null) {
         onSubtitleTrackChanged(selectedSubtitleTrack);
       }

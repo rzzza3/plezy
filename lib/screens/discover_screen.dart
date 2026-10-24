@@ -5,7 +5,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
-import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
@@ -25,7 +24,6 @@ import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import '../widgets/toolbar_scrim.dart';
 import '../widgets/system_clock.dart';
 import '../providers/discover_provider.dart';
-import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/app_menu.dart';
@@ -103,6 +101,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _isTabVisible = true;
 
   bool _initialLoadComplete = false;
+  bool _firstRowsLogged = false;
   bool _pendingTvBrowseRailFocus = false;
 
   /// Primary focus when the rail claim was armed; see [_railClaimAbandoned].
@@ -116,11 +115,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
-  final _serverActivitiesButtonKey = GlobalKey<ServerActivitiesButtonState>();
   final _userMenuKey = GlobalKey<AppMenuButtonState<String>>();
 
   /// Backend-neutral hero client lookup. Returns the actual
-  /// [MediaServerClient] for the item's server (Plex or Jellyfin) so
+  /// [MediaServerClient] for the item's server so
   /// [MediaImageHelper] uses the right transcoder for sized URLs.
   MediaServerClient? _getMediaClientForItem(MediaItem? item) {
     final serverId = item?.serverId;
@@ -378,6 +376,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // Focus hero when fresh content lands, but only if no modal route is on top
     if (isNewLoad && !PlatformDetector.isTV() && _onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
       _heroFocusNode.requestFocus();
+    }
+
+    if (!_firstRowsLogged && (_onDeck.isNotEmpty || _hubs.isNotEmpty)) {
+      _firstRowsLogged = true;
+      final rows = _hubs.length + (_onDeck.isNotEmpty ? 1 : 0);
+      WidgetsBinding.instance.addPostFrameCallback((_) => appLogger.i('Home: first hub frame, rows $rows'));
+    } else if (_firstRowsLogged && renderChanged && !_isLoading && !_areHubsLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => appLogger.i('Home: rows repainted'));
     }
 
     // On initial load, focus content so the user doesn't start on the toolbar
@@ -818,16 +824,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ],
                     ),
                   ),
-                  // Server Tasks — Plex-only (`/activities` API has no
-                  // Jellyfin equivalent), hide the button entirely on
-                  // Jellyfin-only profiles so the chrome doesn't show
-                  // a permanently empty popover.
-                  if (PlatformDetector.isDesktop(context) &&
-                      context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
-                    FocusableAction(
-                      onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
-                      child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
-                    ),
                   // User menu — profiles + sign out. On TV the sidebar's
                   // profile row opens it instead.
                   if (!PlatformDetector.isTV()) _buildUserMenuAction(context),
@@ -1268,8 +1264,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: Builder(
                         builder: (context) {
                           // heroClient resolves to the actual server's client
-                          // (Plex or Jellyfin) so each backend's transcoder
-                          // builds sized URLs.
+                          // so each backend's transcoder builds sized URLs.
                           return blurArtwork(
                             CyclingMediaBackdrop(
                               mediaKey: heroItem.globalKey,

@@ -24,7 +24,7 @@ void main() {
   });
 
   group('TrackSheet subtitle controls', () {
-    testWidgets('shows subtitle search when Plex search is available without subtitle tracks', (tester) async {
+    testWidgets('shows subtitle search when server search is available without subtitle tracks', (tester) async {
       final player = _FakeTrackSheetPlayer(
         tracks: const Tracks(
           audio: [
@@ -41,11 +41,7 @@ void main() {
       await _pumpTrackSheet(
         tester,
         player: player,
-        trackControlsState: const TrackControlsState(
-          ratingKey: '123',
-          serverId: 'plex-server',
-          subtitleSearchSupported: true,
-        ),
+        trackControlsState: const TrackControlsState(ratingKey: '123', serverId: 'srv', subtitleSearchSupported: true),
       );
 
       expect(find.text('Search Subtitles'), findsOneWidget);
@@ -70,7 +66,7 @@ void main() {
         player: player,
         trackControlsState: const TrackControlsState(
           ratingKey: '123',
-          serverId: 'jellyfin-server',
+          serverId: 'silo-server',
           subtitleSearchSupported: false,
         ),
       );
@@ -663,21 +659,6 @@ void main() {
       );
     });
 
-    test('live server-side tracks enable the source column without a transcode flag', () {
-      // A Plex live session delivers subtitles by rebuilding the stream with
-      // the chosen track burned in (DVB bitmap subtitles, issue #1983).
-      final liveTrack = MediaSubtitleTrack(id: 92, codec: 'dvb_subtitle', selected: false, forced: false);
-      final state = TrackControlsState(isLive: true, sourceSubtitleTracks: [liveTrack], onSwitchSubtitle: (_) async {});
-      expect(state.canUseSourceSubtitles, isTrue);
-      expect(state.hasSubtitleControls(const Tracks()), isTrue);
-
-      // A live stream exposing none keeps the native list so in-band CEA
-      // captions stay client-rendered (issue #1590).
-      const withoutTracks = TrackControlsState(isLive: true, subtitleSearchSupported: false);
-      expect(withoutTracks.canUseSourceSubtitles, isFalse);
-      expect(withoutTracks.hasSubtitleControls(const Tracks()), isFalse);
-    });
-
     test('counts direct-play source sidecars without replacing native tracks', () {
       const sourceUri = 'https://example.test/source/available.ass';
       final sourceSidecar = MediaSubtitleTrack(id: 1, external: true, selected: false, forced: false);
@@ -694,7 +675,7 @@ void main() {
       expect(state.hasSubtitleControls(const Tracks()), isTrue);
     });
 
-    test('does not misclassify a Jellyfin external-delivery embedded row as a sidecar', () {
+    test('does not misclassify an external-delivery embedded row as a sidecar', () {
       final sourceTrack = MediaSubtitleTrack(id: 1, usesExternalDelivery: true, selected: false, forced: false);
       final state = TrackControlsState(sourceSubtitleTracks: [sourceTrack], onSwitchSubtitle: (_) async {});
 

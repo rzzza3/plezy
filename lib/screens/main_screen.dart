@@ -36,13 +36,12 @@ import '../navigation/settings_shortcut.dart';
 import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
-import '../profiles/plex_home_service.dart';
+import '../profiles/silo_household_service.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_activation.dart';
 import '../profiles/profile_menu.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
-import '../providers/account_preferences_controller.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
@@ -61,7 +60,6 @@ import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
-import '../utils/live_tv_deep_link.dart';
 import '../widgets/music/mini_player.dart';
 import '../widgets/navigation_label_fit.dart';
 import '../widgets/mobile_navigation_rail.dart';
@@ -74,7 +72,6 @@ import 'discover_screen.dart';
 import 'explore_screen.dart';
 import 'libraries/library_quick_picker_sheet.dart';
 import 'libraries/libraries_screen.dart';
-import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
@@ -348,7 +345,7 @@ Future<void> runInitialProfilePrompt({
     // a dead end. Mirror the boot guard — prune orphans and route to auth
     // when nothing selectable remains.
     if (activeProfile.active == null && activeProfile.profiles.isEmpty) {
-      // Offline, "unresolvable" may just be an unreachable plex.tv — don't
+      // Offline, "unresolvable" may just be an unreachable server — don't
       // kick the user to auth over it.
       if (!isOfflineMode && await hasConnections() && isMounted()) {
         appLogger.w('MainScreen: connections exist but no profiles resolved — settling session');
@@ -358,7 +355,7 @@ Future<void> runInitialProfilePrompt({
     }
 
     // Always prompt when there's no active profile but profiles exist
-    // (fresh sign-in with multiple Plex Home users): otherwise the binder
+    // (fresh sign-in to a household with several profiles): otherwise the binder
     // has no profile to bind, and the user lands on an empty screen with
     // no way back to the picker.
     final hasNoActive = activeProfile.active == null && activeProfile.profiles.isNotEmpty;
@@ -405,20 +402,13 @@ class _MainScreenState extends State<MainScreen>
   /// Last selected online tab (restored when coming back online after an offline fallback)
   NavigationTabId? _lastOnlineTabId;
 
-  /// A preferred startup section (e.g. Live TV) that wasn't visible yet at cold
-  /// start because servers bind asynchronously. Applied once it becomes
-  /// available (see [_handleLiveTvChanged]); cleared on any explicit selection.
-  NavigationTabId? _pendingStartupTab;
-
   /// Whether we auto-switched to Downloads because the previous tab was unavailable offline
   bool _autoSwitchedToDownloads = false;
 
   OfflineModeProvider? _offlineModeProvider;
-  MultiServerProvider? _multiServerProvider;
   CatalogSourcesProvider? _catalogSourcesProvider;
   ValueListenable<bool>? _showExploreTabListenable;
   RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
-  bool _lastHasLiveTv = false;
   bool _lastHasExplore = false;
 
   /// Whether a reconnection attempt is in progress
@@ -426,7 +416,7 @@ class _MainScreenState extends State<MainScreen>
 
   /// Startup routed here explicitly offline. Keep the offline shell until a
   /// visible server actually connects; provider warmup can be optimistic when
-  /// failed Plex servers have no live client yet.
+  /// failed servers have no live client yet.
   bool _offlineUntilConnected = false;
 
   /// Prevents double-pushing the profile selection screen
@@ -476,7 +466,7 @@ class _MainScreenState extends State<MainScreen>
   /// the splash can await its first settle before navigating here. We just
   /// observe its [ActiveProfileProvider.isBinding] state for the once-only
   /// priming below.
-  PlexHomeService? _plexHomeService;
+  SiloHouseholdService? _households;
   ActiveProfileProvider? _activeProfileForListener;
   String? _lastSeenProfileId;
   // Tracks ActiveProfileProvider.isBinding from the previous notification
@@ -500,11 +490,11 @@ class _MainScreenState extends State<MainScreen>
   /// fresh resume for rows the queue drain skipped while it was away.
   final Set<String> _resumeCoveredServerIds = {};
 
-  /// Listener that fires when [ActiveProfileBinder] settles (Plex *and*
-  /// Jellyfin both bound). Drives the once-per-launch priming of
+  /// Listener that fires when [ActiveProfileBinder] settles (the active
+  /// profile's server bound). Drives the once-per-launch priming of
   /// LibrariesProvider + watch sync + tab fullRefresh — wiring this off
   /// the first online-server emission instead would prime before
-  /// Jellyfin gets added, leaving its libraries out of the navbar.
+  /// Silo gets added, leaving its libraries out of the navbar.
   VoidCallback? _bindingSettleListener;
   bool _startupServicesPrimed = false;
   Timer? _startupSettleTimeout;
@@ -534,13 +524,6 @@ class _MainScreenState extends State<MainScreen>
       windowManager.setPreventClose(true);
     }
 
-    // Synchronize _lastHasLiveTv with provider before building screens
-    // so _buildScreens and _hasLiveTv getter agree from the start.
-    try {
-      _lastHasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
-    } catch (_) {
-      _lastHasLiveTv = false;
-    }
     try {
       _lastHasExplore = context.read<CatalogSourcesProvider>().hasAnySource && _showExploreTabSetting;
     } catch (_) {
@@ -553,12 +536,6 @@ class _MainScreenState extends State<MainScreen>
     _currentTab = _defaultTabForMode(_isOffline);
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
     _autoSwitchedToDownloads = _isOffline && _currentTab == NavigationTabId.downloads;
-    // If the preferred startup section isn't visible yet (e.g. Live TV before
-    // servers finish binding), remember it and switch once it becomes available.
-    final preferredStartup = SettingsService.instanceOrNull?.read(SettingsService.startupSection);
-    _pendingStartupTab = (!_isOffline && preferredStartup != null && preferredStartup != _currentTab)
-        ? preferredStartup
-        : null;
     _mountedTabs.add(_currentTab);
     _screens = _buildScreens(_isOffline);
 
@@ -592,13 +569,13 @@ class _MainScreenState extends State<MainScreen>
       // first notification of a session that started with profiles.
       _hadProfiles = activeProfile.profiles.isNotEmpty;
       activeProfile.addListener(_onActiveProfileChanged);
-      _plexHomeService = context.read<PlexHomeService>();
+      _households = context.read<SiloHouseholdService>();
       // `start()` is the live/network entry point: it installs the connection
-      // watch, the refresh timer and an initial `_refreshAll()`. Hydration
-      // already happened from the provider's `create:`, so an offline launch
-      // keeps its cached Plex Home users without reaching the network.
+      // watch and refreshes every uncached household. Hydration already
+      // happened from the provider's `create:`, so an offline launch keeps
+      // its cached profiles without reaching the network.
       // `_handleOfflineStatusChanged` starts it if we come online later.
-      if (!_isOffline) unawaited(_plexHomeService!.start());
+      if (!_isOffline) unawaited(_households!.start());
       final manager = context.read<MultiServerProvider>().serverManager;
       // Read the binder so the Provider's `lazy: false` create has fired for
       // sure. `start()` is idempotent; SetupScreen normally started it already,
@@ -609,11 +586,6 @@ class _MainScreenState extends State<MainScreen>
       _runStartupOnFirstOnlineServer(manager);
 
       if (!_isOffline) {
-        // The active user's playback preferences; profile identity is managed
-        // by ActiveProfileProvider + ActiveProfileBinder.
-        await context.read<AccountPreferencesController>().ensureActiveLoaded();
-        if (!mounted) return;
-
         // Ensure first login (or any unset profile state) requires explicit selection.
         await _promptForInitialProfileSelection();
         if (!mounted) return;
@@ -643,8 +615,8 @@ class _MainScreenState extends State<MainScreen>
   /// [SetupScreen] path used to do all this before navigating to
   /// MainScreen; with the binder taking over for the connect, we hook
   /// into [ActiveProfileProvider.isBinding] (for the once-only priming,
-  /// which must wait for *all* connections — Plex *and* Jellyfin — to
-  /// land so the navbar shows libraries from both backends) and
+  /// which must wait for the binder to land so the navbar shows the
+  /// server's libraries) and
   /// [MultiServerManager.statusStream] (for download resume, which
   /// re-fires whenever a server comes online that the last resume didn't
   /// cover, so rows skipped while their server was offline get drained).
@@ -657,9 +629,8 @@ class _MainScreenState extends State<MainScreen>
     void primeServicesOnBindingSettle({bool fromTimeout = false}) {
       if (_startupServicesPrimed || !mounted) return;
       // Wait for the binder to finish — `_rebind` only flips `isBinding`
-      // false after both `_bindPlexHome` AND `_bindJoinRows` (where
-      // Jellyfin gets added) complete. Priming on the first Plex status
-      // emit instead would load libraries before Jellyfin is registered.
+      // false once the profile's server is registered. Priming on the first
+      // status emit instead would load libraries before it is.
       //
       // The `fromTimeout` escape hatch lets the [_startupSettleTimeout]
       // bypass this gate if the binder has somehow not flipped the flag
@@ -687,13 +658,13 @@ class _MainScreenState extends State<MainScreen>
       // Wait for any online client before firing the resume — the download
       // pipeline is backend-neutral (resumeQueuedDownloads accepts a
       // MediaServerClient and per-item resolution picks up the right
-      // backend), so a Jellyfin-only setup can resume too.
+      // backend), so a Silo-only setup can resume too.
       final onlineClients = manager.onlineClients;
       _resumeQueuedDownloadsForServers(onlineClients.keys.toSet(), onlineClients.values.firstOrNull);
     }
 
-    // Listen for binding-settle so the once-only priming runs after both
-    // Plex and Jellyfin are wired up.
+    // Listen for binding-settle so the once-only priming runs after the
+    // server is wired up.
     _bindingSettleListener = () => primeServicesOnBindingSettle();
     activeProfile.addListener(_bindingSettleListener!);
 
@@ -930,17 +901,6 @@ class _MainScreenState extends State<MainScreen>
   Future<void> _handleShelfContentId(String contentId) async {
     if (!mounted) return;
 
-    // `plezy://live?...` links arrive through the same channel as shelf IDs.
-    final liveLink = LiveTvDeepLink.tryParse(contentId);
-    if (liveLink != null) {
-      try {
-        await liveLink.launch(context, context.read<MultiServerProvider>());
-      } catch (e) {
-        appLogger.e('Live TV deep link failed', error: e);
-      }
-      return;
-    }
-
     final parsed = SystemShelfService.parseContentId(contentId);
     if (parsed == null) {
       appLogger.w('System shelf: invalid content ID: $contentId');
@@ -1002,14 +962,6 @@ class _MainScreenState extends State<MainScreen>
           if (mounted) _handleOfflineStatusChanged();
         });
       }
-    }
-
-    // Listen for Live TV / DVR availability changes
-    final multiServer = context.read<MultiServerProvider>();
-    if (multiServer != _multiServerProvider) {
-      _multiServerProvider?.removeListener(_handleLiveTvChanged);
-      _multiServerProvider = multiServer;
-      _multiServerProvider!.addListener(_handleLiveTvChanged);
     }
 
     // Listen for catalog sources (Explore tab) appearing/disappearing when a
@@ -1107,7 +1059,6 @@ class _MainScreenState extends State<MainScreen>
       windowManager.setPreventClose(false);
     }
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
-    _multiServerProvider?.removeListener(_handleLiveTvChanged);
     _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
     _showExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
     if (_bindingSettleListener != null) {
@@ -1271,7 +1222,6 @@ class _MainScreenState extends State<MainScreen>
         onLibraryOrderChanged: _onLibraryOrderChanged,
         onLibrarySelected: _handleLibrariesScreenSelected,
       ),
-      NavigationTabId.liveTv => LiveTvScreen(key: _screenKeys[tab]),
       NavigationTabId.search => SearchScreen(key: _screenKeys[tab]),
       NavigationTabId.downloads => DownloadsScreen(key: _screenKeys[tab]),
       NavigationTabId.settings => SettingsScreen(key: _screenKeys[tab]),
@@ -1288,7 +1238,6 @@ class _MainScreenState extends State<MainScreen>
 
   NavigationTabId _defaultTabForMode(bool isOffline) => NavigationTab.resolveDefaultTab(
     isOffline: isOffline,
-    hasLiveTv: _hasLiveTv,
     hasExplore: _lastHasExplore,
     preferredStartup: SettingsService.instanceOrNull?.read(SettingsService.startupSection),
   );
@@ -1307,7 +1256,7 @@ class _MainScreenState extends State<MainScreen>
         // Health check first so stale "online" servers get marked offline before
         // we snapshot the offline list for reconnection.
         await serverManager.checkServerHealth();
-        await serverManager.reconnectOfflineServers(forceRediscovery: true);
+        await serverManager.reconnectOfflineServers();
         if (!mounted) return;
         if (shouldRetryActiveProfileBindAfterReconnect(
           hasActiveProfile: activeProfile.active != null,
@@ -1346,22 +1295,6 @@ class _MainScreenState extends State<MainScreen>
         if (!mounted || _currentTab != nextTab) return;
         _onScreen<FocusableTab>(nextTab, (screen) => screen.focusActiveTabIfReady());
       });
-    }
-  }
-
-  void _handleLiveTvChanged() {
-    final hasLiveTv = _multiServerProvider?.hasLiveTv ?? false;
-    if (hasLiveTv == _lastHasLiveTv) return;
-    _lastHasLiveTv = hasLiveTv;
-
-    _handleTabAvailabilityChanged();
-
-    // A preferred startup section (only Live TV can be deferred) just became
-    // available — switch to it via _selectTab so it gets the usual visibility
-    // and focus handling. _selectTab clears _pendingStartupTab.
-    final pending = _pendingStartupTab;
-    if (pending != null && _getVisibleTabs(_isOffline).any((t) => t.id == pending)) {
-      _selectTab(pending);
     }
   }
 
@@ -1441,11 +1374,11 @@ class _MainScreenState extends State<MainScreen>
 
     // Ensure profile settings are warmed when coming back online
     if (!_isOffline) {
-      // A launch that started offline skipped PlexHomeService's live/network
-      // side, so pick it up now that we have a network. `start()` is idempotent,
-      // so repeated offline/online transitions are free.
-      final plexHome = _plexHomeService ??= context.read<PlexHomeService>();
-      unawaited(plexHome.start());
+      // A launch that started offline skipped SiloHouseholdService's
+      // live/network side, so pick it up now that we have a network. `start()`
+      // is idempotent, so repeated offline/online transitions are free.
+      final households = _households ??= context.read<SiloHouseholdService>();
+      unawaited(households.start());
       unawaited(() async {
         final mp = context.read<MultiServerProvider>();
         final binder = context.read<ActiveProfileBinder>();
@@ -1454,8 +1387,6 @@ class _MainScreenState extends State<MainScreen>
           await binder.rebindActive();
           if (!mounted) return;
         }
-        await context.read<AccountPreferencesController>().ensureActiveLoaded();
-        if (!mounted) return;
         await _primeOnlineServices(mp.serverManager);
       }());
     }
@@ -1848,8 +1779,6 @@ class _MainScreenState extends State<MainScreen>
         _mountedTabs.add(tab);
         _screens = _buildScreens(_isOffline);
       }
-      // An explicit selection cancels any deferred startup-section switch.
-      _pendingStartupTab = null;
       if (!_isOffline) {
         _lastOnlineTabId = tab;
       } else if (previousTab != tab) {
@@ -1985,13 +1914,8 @@ class _MainScreenState extends State<MainScreen>
         });
   }
 
-  /// Whether the Live TV tab is currently visible
-  /// Use the synchronized value so screens list and nav bar always agree.
-  /// Updated by _handleLiveTvChanged when the provider notifies.
-  bool get _hasLiveTv => _lastHasLiveTv;
-
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
-    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv, hasExplore: _lastHasExplore);
+    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasExplore: _lastHasExplore);
   }
 
   List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {

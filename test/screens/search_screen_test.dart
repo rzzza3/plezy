@@ -64,7 +64,7 @@ void main() {
     final key = GlobalKey<State<SearchScreen>>();
     final item = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Movie 1',
       serverId: 'server_1',
@@ -353,7 +353,7 @@ void main() {
   testWidgets('card refresh stays server-qualified without restarting search', (tester) async {
     final serverOneItem = testMediaItem(
       id: 'shared-id',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Shared',
       serverId: 'server_1',
@@ -361,7 +361,7 @@ void main() {
     );
     final serverTwoItem = testMediaItem(
       id: 'shared-id',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Shared Alternate',
       serverId: 'server_2',
@@ -441,7 +441,7 @@ void main() {
       items: [
         testMediaItem(
           id: 'movie_1',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           title: 'Movie 1',
           serverId: 'server_1',
@@ -451,7 +451,7 @@ void main() {
         ),
         testMediaItem(
           id: 'movie_2',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           title: 'Movie 2',
           serverId: 'server_1',
@@ -476,7 +476,7 @@ void main() {
   });
 
   testWidgets('library name back-fills from loaded libraries when the row only carries an id', (tester) async {
-    // Plex search rows name their section only by librarySectionKey; the
+    // Search rows can name their library only by id; the
     // title must resolve against the loaded libraries without a request.
     final (_, key) = await _pumpTvSearchScreen(
       tester,
@@ -498,7 +498,7 @@ void main() {
       items: [
         testMediaItem(
           id: 'movie_1',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           title: 'Movie 1',
           serverId: 'server_1',
@@ -522,7 +522,7 @@ void main() {
   testWidgets('card refresh keeps the library stamp', (tester) async {
     final stamped = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Movie 1',
       serverId: 'server_1',
@@ -541,11 +541,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Server • Movies'), findsOneWidget);
 
-    // A fresh fetchItem carries no library context (a Jellyfin /Items/{id}
-    // response has none); the merge must keep the stamp search applied.
+    // A fresh fetchItem carries no library context; the merge must keep the
+    // stamp search applied.
     client.itemResult = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Movie 1 (Refreshed)',
       serverId: 'server_1',
@@ -613,7 +613,7 @@ void main() {
       for (var i = 0; i < 100; i++)
         testMediaItem(
           id: 'episode_$i',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.episode,
           title: 'Paw Patrol',
           serverId: 'server_1',
@@ -621,7 +621,7 @@ void main() {
         ),
       testMediaItem(
         id: 'track_1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.track,
         title: 'Underwater Instrumental Extended Version (paw remix)',
         serverId: 'server_1',
@@ -763,7 +763,7 @@ void main() {
     client.items.add(
       testMediaItem(
         id: 'movie_1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Waltz with Bashir',
         serverId: 'server_1',
@@ -846,7 +846,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
         [
           testMediaItem(
             id: 'movie_1',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.movie,
             title: 'Movie 1',
             serverId: 'server_1',
@@ -901,7 +901,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
 List<MediaItem> _twoLibraryMovies() => [
   testMediaItem(
     id: 'movie_1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
     title: 'Movie 1',
     serverId: 'server_1',
@@ -910,7 +910,7 @@ List<MediaItem> _twoLibraryMovies() => [
   ),
   testMediaItem(
     id: 'movie_2',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
     title: 'Movie 2',
     serverId: 'server_1',
@@ -924,7 +924,7 @@ List<MediaItem> _twoLibraryMovies() => [
 List<MediaItem> _mixedKindItems() => [
   testMediaItem(
     id: 'movie_1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
     title: 'Paw Patrol: The Movie',
     serverId: 'server_1',
@@ -932,7 +932,7 @@ List<MediaItem> _mixedKindItems() => [
   ),
   testMediaItem(
     id: 'episode_1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     title: 'Paw Patrol Rescue',
     serverId: 'server_1',
@@ -940,7 +940,7 @@ List<MediaItem> _mixedKindItems() => [
   ),
   testMediaItem(
     id: 'track_1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.track,
     title: 'Paw Patrol Theme',
     serverId: 'server_1',
@@ -951,14 +951,14 @@ List<MediaItem> _mixedKindItems() => [
 /// A library on `server_1`, keyed so `MediaItem.libraryGlobalKey` for items
 /// with the same `libraryId` resolves to it.
 MediaLibrary _library(String id, String title) =>
-    MediaLibrary(id: id, backend: MediaBackend.plex, title: title, kind: MediaKind.movie, serverId: 'server_1');
+    MediaLibrary(id: id, backend: MediaBackend.silo, title: title, kind: MediaKind.movie, serverId: 'server_1');
 
-/// A Plex actor on `server_1`, shaped like a `searchTypes=people` row.
+/// An actor on `server_1`, shaped like a `searchTypes=people` row.
 MediaPerson _christophWaltz() => MediaPerson(
   id: '38797',
   name: 'Christoph Waltz',
   credit: PersonCredit.actor,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   serverId: ServerId('server_1'),
   serverName: 'Server',
 );
@@ -1007,10 +1007,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   String? get serverName => serverNameValue;
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<MediaItem>> searchItems(

@@ -103,7 +103,7 @@ void main() {
             body: SizedBox(
               width: surface.width,
               height: surface.height,
-              child: PlexVideoControls(
+              child: SiloVideoControls(
                 player: player,
                 volumeController: volume,
                 metadata: testMediaItem(id: 'two-finger-tap'),
@@ -141,7 +141,7 @@ void main() {
     expect(chrome.controlsVisible, isFalse);
   }
 
-  Offset centreOf(WidgetTester tester) => tester.getRect(find.byType(PlexVideoControls)).center;
+  Offset centreOf(WidgetTester tester) => tester.getRect(find.byType(SiloVideoControls)).center;
 
   /// Two fingers down, then both up — the production gesture.
   Future<void> twoFingerTap(WidgetTester tester, {Offset? at, double spread = 40}) async {
@@ -313,7 +313,7 @@ void main() {
     // Opening the strip forces the chrome visible, so this spot is chosen to
     // miss every control in both states: the differential below is only
     // meaningful because the same point toggles playback with the strip shut.
-    final rect = tester.getRect(find.byType(PlexVideoControls));
+    final rect = tester.getRect(find.byType(SiloVideoControls));
     final clearOfControls = Offset(rect.left + rect.width * 0.08, rect.top + rect.height * 0.30);
 
     await twoFingerTap(tester, at: clearOfControls, spread: 24);

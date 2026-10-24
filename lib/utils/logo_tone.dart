@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 /// Classification of a channel-logo frame for theme-adaptive rendering.
 ///
-/// Broadcast channel logos (Gracenote and most Jellyfin/Emby lineups) are
+/// Broadcast channel logos (Gracenote and most other lineups) are
 /// designed for dark UIs: white or near-white marks on transparency. On the
 /// light theme's white cards they are invisible (issue #2197). The tone drives
 /// whether [remapLightNeutral] may recolor a logo for a light surface.

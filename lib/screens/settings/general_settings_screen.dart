@@ -95,14 +95,8 @@ class GeneralSettingsScreen extends StatelessWidget {
     );
   }
 
-  // Sections offered as a startup destination, in display order. Live TV is
-  // always listed; if no server provides it, startup falls back to Home.
-  static const _startupSectionOptions = [
-    NavigationTabId.discover,
-    NavigationTabId.libraries,
-    NavigationTabId.liveTv,
-    NavigationTabId.search,
-  ];
+  // Sections offered as a startup destination, in display order.
+  static const _startupSectionOptions = [NavigationTabId.discover, NavigationTabId.libraries, NavigationTabId.search];
 
   String _startupSectionLabel(NavigationTabId id) => allNavigationTabs.firstWhere((t) => t.id == id).getLabel();
 

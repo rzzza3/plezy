@@ -32,7 +32,7 @@ class SettingsExportException implements Exception {
   String toString() => 'SettingsExportException: $message';
 }
 
-/// Thrown when an import is attempted without an active Plex user, since the
+/// Thrown when an import is attempted without an active profile, since the
 /// user prefix needed to re-scope library preferences is unavailable.
 class NoUserSignedInException extends SettingsExportException {
   const NoUserSignedInException() : super('No user is signed in');

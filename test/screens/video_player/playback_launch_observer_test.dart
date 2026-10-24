@@ -13,7 +13,6 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
@@ -198,7 +197,7 @@ void main() {
         expect(observer.snapshot(), containsPair('item', containsPair('itemId', 'observed')));
         screen.key.currentState!.debugCommitAdjacentEpisodesForTesting(
           AdjacentEpisodes(
-            next: testMediaItem(id: 'next', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+            next: testMediaItem(id: 'next', serverId: 'srv-1', backend: MediaBackend.silo),
             nextStatus: QueueNavigationStatus.found,
             previousStatus: QueueNavigationStatus.boundary,
           ),
@@ -245,7 +244,6 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
   final client = _ObservedClient();
   final multi = testMultiServer(clients: [client]);
   final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
-  final accountPreferences = AccountPreferencesController();
   final initializationHold = Completer<void>();
   Future<void> holdInitialization() => initializationHold.future;
   PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
@@ -255,7 +253,6 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
     initializationHold.complete();
     await tester.pump();
     offlineWatch.dispose();
-    accountPreferences.dispose();
     await fakePlayer.dispose();
   });
   final navigator = GlobalKey<NavigatorState>();
@@ -266,7 +263,6 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
         ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
         ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
         ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-        ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
         Provider<AppDatabase>.value(value: db),
       ],
@@ -280,7 +276,7 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
     VideoPlayerRoute(
       builder: (_) => VideoPlayerScreen(
         key: key,
-        metadata: testMediaItem(id: 'observed', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+        metadata: testMediaItem(id: 'observed', serverId: 'srv-1', backend: MediaBackend.silo),
         selectedQualityPreset: TranscodeQualityPreset.original,
         selectedAudioStreamId: 1,
         launchObserver: observer,
@@ -393,9 +389,9 @@ class _ObservedClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   String get serverName => 'Server';
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => MediaBackend.silo;
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
   @override
   double get watchedThreshold => 0.9;
   @override
