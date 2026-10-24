@@ -46,7 +46,6 @@ import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import '../../widgets/system_bottom_inset.dart';
 import '../../profiles/active_profile_provider.dart';
-import '../../profiles/profile.dart';
 import '../../watch_together/services/watch_together_relay_endpoint.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
@@ -325,22 +324,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildConnectionsSection(BuildContext context) {
-    final active = context.select<ActiveProfileProvider, Profile?>((p) => p.active);
-    final subtitle = active == null
-        ? t.connections.addConnectionSubtitleNoProfile
-        : t.connections.addConnectionSubtitleScoped(displayName: active.displayName);
-
     return SettingsGroup(
       title: t.connections.sectionTitle,
       children: [
-        // Connections are managed per-profile (via the Profiles section
-        // and each profile's detail screen). The shortcut here just opens
-        // the picker scoped to the active profile so users can add a Silo
-        // server or borrow from another profile.
         SettingNavigationTile(
           icon: Symbols.add_link_rounded,
           title: t.connections.addConnection,
-          subtitle: subtitle,
+          subtitle: t.connections.addConnectionSubtitle,
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const AddConnectionScreen()));
           },

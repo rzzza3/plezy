@@ -864,8 +864,7 @@
   "connections": {
     "sectionTitle": "Connections",
     "addConnection": "Add connection",
-    "addConnectionSubtitleNoProfile": "Connect to a Silo server",
-    "addConnectionSubtitleScoped": "Add to ${displayName}: a Silo server or another profile's connection",
+    "addConnectionSubtitle": "Connect to a Silo server",
     "sessionExpiredOne": "Session expired for ${name}",
     "sessionExpiredMany": "Session expired for ${count} servers",
     "accessDeniedOne": "${name} refused access for this account",

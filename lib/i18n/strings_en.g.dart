@@ -2560,10 +2560,7 @@ class Translations$connections$en {
 	String get addConnection => 'Add connection';
 
 	/// en: 'Connect to a Silo server'
-	String get addConnectionSubtitleNoProfile => 'Connect to a Silo server';
-
-	/// en: 'Add to ${displayName}: a Silo server or another profile's connection'
-	String addConnectionSubtitleScoped({required Object displayName}) => 'Add to ${displayName}: a Silo server or another profile\'s connection';
+	String get addConnectionSubtitle => 'Connect to a Silo server';
 
 	/// en: 'Session expired for ${name}'
 	String sessionExpiredOne({required Object name}) => 'Session expired for ${name}';
@@ -7165,8 +7162,7 @@ extension on Translations {
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
-			'connections.addConnectionSubtitleNoProfile' => 'Connect to a Silo server',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: a Silo server or another profile\'s connection',
+			'connections.addConnectionSubtitle' => 'Connect to a Silo server',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',
@@ -7374,9 +7370,9 @@ extension on Translations {
 			'explore.cast' => 'Cast',
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
+			'explore.removeFromWatchlist' => 'Remove from Watchlist',
 			_ => null,
 		} ?? switch (path) {
-			'explore.removeFromWatchlist' => 'Remove from Watchlist',
 			'explore.addedToWatchlist' => 'Added to watchlist',
 			'explore.removedFromWatchlist' => 'Removed from watchlist',
 			'explore.watchlistUpdateFailed' => 'Couldn\'t update watchlist',
@@ -7888,9 +7884,9 @@ extension on Translations {
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
+			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			_ => null,
 		} ?? switch (path) {
-			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
