@@ -39,7 +39,7 @@ MediaItem _episodeMeta({
   required String? parentId,
 }) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Ep $id',
   serverId: serverId,
@@ -266,7 +266,7 @@ void main() {
 
 MediaItem _seasonEpisode({required String id, required int season, required int episode}) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode $id',
   serverId: ServerId('srv'),

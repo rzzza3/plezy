@@ -18,14 +18,11 @@ import '../utils/watch_state_notifier.dart';
 
 /// Tracks playback progress and reports it to the active media server.
 ///
-/// Plex and both MediaBrowser dialects go through the unified
-/// [MediaServerClient.reportPlayback*] surface — Plex maps the three signals
-/// onto `/:/timeline` updates with appropriate `state`, while MediaBrowser
-/// uses the three `/Sessions/Playing*` endpoints.
+/// Reports go through the unified [MediaServerClient.reportPlayback*]
+/// surface; the client maps the three signals onto its wire.
 ///
 /// Local watched state flips as soon as the position crosses the client's
-/// [MediaServerClient.watchedThreshold] (per-server pref on Plex, fixed 90% on
-/// MediaBrowser). The *server-side* mark is a separate decision: each backend
+/// [MediaServerClient.watchedThreshold] (fixed 90% on Silo). The *server-side* mark is a separate decision: each backend
 /// already marks an item played from a threshold crossing it observes in the
 /// reports this tracker sends, so an explicit mark is issued only for sessions
 /// that gave it no such crossing (#1287, #1740).
@@ -62,18 +59,16 @@ class PlaybackProgressTracker {
   final MediaSourceInfo? mediaInfo;
 
   /// Invoked once after the item is successfully scrobbled. The player wires
-  /// this to mark same-file sibling episodes of a Plex multi-episode file
+  /// this to mark same-file sibling episodes of a multi-episode file
   /// watched (#1500) — resolved lazily here because the play queue holding
   /// the siblings is created fire-and-forget and may not exist when this
   /// tracker is constructed. Best-effort: failures are logged and never
   /// un-scrobble the primary item.
   final Future<void> Function()? onScrobbled;
 
-  /// Invoked on every paused progress tick. The player wires this to the
-  /// Plex transcoder keepalive ping (`/video/:/transcode/universal/ping`) —
-  /// timeline reports alone historically have not been enough to stop PMS
-  /// from reaping an idle transcode, so official Plex clients send both
-  /// while paused. Best-effort; failures are the callee's to swallow.
+  /// Invoked on every paused progress tick, for a backend whose idle
+  /// transcode needs a keepalive beyond the progress reports. Nothing wires
+  /// one on Silo today. Best-effort; failures are the callee's to swallow.
   final Future<void> Function()? onPausedKeepalive;
 
   /// Whether non-terminal playback reports reflect real playback output.
@@ -128,7 +123,7 @@ class PlaybackProgressTracker {
   ///
   /// Position zero does not count. Verified against PMS 1.43: a session
   /// reporting `time=0` and then the full duration is not marked played, while
-  /// the same session starting at `time=1000` is. Plex treats a zero position
+  /// the same session starting at `time=1000` is. A server may treat a zero position
   /// as session initialisation rather than progress, so it has nothing to
   /// cross from. (Retention of a resume point is a separate, higher bar —
   /// reports at 5s and 30s arm the crossing without persisting an offset.)
@@ -137,7 +132,7 @@ class PlaybackProgressTracker {
   /// The backend has received an at-or-above-threshold report while already
   /// holding a sub-threshold offset — it observed the crossing and marked the
   /// item itself, so an explicit mark would record the same watch twice
-  /// (#1287, #1740 Plex).
+  /// (#1287, #1740).
   bool _serverObservedCrossing = false;
 
   /// The terminal stopped report has been delivered; no further report can
@@ -244,7 +239,7 @@ class PlaybackProgressTracker {
   /// [initialPosition] and [initialDuration] override the live player state
   /// for that initial report only. Music binds a new tracker the instant a
   /// gapless advance is announced, when `player.state.position`/`duration`
-  /// still hold the *outgoing* track's values — reporting those told Plex the
+  /// still hold the *outgoing* track's values — reporting those told the server the
   /// new track was already at ~100%, which recorded a play (and a Last.fm
   /// scrobble) at track start on top of the real one (#1849). Callers that
   /// know where the item truly starts pass it here; timer ticks always read
@@ -367,7 +362,7 @@ class PlaybackProgressTracker {
   }
 
   /// The server killed this playback session out from under the client
-  /// (Plex admin stop, paused-too-long auto-termination). Continuing the
+  /// (an admin stop, paused-too-long auto-termination). Continuing the
   /// heartbeat loop would re-register the session on PMS as a zombie row the
   /// admin can no longer clear (#1916), so the local reporting session is
   /// closed with one stopped report at the current playhead — verified
@@ -756,7 +751,7 @@ class PlaybackProgressTracker {
 
   /// The engine's current selection, resolved for every report state.
   ///
-  /// The terminal report carries the indexes too: MediaBrowser backends only
+  /// The terminal report carries the indexes too: some backends only
   /// learn a track pick from a report body, and [updateInterval] means a pick
   /// made just before exit has no progress ping left to ride.
   Future<PlaybackStreamSelection> _currentStreamSelection() async {
@@ -820,7 +815,7 @@ class PlaybackProgressTracker {
     // and a native track id is the engine's own ordinal, so neither the n-th
     // row nor the row whose stream index happens to equal the native id is
     // this track. An unmatched track is withheld rather than guessed.
-    return findPlexTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle)?.id;
+    return findServerTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle)?.id;
   }
 
   /// Queue progress update locally (offline mode)

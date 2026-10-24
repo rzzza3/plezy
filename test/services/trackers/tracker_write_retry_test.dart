@@ -47,7 +47,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     : serverId = ServerId('server-1');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async => externalIdsByItem[itemId] ?? const ExternalIds();
@@ -149,7 +149,7 @@ http.Client _unreachableClient() => MockClient((_) async => throw http.ClientExc
 
 MediaItem _episodeItem(int number) => testMediaItem(
   id: 'episode-1-$number',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode $number',
   serverId: ServerId('server-1'),
@@ -161,7 +161,7 @@ MediaItem _episodeItem(int number) => testMediaItem(
 
 MediaItem _episodeItemOfShow(String showId, int number) => testMediaItem(
   id: '$showId-episode-$number',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode $number',
   serverId: ServerId('server-1'),
@@ -173,7 +173,7 @@ MediaItem _episodeItemOfShow(String showId, int number) => testMediaItem(
 
 MediaItem _movieItem({int? viewOffsetMs, int? durationMs}) => testMediaItem(
   id: 'movie-1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: 'Movie 1',
   serverId: ServerId('server-1'),
@@ -299,7 +299,7 @@ void main() {
   group('a failed container write', () {
     MediaItem show() => testMediaItem(
       id: 'show-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.show,
       title: 'Show 1',
       serverId: ServerId('server-1'),

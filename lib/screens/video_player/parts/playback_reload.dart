@@ -54,20 +54,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
   }) async {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return PlaybackSourceChangeOutcome.unavailable;
-    // Live streams have no version/quality/audio catalog to switch; the only
-    // source change a live session supports is its server-side subtitle
-    // delivery (Plex burn-on-request, issue #1983).
-    final isLiveSubtitleSwitch =
-        widget.isLive &&
-        newSubtitleChoice != null &&
-        newMediaIndex == null &&
-        newPreset == null &&
-        newAudioStreamId == null;
-    if (widget.isLive && !isLiveSubtitleSwitch) return PlaybackSourceChangeOutcome.unavailable;
     final transitionLease = _transitionGate.tryAcquire(PlaybackTransition.switchingSource);
     if (transitionLease == null) return PlaybackSourceChangeOutcome.busy;
     try {
-      if (isLiveSubtitleSwitch) return await _switchLiveSubtitle(newSubtitleChoice);
       return await _performPlaybackSourceSwitch(
         currentPlayer: currentPlayer,
         transitionLease: transitionLease,
@@ -117,17 +106,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       if (preference != null) _sessionSubtitlePreference = preference;
     }
 
-    // Snapshot the backend client before subtitle selection can cross an
-    // async boundary or the profile-scoped context can disappear.
-    final serverId = _currentMetadata.serverId;
-    final isPlexBacked = _currentMetadata.backend == MediaBackend.plex;
-    PlexClient? streamSelectClient;
-    if (isPlexBacked && serverId != null) {
-      try {
-        streamSelectClient = context.getPlexClientForServer(ServerId(serverId));
-      } catch (_) {}
-    }
-
     if (newSubtitleChoice != null && newMediaIndex == null && newPreset == null && newAudioStreamId == null) {
       try {
         final selected = await _selectSourceSubtitleLocally(
@@ -157,7 +135,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         : newSubtitleChoice.isOff
         ? const SubtitlePreference.off()
         : SubtitlePreference.trackOrNull(
-            PlaybackSubtitleResolver.preferredTrackForSource(_currentMediaInfo, newSubtitleChoice.sourceStreamId!),
+            PlaybackSubtitleResolver.preferredTrackForSource(_currentMediaInfo, newSubtitleChoice.sourceStreamId!) ??
+                switch (newSubtitleChoice.pendingTrack) {
+                  final track? => PlaybackSubtitleResolver.subtitleTrackForSource(track),
+                  null => null,
+                },
           );
     final effectiveMediaSourceId = newMediaIndex != null
         ? PlaybackSession.mediaSourceIdForIndex(_availableVersions, effectiveMediaIndex) ?? _requestedMediaSourceId
@@ -178,35 +160,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     try {
       if (isVersionChange) {
         await saveMediaVersionPreferenceFor(_currentMetadata, index: effectiveMediaIndex, versions: _availableVersions);
-        if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
-      }
-
-      // Writing the part's stream selection is persistence, not delivery —
-      // the reload carries the audio id and the subtitle intent itself. So it
-      // answers to the same setting the in-player track handlers gate on,
-      // instead of promising remembered selections the user switched off.
-      if (isPlexBacked && (isSubtitleChange || isAudioChange) && await TrackManager.shouldPersistTrackSelections()) {
-        final partId = _currentMediaInfo?.partId;
-        if (streamSelectClient == null || partId == null) {
-          throw PlaybackException(
-            t.messages.streamSelectionUnavailable,
-            reason: PlaybackFailureReason.invalidPlaybackData,
-          );
-        }
-        final saved = await streamSelectClient.selectStreams(
-          partId,
-          audioStreamID: isAudioChange ? effectiveAudioStreamId : null,
-          // Plex's wire API uses 0 for Off. Keep that convention at this
-          // backend boundary so it cannot collide with other backends' source ids.
-          subtitleStreamID: isSubtitleChange
-              ? newSubtitleChoice.isOff
-                    ? 0
-                    : newSubtitleChoice.sourceStreamId
-              : null,
-        );
-        if (!saved) {
-          throw PlaybackException(t.messages.streamSelectionFailed);
-        }
         if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
       }
 
@@ -271,19 +224,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           burnedSourceStreamId != null &&
           _sidecarForSourceStreamId(burnSession, burnedSourceStreamId) != null,
       targetIsOff: choice.isOff,
-      // "A file the client fetches for itself", which backends may mark differently: Plex
-      // never sets `isExternalFile` and instead gives a real external
-      // subtitle a `/library/streams/{id}` key - the same test `_selectedInternalSubtitleForHls`
-      // uses to decide what it must not burn. Reading only `isExternalFile` classified every Plex
-      // external file as an embedded target and sent an already-loaded track switch to the server.
+      // "A file the client fetches for itself": an already-loaded external
+      // track switches locally instead of asking the server.
       targetIsExternalFile:
           targetSourceStreamId != null &&
-          (_currentMediaInfo?.subtitleTracks.any(
-                (track) =>
-                    track.id == targetSourceStreamId &&
-                    (track.isExternalFile ||
-                        (_currentMetadata.backend == MediaBackend.plex && (track.key?.isNotEmpty ?? false))),
-              ) ??
+          (_currentMediaInfo?.subtitleTracks.any((track) => track.id == targetSourceStreamId && track.isExternalFile) ??
               false),
     )) {
       return false;
@@ -383,10 +328,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     String reason = 'media reload',
   }) async {
     if (_shuttingDown) return MediaReloadOutcome.superseded;
-    if (widget.isLive) {
-      _clearEpisodeLoadingFlags();
-      return MediaReloadOutcome.rejected;
-    }
     final existingPlayer = player;
     if (!mounted || existingPlayer == null) {
       if (mounted) _clearEpisodeLoadingFlags();
@@ -464,7 +405,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // backend; [TrackManager] narrows it per backend for its server-side
       // track persistence.
       late final OfflineWatchSyncService offlineWatchService;
-      late final AccountPreferencesController accountPreferences;
       late final PlaybackStateProvider playbackState;
       late final AppDatabase database;
       late final MultiServerManager serverManager;
@@ -473,7 +413,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       late final bool wtOwnsStart;
       try {
         offlineWatchService = context.read<OfflineWatchSyncService>();
-        accountPreferences = context.read<AccountPreferencesController>();
         playbackState = context.read<PlaybackStateProvider>();
         database = context.read<AppDatabase>();
         serverManager = context.read<MultiServerProvider>().serverManager;
@@ -565,7 +504,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         // Local resume lookup can overlap the old stop, but source resolution
-        // below must not: Plex can use that stop to terminate any new
+        // below must not: a server can use that stop to terminate any new
         // transcode sharing this playback session identifier.
         final stoppedProgressFuture = _sendStoppedProgressOnce();
 
@@ -672,7 +611,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           resolveShouldAutoStart: (_) => shouldAutoStart,
           resumePosition: () => openResumePosition,
           mediaClient: () => mediaClient,
-          getProfileSettings: () => accountPreferences.activePreferences,
           preferredAudioTrack: initializationAudioTrack,
           wtStartupHold: () => reloadStartupHold,
           primarySubtitleTranscoding: () => result.isTranscoding,

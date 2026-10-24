@@ -3,7 +3,7 @@ import 'media_server_http_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
 /// [MediaServerHttpClient] with endpoint failover (the extracted
-/// implementation of what used to be `PlexClient._getWithFailover`).
+/// implementation).
 ///
 /// Semantics — decided once, here ([retryTransientMediaServerCall]'s doc
 /// cross-references this):
@@ -12,7 +12,7 @@ import '../exceptions/media_server_exceptions.dart';
 ///   (POST/PUT/DELETE) fail fast by default on both backends: replaying a
 ///   mutation against a second endpoint when the first was flaky-but-alive
 ///   risks double-application. A POST whose replay is harmless may opt in
-///   with `allowEndpointFailover: true` (Plex play-queue creation does — an
+///   with `allowEndpointFailover: true` (a non-idempotent POST does — an
 ///   orphaned duplicate queue on the server is inert).
 /// - **Trigger:** a transient transport failure
 ///   ([MediaServerHttpException.isTransient]) or a 5xx — whether thrown or
@@ -61,7 +61,7 @@ class FailoverHttpClient extends MediaServerHttpClient {
     this.validateCandidate,
   }) : _endpointManager = prioritizedEndpoints.isNotEmpty ? EndpointFailoverManager(prioritizedEndpoints) : null;
 
-  /// Backend name for log lines (e.g. 'Plex') — keeps failover logs
+  /// Backend name for log lines (e.g. 'Silo') — keeps failover logs
   /// greppable per backend.
   final String logLabel;
   final EndpointFailoverManager? _endpointManager;

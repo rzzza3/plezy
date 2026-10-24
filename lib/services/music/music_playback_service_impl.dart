@@ -1019,7 +1019,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
     // Every music bind starts its track at the top, but on a gapless advance
     // the player's state still carries the *finished* track's position and
-    // duration when the transition is announced. Reporting that told Plex the
+    // duration when the transition is announced. Reporting that told the server the
     // new track was already at ~100% and double-counted the play (#1849), so
     // the initial report is pinned to the track's own start instead of live
     // player state.

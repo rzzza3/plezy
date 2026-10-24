@@ -9,8 +9,7 @@ String formatQueueItemSubtitle(MediaItem item) {
   }
   if (grandparentTitle != null) return grandparentTitle;
   if (item.year != null) {
-    final edition = item.editionTitle;
-    return edition != null ? '${item.year} \u00b7 $edition' : '${item.year}';
+    return '${item.year}';
   }
   return item.kind.label;
 }

@@ -23,7 +23,7 @@ class ExternalSeasonRef {
   /// the former numbers `2` the latter often folds into `1` at an episode
   /// offset. Which one a library follows is a server-side setting, not
   /// anything a dataset can tell us, and it is NOT inferable from which ids an
-  /// item exposes (a Plex show carries all three regardless). So when the two
+  /// item exposes (a show can carry all three regardless). So when the two
   /// disagree the honest answer is "cannot tell" and the caller must not gate.
   ///
   /// A missing number is not agreement either: `tvdb: 2, tmdb: null` means
@@ -46,21 +46,15 @@ class ExternalSeasonRef {
 
 /// External IDs (IMDb / TMDB / TVDB / AniDB) extracted from a media server's
 /// metadata. Shared by the Trakt and tracker resolvers.
-///
-/// - **Plex** stores modern IDs in a `Guid` array (`imdb://tt123`,
-///   `tmdb://456`, `tvdb://789`) and legacy agents expose one scalar `guid`
-///   instead — the `Guid` array only exists for the Plex Movie / Plex TV
-///   Series agents. Use [ExternalIds.fromGuids] and [fillFrom] with
-///   [ExternalIds.fromLegacyPlexGuid] so both shapes are read.
 class ExternalIds {
   final String? imdb;
   final int? tmdb;
   final int? tvdb;
 
-  /// AniDB series id, only ever produced by Plex's HAMA agent. Separate from
-  /// the three catalog ids because almost nothing accepts it: it names a Fribb
-  /// row (and through it MAL/AniList/Simkl) but Trakt, Plex Discover, Seerr and
-  /// the Anime-Lists episode mappings are all keyed the other way.
+  /// AniDB series id. Separate from the three catalog ids because almost
+  /// nothing accepts it: it names a Fribb row (and through it
+  /// MAL/AniList/Simkl) but Trakt, Seerr and the Anime-Lists episode mappings
+  /// are all keyed the other way.
   final int? anidb;
 
   const ExternalIds({this.imdb, this.tmdb, this.tvdb, this.anidb});
@@ -81,17 +75,6 @@ class ExternalIds {
       (tvdb != null && tvdb == other.tvdb) ||
       (anidb != null && anidb == other.anidb);
 
-  /// This set with every absent id taken from [other].
-  ///
-  /// Used to read a Plex item that carries both shapes: the modern `Guid` array
-  /// wins per field and the legacy scalar `guid` only fills what it left null.
-  ExternalIds fillFrom(ExternalIds other) => ExternalIds(
-    imdb: imdb ?? other.imdb,
-    tmdb: tmdb ?? other.tmdb,
-    tvdb: tvdb ?? other.tvdb,
-    anidb: anidb ?? other.anidb,
-  );
-
   /// Round-trips through the persisted tracker write queue. Absent ids stay
   /// absent so a re-read yields the same [hasAny]/[intersects] answers.
   Map<String, Object?> toJson() => {
@@ -107,102 +90,4 @@ class ExternalIds {
     tvdb: (json['tvdb'] as num?)?.toInt(),
     anidb: (json['anidb'] as num?)?.toInt(),
   );
-
-  factory ExternalIds.fromGuids(List<dynamic> guids) {
-    String? imdb;
-    int? tmdb;
-    int? tvdb;
-    for (final g in guids) {
-      if (g is! Map) continue;
-      final id = g['id'];
-      if (id is! String) continue;
-      if (id.startsWith('imdb://')) {
-        imdb = id.substring(7);
-      } else if (id.startsWith('tmdb://')) {
-        tmdb = int.tryParse(id.substring(7));
-      } else if (id.startsWith('tvdb://')) {
-        tvdb = int.tryParse(id.substring(7));
-      }
-    }
-    return ExternalIds(imdb: imdb, tmdb: tmdb, tvdb: tvdb);
-  }
-
-  /// The scalar `guid` a legacy-agent Plex item carrying these ids would
-  /// have, as `/library/all?guid=` filter values — the inverse of
-  /// [fromLegacyPlexGuid]. That filter is a literal prefix match (verified on
-  /// PMS 1.43), and every legacy guid ends in `?lang=xx`, so each value ends
-  /// in the `?` and cannot run into a longer id (`themoviedb://1` would
-  /// otherwise match every id starting with 1). HAMA's `anidb2`..`anidb9`
-  /// grouping modes are left out for the reason [fromLegacyPlexGuid] gives.
-  List<String> get legacyPlexGuidPrefixes => [
-    if (imdb case final imdb?) ...['com.plexapp.agents.imdb://$imdb?', 'com.plexapp.agents.hama://imdb-$imdb?'],
-    if (tmdb case final tmdb?) ...[
-      'com.plexapp.agents.themoviedb://$tmdb?',
-      'com.plexapp.agents.hama://tmdb-$tmdb?',
-      'com.plexapp.agents.hama://tsdb-$tmdb?',
-    ],
-    if (tvdb case final tvdb?) ...[
-      'com.plexapp.agents.thetvdb://$tvdb?',
-      'com.plexapp.agents.hama://tvdb-$tvdb?',
-      for (var mode = 2; mode <= 9; mode++) 'com.plexapp.agents.hama://tvdb$mode-$tvdb?',
-    ],
-    if (anidb case final anidb?) 'com.plexapp.agents.hama://anidb-$anidb?',
-  ];
-
-  /// Build from a legacy Plex item's scalar `guid`.
-  ///
-  /// HAMA composes its guid as `<source>-<id>` over
-  /// `anidb|anidb2..9|tvdb|tvdb2..9|tmdb|tsdb|imdb`. Only plain `anidb-` is
-  /// mapped: `anidb2`..`anidb9` are HAMA's grouping modes, where several AniDB
-  /// entries share one Plex show under TVDB-shaped seasons, so the guid names
-  /// the root entry only and would mislabel every later season.
-  factory ExternalIds.fromLegacyPlexGuid(Object? guid) {
-    if (guid is! String || guid.isEmpty) return const ExternalIds();
-
-    final uri = Uri.tryParse(guid);
-    if (uri == null || !uri.hasAuthority || uri.path.isNotEmpty) return const ExternalIds();
-
-    final value = uri.host;
-    switch (uri.scheme.toLowerCase()) {
-      case 'com.plexapp.agents.imdb':
-        return ExternalIds(imdb: _normalizeImdb(value, allowBareDigits: false));
-      case 'com.plexapp.agents.themoviedb':
-        return ExternalIds(tmdb: _parseNumericId(value));
-      case 'com.plexapp.agents.thetvdb':
-        return ExternalIds(tvdb: _parseNumericId(value));
-      case 'com.plexapp.agents.hama':
-        final separator = value.indexOf('-');
-        if (separator <= 0 || separator == value.length - 1) return const ExternalIds();
-        final source = value.substring(0, separator).toLowerCase();
-        final id = value.substring(separator + 1);
-        if (source == 'imdb') {
-          return ExternalIds(imdb: _normalizeImdb(id, allowBareDigits: true));
-        }
-        if (source == 'anidb') {
-          return ExternalIds(anidb: _parseNumericId(id));
-        }
-        if (source == 'tmdb' || source == 'tsdb') {
-          return ExternalIds(tmdb: _parseNumericId(id));
-        }
-        if (_hamaTvdbSource.hasMatch(source)) {
-          return ExternalIds(tvdb: _parseNumericId(id));
-        }
-    }
-    return const ExternalIds();
-  }
-
-  static final RegExp _decimalId = RegExp(r'^[0-9]+$');
-  static final RegExp _hamaTvdbSource = RegExp(r'^tvdb(?:[2-9])?$');
-
-  static int? _parseNumericId(String value) => _decimalId.hasMatch(value) ? int.tryParse(value) : null;
-
-  static String? _normalizeImdb(String value, {required bool allowBareDigits}) {
-    final normalized = value.toLowerCase();
-    if (normalized.startsWith('tt')) {
-      final digits = normalized.substring(2);
-      return _decimalId.hasMatch(digits) ? 'tt$digits' : null;
-    }
-    return allowBareDigits && _decimalId.hasMatch(normalized) ? 'tt$normalized' : null;
-  }
-
 }

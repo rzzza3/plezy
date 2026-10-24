@@ -1,32 +1,27 @@
-import 'dart:async';
-
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
-import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_avatar.dart';
-import 'package:plezy/profiles/profile_connection.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
-import 'package:plezy/screens/profile/pin_entry_dialog.dart';
-import 'package:plezy/screens/profile/profile_detail_screen.dart';
+import 'package:plezy/profiles/silo_household_service.dart';
 import 'package:plezy/screens/profile/profile_switch_screen.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/silo/silo_profiles.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/profile_stack.dart';
+
+const _owner = SiloProfile(id: 'owner', name: 'Owner', isPrimary: true);
+const _kids = SiloProfile(id: 'kids', name: 'Kids');
+const _account = SiloAccount(id: 'acct-1', username: 'alice', role: 'admin');
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -36,26 +31,26 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
-  testWidgets('D-pad can focus profile actions and open the manage menu', (tester) async {
+  testWidgets('D-pad can focus profile actions and open the tile menu', (tester) async {
     await _pumpPicker(
       tester,
-      profiles: [Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1))],
-      connections: const [],
+      households: {
+        'srv': const SiloHousehold(_account, [_owner]),
+      },
     );
 
     expect(find.text('Owner'), findsOneWidget);
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ProfileTile:local-owner');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ProfileTile:silo:srv/owner');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ProfileActions:local-owner');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ProfileActions:silo:srv/owner');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
 
-    expect(find.text(t.profiles.manage), findsOneWidget);
-    expect(find.text(t.profiles.delete), findsOneWidget);
+    expect(find.text(t.profiles.signOut), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
@@ -64,63 +59,57 @@ void main() {
   testWidgets('orders profiles by recent usage from storage', (tester) async {
     await _pumpPicker(
       tester,
-      profiles: [
-        Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-        Profile.local(id: 'local-kids', displayName: 'Kids', createdAt: DateTime(2026, 1, 2)),
-      ],
-      connections: const [],
-      lastUsedAt: {'local-kids': DateTime(2026, 1, 3)},
+      households: {
+        'srv': const SiloHousehold(_account, [_owner, _kids]),
+      },
+      lastUsedAt: {'silo:srv/kids': DateTime(2026, 1, 3)},
     );
 
     expect(tester.getTopLeft(find.text('Kids')).dy, lessThan(tester.getTopLeft(find.text('Owner')).dy));
   });
 
-  testWidgets('passes derived Plex Home avatar URLs only to linked profile tiles', (tester) async {
-    final linkedProfile = Profile.local(id: 'local-linked', displayName: 'Linked', createdAt: DateTime(2026, 1, 1));
-    final unlinkedProfile = Profile.local(
-      id: 'local-unlinked',
-      displayName: 'Unlinked',
-      createdAt: DateTime(2026, 1, 2),
-    );
-    const thumb = 'https://plex.tv/users/linked-uuid/avatar?c=1';
+  testWidgets("passes each profile's avatar, resolved against its server, to its tile", (tester) async {
     await _pumpPicker(
       tester,
-      profiles: [linkedProfile, unlinkedProfile],
-      connections: [_plexAccount('Owner')],
-      profileConnections: [
-        ProfileConnection(
-          profileId: linkedProfile.id,
-          connectionId: 'plex-account',
-          userToken: 'borrowed-token',
-          userIdentifier: 'linked-uuid',
-        ),
-      ],
-      homeUsers: [_homeUser('linked-uuid', 'Linked', thumb: thumb)],
+      households: {
+        'srv': const SiloHousehold(_account, [
+          SiloProfile(id: 'owner', name: 'Owner', avatarUrl: '/api/v2/profiles/owner/avatar'),
+          _kids,
+        ]),
+      },
     );
 
-    final linkedAvatar = tester.widget<ProfileAvatar>(
-      find.byWidgetPredicate((widget) => widget is ProfileAvatar && widget.profile?.id == linkedProfile.id),
+    ProfileAvatar avatarOf(String id) => tester.widget<ProfileAvatar>(
+      find.byWidgetPredicate((widget) => widget is ProfileAvatar && widget.profile?.id == id),
     );
-    final unlinkedAvatar = tester.widget<ProfileAvatar>(
-      find.byWidgetPredicate((widget) => widget is ProfileAvatar && widget.profile?.id == unlinkedProfile.id),
-    );
-    expect(linkedAvatar.avatarUrl, isNotNull);
-    expect(linkedAvatar.avatarUrl, thumb);
-    expect(unlinkedAvatar.avatarUrl, isNull);
+    expect(avatarOf('silo:srv/owner').avatarUrl, 'https://srv.example/api/v2/profiles/owner/avatar');
+    expect(avatarOf('silo:srv/kids').avatarUrl, isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
 
+  testWidgets('names the server each profile belongs to', (tester) async {
+    await _pumpPicker(
+      tester,
+      households: {
+        'den': const SiloHousehold(_account, [_owner]),
+        'cabin': const SiloHousehold(_account, [_kids]),
+      },
+      serverNames: {'den': 'Den', 'cabin': 'Cabin'},
+    );
+
+    expect(find.descendant(of: _tileFor('Owner'), matching: find.text('Den')), findsOneWidget);
+    expect(find.descendant(of: _tileFor('Kids'), matching: find.text('Cabin')), findsOneWidget);
+  });
+
   testWidgets('paints the recency order on the first frame that shows profiles', (tester) async {
     await _pumpPicker(
       tester,
-      profiles: [
-        Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-        Profile.local(id: 'local-kids', displayName: 'Kids', createdAt: DateTime(2026, 1, 2)),
-      ],
-      connections: const [],
-      lastUsedAt: {'local-kids': DateTime(2026, 1, 3)},
+      households: {
+        'srv': const SiloHousehold(_account, [_owner, _kids]),
+      },
+      lastUsedAt: {'silo:srv/kids': DateTime(2026, 1, 3)},
       settle: false,
     );
 
@@ -136,7 +125,7 @@ void main() {
 
     expect(paintedOrders, isNotEmpty, reason: 'the picker never painted a profile');
     expect(paintedOrders.toSet(), {'Kids,Owner'}, reason: 'the recency sort must not arrive a frame late');
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ProfileTile:local-kids');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ProfileTile:silo:srv/kids');
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
@@ -150,73 +139,28 @@ void main() {
       PlatformDetector.debugSetIsDesktopOSOverride(null);
     });
 
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final owner = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-    final kids = Profile.local(id: 'local-kids', displayName: 'Kids', createdAt: DateTime(2026, 1, 2));
-    final profiles = _MutableProfileRegistry(db, [owner, kids]);
-    final connections = _FakeConnectionRegistry(db);
-    final profileConnections = _FakeProfileConnectionRegistry(db);
-    final storage = await StorageService.getInstance();
-    final plexHome = _NoTimerPlexHomeService(
-      connections: connections,
-      profileConnections: profileConnections,
-      storage: storage,
-      plexHomeUserFetcher: (_) async => const [],
+    final picker = await _pumpPicker(
+      tester,
+      households: {
+        'srv': const SiloHousehold(_account, [_owner, _kids]),
+      },
+      withInputMode: true,
     );
-    final activeProfile = ActiveProfileProvider(
-      registry: profiles,
-      plexHome: plexHome,
-      connections: connections,
-      profileConnections: profileConnections,
-      storage: storage,
-    );
-    addTearDown(() async {
-      activeProfile.dispose();
-      await plexHome.dispose();
-      await profiles.close();
-      await db.close();
-    });
-
-    await activeProfile.initialize();
-    await tester.pumpWidget(
-      InputModeTracker(
-        child: TranslationProvider(
-          child: MultiProvider(
-            providers: [
-              Provider<StorageService>.value(value: storage),
-              Provider<ProfileRegistry>.value(value: profiles),
-              Provider<ProfileConnectionRegistry>.value(value: profileConnections),
-              Provider<ConnectionRegistry>.value(value: connections),
-              Provider<PlexHomeService>.value(value: plexHome),
-              ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
-            ],
-            child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
 
     expect(_visibleProfileNames(tester), ['Owner', 'Kids']);
     final focused = FocusManager.instance.primaryFocus;
-    expect(focused?.debugLabel, 'ProfileTile:local-owner');
+    expect(focused?.debugLabel, 'ProfileTile:silo:srv/owner');
     expect(_tileIsHighlighted(tester, 'Owner'), isTrue, reason: 'the focused tile starts highlighted');
 
-    // A refreshed profile source can re-sort the list after first paint. The
-    // tile must move with its focus node instead of the node being rebound to
+    // A refreshed household can re-sort the list after first paint. The tile
+    // must move with its focus node instead of the node being rebound to
     // whatever profile now occupies its index.
-    profiles.emit([
-      owner,
-      Profile.local(
-        id: 'local-kids',
-        displayName: 'Kids',
-        createdAt: DateTime(2026, 1, 2),
-        lastUsedAt: DateTime(2026, 1, 3),
-      ),
-    ]);
+    await tester.runAsync(
+      () => picker.households.put(testSiloConnection('srv'), const SiloHousehold(_account, [_kids, _owner])),
+    );
     await tester.pumpAndSettle();
 
-    expect(_visibleProfileNames(tester), ['Kids', 'Owner'], reason: 'the emission should have re-sorted the list');
+    expect(_visibleProfileNames(tester), ['Kids', 'Owner'], reason: 'the household should have re-sorted the list');
     expect(FocusManager.instance.primaryFocus, same(focused), reason: 'the reorder must not move focus off the tile');
     expect(_tileIsHighlighted(tester, 'Owner'), isTrue, reason: 'the focused tile must still draw focus chrome');
 
@@ -224,349 +168,76 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('names the Plex Home user and the account together, not the account alone', (tester) async {
+  testWidgets('Sign out on a tile asks before signing out of its server', (tester) async {
     await _pumpPicker(
       tester,
-      profiles: [
-        Profile.plexHome(
-          id: 'home-alice',
-          displayName: 'Alice',
-          parentConnectionId: 'plex-account',
-          plexHomeUserUuid: 'alice-uuid',
-          createdAt: DateTime(2026, 1, 1),
-        ),
-      ],
-      connections: [_plexAccount('Bob')],
-    );
-
-    expect(find.text('Alice'), findsOneWidget);
-    expect(
-      _relationChip(tester, tile: _tileFor('Alice'), first: 'Alice', second: 'Bob'),
-      t.profiles.plexAccountUserChip(user: 'Alice', account: 'Bob'),
-    );
-    expect(find.text('Bob'), findsNothing, reason: 'the owner name alone reads as being signed in as the owner');
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('names the borrowed Home user and the account it came from', (tester) async {
-    await _pumpPicker(
-      tester,
-      profiles: [Profile.local(id: 'local-alice', displayName: 'Alice', createdAt: DateTime(2026, 1, 1))],
-      connections: [_plexAccount('Bob')],
-      profileConnections: const [
-        ProfileConnection(
-          profileId: 'local-alice',
-          connectionId: 'plex-account',
-          userToken: 'borrowed-token',
-          userIdentifier: 'charlie-uuid',
-        ),
-      ],
-      homeUsers: [_homeUser('charlie-uuid', 'Charlie')],
-    );
-
-    expect(
-      _relationChip(tester, tile: _tileFor('Alice'), first: 'Charlie', second: 'Bob'),
-      t.profiles.plexAccountUserChip(user: 'Charlie', account: 'Bob'),
-    );
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('falls back to naming the account when the Home user cannot be resolved', (tester) async {
-    await _pumpPicker(
-      tester,
-      profiles: [Profile.local(id: 'local-alice', displayName: 'Alice', createdAt: DateTime(2026, 1, 1))],
-      connections: [_plexAccount('Bob')],
-      profileConnections: const [
-        ProfileConnection(
-          profileId: 'local-alice',
-          connectionId: 'plex-account',
-          userToken: 'borrowed-token',
-          userIdentifier: 'departed-uuid',
-        ),
-      ],
-    );
-
-    expect(find.text(t.profiles.plexAccountChip(account: 'Bob')), findsOneWidget);
-    expect(find.text('Bob'), findsNothing);
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('lets a locale put the account before the user', (tester) async {
-    // ja renders the relation as `${account}経由の${user}`. Splitting the two
-    // halves across widgets — or across two translated fragments — would pin
-    // them to English order; this is the assertion that keeps them in one
-    // translated string.
-    // `runAsync`: a deferred locale library loads on the real event loop,
-    // which the widget tester's fake async would otherwise never pump.
-    await tester.runAsync(() => LocaleSettings.setLocale(AppLocale.ja));
-    addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
-    await _pumpPicker(
-      tester,
-      profiles: [
-        Profile.plexHome(
-          id: 'home-alice',
-          displayName: 'Alice',
-          parentConnectionId: 'plex-account',
-          plexHomeUserUuid: 'alice-uuid',
-          createdAt: DateTime(2026, 1, 1),
-        ),
-      ],
-      connections: [_plexAccount('Bob')],
-    );
-
-    final label = _relationChip(tester, tile: _tileFor('Alice'), first: 'Alice', second: 'Bob');
-    expect(label, t.profiles.plexAccountUserChip(user: 'Alice', account: 'Bob'));
-    expect(label.indexOf('Bob'), lessThan(label.indexOf('Alice')));
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-  });
-
-  testWidgets('Manage on a PIN-protected non-active local profile requires its PIN', (tester) async {
-    await _pumpPicker(
-      tester,
-      profiles: [
-        Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-        Profile.local(
-          id: 'local-kids',
-          displayName: 'Kids',
-          pinHash: computePinHash('1234'),
-          createdAt: DateTime(2026, 1, 2),
-        ),
-      ],
-      connections: const [],
-      activeProfileId: 'local-owner',
-    );
-
-    // Bounded pumps whenever the PIN dialog is open: its autofocused field's
-    // cursor blink keeps scheduling frames, so pumpAndSettle never settles.
-    await _openTileMenu(tester, 'Kids');
-    await tester.tap(find.text(t.profiles.manage));
-    await _pumpBounded(tester);
-
-    expect(find.byType(PinEntryDialog), findsOneWidget, reason: 'Manage on a protected profile must ask for its PIN');
-    expect(find.byType(ProfileDetailScreen), findsNothing);
-
-    // A wrong PIN re-prompts with the retry error and never navigates.
-    await tester.enterText(find.byType(TextField), '9999');
-    await _pumpBounded(tester);
-
-    expect(find.byType(PinEntryDialog), findsOneWidget);
-    expect(find.text(t.profiles.incorrectPinTryAgain), findsOneWidget);
-    expect(find.byType(ProfileDetailScreen), findsNothing);
-
-    // Backing out of the retry leaves the picker unnavigated.
-    await tester.tap(find.text(t.common.cancel));
-    await _pumpBounded(tester);
-
-    expect(find.byType(PinEntryDialog), findsNothing);
-    expect(find.byType(ProfileDetailScreen), findsNothing);
-
-    // The right PIN proceeds to the detail screen. Bounded pumps only from
-    // here: the mounted detail screen never settles (indeterminate chrome),
-    // so pumpAndSettle would run into the test timeout.
-    await _openTileMenu(tester, 'Kids');
-    await tester.tap(find.text(t.profiles.manage));
-    await _pumpBounded(tester);
-    await tester.enterText(find.byType(TextField), '1234');
-    await _pumpBounded(tester);
-
-    expect(find.byType(ProfileDetailScreen), findsOneWidget);
-
-    // Pop the detail route before the shrink teardown so its subtree disposes
-    // inside a live navigator rather than during a whole-tree unmount.
-    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    // A duration pump: the detail screen's Drift stream builders schedule a
-    // zero-duration close timer on unmount, and a bare pump does not elapse
-    // fake time, so the timer would still be pending at the end-of-test check.
-    await tester.pump(const Duration(milliseconds: 100));
-  });
-
-  testWidgets('Delete on a PIN-protected non-active local profile requires its PIN', (tester) async {
-    await _pumpPicker(
-      tester,
-      profiles: [
-        Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-        Profile.local(
-          id: 'local-kids',
-          displayName: 'Kids',
-          pinHash: computePinHash('1234'),
-          createdAt: DateTime(2026, 1, 2),
-        ),
-      ],
-      connections: const [],
-      activeProfileId: 'local-owner',
-    );
-
-    // Bounded pumps while the PIN dialog is open — see the manage test.
-    await _openTileMenu(tester, 'Kids');
-    await tester.tap(find.text(t.profiles.delete));
-    await _pumpBounded(tester);
-
-    expect(find.byType(PinEntryDialog), findsOneWidget, reason: 'Delete on a protected profile must ask for its PIN');
-    expect(find.text(t.profiles.deleteThisProfileTitle), findsNothing);
-
-    // Cancelling the PIN prompt blocks the delete confirmation entirely.
-    await tester.tap(find.text(t.common.cancel));
-    await _pumpBounded(tester);
-
-    expect(find.byType(PinEntryDialog), findsNothing);
-    expect(find.text(t.profiles.deleteThisProfileTitle), findsNothing);
-
-    // The right PIN reaches the confirmation; close it without deleting.
-    await _openTileMenu(tester, 'Kids');
-    await tester.tap(find.text(t.profiles.delete));
-    await _pumpBounded(tester);
-    await tester.enterText(find.byType(TextField), '1234');
-    await _pumpBounded(tester);
-
-    expect(find.text(t.profiles.deleteThisProfileTitle), findsOneWidget);
-
-    await tester.tap(find.text(t.common.cancel));
-    await _pumpBounded(tester);
-    expect(find.text('Kids'), findsOneWidget);
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 100));
-  });
-
-  testWidgets('Manage on an unprotected profile opens the detail screen without a PIN prompt', (tester) async {
-    await _pumpPicker(
-      tester,
-      profiles: [Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1))],
-      connections: const [],
+      households: {
+        'srv': const SiloHousehold(_account, [_owner]),
+      },
+      serverNames: {'srv': 'Den'},
     );
 
     await _openTileMenu(tester, 'Owner');
-    await tester.tap(find.text(t.profiles.manage));
-    // Bounded pumps only: the mounted detail screen never settles.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text(t.profiles.signOut));
+    await tester.pumpAndSettle();
 
-    expect(find.byType(PinEntryDialog), findsNothing);
-    expect(find.byType(ProfileDetailScreen), findsOneWidget);
-
-    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text(t.profiles.signOutServerTitle(serverName: 'Den')), findsOneWidget);
+    await tester.tap(find.text(t.common.cancel));
+    await tester.pumpAndSettle();
+    expect(find.text('Owner'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
   });
 }
 
-/// Three bounded pumps covering a dialog/route transition without requiring
-/// quiescence: a focused text field's cursor blink and a mounted
-/// [ProfileDetailScreen] both keep scheduling work, so [WidgetTester
-/// .pumpAndSettle] would hang until the test timeout.
-Future<void> _pumpBounded(WidgetTester tester) async {
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
-  await tester.pump(const Duration(milliseconds: 400));
+class _Picker {
+  _Picker(this.connections, this.households, this.active);
+
+  final ConnectionRegistry connections;
+  final SiloHouseholdService households;
+  final ActiveProfileProvider active;
 }
 
-/// Boots the picker over a fixed profile/connection set. [homeUsers] seeds the
-/// live Plex Home cache, which is what turns a borrowed connection's
-/// `userIdentifier` uuid into a name.
-Future<void> _pumpPicker(
+/// Boots the picker over the signed-in servers in [households] (server id →
+/// household), the way boot leaves it: households cached, provider
+/// initialized.
+Future<_Picker> _pumpPicker(
   WidgetTester tester, {
-  required List<Profile> profiles,
-  required List<Connection> connections,
-  List<ProfileConnection> profileConnections = const [],
-  List<PlexHomeUser> homeUsers = const [],
-  String? activeProfileId,
+  required Map<String, SiloHousehold> households,
+  Map<String, String> serverNames = const {},
   Map<String, DateTime> lastUsedAt = const {},
   bool settle = true,
+  bool withInputMode = false,
 }) async {
-  final db = AppDatabase.forTesting(NativeDatabase.memory());
-  final profileRegistry = _FakeProfileRegistry(db, profiles);
-  final connectionRegistry = _FakeConnectionRegistry(db, connections);
-  final profileConnectionRegistry = _FakeProfileConnectionRegistry(db, profileConnections);
-  final storage = await StorageService.getInstance();
-  if (activeProfileId != null) {
-    await storage.setActiveProfileId(activeProfileId);
-  }
-  for (final entry in lastUsedAt.entries) {
-    await storage.markProfileUsed(entry.key, entry.value);
-  }
-  final plexHome = _NoTimerPlexHomeService(
-    connections: connectionRegistry,
-    profileConnections: profileConnectionRegistry,
-    storage: storage,
-    plexHomeUserFetcher: (_) async => homeUsers,
-  );
-  final activeProfile = ActiveProfileProvider(
-    registry: profileRegistry,
-    plexHome: plexHome,
-    connections: connectionRegistry,
-    profileConnections: profileConnectionRegistry,
-    storage: storage,
-  );
-  addTearDown(() async {
-    activeProfile.dispose();
-    await plexHome.dispose();
-    await db.close();
-  });
-  if (homeUsers.isNotEmpty) {
-    for (final connection in connections.whereType<PlexAccountConnection>()) {
-      expect(await plexHome.refresh(connection), isTrue);
+  final stack = (await tester.runAsync(() async {
+    final stack = await ProfileStack.create();
+    for (final entry in lastUsedAt.entries) {
+      await stack.storage.markProfileUsed(entry.key, entry.value);
     }
-  }
+    for (final entry in households.entries) {
+      await stack.addServer(entry.key, entry.value, serverName: serverNames[entry.key]);
+    }
+    return stack;
+  }))!;
+  addTearDown(() => tester.runAsync(stack.dispose));
 
-  // Boot initializes the provider before the picker is reachable; mirror that.
-  await activeProfile.initialize();
-  await tester.pumpWidget(
-    TranslationProvider(
-      child: MultiProvider(
-        providers: [
-          Provider<StorageService>.value(value: storage),
-          Provider<ProfileRegistry>.value(value: profileRegistry),
-          Provider<ProfileConnectionRegistry>.value(value: profileConnectionRegistry),
-          Provider<ConnectionRegistry>.value(value: connectionRegistry),
-          Provider<PlexHomeService>.value(value: plexHome),
-          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
-        ],
-        child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
-      ),
+  Widget app = TranslationProvider(
+    child: MultiProvider(
+      providers: [
+        Provider<StorageService>.value(value: stack.storage),
+        Provider<AppDatabase>.value(value: stack.db),
+        Provider<ConnectionRegistry>.value(value: stack.connections),
+        Provider<SiloHouseholdService>.value(value: stack.households),
+        ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+      ],
+      child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
     ),
   );
+  if (withInputMode) app = InputModeTracker(child: app);
+  await tester.pumpWidget(app);
   if (settle) await tester.pumpAndSettle();
-}
-
-PlexAccountConnection _plexAccount(String accountLabel) {
-  return PlexAccountConnection(
-    id: 'plex-account',
-    accountToken: 'token',
-    clientIdentifier: 'client',
-    accountLabel: accountLabel,
-    createdAt: DateTime(2026, 1, 1),
-  );
-}
-
-PlexHomeUser _homeUser(String uuid, String title, {String thumb = ''}) {
-  return PlexHomeUser(
-    id: 1,
-    uuid: uuid,
-    title: title,
-    thumb: thumb,
-    hasPassword: false,
-    restricted: false,
-    updatedAt: null,
-    admin: false,
-    guest: false,
-    protected: false,
-  );
+  return _Picker(stack.connections, stack.households, stack.active);
 }
 
 Finder _tileFor(String displayName) {
@@ -577,22 +248,6 @@ Finder _tileFor(String displayName) {
 Future<void> _openTileMenu(WidgetTester tester, String name) async {
   await tester.tap(find.descendant(of: _tileFor(name), matching: find.byTooltip(t.profiles.manage)));
   await tester.pumpAndSettle();
-}
-
-/// The single chip label inside [tile] that names both [first] and [second].
-///
-/// Asserting that exactly one text node carries both halves is the point: two
-/// nodes, or one node plus a neighbouring label, would mean the relation is
-/// assembled in Dart and no locale could reorder it.
-String _relationChip(WidgetTester tester, {required Finder tile, required String first, required String second}) {
-  final labels = tester
-      .widgetList<Text>(find.descendant(of: tile, matching: find.byType(Text)))
-      .map((text) => text.data)
-      .whereType<String>()
-      .where((label) => label.contains(first) && label.contains(second))
-      .toList();
-  expect(labels, hasLength(1), reason: 'both halves must render as one translated string');
-  return labels.single;
 }
 
 /// Tile labels in painted order. Only the two names the reorder tests seed are
@@ -622,81 +277,4 @@ bool _tileIsHighlighted(WidgetTester tester, String name) {
     final fill = decoration?.color;
     return (border != null && border.style != BorderStyle.none && border.color.a > 0) || (fill != null && fill.a > 0);
   });
-}
-
-class _FakeProfileRegistry extends ProfileRegistry {
-  final List<Profile> _profiles;
-
-  _FakeProfileRegistry(super.db, this._profiles);
-
-  @override
-  Stream<List<Profile>> watchProfiles() => Stream.value(_profiles);
-
-  @override
-  Future<List<Profile>> list() async => _profiles;
-}
-
-/// Profile registry whose stream keeps emitting, so a test can re-sort the
-/// list after first paint the way a refreshed profile source does.
-class _MutableProfileRegistry extends ProfileRegistry {
-  _MutableProfileRegistry(super.db, this._profiles);
-
-  List<Profile> _profiles;
-  final StreamController<List<Profile>> _controller = StreamController<List<Profile>>.broadcast();
-
-  @override
-  Stream<List<Profile>> watchProfiles() async* {
-    yield _profiles;
-    yield* _controller.stream;
-  }
-
-  @override
-  Future<List<Profile>> list() async => _profiles;
-
-  void emit(List<Profile> profiles) {
-    _profiles = profiles;
-    _controller.add(profiles);
-  }
-
-  Future<void> close() => _controller.close();
-}
-
-class _FakeConnectionRegistry extends ConnectionRegistry {
-  final List<Connection> _connections;
-
-  _FakeConnectionRegistry(super.db, [this._connections = const []]);
-
-  @override
-  Stream<List<Connection>> watchConnections() => Stream.value(_connections);
-
-  @override
-  Future<List<Connection>> list() async => _connections;
-
-  @override
-  Future<Connection?> get(String id) async => _connections.where((conn) => conn.id == id).firstOrNull;
-}
-
-class _FakeProfileConnectionRegistry extends ProfileConnectionRegistry {
-  final List<ProfileConnection> _profileConnections;
-
-  _FakeProfileConnectionRegistry(super.db, [this._profileConnections = const []]);
-
-  @override
-  Stream<List<ProfileConnection>> watchAll() => Stream.value(_profileConnections);
-}
-
-/// Real [PlexHomeService] cache/refresh behavior, minus `start()`'s periodic
-/// refresh timer: `ActiveProfileProvider.initialize` starts the service, and
-/// a pending `Timer.periodic` trips `testWidgets`' end-of-test invariant.
-/// Tests seed the cache explicitly through [PlexHomeService.refresh].
-class _NoTimerPlexHomeService extends PlexHomeService {
-  _NoTimerPlexHomeService({
-    required super.connections,
-    required super.profileConnections,
-    required super.storage,
-    super.plexHomeUserFetcher,
-  });
-
-  @override
-  Future<void> start() async {}
 }

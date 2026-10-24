@@ -373,12 +373,7 @@ class AgentSettingsCommands {
     final reason = unsupportedReason(pref.key, context);
     var choices = pref.jsonChoices;
     if (pref == SettingsService.startupSection) {
-      choices = [
-        NavigationTabId.discover.name,
-        NavigationTabId.libraries.name,
-        NavigationTabId.liveTv.name,
-        NavigationTabId.search.name,
-      ];
+      choices = [NavigationTabId.discover.name, NavigationTabId.libraries.name, NavigationTabId.search.name];
     }
     if (pref == SettingsService.subtitleRenderResolution && (Platform.isIOS || Platform.isAndroid)) {
       choices =
@@ -420,7 +415,6 @@ class AgentSettingsCommands {
       'application': _application(pref.key),
       if (pref == SettingsService.crashReporting)
         'note': 'Controls event submission; reporting must also be compiled into this build.',
-      if (pref == SettingsService.directPlayCoveredQuality) 'note': 'Only Plex uses this startup quality decision.',
       if (pref == SettingsService.customRelayUrl || pref == SettingsService.mpvConfigText)
         'valueRequiresExplicitGet': true,
     };

@@ -8,7 +8,6 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
-import '../../profiles/profile.dart';
 import '../../services/silo_client.dart';
 import '../../silo/silo_app.dart';
 import '../../silo/silo_device_sign_in.dart';
@@ -25,9 +24,8 @@ import '../profile/silo_profile_screen.dart';
 /// profile is bound.
 class SiloLoginScreen extends StatefulWidget {
   final Uri origin;
-  final Profile? targetProfile;
 
-  const SiloLoginScreen({super.key, required this.origin, this.targetProfile});
+  const SiloLoginScreen({super.key, required this.origin});
 
   @override
   State<SiloLoginScreen> createState() => _SiloLoginScreenState();
@@ -90,7 +88,7 @@ class _SiloLoginScreenState extends State<SiloLoginScreen> with ControllerDispos
     final entered = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => SiloProfileScreen(silo: silo, server: server, targetProfile: widget.targetProfile),
+        builder: (_) => SiloProfileScreen(silo: silo, server: server),
       ),
     );
     if (entered != true) {

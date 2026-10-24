@@ -35,10 +35,8 @@ import '../../focus/focus_navigation_intent.dart';
 import '../../focus/transport_keys.dart';
 
 import '../../database/app_database.dart';
-import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
 import '../../media/stepped_seek.dart';
-import '../../models/livetv_capture_buffer.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../media/media_source_info.dart';
 import '../../models/transcode_quality_preset.dart';
@@ -46,7 +44,6 @@ import '../../media/media_version.dart';
 import '../../screens/video_player_screen.dart';
 import '../../focus/key_event_utils.dart';
 import '../../services/keyboard_shortcuts_service.dart';
-import '../../services/live_seek_accumulator.dart';
 import '../../services/device_adjustment_service.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/player_sync_offsets.dart';
@@ -106,7 +103,7 @@ part 'parts/visibility.dart';
 ///
 /// Direct play exposes embedded tracks in the native player and can attach
 /// arbitrary sidecars itself. A transcode can only deliver a resolved sidecar or
-/// an embedded codec the server can burn into the rendition (Plex
+/// an embedded codec the server can burn into the rendition (the server
 /// `subtitles=burn`), so the codec is the only discriminator here.
 List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
   List<MediaSubtitleTrack> tracks, {
@@ -142,14 +139,6 @@ List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
         return CodecUtils.isTranscodableSubtitleCodec(track.codec);
       })
       .toList(growable: false);
-}
-
-@visibleForTesting
-MediaSubtitleTrack? findNewExternalSubtitleTrack(List<MediaSubtitleTrack> tracks, Set<int> existingSourceIds) {
-  for (final track in tracks) {
-    if (track.isExternal && !existingSourceIds.contains(track.id)) return track;
-  }
-  return null;
 }
 
 @visibleForTesting
@@ -543,7 +532,7 @@ enum PlaybackSourceChangeOutcome { applied, unchanged, busy, unavailable, supers
 
 typedef _EdgeAdjustmentIndicatorState = ({bool visible, MobileEdgeAdjustmentSide? side, double value});
 
-class PlexVideoControls extends StatefulWidget {
+class SiloVideoControls extends StatefulWidget {
   final Player player;
   final VideoVolumeController volumeController;
   final MediaItem metadata;
@@ -633,33 +622,6 @@ class PlexVideoControls extends StatefulWidget {
   /// Optional callback that returns thumbnail image bytes for a given timestamp.
   final ScrubFrame? Function(Duration time)? thumbnailDataBuilder;
 
-  /// Whether this is a live TV stream (disables seek, progress, etc.)
-  final bool isLive;
-
-  /// Channel name for live TV display
-  final String? liveChannelName;
-
-  /// Capture buffer for live TV time-shift (null = no time-shift support)
-  final CaptureBuffer? captureBuffer;
-
-  /// Whether playback is at the live edge
-  final bool isAtLiveEdge;
-
-  /// Maps a player-local position to absolute epoch seconds for live TV.
-  final int Function(Duration position)? liveEpochForPosition;
-
-  /// Seek callback for live TV time-shift (absolute epoch seconds; scrubber)
-  final ValueChanged<int>? onLiveSeek;
-
-  /// Relative live-TV skip entry point (delta seconds). The owning screen
-  /// accumulates rapid presses and debounces the transcode re-open, so skip
-  /// buttons/dpad/remote keys must use this rather than `onLiveSeek` (#1253).
-  /// Returns the seconds actually applied — zero at the edge of the seekable
-  /// window — which is all the skip badge may announce (#2425).
-  final LiveSeekBy? onLiveSeekBy;
-
-  final VoidCallback? onJumpToLive;
-
   /// Whether ambient lighting is enabled (passed to settings sheet)
   final bool isAmbientLightingEnabled;
 
@@ -681,7 +643,7 @@ class PlexVideoControls extends StatefulWidget {
   @visibleForTesting
   final List<MediaMarker>? initialMarkers;
 
-  const PlexVideoControls({
+  const SiloVideoControls({
     super.key,
     required this.player,
     required this.volumeController,
@@ -733,23 +695,15 @@ class PlexVideoControls extends StatefulWidget {
     this.shaderService,
     this.onShaderChanged,
     this.thumbnailDataBuilder,
-    this.isLive = false,
-    this.liveChannelName,
-    this.captureBuffer,
-    this.isAtLiveEdge = true,
-    this.liveEpochForPosition,
-    this.onLiveSeek,
-    this.onLiveSeekBy,
-    this.onJumpToLive,
     this.isAmbientLightingEnabled = false,
     this.onToggleAmbientLighting,
   });
 
   @override
-  State<PlexVideoControls> createState() => _PlexVideoControlsState();
+  State<SiloVideoControls> createState() => _SiloVideoControlsState();
 }
 
-class _PlexVideoControlsState extends State<PlexVideoControls>
+class _SiloVideoControlsState extends State<SiloVideoControls>
     with WindowListener, ListenableBindingsMixin, MountedSetStateMixin {
   bool get _showControls => widget.chromeController.controlsVisible;
   bool get _hasRenderedFirstFrame => widget.hasFirstFrame?.value ?? true;
@@ -1035,7 +989,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   @override
-  void didUpdateWidget(PlexVideoControls oldWidget) {
+  void didUpdateWidget(SiloVideoControls oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.player != widget.player) {
       ++_subtitleVisibilityWriteGeneration;
@@ -1339,12 +1293,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       canControl: widget.canControl,
                                                       hasFirstFrame: widget.hasFirstFrame,
                                                       thumbnailDataBuilder: widget.thumbnailDataBuilder,
-                                                      isLive: widget.isLive,
-                                                      liveChannelName: widget.liveChannelName,
-                                                      captureBuffer: widget.captureBuffer,
-                                                      isAtLiveEdge: widget.isAtLiveEdge,
-                                                      liveEpochForPosition: widget.liveEpochForPosition,
-                                                      onLiveSeek: _liveSeekAbandoningBurst(widget.onLiveSeek),
                                                       serverId: widget.metadata.serverId,
                                                       showQueueTab: canShowQueue,
                                                       onQueueItemSelected: canShowQueue ? _onQueueItemSelected : null,

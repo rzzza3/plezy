@@ -13,7 +13,6 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
@@ -245,7 +244,6 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
   final client = _ObservedClient();
   final multi = testMultiServer(clients: [client]);
   final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
-  final accountPreferences = AccountPreferencesController();
   final initializationHold = Completer<void>();
   Future<void> holdInitialization() => initializationHold.future;
   PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
@@ -255,7 +253,6 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
     initializationHold.complete();
     await tester.pump();
     offlineWatch.dispose();
-    accountPreferences.dispose();
     await fakePlayer.dispose();
   });
   final navigator = GlobalKey<NavigatorState>();
@@ -266,7 +263,6 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
         ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
         ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
         ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-        ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
         Provider<AppDatabase>.value(value: db),
       ],

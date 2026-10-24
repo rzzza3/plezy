@@ -16,7 +16,6 @@ import '../../i18n/strings.g.dart';
 import '../main_screen.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mixins/refreshable.dart';
-import '../../providers/account_preferences_controller.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/libraries_provider.dart';
@@ -27,7 +26,6 @@ import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/seerr_account_provider.dart';
-import '../../services/account_preferences_accounts.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
@@ -48,11 +46,9 @@ import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import '../../widgets/system_bottom_inset.dart';
 import '../../profiles/active_profile_provider.dart';
-import '../../profiles/profile.dart';
 import '../../watch_together/services/watch_together_relay_endpoint.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
-import 'account_preferences_screen.dart';
 import 'appearance_settings_screen.dart';
 import 'general_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
@@ -119,7 +115,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kWatchTogetherRelay = 'watch_together_relay';
   static const _kExportSettings = 'export_settings';
   static const _kImportSettings = 'import_settings';
-  static const _kAccountPreferences = 'account_preferences';
 
   KeyboardShortcutsService? _keyboardService;
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
@@ -329,55 +324,25 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildConnectionsSection(BuildContext context) {
-    final active = context.select<ActiveProfileProvider, Profile?>((p) => p.active);
-    final subtitle = active == null
-        ? t.connections.addConnectionSubtitleNoProfile
-        : t.connections.addConnectionSubtitleScoped(displayName: active.displayName);
-
     return SettingsGroup(
       title: t.connections.sectionTitle,
       children: [
-        // Connections are managed per-profile (via the Profiles section
-        // and each profile's detail screen). The shortcut here just opens
-        // the picker scoped to the active profile so users can add a Silo
-        // server or borrow from another profile.
         SettingNavigationTile(
           icon: Symbols.add_link_rounded,
           title: t.connections.addConnection,
-          subtitle: subtitle,
+          subtitle: t.connections.addConnectionSubtitle,
           onTap: () {
-            final active = context.read<ActiveProfileProvider>().active;
-            Navigator.push(context, MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: active)));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const AddConnectionScreen()));
           },
         ),
         _buildProfilesTile(context),
-        if (context.select<AccountPreferencesController, bool>((c) => c.accounts.isNotEmpty))
-          _buildAccountPreferencesTile(context),
       ],
     );
   }
 
-  /// Server-stored preferences for the accounts the active profile signed in
-  /// with. Hidden when no account is reachable — an empty picker is noise.
-  Widget _buildAccountPreferencesTile(BuildContext context) {
-    final accounts = context.select<AccountPreferencesController, List<AccountPreferenceAccount>>((c) => c.accounts);
-    final subtitle = accounts.length == 1
-        ? t.accountPreferences.hubSubtitleSingle(account: accounts.single.target.label)
-        : t.accountPreferences.hubSubtitleMultiple(count: accounts.length);
-    return SettingNavigationTile(
-      focusNode: _focusTracker.get(_kAccountPreferences),
-      icon: Symbols.manage_accounts_rounded,
-      title: t.accountPreferences.sectionTitle,
-      subtitle: subtitle,
-      destinationBuilder: (context) =>
-          AccountPreferencesScreen(targets: [for (final account in accounts) account.target]),
-    );
-  }
-
   Widget _buildProfilesTile(BuildContext context) {
-    // ActiveProfileProvider already merges local rows with virtual Plex
-    // Home profiles — counting only the local DB rows made every Plex Home
-    // household read as a single profile here. `context.select` keeps
+    // ActiveProfileProvider lists every signed-in server's Silo profiles.
+    // `context.select` keeps
     // rebuilds scoped to actual count/name changes (a StreamBuilder here
     // was also re-created on every settings rebuild).
     final count = context.select<ActiveProfileProvider, int>((p) => p.profiles.length);

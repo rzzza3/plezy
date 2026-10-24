@@ -209,7 +209,7 @@ void main() {
     testWidgets('dispose + re-init reseats the TabController without LateInitializationError', (tester) async {
       // Regression: libraries_screen calls disposeTabNavigation() then
       // initTabNavigation() inside _updateVisibleTabs whenever the visible
-      // tab set changes (e.g. switching between a Plex library with 4 tabs
+      // tab set changes (e.g. switching between a library with 4 tabs
       // and another library with 1). A `late final` on `tabController`
       // would throw LateInitializationError on the second init; the mixin
       // must allow re-initialization for the lifetime of the State.

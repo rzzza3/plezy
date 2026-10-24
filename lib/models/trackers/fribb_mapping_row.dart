@@ -68,7 +68,7 @@ class FribbMappingRow {
   final int? anilistId;
 
   /// Fribb's `imdb_id` is an array of IMDb GUIDs (movie collections / multi-part
-  /// can carry several); a Plex item matches if its single IMDb id is any one.
+  /// can carry several); a library item matches if its single IMDb id is any one.
   @JsonKey(name: 'imdb_id', fromJson: flexibleStringList)
   final List<String>? imdbIds;
   @JsonKey(name: 'mal_id', fromJson: flexibleInt)
@@ -88,7 +88,7 @@ class FribbMappingRow {
   @JsonKey(name: 'tvdb_id', fromJson: flexibleInt)
   final int? tvdbId;
 
-  /// Plex season number this mapping corresponds to. A single show-level
+  /// Library season number this mapping corresponds to. A single show-level
   /// external ID can resolve to multiple rows for split-cour anime; the
   /// resolver picks by matching the episode's `parentIndex` against these.
   @JsonKey(readValue: _readTvdbSeason, fromJson: flexibleInt)

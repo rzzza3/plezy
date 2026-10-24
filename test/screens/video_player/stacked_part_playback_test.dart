@@ -16,7 +16,6 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/offline_mode_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -182,7 +181,6 @@ Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
   final multi = testMultiServer(clients: [client]);
   final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
   final offlineMode = OfflineModeProvider(multi.manager, multiServerProvider: multi.provider);
-  final accountPreferences = AccountPreferencesController();
   final initializationHold = Completer<void>();
   Future<void> holdInitialization() => initializationHold.future;
   PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
@@ -193,7 +191,6 @@ Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
     await tester.pump();
     offlineWatch.dispose();
     offlineMode.dispose();
-    accountPreferences.dispose();
     await player.dispose();
   });
   final navigator = GlobalKey<NavigatorState>();
@@ -205,7 +202,6 @@ Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
         ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
         ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
         ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
-        ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
         Provider<AppDatabase>.value(value: db),
       ],
@@ -321,7 +317,7 @@ class _StackedPlayer extends FakeSyncPlayer {
   }
 }
 
-/// Resolves the file holding the requested start position, the way the Plex
+/// Resolves the file holding the requested start position, the way a
 /// mapper does, and names it in the URL.
 class _StackedClient with PlaybackReportRecorder implements MediaServerClient {
   static const _parts = [MediaPart(id: '11', durationMs: 3000000), MediaPart(id: '12', durationMs: 2400000)];

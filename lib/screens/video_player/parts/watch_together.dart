@@ -4,7 +4,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
   /// Whether an active Watch Together session owns playback starts: media is
   /// opened paused and the sync layer coordinates the (group) start.
   bool _watchTogetherOwnsPlaybackStart() {
-    if (_isOfflinePlayback || widget.isLive) return false;
+    if (_isOfflinePlayback) return false;
     return _activeWatchTogetherSession() != null;
   }
 
@@ -230,7 +230,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       return false;
     }
 
-    if (player == null || widget.isLive) {
+    if (player == null) {
       // Route replacement: report handled at initiation — the navigation
       // future only completes when the pushed route pops.
       unawaited(_replaceScreenWithPlayer(metadata, watchTogetherLease: lease));

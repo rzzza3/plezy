@@ -197,7 +197,7 @@ class PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapM
               ClipRRect(
                 borderRadius: const BorderRadius.all(Radius.circular(6)),
                 child: OptimizedMediaImage(
-                  // Backend-neutral lookup so non-Plex items render via their own
+                  // Backend-neutral lookup so items render via their own
                   // image transcoder; null falls through to the placeholder below.
                   client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
                   imagePath: posterUrl,
@@ -247,13 +247,7 @@ class PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapM
       }
       return item.displaySubtitle ?? t.discover.tvShow;
     } else if (kind == MediaKind.movie) {
-      // For movies, show year and edition (edition is Plex-only; null elsewhere)
-      final year = item.year?.toString();
-      final edition = item.editionTitle;
-      if (year != null && edition != null) {
-        return '$year · $edition';
-      }
-      return year ?? t.discover.movie;
+      return item.year?.toString() ?? t.discover.movie;
     } else if (kind == MediaKind.track) {
       // Music: "Artist · Album" (either half may be missing).
       final parts = [item.trackArtistTitle, item.albumTitle].nonNulls.where((part) => part.isNotEmpty).toList();

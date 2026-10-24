@@ -119,7 +119,7 @@ void main() {
 
       await tester.pumpWidget(
         shell(
-          PlexVideoControls(
+          SiloVideoControls(
             player: player,
             volumeController: volume,
             metadata: testMediaItem(id: 'window-refocus'),
@@ -147,7 +147,7 @@ void main() {
     testWidgets('re-activating the window hands the remote back to the player surface', (tester) async {
       await pumpControlsUnderScreenFocus(tester);
 
-      (tester.state(find.byType(PlexVideoControls)) as WindowListener).onWindowFocus();
+      (tester.state(find.byType(SiloVideoControls)) as WindowListener).onWindowFocus();
       await tester.pumpAndSettle();
 
       expect(
@@ -187,7 +187,7 @@ void main() {
         shell(
           Stack(
             children: [
-              PlexVideoControls(
+              SiloVideoControls(
                 player: player,
                 volumeController: volume,
                 metadata: testMediaItem(id: 'prompt-focus'),
@@ -236,7 +236,7 @@ void main() {
       final focusedControl = FocusManager.instance.primaryFocus;
       expect(focusedControl?.debugLabel, 'PlayPause', reason: 'a control took the remote');
 
-      (tester.state(find.byType(PlexVideoControls)) as WindowListener).onWindowFocus();
+      (tester.state(find.byType(SiloVideoControls)) as WindowListener).onWindowFocus();
       await tester.pumpAndSettle();
 
       expect(

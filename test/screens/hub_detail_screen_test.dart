@@ -76,7 +76,7 @@ void main() {
     expect(position.pixels, 0);
   });
 
-  testWidgets('Plex hub replaces its preview with the full-hub response', (tester) async {
+  testWidgets('a hub replaces its preview with the full-hub response', (tester) async {
     final items = List.generate(205, (index) => _item(index));
     final harness = await _createHarness(items);
 
@@ -280,60 +280,11 @@ void main() {
     });
   });
 
-  testWidgets('Plex section sorts order by their own field and unsupported ones are not offered', (tester) async {
-    MediaItem played(String id, String title, int plays) => testMediaItem(
-      id: id,
-      backend: MediaBackend.plex,
-      kind: MediaKind.movie,
-      title: title,
-      viewCount: plays,
-      serverId: 'server_1',
-      serverName: 'Server',
-    );
-    final items = [played('a', 'Alpha', 1), played('b', 'Bravo', 3), played('c', 'Charlie', 2)];
-    final harness = await _createHarness(items);
-    harness.client.sortOptions = const [
-      MediaSort(key: 'titleSort', descKey: 'titleSort:desc', title: 'Title', defaultDirection: 'asc'),
-      MediaSort(key: 'viewCount', descKey: 'viewCount:desc', title: 'Plays', defaultDirection: 'desc'),
-      MediaSort(key: 'mediaHeight', descKey: 'mediaHeight:desc', title: 'Resolution', defaultDirection: 'desc'),
-    ];
-    await tester.pumpWidget(
-      harness.wrap(
-        HubDetailScreen(
-          hub: MediaHub(
-            id: '/hubs/sections/1/recentlyAdded',
-            title: 'Hub',
-            type: 'movie',
-            items: items,
-            size: items.length,
-            serverId: 'server_1',
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip(t.libraries.sort));
-    await tester.pumpAndSettle();
-    // A sort the loaded items cannot honor would silently order by title.
-    expect(find.text('Resolution'), findsNothing);
-    await tester.tap(find.text('Plays'));
-    await tester.pump();
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-
-    final titles = tester
-        .widgetList<FocusableMediaCard>(find.byType(FocusableMediaCard))
-        .map((card) => (card.item as MediaItem).title)
-        .toList();
-    expect(titles, ['Bravo', 'Charlie', 'Alpha']);
-  });
-
   group('default sort fallback logging', () {
-    // Sort options are fetched per Plex library section. Aggregated rows
+    // Sort options are fetched per library. Aggregated rows
     // (Continue Watching spans servers) and synthesized hubs name no section,
     // so falling back to the default sorts is the designed path and must not
-    // raise a warning; a Plex section hub that lost its serverId is a real
+    // raise a warning; a library hub that lost its serverId is a real
     // tagging defect and must.
     late Logger originalLogger;
     late _RecordingLogOutput logOutput;
@@ -378,18 +329,12 @@ void main() {
 
       expect(logOutput.levels.where((level) => level.value >= Level.warning.value), isEmpty);
     });
-
-    testWidgets('a Plex section hub that lost its serverId still warns', (tester) async {
-      await pumpHub(tester, id: '/hubs/sections/1/recentlyAdded');
-
-      expect(logOutput.levels, contains(Level.warning));
-    });
   });
 }
 
 MediaItem _item(int index) => testMediaItem(
   id: 'item_$index',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: 'Item $index',
   serverId: 'server_1',
@@ -398,7 +343,7 @@ MediaItem _item(int index) => testMediaItem(
 
 MediaItem _titled(String id, String title) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: title,
   serverId: 'server_1',
@@ -452,7 +397,7 @@ class _PagedHubClient implements MediaServerClient {
   List<MediaSort> sortOptions = const [];
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   ServerId get serverId => ServerId('server_1');
@@ -461,7 +406,7 @@ class _PagedHubClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<LibraryPage<MediaItem>> fetchMoreHubItemsPage(

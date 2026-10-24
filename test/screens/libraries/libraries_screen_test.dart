@@ -54,14 +54,14 @@ import '../../test_helpers/prefs.dart';
 
 const _libraryA = MediaLibrary(
   id: 'movies',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Library A',
   kind: MediaKind.movie,
   serverId: 'server',
 );
 const _libraryB = MediaLibrary(
   id: 'shows',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Library B',
   kind: MediaKind.show,
   serverId: 'server',
@@ -70,7 +70,7 @@ const _libraryB = MediaLibrary(
 // rebuilds the tab set.
 const _sharedLibrary = MediaLibrary(
   id: 'shared',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Shared',
   kind: MediaKind.movie,
   isShared: true,
@@ -191,17 +191,18 @@ void main() {
   testWidgets('a tab set change restores the destination library saved tab', (tester) async {
     final preferences = _GatedPreferences({
       'selected_library_key': _libraryA.globalKey,
-      'library_tab_${_libraryA.globalKey}': LibraryTabType.playlists.name,
+      'library_tab_${_libraryA.globalKey}': LibraryTabType.browse.name,
       'library_tab_${_sharedLibrary.globalKey}': LibraryTabType.browse.name,
     });
     final harness = await _Harness.create(preferences, libraryOrder: const [_libraryA, _sharedLibrary]);
     addTearDown(harness.dispose);
 
     await harness.pump(tester);
-    expect(harness.controller(tester).index, LibraryTabType.playlists.index);
+    expect(harness.controller(tester).index, 1);
 
-    // Playlists carries over to index 1 of the two shared tabs; that carry-over
-    // must not overwrite the Browse tab the shared library saved.
+    // Browse (index 1) carries over to index 1 of the shared tabs, Playlists;
+    // that carry-over must not overwrite the Browse tab the shared library
+    // saved.
     (tester.state(find.byType(LibrariesScreen)) as LibraryLoadable).loadLibraryByKey(_sharedLibrary.globalKey);
     await tester.pumpAndSettle();
 
@@ -711,7 +712,7 @@ MediaHub _recommendationHub(String id) => MediaHub(
         id: '$id-$i',
         title: '$id-$i',
         kind: MediaKind.collection,
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         serverId: 'server',
       ),
   ],
@@ -724,10 +725,10 @@ class _HubClient extends _PagedClient {
   final Object authenticationSessionId = Object();
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   List<MediaHub> hubs = [_recommendationHub('A'), _recommendationHub('B'), _recommendationHub('C')];
   Future<List<MediaHub>>? nextHubs;

@@ -8,7 +8,6 @@ import '../../focus/key_event_utils.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
-import '../../profiles/plex_home_switch.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/clickable_cursor.dart';
@@ -691,29 +690,10 @@ Future<String?> showPinEntryDialog(BuildContext context, String userName, {Strin
   );
 }
 
-/// The [PlexHomeSwitchPinPrompt] every UI-side `mintPlexHomeUserToken` caller
-/// needs: show [showPinEntryDialog] for [displayName], or cancel the switch
-/// once [context] is gone. Only the *use* is guarded — build it before the
-/// caller's first await, while [context] is still live.
-PlexHomeSwitchPinPrompt dialogPinPrompt(BuildContext context, String displayName) =>
-    ({String? errorMessage}) async =>
+/// A PIN prompt for [enterSiloProfile]: show [showPinEntryDialog] for
+/// [displayName], or cancel once [context] is gone. Only the *use* is
+/// guarded — build it before the caller's first await, while [context] is
+/// still live.
+Future<String?> Function(String? errorMessage) pinPromptFor(BuildContext context, String displayName) =>
+    (errorMessage) async =>
         context.mounted ? showPinEntryDialog(context, displayName, errorMessage: errorMessage) : null;
-
-/// Two-step "set + confirm" PIN entry. Returns the matching PIN, or null
-/// when the user cancels. On mismatch, surfaces a snackbar via [onMismatch]
-/// (or no-op if not provided) and returns null — the helper keeps the UX
-/// in one place so multiple call sites don't drift.
-Future<String?> captureAndConfirmPin(
-  BuildContext context, {
-  String? setLabel,
-  String? confirmLabel,
-  void Function(BuildContext)? onMismatch,
-}) async {
-  final pin = await showPinEntryDialog(context, setLabel ?? t.profiles.setPinTitle);
-  if (pin == null || !context.mounted) return null;
-  final confirm = await showPinEntryDialog(context, confirmLabel ?? t.profiles.confirmPinTitle);
-  if (confirm == null || !context.mounted) return null;
-  if (pin == confirm) return pin;
-  onMismatch?.call(context);
-  return null;
-}

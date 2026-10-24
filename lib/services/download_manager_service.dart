@@ -1,6 +1,5 @@
 // ignore_for_file: prefer_initializing_formals
 
-import 'dart:convert';
 import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io';
@@ -23,7 +22,6 @@ import 'api_cache.dart';
 import 'connectivity_probe.dart';
 import 'download_artwork_helpers.dart';
 import 'download_artwork_service.dart';
-import 'plex_api_cache.dart';
 import 'settings_service.dart';
 import '../connection/connection.dart' show SiloConnection;
 import 'silo_client.dart';
@@ -578,28 +576,12 @@ class DownloadManagerService {
     return _profileScopeIdForBackend(backend, serverId, activeProfileId);
   }
 
+  /// The active profile id is its own client scope
+  /// `silo:<server_id>/<profile_id>`, so a download made under another
+  /// profile on the same server is never visible.
   Future<String?> _profileScopeIdForBackend(MediaBackend backend, ServerId serverId, String activeProfileId) async {
-    // A Silo download belongs to the Silo profile this Plezy profile enters,
-    // so another profile on the same server never sees it. The persisted
-    // binding wins: offline the binder leaves the server invisible, so there
-    // is no live client to ask.
-    if (backend == MediaBackend.silo) {
-      return await _boundSiloScopeId(serverId, activeProfileId) ?? activeClientScopeIdForServer(serverId);
-    }
-    return buildPlexProfileScopeId(serverId: serverId, profileId: activeProfileId);
-  }
-
-  /// The `silo:<server_id>/<profile_id>` scope of [activeProfileId]'s join
-  /// row for the Silo server [serverId], whose `userIdentifier` is the Silo
-  /// profile it enters.
-  Future<String?> _boundSiloScopeId(ServerId serverId, String activeProfileId) async {
-    final binding =
-        await (_database.select(_database.profileConnections)
-              ..where((t) => t.profileId.equals(activeProfileId))
-              ..where((t) => t.connectionId.equals(SiloConnection.idFor(serverId))))
-            .getSingleOrNull();
-    final siloProfileId = binding?.userIdentifier ?? '';
-    return siloProfileId.isEmpty ? null : SiloProfileScopeId.tryParse('silo:$serverId/$siloProfileId');
+    final scope = SiloProfileScopeId.tryParse(activeProfileId);
+    return scope != null && scope.publicServerId == serverId ? scope : null;
   }
 
   /// Resolves the backend and the profile-visible cache namespace once per
@@ -720,9 +702,6 @@ class DownloadManagerService {
   /// Resolve which backend the cache row for [serverId] uses. Reads the
   /// `Connections` table directly so the lookup works even when the server
   /// is currently offline (the connection persists across launches).
-  ///
-  /// A Plex server has no row of its own: it lives in the `servers` list of
-  /// its account's persisted config.
   Future<MediaBackend?> _backendForServer(ServerId serverId) async {
     // Prefer a live client — `MediaServerClient.backend` is in memory.
     final live = _getClient(serverId);
@@ -731,31 +710,9 @@ class DownloadManagerService {
       _database.connections,
     )..where((t) => t.id.isIn([serverId.value, SiloConnection.idFor(serverId)]))).get();
     for (final connection in rows) {
-      final backend = switch (connection.kind) {
-        'plex' => MediaBackend.plex,
-        'silo' => MediaBackend.silo,
-        _ => null,
-      };
-      if (backend != null) return backend;
+      if (connection.kind == MediaBackend.silo.id) return MediaBackend.silo;
     }
-    if (await _hasPlexAccountForServer(serverId)) return MediaBackend.plex;
     return null;
-  }
-
-  Future<bool> _hasPlexAccountForServer(ServerId serverId) async {
-    final accounts = await (_database.select(_database.connections)..where((t) => t.kind.equals('plex'))).get();
-    for (final account in accounts) {
-      try {
-        final config = jsonDecode(account.configJson);
-        if (config is! Map<String, dynamic>) continue;
-        final servers = config['servers'];
-        if (servers is! List) continue;
-        if (servers.any((server) => server is Map && server['clientIdentifier'] == serverId.value)) return true;
-      } on FormatException {
-        // Ignore malformed persisted accounts.
-      }
-    }
-    return false;
   }
 
   /// Backend-aware metadata lookup. Dispatches to the right `getMetadata`
@@ -765,8 +722,8 @@ class DownloadManagerService {
   /// When [_backendForServer] can't resolve the backend (no live client and
   /// no `connections` row — happens when a server has been removed but old
   /// download rows still reference it), fan out to every registered backend
-  /// cache instead of silently defaulting to Plex. Otherwise Silo
-  /// items would render with blank metadata after a connection is severed.
+  /// cache. Otherwise items would render with blank metadata after a
+  /// connection is severed.
   Future<MediaItem?> _lookupMetadata(ServerId serverId, String itemId, {String? clientScopeId}) async {
     final backend = await _backendForServer(serverId);
     final live = _getClient(serverId, clientScopeId: clientScopeId);
@@ -785,106 +742,6 @@ class DownloadManagerService {
       if (hit != null) return hit;
     }
     return null;
-  }
-
-  Set<String> _offlineMetadataIds(DownloadedMediaItem row) => {
-    row.ratingKey,
-    ?row.parentRatingKey,
-    ?row.grandparentRatingKey,
-  };
-
-  /// Preserve Plex metadata while full logout temporarily leaves downloads
-  /// without a profile owner.
-  ///
-  /// Available metadata is sanitized into the transfer cache, while the
-  /// durable download always moves to the neutral scope even when its leaf
-  /// cache row is missing. The cache and scope changes share one transaction.
-  Future<void> preparePlexMetadataForLogoutTransfer() async {
-    final rows = await getAllDownloads();
-    final cache = PlexApiCache.instance;
-    for (final row in rows) {
-      final publicServerId = ServerId(row.serverId);
-      final owners = await _database.getValidDownloadOwnersForKey(row.globalKey);
-      final rowScope = PlexProfileScopeId.tryParse(row.clientScopeId ?? '');
-      final ownerHasPlexScope = owners.any(
-        (owner) =>
-            owner.backend == MediaBackend.plex.id || PlexProfileScopeId.tryParse(owner.clientScopeId ?? '') != null,
-      );
-      if (rowScope == null && !ownerHasPlexScope && await _backendForServer(publicServerId) != MediaBackend.plex) {
-        continue;
-      }
-
-      final sourceScopes = <String, PlexProfileScopeId>{};
-      for (final owner in owners) {
-        final persistedScope = PlexProfileScopeId.tryParse(owner.clientScopeId ?? '');
-        if (persistedScope != null && persistedScope.publicServerId == publicServerId) {
-          sourceScopes[persistedScope] = persistedScope;
-        }
-        final derivedScope = buildPlexProfileScopeId(serverId: publicServerId, profileId: owner.profileId);
-        sourceScopes[derivedScope] = derivedScope;
-      }
-      if (rowScope != null && rowScope.publicServerId == publicServerId) {
-        sourceScopes[rowScope] = rowScope;
-      }
-
-      final transferScope = buildPlexTransferScopeId(publicServerId);
-      final metadataIds = _offlineMetadataIds(row);
-      await _database.transaction(() async {
-        for (final id in metadataIds) {
-          for (final sourceScope in sourceScopes.values) {
-            final copied = await cache.copyPinnedMetadata(
-              sourceServerId: sourceScope.cacheServerId,
-              destinationServerId: transferScope.cacheServerId,
-              ratingKey: id,
-              stripProfileState: true,
-            );
-            if (copied) break;
-          }
-        }
-        await _database.updateDownloadedMediaClientScope(row.globalKey, transferScope);
-        for (final id in metadataIds) {
-          await cache.deleteAllProfileRowsForItem(publicServerId, id);
-        }
-      });
-    }
-  }
-
-  /// Move ownerless full-logout metadata into the adopting profile's private
-  /// Plex namespace before profile-visible cache hydration runs.
-  Future<void> adoptTransferredPlexMetadataForProfile(String profileId, {bool Function()? isStillActive}) async {
-    if (profileId.isEmpty || isStillActive != null && !isStillActive()) return;
-    final owners = {for (final owner in await _database.getDownloadOwnersForProfile(profileId)) owner.globalKey: owner};
-    final rows = await getAllDownloads();
-    final cache = PlexApiCache.instance;
-    for (final row in rows) {
-      if (isStillActive != null && !isStillActive()) return;
-      final owner = owners[row.globalKey];
-      final transferScope =
-          PlexTransferScopeId.tryParse(row.clientScopeId ?? '') ??
-          PlexTransferScopeId.tryParse(owner?.clientScopeId ?? '');
-      if (owner == null || transferScope == null || transferScope.publicServerId != ServerId(row.serverId)) continue;
-      final destinationScope = buildPlexProfileScopeId(serverId: transferScope.publicServerId, profileId: profileId);
-      final metadataIds = _offlineMetadataIds(row);
-      await _database.transaction(() async {
-        for (final id in metadataIds) {
-          await cache.copyPinnedMetadata(
-            sourceServerId: transferScope.cacheServerId,
-            destinationServerId: destinationScope.cacheServerId,
-            ratingKey: id,
-          );
-        }
-        await _database.updateDownloadedMediaClientScope(row.globalKey, destinationScope);
-        await _database.updateDownloadOwnerScope(
-          profileId: profileId,
-          globalKey: row.globalKey,
-          backendId: MediaBackend.plex.id,
-          clientScopeId: destinationScope,
-        );
-        for (final id in metadataIds) {
-          await cache.deleteForItem(transferScope.cacheServerId, id);
-        }
-      });
-    }
   }
 
   /// "Ensure cached & pin": load the item metadata row, then pin cached rows
@@ -918,11 +775,6 @@ class DownloadManagerService {
       }
       final backend = MediaBackend.fromId(backendId);
       await ApiCache.forBackend(backend).deleteForItem(ServerId(scopeId), itemId);
-      return;
-    }
-    if (backendId == null || backendId == MediaBackend.plex.id) {
-      final scope = buildPlexProfileScopeId(serverId: serverId, profileId: profileId);
-      await PlexApiCache.instance.deleteForItem(scope.cacheServerId, itemId);
     }
   }
 
@@ -967,7 +819,7 @@ class DownloadManagerService {
           progressBar: true,
         );
 
-    // Protect native writes even while Flutter is suspended. Plex servers can
+    // Protect native writes even while Flutter is suspended. Servers can
     // also reject concurrent media downloads.
     await FileDownloader().configure(
       globalConfig: [(Config.checkAvailableSpace, true), (Config.holdingQueue, (1, 1, 1))],
@@ -2829,7 +2681,7 @@ class DownloadManagerService {
   /// otherwise auto-retry if retries remain.
   ///
   /// A native failure's description is never user copy, only diagnostics for
-  /// the log. For an HTTP failure it is the server's raw response body (a Plex
+  /// the log. For an HTTP failure it is the server's raw response body (a server
   /// refusal names a paid plan, #2510); otherwise it is the platform's own
   /// English exception text, which can name the host or, for Android's
   /// catch-all, quote the request URL with its token. An HTTP body is also
@@ -3856,7 +3708,7 @@ class DownloadManagerService {
 
   /// Get chapter thumb paths from cached metadata, or null when the cache
   /// cannot answer. Backend-aware: routes through the resolved
-  /// [MediaServerClient] so Plex items return their
+  /// [MediaServerClient] so items return their
   /// `/library/parts/.../indexes/sd/...` paths. Every shape hashes
   /// through [DownloadStorageService] the same way.
   ///
@@ -4535,7 +4387,7 @@ class DownloadManagerService {
       }
       await _deleteAdditionalPartFiles(record);
 
-      // thumbPath is a server-side API path (Plex /library/metadata/.../thumb,
+      // thumbPath is a server-side API path (e.g. an item thumb,
       // a Silo artwork URL), not a local file path —
       // resolve it via getArtworkPathFromThumb
       if (deleteThumb && record.thumbPath != null) {
@@ -4552,7 +4404,7 @@ class DownloadManagerService {
 
   /// Whether [storedPath], a file [record] recorded, is also another
   /// download's file. Paths used to be built from titles alone, so two items
-  /// with the same title (two libraries, or the same movie on Plex and
+  /// with the same title (two libraries, or the same movie on two servers and
   /// Silo) could end up on one file; it stays while another row plays it.
   Future<bool> _isVideoPathSharedWithOtherDownload(DownloadedMediaItem record, String storedPath) async {
     final shared = await _database.isVideoFilePathRecordedByOtherDownload(

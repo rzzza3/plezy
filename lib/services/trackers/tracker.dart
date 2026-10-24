@@ -24,7 +24,7 @@ abstract class Tracker {
   bool get canWriteWatched;
 
   /// True if this tracker's IDs only come from the Fribb anime mapping
-  /// (MAL, AniList). Simkl and Trakt return false because they accept Plex
+  /// (MAL, AniList). Simkl and Trakt return false because they accept server
   /// tvdb/imdb/tmdb directly; when no active tracker needs Fribb we skip the
   /// 5.6 MB mapping download entirely.
   bool get needsFribb;
@@ -39,7 +39,7 @@ abstract class Tracker {
   Future<void> setEnabled(bool enabled);
 
   /// Whether an item in the given library should be scrobbled. Applies the
-  /// per-tracker whitelist/blacklist — callers pass the Plex library
+  /// per-tracker whitelist/blacklist — callers pass the library
   /// `serverId:sectionId` globalKey. Null is allowed only when no filter is
   /// configured for this tracker.
   bool shouldScrobbleForLibrary(String? libraryGlobalKey);

@@ -28,18 +28,7 @@ class AgentControlService {
   static const extensionName = 'ext.plezy.agent';
   static const protocolVersion = 1;
   static const maxPayloadBytes = 1024 * 1024;
-  static const scopeTypes = [
-    'app',
-    'player',
-    'server',
-    'library',
-    'profile',
-    'catalog',
-    'account',
-    'syncRule',
-    'liveTvFavorites',
-    'dvrRule',
-  ];
+  static const scopeTypes = ['app', 'player', 'server', 'library', 'profile', 'catalog', 'syncRule'];
   static const _readCommands = {
     'app.status',
     'settings.list',
@@ -397,10 +386,7 @@ class AgentControlService {
       'library' ||
       'profile' ||
       'catalog' => await _scopedSettings.read(command, arguments, context),
-      'account' ||
-      'syncRule' ||
-      'liveTvFavorites' ||
-      'dvrRule' => await _resourceSettings.read(command, arguments, context),
+      'syncRule' => await _resourceSettings.read(command, arguments, context),
       _ => throw const AgentControlException('unsupportedScope', 'The settings scope is not supported.'),
     };
     return command == 'settings.list' && result is Map<String, dynamic>
@@ -436,10 +422,7 @@ class AgentControlService {
       'library' ||
       'profile' ||
       'catalog' => _scopedSettings.prepare(command, arguments, context),
-      'account' ||
-      'syncRule' ||
-      'liveTvFavorites' ||
-      'dvrRule' => _resourceSettings.prepare(command, arguments, context),
+      'syncRule' => _resourceSettings.prepare(command, arguments, context),
       _ => throw const AgentControlException('unsupportedScope', 'The settings scope is not supported.'),
     };
   }

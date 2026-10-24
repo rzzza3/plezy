@@ -51,7 +51,7 @@ void main() {
     // explanation, so every credential family has to reach the repair prompt
     // instead of being dropped or mistaken for "not set".
 
-    test('the legacy Plex slot fails the storage step so the gate offers a repair', () async {
+    test('the legacy account-token slot fails the storage step so the gate offers a repair', () async {
       // `StorageService.onInit` primes log redaction from this slot, so an
       // unreadable value fails a fatal gate step rather than being dropped.
       resetSharedPreferencesForTest(initialAsync: {legacyPlexTokenPref: 42});

@@ -8,8 +8,8 @@ export 'media_stream.dart' show MediaStreamKind;
 /// Backend-neutral file-info payload rendered by `FileInfoBottomSheet`.
 ///
 /// The shape mirrors what media servers actually return: an item owns one
-/// or more *versions* (Plex `Media`), a version owns one or more *parts*
-/// (Plex `Part`), and a part owns the demuxed *streams*.
+/// or more *versions*, a version owns one or more *parts*
+/// (files), and a part owns the demuxed *streams*.
 /// Nothing is collapsed to "the first entry" — split/stacked files and
 /// multi-version libraries surface every entry.
 ///
@@ -22,16 +22,16 @@ class MediaFileInfo {
   const MediaFileInfo({this.versions = const []});
 }
 
-/// One playable version of an item: Plex `Media`.
+/// One playable version of an item.
 ///
 /// The video/audio summary fields are the server's own roll-up of the primary
-/// streams. They are kept because Plex derives them independently of the
+/// streams. They are kept because the server derives them independently of the
 /// stream table (an item can carry a `Media.videoResolution` label with no
 /// probed streams at all), and they are what the version picker shows.
 class MediaFileVersion {
   final String? id;
 
-  /// Server-assigned version label (Plex `Media.title`).
+  /// Server-assigned version label (the version title).
   final String? title;
 
   final String? container;
@@ -50,7 +50,7 @@ class MediaFileVersion {
   final String? videoCodec;
   final String? videoProfile;
 
-  /// Server frame-rate label (Plex `24p`, `NTSC`).
+  /// Server frame-rate label (`24p`, `NTSC`).
   final String? videoFrameRateLabel;
 
   final String? audioCodec;
@@ -83,14 +83,14 @@ class MediaFileVersion {
   /// Source type (`Default`, `Grouping`, `Placeholder`).
   final String? sourceType;
 
-  /// Plex `proxyType == 42` — this version is a server-generated optimized
+  /// This version is a server-generated optimized
   /// copy rather than the original file.
   final bool? isOptimizedVersion;
 
-  /// Plex `target` — the optimization profile that produced this version.
+  /// The optimization profile that produced this version.
   final String? optimizationTarget;
 
-  /// Plex `deletedAt` (epoch seconds). Plex keeps listing an optimized
+  /// Deletion time (epoch seconds). A server can keep listing an optimized
   /// version it has already deleted, and that is exactly what a user
   /// staring at a missing file needs to see.
   final DateTime? deletedAt;
@@ -99,7 +99,7 @@ class MediaFileVersion {
   /// containers.
   final String? transportStreamTimestamp;
 
-  /// Plex `displayOffset` — where this version starts inside a multi-part
+  /// Where this version starts inside a multi-part
   /// presentation, as a percentage.
   final int? displayOffsetPercent;
 
@@ -167,7 +167,7 @@ class MediaFileVersion {
   }
 }
 
-/// One file backing a version: Plex `Part`.
+/// One file backing a version.
 class MediaFilePart {
   final String? id;
   final String? filePath;
@@ -177,27 +177,27 @@ class MediaFilePart {
   final bool? optimizedForStreaming;
   final bool? has64bitOffsets;
 
-  /// Plex: the server generated BIF/preview thumbnails for this part.
+  /// The server generated BIF/preview thumbnails for this part.
   final bool? hasThumbnail;
 
-  /// Plex `indexes` — which preview-thumbnail index exists (`sd`).
+  /// Which preview-thumbnail index exists (`sd`).
   final String? indexes;
 
-  /// Plex `packetLength` for transport-stream containers.
+  /// Packet length for transport-stream containers.
   final int? packetLength;
 
-  /// Plex `failureBIFResultCode` / `failureBIFRetryCount` — why the server
+  /// Preview-thumbnail failure code and retry count — why the server
   /// has no preview thumbnails for this file, and how often it has retried.
   final int? previewFailureCode;
   final int? previewRetryCount;
 
-  /// Plex `exists` / `accessible` — whether the file is still on disk and
+  /// Whether the file is still on disk and
   /// whether the server can read it. Only populated when the metadata was
-  /// fetched with `checkFiles=1`, which is what the app's Plex client does.
+  /// fetched with `checkFiles=1`, when the client asks for it.
   final bool? exists;
   final bool? accessible;
 
-  /// Plex `Part.key` — the server-relative streaming path for this file.
+  /// The server-relative streaming path for this file.
   final String? streamKey;
 
   final List<MediaStreamDetails> streams;
@@ -250,7 +250,7 @@ class MediaFileAttachment {
 
 /// Colour/HDR classification of a video stream, normalised across backends.
 ///
-/// Plex derives it from the transfer characteristics plus the Dolby Vision
+/// The server derives it from the transfer characteristics plus the Dolby Vision
 /// block.
 enum MediaVideoRange {
   sdr,
@@ -279,7 +279,7 @@ enum MediaVideoRange {
   };
 }
 
-/// Dolby Vision descriptor. Plex exposes it as `DOVI*` keys on the video
+/// Dolby Vision descriptor. Servers expose it as `DOVI*` fields on the video
 /// stream.
 class MediaDolbyVisionInfo {
   final int? profile;
@@ -330,7 +330,7 @@ class MediaDolbyVisionInfo {
 class MediaStreamDetails {
   final MediaStreamKind kind;
 
-  /// Backend stream id (Plex `Stream.id`).
+  /// Backend stream id (the stream id).
   final String? id;
 
   /// Container stream ordinal.
@@ -341,18 +341,18 @@ class MediaStreamDetails {
 
   final String? title;
 
-  /// Server-rendered summary (Plex `extendedDisplayTitle`).
+  /// Server-rendered summary (the extended display title).
   final String? displayTitle;
 
   final String? codec;
 
-  /// FourCC / container codec tag (Plex `codecID`).
+  /// FourCC / container codec tag (`codecID`).
   final String? codecTag;
 
   final String? profile;
   final int? level;
 
-  /// Human-readable language (Plex `language`).
+  /// Human-readable language (`language`).
   final String? language;
 
   /// ISO 639 code as the server reports it.
@@ -367,7 +367,7 @@ class MediaStreamDetails {
   final bool? isExternal;
   final bool? isHearingImpaired;
 
-  /// Plex dubbed/original audio flags.
+  /// Dubbed/original audio flags.
   final bool? isDub;
   final bool? isOriginal;
 
@@ -403,24 +403,24 @@ class MediaStreamDetails {
   final bool? isAvc;
   final int? nalLengthSize;
 
-  /// Plex `hasScalingMatrix` — H.264 custom scaling matrices, which some
+  /// `hasScalingMatrix` — H.264 custom scaling matrices, which some
   /// hardware decoders reject.
   final bool? hasScalingMatrix;
 
   /// Transport-stream PID / program identifier.
   final String? streamIdentifier;
 
-  /// Free-form ffmpeg stream comment tag (Plex `comment`).
+  /// Free-form ffmpeg stream comment tag (`comment`).
   final String? comment;
 
   /// Clockwise display rotation in degrees.
   final int? rotation;
 
-  /// Plex `descriptions` — the track carries audio descriptions for the
+  /// `descriptions` — the track carries audio descriptions for the
   /// visually impaired.
   final bool? hasDescriptions;
 
-  /// Plex `headerCompression` — the Matroska track uses header stripping,
+  /// `headerCompression` — the Matroska track uses header stripping,
   /// which some demuxers reject.
   final bool? headerCompression;
 
@@ -445,24 +445,24 @@ class MediaStreamDetails {
   /// muxed in the stream.
   final bool? supportsExternalStream;
 
-  /// Sidecar subtitle file format (Plex `format`).
+  /// Sidecar subtitle file format (`format`).
   final String? subtitleFormat;
 
-  /// Where a downloaded subtitle came from (Plex `providerTitle`).
+  /// Where a downloaded subtitle came from (`providerTitle`).
   final String? providerTitle;
 
   /// Match score of a downloaded/auto-selected subtitle.
   final int? score;
 
-  /// Plex `key` on a sidecar subtitle — the server-relative path the
+  /// `key` on a sidecar subtitle — the server-relative path the
   /// subtitle file is served from, and what marks the track external.
   final String? externalKey;
 
-  /// Plex `transient` — a subtitle attached to this playback only, not
+  /// `transient` — a subtitle attached to this playback only, not
   /// stored on the item.
   final bool? isTransient;
 
-  /// Plex `sourceKey` — the library stream a downloaded subtitle was
+  /// `sourceKey` — the library stream a downloaded subtitle was
   /// copied from.
   final String? sourceKey;
 

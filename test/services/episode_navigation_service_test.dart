@@ -6,7 +6,6 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/play_queue.dart';
-import 'package:plezy/models/plex/play_queue_response.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/episode_navigation_service.dart';
@@ -15,7 +14,7 @@ import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 
 MediaItem _meta(String id, {String? title}) =>
-    testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
+    testMediaItem(id: id, backend: MediaBackend.silo, kind: MediaKind.episode, title: title ?? 'Episode $id');
 
 MediaItem _siloEpisode(String id, {required String seriesId, ServerId? serverId}) => testMediaItem(
   id: id,
@@ -34,15 +33,12 @@ MediaItem _siloMovie(String id) => testMediaItem(
   serverId: ServerId('srv-silo'),
 );
 
-PlexMediaItem _plexMovie(String id, int playQueueItemId) =>
-    PlexMediaItem(id: id, kind: MediaKind.movie, title: 'Movie $id', playQueueItemId: playQueueItemId);
-
-MediaItem _plexEpisode(String id, {required String seriesId, int? viewCount}) => testMediaItem(
+MediaItem _watchedEpisode(String id, {required String seriesId, int? viewCount}) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode $id',
-  serverId: 'srv-plex',
+  serverId: 'srv-silo',
   grandparentId: seriesId,
   viewCount: viewCount,
 );
@@ -50,17 +46,12 @@ MediaItem _plexEpisode(String id, {required String seriesId, int? viewCount}) =>
 /// Recording client whose `fetchClientSideEpisodeQueue` is observable —
 /// callers can assert it was (or wasn't) hit.
 class _RecordingClient implements MediaServerClient {
-  _RecordingClient({
-    required this.seriesEpisodes,
-    this.clientBackend = MediaBackend.silo,
-    this.fetchError,
-    String serverId = 'srv-silo',
-  }) : serverId = ServerId(serverId);
+  _RecordingClient({required this.seriesEpisodes, this.fetchError, String serverId = 'srv-silo'})
+    : serverId = ServerId(serverId);
 
   @override
   final ServerId serverId;
   final List<MediaItem> seriesEpisodes;
-  final MediaBackend clientBackend;
   final Object? fetchError;
   final List<String> seriesQueueCalls = [];
 
@@ -73,7 +64,7 @@ class _RecordingClient implements MediaServerClient {
   }
 
   @override
-  MediaBackend get backend => clientBackend;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   void close() {}
@@ -220,67 +211,6 @@ void main() {
       expect(result!.hasPrevious, isTrue);
     });
 
-    testWidgets('extends a Plex movie queue window for adjacency', (tester) async {
-      final previous = _plexMovie('movie-1', 1001);
-      final current = _plexMovie('movie-2', 1002);
-      final next = _plexMovie('movie-3', 1003);
-      final playback = PlaybackStateProvider();
-      addTearDown(playback.dispose);
-      await playback.setPlaybackFromPlayQueue(
-        PlayQueueResponse(
-          playQueueID: 77,
-          playQueueSelectedItemID: 1002,
-          playQueueShuffled: false,
-          playQueueTotalCount: 3,
-          items: [current],
-        ),
-        'collection-movies',
-      );
-      var windowFetches = 0;
-      String? requestedCenter;
-      playback.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) async {
-        windowFetches++;
-        requestedCenter = center;
-        expect(playQueueId, 77);
-        return PlayQueueResponse(
-          playQueueID: playQueueId,
-          playQueueSelectedItemID: 1002,
-          playQueueShuffled: false,
-          playQueueTotalCount: 3,
-          items: [previous, current, next],
-        );
-      });
-      final serverProvider = testMultiServer().provider;
-
-      AdjacentEpisodes? result;
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
-            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
-          ],
-          child: _ProbeWidget(metadata: current, onResult: (r) => result = r),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(windowFetches, 1);
-      expect(requestedCenter, '1002');
-      expect(playback.isQueueActive, isTrue);
-      expect(playback.playQueueId, 77);
-      expect(playback.currentQueueItem, same(current));
-      expect(playback.currentPlayQueueItemID, 1002);
-      expect(playback.loadedItems, [previous, current, next]);
-      expect(result, isNotNull);
-      expect(result!.nextStatus, QueueNavigationStatus.found);
-      expect(result!.previousStatus, QueueNavigationStatus.found);
-      expect(result!.next, same(next));
-      expect(result!.previous, same(previous));
-      expect(result!.hasNext, isTrue);
-      expect(result!.hasPrevious, isTrue);
-    });
-
     testWidgets('does not use an unrelated active queue for a standalone movie', (tester) async {
       final queuedPrevious = _siloMovie('queued-1');
       final queuedCurrent = _siloMovie('queued-2');
@@ -386,17 +316,13 @@ void main() {
       expect(result!.previous?.id, 'ep1');
     });
 
-    testWidgets('builds a Plex local fallback queue with watched episodes', (tester) async {
-      final ep1 = _plexEpisode('ep1', seriesId: 'series-P', viewCount: 1);
-      final ep2 = _plexEpisode('ep2', seriesId: 'series-P', viewCount: 1);
-      final ep3 = _plexEpisode('ep3', seriesId: 'series-P', viewCount: 1);
+    testWidgets('builds a local fallback queue with watched episodes', (tester) async {
+      final ep1 = _watchedEpisode('ep1', seriesId: 'series-P', viewCount: 1);
+      final ep2 = _watchedEpisode('ep2', seriesId: 'series-P', viewCount: 1);
+      final ep3 = _watchedEpisode('ep3', seriesId: 'series-P', viewCount: 1);
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
-      final client = _RecordingClient(
-        seriesEpisodes: [ep1, ep2, ep3],
-        clientBackend: MediaBackend.plex,
-        serverId: 'srv-plex',
-      );
+      final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3]);
       final serverProvider = testMultiServer(clients: [client]).provider;
 
       AdjacentEpisodes? result;
@@ -420,15 +346,10 @@ void main() {
     });
 
     testWidgets('distinguishes a fallback fetch failure from the end of a series', (tester) async {
-      final current = _plexEpisode('ep2', seriesId: 'series-P');
+      final current = _watchedEpisode('ep2', seriesId: 'series-P');
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
-      final client = _RecordingClient(
-        seriesEpisodes: const [],
-        clientBackend: MediaBackend.plex,
-        fetchError: StateError('network unavailable'),
-        serverId: 'srv-plex',
-      );
+      final client = _RecordingClient(seriesEpisodes: const [], fetchError: StateError('network unavailable'));
       final serverProvider = testMultiServer(clients: [client]).provider;
 
       AdjacentEpisodes? result;
@@ -450,15 +371,11 @@ void main() {
     });
 
     testWidgets('confirms the end only after loading a queue containing the current episode', (tester) async {
-      final ep1 = _plexEpisode('ep1', seriesId: 'series-P', viewCount: 1);
-      final ep2 = _plexEpisode('ep2', seriesId: 'series-P', viewCount: 1);
+      final ep1 = _watchedEpisode('ep1', seriesId: 'series-P', viewCount: 1);
+      final ep2 = _watchedEpisode('ep2', seriesId: 'series-P', viewCount: 1);
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
-      final client = _RecordingClient(
-        seriesEpisodes: [ep1, ep2],
-        clientBackend: MediaBackend.plex,
-        serverId: 'srv-plex',
-      );
+      final client = _RecordingClient(seriesEpisodes: [ep1, ep2]);
       final serverProvider = testMultiServer(clients: [client]).provider;
 
       AdjacentEpisodes? result;

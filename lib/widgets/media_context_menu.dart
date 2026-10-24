@@ -12,18 +12,13 @@ import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
-import '../metadata_edit/metadata_edit_adapters.dart';
-import '../metadata_edit/metadata_edit_models.dart';
-import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
-import '../services/recent_tags_service.dart';
 import '../services/watch_actions.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
 import '../utils/content_utils.dart';
-import '../utils/delete_impact.dart';
 import '../utils/download_utils.dart';
 import '../utils/focus_utils.dart';
 import '../utils/global_key_utils.dart';
@@ -31,8 +26,6 @@ import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../providers/catalog_sources_provider.dart';
-import '../profiles/active_profile_provider.dart';
-import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
@@ -44,16 +37,12 @@ import '../utils/dialogs.dart';
 import '../utils/downloads_folder_actions.dart';
 import '../services/external_player_service.dart';
 import 'collection_picker_dialog.dart';
-import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
-import '../screens/metadata_edit_screen.dart';
 import '../screens/music/album_detail_screen.dart';
 import '../screens/music/artist_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
-import '../utils/deletion_notifier.dart';
 import '../widgets/app_menu.dart';
-import '../widgets/tag_edit_dialog.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/overlay_sheet.dart';
 import 'watchlist_source_chooser.dart';
@@ -80,14 +69,11 @@ class _MenuContext {
   final MediaPlaylist? playlist;
   final MediaServerClient? mediaClient;
   final CatalogSourcesProvider? catalogSources;
-  final bool isAdmin;
   final bool canTranscode;
   final bool itemServerOnline;
   final bool canRemoveFromContinueWatching;
-  final bool canEditMetadata;
   final bool showWatchlistEntry;
   final bool watchlistRemoveOffered;
-  final bool canDeleteFromServer;
 
   /// A downloads folder (see [MediaContextMenu.isOffline]).
   final bool isDownloadsFolder;
@@ -97,14 +83,11 @@ class _MenuContext {
     required this.playlist,
     required this.mediaClient,
     required this.catalogSources,
-    required this.isAdmin,
     required this.canTranscode,
     required this.itemServerOnline,
     required this.canRemoveFromContinueWatching,
-    required this.canEditMetadata,
     required this.showWatchlistEntry,
     required this.watchlistRemoveOffered,
-    required this.canDeleteFromServer,
   }) : isDownloadsFolder = false;
 
   /// A downloads folder's entries act on local downloads, so none of the
@@ -113,27 +96,17 @@ class _MenuContext {
     : playlist = null,
       mediaClient = null,
       catalogSources = null,
-      isAdmin = false,
       canTranscode = false,
       itemServerOnline = false,
       canRemoveFromContinueWatching = false,
-      canEditMetadata = false,
       showWatchlistEntry = false,
       watchlistRemoveOffered = false,
-      canDeleteFromServer = false,
       isDownloadsFolder = true;
 
   bool get isPlaylist => playlist != null;
   MediaKind? get mediaKind => mediaItem?.kind;
   bool get isCollection => mediaKind == MediaKind.collection;
   MediaBackend? get itemBackend => mediaItem?.backend ?? playlist?.backend;
-
-  /// Backend-aware gate: a few menu items remain Plex-only because the
-  /// server-side feature has no MediaBrowser equivalent (match/unmatch).
-  /// No fallback: items without a backend marker show only neutral actions —
-  /// dispatching a Plex-only action against an unknown-backend item could
-  /// crash or hit the wrong server.
-  bool get isPlex => itemBackend == MediaBackend.plex;
 }
 
 /// Whether the picked entry navigated away, in which case the menu must not
@@ -175,27 +148,6 @@ List<_MenuAction> _syncDownloadMenuActions({
   ];
 }
 
-bool isAdminActionAllowedForMediaItem({
-  required bool isOwnerOrAdmin,
-  required MediaBackend? itemBackend,
-  required Profile? activeProfile,
-}) {
-  final blockedByPlexHomeRole =
-      itemBackend == MediaBackend.plex && activeProfile != null && activeProfile.isPlexHome && !activeProfile.plexAdmin;
-  return isOwnerOrAdmin && !blockedByPlexHomeRole;
-}
-
-/// Whether "Delete from server" may be offered for an item.
-///
-/// Whether the server lets this user delete an item of [itemBackend]. Plex
-/// has no per-item permission on the wire, so it keeps the account-level
-/// owner/admin gate; Silo offers no deletion.
-bool isMediaDeletionAllowed({required MediaBackend? itemBackend, required bool isAdminActionAllowed}) =>
-    switch (itemBackend) {
-      MediaBackend.plex => isAdminActionAllowed,
-      MediaBackend.silo || null => false,
-    };
-
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
 /// Caller-supplied entry appended to a [MediaContextMenu] (e.g. the
@@ -219,7 +171,7 @@ class MediaContextMenu extends StatefulWidget {
 
   /// Plays the item's trailer. When non-null a "Play trailer" item is added to
   /// the menu. Only the detail screen passes this (it resolves the trailer from
-  /// Plex extras), so the item never appears on card/browse context menus. This
+  /// server extras), so the item never appears on card/browse context menus. This
   /// keeps the trailer reachable even when the detail row hides its trailer
   /// button to fit a small screen.
   final VoidCallback? onPlayTrailer;
@@ -314,24 +266,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _ => '',
   };
 
-  /// Get the correct PlexClient for this item's server. Throws on
-  /// non-Plex backends — Plex-only flows (Add to Collection, match,
-  /// unmatch, etc.) call this directly. Backend-neutral flows must use
-  /// [_getMediaClientForItem] instead.
-  ///
-  /// An item that names its server never falls back to another server's
-  /// client: its id means nothing there, so an action would fail or, with
-  /// colliding ids, change a different item. Throws when that server has no
-  /// client instead.
-  PlexClient _getClientForItem() {
-    final serverId = serverIdOrNull(_itemServerId);
-    return serverId != null ? context.getPlexClientForServer(serverId) : context.getPlexClientWithFallback(null);
-  }
-
-  /// Backend-neutral client for the active item's server. Used by flows
-  /// that work on every backend (downloads, basic browse). Like
-  /// [_getClientForItem], never another server's client for an item that
-  /// names its own.
+  /// Client for the active item's server. An item that names its server
+  /// never falls back to another server's client: its id means nothing
+  /// there, so an action would fail or, with colliding ids, change a
+  /// different item. Throws when that server has no client instead.
   MediaServerClient _getMediaClientForItem() {
     final serverId = serverIdOrNull(_itemServerId);
     return serverId != null ? context.getMediaClientForServer(serverId) : context.getMediaClientWithFallback(null);
@@ -426,23 +364,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final mediaItem = _mediaItem;
     final playlist = _playlist;
     final mediaKind = mediaItem?.kind;
-    final itemBackend = mediaItem?.backend ?? playlist?.backend;
     if (widget.isOffline && mediaItem != null && mediaKind == MediaKind.collection) {
       return _MenuContext.downloadsFolder(mediaItem);
     }
 
-    // Check if user has admin privileges. Plex uses the server-owned flag
-    // (folded with the active Plex Home profile's admin bit, when
-    // applicable).
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-    final activeProfile = context.read<ActiveProfileProvider>().active;
-    final isOwnerOrAdmin =
-        _itemServerId != null && multiServerProvider.serverManager.isOwnerOrAdmin(ServerId(_itemServerId!));
-    final isAdmin = isAdminActionAllowedForMediaItem(
-      isOwnerOrAdmin: isOwnerOrAdmin,
-      itemBackend: itemBackend,
-      activeProfile: activeProfile,
-    );
 
     // Backend capabilities gate menu items so we don't expose actions the
     // active server cannot perform.
@@ -453,10 +379,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final itemServerOnline =
         _itemServerId != null && multiServerProvider.serverManager.isClientOnline(ServerId(_itemServerId!));
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
-    final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
 
     // Watchlist (movies and shows), backed by the connected catalog sources
-    // (Trakt, Plex, MAL, ...). Whether THIS item resolves in a source needs
+    // (Trakt, MAL, ...). Whether THIS item resolves in a source needs
     // its external ids, which load lazily: the entry defaults to "Add" — an
     // idempotent no-op when the item turns out to be listed already — and
     // only offers "Remove" once cached candidates prove membership, so a
@@ -489,27 +414,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     }
 
-    final isDeletableKind =
-        mediaKind == MediaKind.episode ||
-        mediaKind == MediaKind.movie ||
-        mediaKind == MediaKind.show ||
-        mediaKind == MediaKind.season;
-    final canDeleteFromServer =
-        isDeletableKind &&
-        isMediaDeletionAllowed(itemBackend: itemBackend, isAdminActionAllowed: isAdmin);
     return _MenuContext(
       mediaItem: mediaItem,
       playlist: playlist,
       mediaClient: mediaClient,
       catalogSources: catalogSources,
-      isAdmin: isAdmin,
       canTranscode: canTranscode,
       itemServerOnline: itemServerOnline,
       canRemoveFromContinueWatching: canRemoveFromContinueWatching,
-      canEditMetadata: canEditMetadata,
       showWatchlistEntry: showWatchlistEntry,
       watchlistRemoveOffered: watchlistRemoveOffered,
-      canDeleteFromServer: canDeleteFromServer,
     );
   }
 
@@ -554,12 +468,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   List<_MenuAction> _buildItemMenuActions(BuildContext context, _MenuContext menu) {
     final mediaItem = menu.mediaItem!;
     final mediaKind = mediaItem.kind;
-    final isMovieOrShow = mediaKind == MediaKind.movie || mediaKind == MediaKind.show;
     final isMovieOrEpisode = mediaKind == MediaKind.movie || mediaKind == MediaKind.episode;
     final isPartiallyWatched = mediaItem.isPartiallyWatched;
     final hasActiveProgress = isMovieOrEpisode && mediaItem.hasActiveProgress;
     final isVideoKind = mediaItem.isVideoContent;
-    final isUnmatched = _isUnmatched(mediaItem);
 
     // Go to Series (for episodes and seasons) — hide if already on that series' detail screen
     final ancestorMeta = context.findAncestorWidgetOfExactType<MediaDetailScreen>()?.metadata;
@@ -590,31 +502,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (widget.isInContinueWatching && isVideoKind)
         _MenuAction(value: 'details', icon: Symbols.info_rounded, label: t.mediaMenu.viewDetails),
       if (isVideoKind) _MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate),
-      // Edit Metadata — admin-only and backend-capability gated.
-      if (menu.canEditMetadata)
-        _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
-      // Quick Tag — same admin/capability gate as Edit Metadata, restricted to
-      // the kinds whose schema carries a 'label' field on both backends.
-      if (menu.canEditMetadata && isMovieOrShow)
-        _MenuAction(value: 'quick_tag', icon: Symbols.label_rounded, label: t.metadataEdit.quickTag),
-      // Match / Unmatch — Plex-only (MediaBrowser servers don't expose match agents).
-      if (menu.isPlex && menu.isAdmin && isMovieOrShow) ...[
-        _MenuAction(
-          value: 'match',
-          icon: Symbols.search_rounded,
-          label: isUnmatched ? t.matchScreen.match : t.matchScreen.fixMatch,
-        ),
-        if (!isUnmatched) _MenuAction(value: 'unmatch', icon: Symbols.link_off_rounded, label: t.matchScreen.unmatch),
-      ],
-      // Remove from Collection (only when viewing items within a collection).
-      // Plex-only — uses `removeFromCollection` API; MediaBrowser collection
-      // membership APIs aren't wired here yet.
-      if (menu.isPlex && widget.collectionId != null)
-        _MenuAction(
-          value: 'remove_from_collection',
-          icon: Symbols.delete_outline_rounded,
-          label: t.collections.removeFromCollection,
-        ),
       if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.season) &&
           itemSeriesKey != null &&
           !widget.isInContinueWatching &&
@@ -666,7 +553,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final isMovieOrEpisode = mediaKind == MediaKind.movie || mediaKind == MediaKind.episode;
     // Play Version (for episodes and movies). Hidden when there's
     // nothing to choose: a single source on a backend that can't
-    // transcode (e.g. Plex installs without a working transcoder)
+    // transcode (e.g. a server without a working transcoder)
     // would just bounce straight to playback with default
     // settings, which is what the regular Play action already does.
     // A row's version list, when present, is complete (the
@@ -721,28 +608,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           value: 'toggle_watchlist',
           icon: menu.watchlistRemoveOffered ? Symbols.bookmark_remove_rounded : Symbols.bookmark_add_rounded,
           label: menu.watchlistRemoveOffered ? t.explore.removeFromWatchlist : t.explore.addToWatchlist,
-        ),
-      // Add to... (for episodes, movies, shows, and seasons). Plex-only —
-      // uses `buildMetadataUri` + `addToPlaylist` / `addToCollection`. The
-      // MediaBrowser item-add APIs are different and not wired here yet.
-      if (menu.isPlex && mediaItem.isVideoContent)
-        _MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo),
-      // Delete media item (for episodes, movies, shows, and seasons). Routed
-      // through `MediaServerClient.deleteMediaItem`, which every backend
-      // implements (DELETE /library/metadata/{id} for Plex and
-      // DELETE /Items/{id} for MediaBrowser servers); the kind and permission checks were
-      // resolved together in [_resolveMenuContext].
-      //
-      // The label names the kind. One shared "Delete from server" string for
-      // an episode, a season and a whole show is what let #1781 happen: the
-      // reporter hit the show-level entry believing it acted on the episode
-      // he had highlighted.
-      if (menu.canDeleteFromServer)
-        _MenuAction(
-          value: 'delete_media',
-          icon: Symbols.delete_forever_rounded,
-          label: _deleteMenuLabel(mediaKind),
-          destructive: true,
         ),
     ];
   }
@@ -846,20 +711,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       case 'rate':
         if (context.mounted) await _handleRate(context, mediaItem);
         break;
-      case 'edit_metadata':
-        outcome.didNavigate = true;
-        if (context.mounted) await _pushAndRefresh(context, mediaItem, MetadataEditScreen(metadata: mediaItem));
-        break;
-      case 'quick_tag':
-        if (context.mounted) await _showQuickTagDialog(context, mediaItem);
-        break;
-      case 'match':
-        outcome.didNavigate = true;
-        if (context.mounted) await _pushAndRefresh(context, mediaItem, PlexMatchScreen(metadata: mediaItem));
-        break;
-      case 'unmatch':
-        await _handleUnmatch(context, mediaItem);
-        break;
       case 'remove_from_collection':
         await _handleRemoveFromCollection(context, mediaItem);
         break;
@@ -904,9 +755,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         break;
       case 'add_to':
         await _showAddToSubmenu(context);
-        break;
-      case 'delete_media':
-        await _handleDeleteMediaItem(context, mediaItem.kind);
         break;
       case 'music_play':
         await _handleMusicPlay(context);
@@ -984,12 +832,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
     }
-  }
-
-  /// Push a full-screen editor for [item] and refresh its source once it pops.
-  Future<void> _pushAndRefresh(BuildContext context, MediaItem item, Widget screen) async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-    _notifyRefresh(item);
   }
 
   /// Open the show an episode or season belongs to, landing on that season
@@ -1099,40 +941,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Plex-only: an item is unmatched when its [MediaItem.guid] is missing or
-  /// references the Plex no-agent marker.
-  bool _isUnmatched(MediaItem item) {
-    final g = item.guid;
-    return g == null || g.isEmpty || g.contains('agents.none://');
-  }
-
-  Future<void> _handleUnmatch(BuildContext context, MediaItem item) async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: t.matchScreen.unmatch,
-      message: t.matchScreen.unmatchConfirm,
-      confirmText: t.matchScreen.unmatch,
-      isDestructive: true,
-    );
-    if (!confirmed || !context.mounted) return;
-
-    final client = _getClientForItem();
-    try {
-      final success = await client.unmatchItem(item.id);
-      if (!context.mounted) return;
-      if (success) {
-        showSuccessSnackBar(context, t.matchScreen.unmatchSuccess);
-        _notifyRefresh(item);
-      } else {
-        showErrorSnackBar(context, t.matchScreen.unmatchFailed);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
-      }
-    }
-  }
-
   /// Fetch and navigate to a related item (series, album, or artist).
   Future<void> _navigateToRelated(
     BuildContext context,
@@ -1200,104 +1008,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       if (context.mounted) {
         showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: localizedErrorReason(e)));
-      }
-    } finally {
-      await loadingDialog.dismiss();
-    }
-  }
-
-  /// Quick-tag flow: load the editable draft, let the user toggle the 'label'
-  /// field in [TagEditDialog] with server/recents suggestions, then save
-  /// through the adapter so Plex tag diffs apply.
-  Future<void> _showQuickTagDialog(BuildContext context, MediaItem item) async {
-    final client = _getMediaClientForItem();
-    final profileId = context.read<ActiveProfileProvider>().activeId;
-    final serverId = item.serverId;
-    final loadingDialog = ScopedLoadingDialogController();
-
-    try {
-      final adapter = metadataEditAdapterFor(client);
-      if (adapter == null) return;
-      if (context.mounted) {
-        loadingDialog.show(
-          context,
-          builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
-        );
-      }
-
-      final draft = await adapter.load(item);
-      final labelField = adapter
-          .schemaFor(draft)
-          .expand((section) => section.fields)
-          .where((field) => field.id == 'label')
-          .firstOrNull;
-      if (labelField == null) return;
-
-      final recent = (profileId == null || profileId.isEmpty || serverId == null)
-          ? const <String>[]
-          : RecentTagsService.getRecentTags(profileId: profileId, serverId: serverId, fieldId: 'label');
-      final suggestionsFuture = adapter
-          .fetchTagSuggestions(draft, labelField)
-          .then(
-            (serverTags) => RecentTagsService.mergeSuggestions(
-              recent: recent,
-              serverTags: serverTags,
-              existing: metadataStringList(draft.values['label']),
-            ),
-          )
-          .catchError((_) => recent);
-
-      await loadingDialog.dismiss();
-      if (!context.mounted) return;
-
-      final result = await showScopedDialog<List<String>>(
-        context: context,
-        builder: (context) => TagEditDialog(
-          title: t.metadataEdit.label,
-          initialTags: metadataStringList(draft.values['label']),
-          suggestionsFuture: suggestionsFuture,
-        ),
-      );
-      if (result == null || !context.mounted) return;
-
-      final original = metadataStringList(draft.originalValues['label']);
-      if (metadataEditStringListEquals(result, original)) return;
-      draft.setValue('label', result);
-
-      // Re-show the spinner for the write: Plex saves can be several
-      // sequential PUTs and MediaBrowser re-posts the whole DTO, so the card
-      // must not be interactive (and re-launchable) mid-save.
-      if (context.mounted) {
-        loadingDialog.show(
-          context,
-          builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
-        );
-      }
-      final saved = await adapter.save(draft);
-      await loadingDialog.dismiss();
-
-      if (saved) {
-        if (profileId != null && profileId.isNotEmpty && serverId != null) {
-          unawaited(
-            RecentTagsService.addRecentTags(
-              result.where((tag) => !original.contains(tag)),
-              profileId: profileId,
-              serverId: serverId,
-              fieldId: 'label',
-            ),
-          );
-        }
-        if (context.mounted) {
-          showSuccessSnackBar(context, t.metadataEdit.metadataUpdated);
-          _notifyRefresh(item);
-        }
-      } else if (context.mounted) {
-        showErrorSnackBar(context, t.metadataEdit.metadataUpdateFailed);
-      }
-    } catch (e, st) {
-      appLogger.e('Quick tag failed', error: e, stackTrace: st);
-      if (context.mounted) {
-        showErrorSnackBar(context, t.metadataEdit.metadataUpdateFailed);
       }
     } finally {
       await loadingDialog.dismiss();
@@ -1634,7 +1344,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Launch playback for collection or playlist.
   ///
   /// Dispatches to the right launcher implementation based on the item's
-  /// backend — Plex uses server-side `/playQueues`.
+  /// backend; queues are built client-side.
   Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
     final playlist = _playlist;
     if (playlist != null && playlist.playlistType == 'audio') {
@@ -1844,13 +1554,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _ => '',
   };
 
-  String _deleteMenuLabel(MediaKind? kind) => switch (kind) {
-    MediaKind.season => t.mediaMenu.deleteSeasonFromServer,
-    MediaKind.show => t.mediaMenu.deleteShowFromServer,
-    MediaKind.movie => t.mediaMenu.deleteMovieFromServer,
-    _ => t.mediaMenu.deleteEpisodeFromServer,
-  };
-
   Future<void> _handleManageSyncRule(BuildContext context) => manageSyncRule(
     context,
     downloadProvider: context.read<DownloadProvider>(),
@@ -1887,119 +1590,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     globalKey: _itemSyncRuleKey(context),
     displayTitle: _itemDisplayTitle(),
   );
-
-  /// Handle delete media item action.
-  ///
-  /// Permanently removes the item and its files from the server. Everything
-  /// before the DELETE exists to make the blast radius legible: the dialog
-  /// names the exact target, states the kind, and — for a single playable
-  /// item — reports what the server will actually destroy. When that cannot
-  /// be established, the dialog says so instead of implying single-file
-  /// scope (#1781).
-  Future<void> _handleDeleteMediaItem(BuildContext context, MediaKind? mediaKind) async {
-    final item = _mediaItem!;
-    final client = _getMediaClientForItem();
-
-    // Shows and seasons are known-broad by definition; probing their parts
-    // would be a per-episode fan-out to restate what the copy already says.
-    final probesImpact = mediaKind == MediaKind.episode || mediaKind == MediaKind.movie;
-    DeleteImpact? impact;
-    if (probesImpact) {
-      showLoadingDialog(context);
-      try {
-        impact = await resolveDeleteImpact(item: item, client: client);
-      } finally {
-        // The spinner traps system back and nothing else pushes during the
-        // probe, so it is still the top route here. A `Navigator.canPop`
-        // guard would only test "is anything poppable", which is true of the
-        // screen underneath — exactly the route that must not close.
-        if (context.mounted) Navigator.pop(context);
-      }
-      if (!context.mounted) return;
-    }
-
-    final confirmed = await showDeleteConfirmation(
-      context,
-      title: _deleteDialogTitle(mediaKind),
-      message: t.mediaMenu.confirmDeleteTarget(title: formatMediaTargetLabel(item)),
-      warning: _deleteWarning(item, mediaKind, impact),
-      confirmText: impact != null && impact.isUnverified ? t.mediaMenu.deleteAnyway : _deleteConfirmLabel(mediaKind),
-    );
-
-    if (!confirmed || !context.mounted) return;
-
-    try {
-      final success = await client.deleteMediaItem(item);
-
-      if (context.mounted) {
-        if (success) {
-          showSuccessSnackBar(context, t.mediaMenu.mediaDeletedSuccessfully);
-          // Broadcast deletion event for cross-screen propagation
-          DeletionNotifier().notifyDeletedItem(item: item);
-          // Siblings sharing the deleted file died with it server-side. Without
-          // their own events their rows linger until a full refresh.
-          for (final sibling in impact?.sharedWith ?? const <MediaItem>[]) {
-            DeletionNotifier().notifyDeletedItem(item: sibling);
-          }
-          // Backward-compatible list refresh for screens that are not DeletionAware yet
-          _notifyListRefresh();
-        } else {
-          showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
-        }
-      }
-    } catch (e) {
-      appLogger.e(t.mediaMenu.mediaFailedToDelete, error: e);
-      if (context.mounted) {
-        showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
-      }
-    }
-  }
-
-  String _deleteDialogTitle(MediaKind? kind) => switch (kind) {
-    MediaKind.season => t.mediaMenu.deleteSeasonTitle,
-    MediaKind.show => t.mediaMenu.deleteShowTitle,
-    MediaKind.movie => t.mediaMenu.deleteMovieTitle,
-    _ => t.mediaMenu.deleteEpisodeTitle,
-  };
-
-  String _deleteConfirmLabel(MediaKind? kind) => switch (kind) {
-    MediaKind.season => t.mediaMenu.deleteSeasonConfirm,
-    MediaKind.show => t.mediaMenu.deleteShowConfirm,
-    MediaKind.movie => t.mediaMenu.deleteMovieConfirm,
-    _ => t.mediaMenu.deleteEpisodeConfirm,
-  };
-
-  /// The danger block under the confirmation message, or null when the delete
-  /// is verified to remove exactly the named item.
-  String? _deleteWarning(MediaItem item, MediaKind? kind, DeleteImpact? impact) {
-    if (kind == MediaKind.show || kind == MediaKind.season) {
-      // leafCount is the episode total; a season falls back to its direct
-      // children. Neither is guaranteed, so keep the countless sentence.
-      final episodes = item.leafCount ?? (kind == MediaKind.season ? item.childCount : null);
-      return episodes != null && episodes > 0
-          ? t.mediaMenu.deleteEpisodeCountWarning(n: episodes)
-          : t.mediaMenu.deleteMultipleWarning;
-    }
-
-    if (impact == null) return null;
-
-    if (impact.isUnverified) {
-      return switch (impact.reason) {
-        DeleteImpactUnverifiedReason.noFileInfo => t.mediaMenu.deleteScopeUnverifiedNoFileInfo,
-        _ => t.mediaMenu.deleteScopeUnverifiedProbeFailed,
-      };
-    }
-
-    if (!impact.isBroad) return null;
-
-    final lines = <String>[];
-    if (impact.files.length > 1) lines.add(t.mediaMenu.deleteMultiPartWarning(n: impact.files.length));
-    if (impact.sharedWith.isNotEmpty) {
-      lines.add(t.mediaMenu.deleteSharedFileHeading(n: impact.sharedWith.length));
-      lines.addAll(impact.sharedWith.map((sibling) => '\u2022 ${formatMediaTargetLabel(sibling)}'));
-    }
-    return lines.join('\n');
-  }
 
   @override
   Widget build(BuildContext context) {

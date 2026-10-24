@@ -596,16 +596,17 @@ void main() {
     });
   });
 
-  // The reporter's setup: Plex on macOS, where the client's cache scope is a
-  // profile scope that differs from the public server id. The observation and
+  // The reporter's setup (#1829, first seen on macOS): the client's
+  // cache scope is a profile scope that differs from the public server id, as
+  // a Silo client's `silo:<server>/<profile>` scope does. The observation and
   // the patch must land on the same key or suppression silently never fires.
-  group("the reporter's Plex handoff (#1829)", () {
-    final plexScope = buildPlexProfileScopeId(serverId: ServerId('plex-machine'), profileId: 'profile-a');
-    final plexEpisode = testMediaItem(
+  group("the reporter's cross-device handoff (#1829)", () {
+    final siloScope = SiloProfileScopeId(serverId: ServerId('silo-machine'), profileId: 'profile-a');
+    final siloEpisode = testMediaItem(
       id: 'episode-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
-      serverId: 'plex-machine',
+      serverId: 'silo-machine',
       durationMs: 3600000,
     );
 
@@ -614,17 +615,17 @@ void main() {
       addTearDown(store.dispose);
       // Exactly how ProfileSessionScreen wires the map: serverId -> the
       // client's own cacheServerId.
-      store.setActiveClientScopesByServer({'plex-machine': plexScope});
+      store.setActiveClientScopesByServer({'silo-machine': siloScope});
 
-      // The Mac pauses with 30 minutes left. Plex persists position on every
-      // timeline report, so the tracker acknowledges it.
+      // The Mac pauses with 30 minutes left. The server persists position on
+      // every progress report, so the tracker acknowledges it.
       await _emit(
         _event(
           changeType: WatchStateChangeType.progressUpdate,
           isNowWatched: false,
-          serverId: 'plex-machine',
+          serverId: 'silo-machine',
           itemId: 'episode-1',
-          cacheServerId: plexScope,
+          cacheServerId: siloScope,
           viewOffset: 1800000,
           serverAcknowledged: true,
         ),
@@ -632,13 +633,13 @@ void main() {
 
       // Precondition: without an observation the local patch pins the row.
       // This is the bug as reported.
-      final serverRow = plexEpisode.copyWith(viewOffsetMs: 2700000);
+      final serverRow = siloEpisode.copyWith(viewOffsetMs: 2700000);
       expect(store.apply(serverRow).viewOffsetMs, 1800000);
 
       // The iPad advances the server to 15 minutes left; Refresh reads it back.
       final watermark = store.observationWatermark;
       store.recordObservations(
-        [(item: serverRow, clientScope: plexScope)],
+        [(item: serverRow, clientScope: siloScope)],
         watermark: watermark,
         epoch: store.observationEpoch,
       );
@@ -649,12 +650,12 @@ void main() {
     test('a pre-refresh pause still pins, so a later local action is not lost', () async {
       final store = WatchStateStore();
       addTearDown(store.dispose);
-      store.setActiveClientScopesByServer({'plex-machine': plexScope});
+      store.setActiveClientScopesByServer({'silo-machine': siloScope});
 
-      final serverRow = plexEpisode.copyWith(viewOffsetMs: 2700000);
+      final serverRow = siloEpisode.copyWith(viewOffsetMs: 2700000);
       final watermark = store.observationWatermark;
       store.recordObservations(
-        [(item: serverRow, clientScope: plexScope)],
+        [(item: serverRow, clientScope: siloScope)],
         watermark: watermark,
         epoch: store.observationEpoch,
       );
@@ -664,9 +665,9 @@ void main() {
         _event(
           changeType: WatchStateChangeType.progressUpdate,
           isNowWatched: false,
-          serverId: 'plex-machine',
+          serverId: 'silo-machine',
           itemId: 'episode-1',
-          cacheServerId: plexScope,
+          cacheServerId: siloScope,
           viewOffset: 3000000,
           serverAcknowledged: true,
         ),
@@ -679,7 +680,7 @@ void main() {
       final store = WatchStateStore();
       addTearDown(store.dispose);
       // DownloadMetadataStore replaces the scope map with only the servers it
-      // has downloads for, so a Plex server without downloads can end up
+      // has downloads for, so a server without downloads can end up
       // unscoped. The patch keys off the event's own cacheServerId, so both
       // sides miss together rather than leaving a stale pin behind.
       store.setActiveClientScopesByServer(const {});
@@ -688,15 +689,15 @@ void main() {
         _event(
           changeType: WatchStateChangeType.progressUpdate,
           isNowWatched: false,
-          serverId: 'plex-machine',
+          serverId: 'silo-machine',
           itemId: 'episode-1',
-          cacheServerId: plexScope,
+          cacheServerId: siloScope,
           viewOffset: 1800000,
           serverAcknowledged: true,
         ),
       );
 
-      final serverRow = plexEpisode.copyWith(viewOffsetMs: 2700000);
+      final serverRow = siloEpisode.copyWith(viewOffsetMs: 2700000);
       expect(store.apply(serverRow).viewOffsetMs, 2700000);
     });
   });

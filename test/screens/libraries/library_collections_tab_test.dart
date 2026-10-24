@@ -1,12 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -17,13 +14,11 @@ import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/screens/collection_detail_screen.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/tabs/library_collections_tab.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/library_content_notifier.dart';
@@ -35,7 +30,6 @@ import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:provider/provider.dart';
 
-import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/download_fixtures.dart';
 import '../../test_helpers/library_tab_scaffold.dart';
 import '../../test_helpers/media_items.dart';
@@ -46,13 +40,6 @@ import '../../test_helpers/profile_stack.dart';
 
 final _serverId = ServerId('collection-server');
 final _siloServerId = ServerId('silo-collection-server');
-final _musicLibrary = MediaLibrary(
-  id: 'music',
-  backend: MediaBackend.plex,
-  title: 'Music',
-  kind: MediaKind.artist,
-  serverId: _serverId,
-);
 final _siloMusicLibrary = MediaLibrary(
   id: 'music-library',
   backend: MediaBackend.silo,
@@ -62,7 +49,7 @@ final _siloMusicLibrary = MediaLibrary(
 );
 final _movieLibrary = MediaLibrary(
   id: 'movies',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Movies',
   kind: MediaKind.movie,
   serverId: _serverId,
@@ -80,20 +67,6 @@ void main() {
   });
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
-
-  testWidgets('music library collections use square grid geometry and square cards', (tester) async {
-    final harness = _CollectionHarness.plex();
-    addTearDown(harness.dispose);
-    TvDetectionService.debugSetAppleTVOverride(true);
-    await SettingsService.instance.write(SettingsService.tvFullCardLayout, true);
-
-    await _pumpTab(tester, harness: harness, library: _musicLibrary);
-
-    final layout = tester.widget<MediaCardSliverLayout>(find.byType(MediaCardSliverLayout));
-    expect(layout.shape, CardShape.square);
-    expect(layout.fullBleedImage, isFalse);
-    expect(tester.widget<FocusableMediaCard>(find.byType(FocusableMediaCard)).cardShapeOverride, CardShape.square);
-  });
 
   testWidgets('Silo video collections keep poster geometry when opened from a music library', (tester) async {
     final harness = _CollectionHarness.silo();
@@ -113,7 +86,7 @@ void main() {
     var count = 2;
     var first = 1;
     Completer<void>? gate;
-    final harness = _CollectionHarness.plexMovies(
+    final harness = _CollectionHarness.movies(
       collectionCount: 2,
       currentCount: () => count,
       firstIndex: () => first,
@@ -161,7 +134,7 @@ void main() {
       var first = 1;
       var count = 3;
       Completer<void>? gate;
-      final harness = _CollectionHarness.plexMovies(
+      final harness = _CollectionHarness.movies(
         collectionCount: 3,
         currentCount: () => count,
         firstIndex: () => first,
@@ -234,7 +207,7 @@ void main() {
 
   group('D-pad grid navigation', () {
     testWidgets('UP moves one row up without resetting the scroll position', (tester) async {
-      final harness = _CollectionHarness.plexMovies(collectionCount: 60);
+      final harness = _CollectionHarness.movies(collectionCount: 60);
       addTearDown(harness.dispose);
 
       await _pumpTab(tester, harness: harness, library: _movieLibrary);
@@ -261,7 +234,7 @@ void main() {
     });
 
     testWidgets('focusing the first item scrolls back once its card has unmounted', (tester) async {
-      final harness = _CollectionHarness.plexMovies(collectionCount: 120);
+      final harness = _CollectionHarness.movies(collectionCount: 120);
       addTearDown(harness.dispose);
 
       await _pumpTab(tester, harness: harness, library: _movieLibrary);
@@ -279,7 +252,7 @@ void main() {
     });
 
     testWidgets('UP from the first row hands focus to onBack', (tester) async {
-      final harness = _CollectionHarness.plexMovies(collectionCount: 60);
+      final harness = _CollectionHarness.movies(collectionCount: 60);
       addTearDown(harness.dispose);
       var backCalls = 0;
 
@@ -293,7 +266,7 @@ void main() {
     });
 
     testWidgets('LEFT and RIGHT move within a row; first column LEFT reaches the sidebar', (tester) async {
-      final harness = _CollectionHarness.plexMovies(collectionCount: 60);
+      final harness = _CollectionHarness.movies(collectionCount: 60);
       addTearDown(harness.dispose);
       var sidebarCalls = 0;
 
@@ -383,99 +356,47 @@ class _CollectionHarness {
     provider = testMultiServerProvider(manager);
   }
 
-  factory _CollectionHarness.plex() {
-    final database = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(database);
-    final client = testPlexClient(
-      config: PlexConfig(
-        baseUrl: 'https://plex.example.com',
-        token: 'token',
-        clientIdentifier: 'client-id',
-        product: 'Plezy',
-        version: 'test',
-      ),
-      serverId: _serverId,
-      httpClient: MockClient((request) async {
-        if (request.url.path != '/library/sections/music/collections') {
-          return http.Response('not found', 404);
-        }
-        return http.Response(
-          jsonEncode({
-            'MediaContainer': {
-              'size': 1,
-              'totalSize': 1,
-              'Metadata': [
-                {'ratingKey': 'collection-1', 'type': 'collection', 'title': 'Music Collection', 'childCount': 4},
-              ],
-            },
-          }),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }),
-    );
-    return _CollectionHarness._(database: database, client: client);
-  }
-
   /// Movie library with [collectionCount] collections, served as one page.
   /// [currentCount] overrides the count per request, [firstIndex] the lowest
   /// collection number in the payload (so a refetch can prepend rather than
   /// append), and [responseGate] holds a response open, so live-refresh tests
   /// can stage a changed payload and observe the in-flight state.
-  factory _CollectionHarness.plexMovies({
+  factory _CollectionHarness.movies({
     required int collectionCount,
     int Function()? currentCount,
     int Function()? firstIndex,
     Future<void> Function()? responseGate,
   }) {
     final database = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(database);
-    final client = testPlexClient(
-      config: PlexConfig(
-        baseUrl: 'https://plex.example.com',
-        token: 'token',
-        clientIdentifier: 'client-id',
-        product: 'Plezy',
-        version: 'test',
-      ),
+    final client = _SiloCollectionsClient.paged(
       serverId: _serverId,
-      httpClient: MockClient((request) async {
-        if (request.url.path == '/library/collections/collection-1/children') {
-          return http.Response(
-            jsonEncode({
-              'MediaContainer': {
-                'size': 2,
-                'totalSize': 2,
-                'Metadata': [
-                  for (var i = 1; i <= 2; i++) {'ratingKey': 'member-$i', 'type': 'movie', 'title': 'Member $i'},
-                ],
-              },
-            }),
-            200,
-            headers: {'content-type': 'application/json'},
-          );
-        }
-        if (request.url.path != '/library/sections/movies/collections') {
-          return http.Response('not found', 404);
-        }
-        await responseGate?.call();
+      responseGate: responseGate,
+      collections: () {
         final count = currentCount?.call() ?? collectionCount;
         final first = firstIndex?.call() ?? 0;
-        return http.Response(
-          jsonEncode({
-            'MediaContainer': {
-              'size': count,
-              'totalSize': count,
-              'Metadata': [
-                for (var i = first; i < first + count; i++)
-                  {'ratingKey': 'collection-$i', 'type': 'collection', 'title': 'Collection $i', 'childCount': 2},
-              ],
-            },
-          }),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }),
+        return [
+          for (var i = first; i < first + count; i++)
+            testMediaItem(
+              id: 'collection-$i',
+              backend: MediaBackend.silo,
+              kind: MediaKind.collection,
+              title: 'Collection $i',
+              childCount: 2,
+              libraryId: 'movies',
+              serverId: _serverId,
+            ),
+        ];
+      },
+      members: [
+        for (var i = 1; i <= 2; i++)
+          testMediaItem(
+            id: 'member-$i',
+            backend: MediaBackend.silo,
+            kind: MediaKind.movie,
+            title: 'Member $i',
+            serverId: _serverId,
+          ),
+      ],
     );
     return _CollectionHarness._(database: database, client: client);
   }
@@ -501,14 +422,30 @@ class _CollectionHarness {
   }
 }
 
-/// A Silo client whose only collection rows are the given [collections].
+/// A Silo client serving the library's collection rows and their members.
 class _SiloCollectionsClient implements MediaServerClient {
-  _SiloCollectionsClient(this.collections);
+  _SiloCollectionsClient(List<MediaItem> collections)
+    : serverId = _siloServerId,
+      collections = (() => collections),
+      responseGate = null,
+      members = const [];
 
-  final List<MediaItem> collections;
+  /// Collections answered per request by [collections] (so a test can change
+  /// the payload between fetches), each held by [responseGate] when given.
+  /// Every collection holds [members].
+  _SiloCollectionsClient.paged({
+    required this.serverId,
+    required this.collections,
+    this.responseGate,
+    this.members = const [],
+  });
+
+  final List<MediaItem> Function() collections;
+  final Future<void> Function()? responseGate;
+  final List<MediaItem> members;
 
   @override
-  ServerId get serverId => _siloServerId;
+  final ServerId serverId;
 
   @override
   String? get serverName => 'Silo';
@@ -525,7 +462,20 @@ class _SiloCollectionsClient implements MediaServerClient {
     int? start,
     int? size,
     AbortController? abort,
-  }) async => fakeLibraryPage(collections, start: start, size: size);
+  }) async {
+    await responseGate?.call();
+    return fakeLibraryPage(collections(), start: start, size: size);
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchCollectionPage(
+    String collectionId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+    String? libraryId,
+    String? libraryTitle,
+  }) async => fakeLibraryPage(members, start: start, size: size);
 
   @override
   String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) => '';

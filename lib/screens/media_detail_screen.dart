@@ -30,7 +30,6 @@ import '../media/library_query.dart';
 import '../media/library_change_event.dart';
 import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
-import '../utils/plex_season_display.dart';
 import '../media/media_item.dart';
 import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
@@ -48,7 +47,6 @@ import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/media_quality_labels.dart';
-import '../services/plex_client.dart';
 import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../utils/content_utils.dart';
@@ -99,7 +97,6 @@ import '../widgets/hub_section.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/rasterized_gradient.dart';
 import '../widgets/tv_browse_rail.dart';
-import '../providers/account_preferences_controller.dart';
 import '../services/playback_track_preview.dart';
 import '../utils/error_message_utils.dart';
 
@@ -402,9 +399,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   String? _playbackStatusTarget;
   Timer? _playbackProbeTimer;
 
-  // Scores from the full record a probe fetched, by global key. Plex children
-  // listings carry only the scalar TMDB pair; the item's own fetch adds the
-  // `Rating[]` array (IMDb), so the TV hero shows that for the focused episode
+  // Scores from the full record a probe fetched, by global key. Children
+  // listings can carry fewer scores than the item's own fetch (IMDb), so the TV hero shows that for the focused episode
   // at no extra request (#2539). Outlives probe refreshes: a score does not
   // move with watch state, and clearing it would blank the badge until the
   // re-probe lands.
@@ -820,10 +816,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (!_canUseDetail) return;
     _invalidatePlaybackProbes(refreshItems: true);
     if (widget.isOffline) return;
-    // Backend-neutral. Plex bundles metadata + on-deck in one round-trip
-    // (`?includeOnDeck=1`); other backends' [fetchItemWithOnDeck] return
-    // onDeckEpisode=null and on-deck repopulates from cached lists on
-    // the next navigation.
+    // Backend-neutral. When [fetchItemWithOnDeck] returns
+    // onDeckEpisode=null, on-deck repopulates from cached lists on the next
+    // navigation.
     final mediaClient = _getMediaClientForMetadata(context);
     if (mediaClient == null) return;
     final serverId = _metadata.serverId;
@@ -1186,7 +1181,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// mirroring [FittedMetadataLine]'s policy — instead of wrapping onto a
   /// second run that short heroes clip away entirely: the scores pill sheds
   /// one badge at a time from the end, then quality labels go rightmost-first,
-  /// then the Plex edition, certification, runtime, and finally the year. The
+  /// then the certification, runtime, and finally the year. The
   /// tappable user-rating chip is the strip's only interactive element and is
   /// never dropped.
   ///
@@ -1243,7 +1238,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     if (!scoresOnly) {
       if (metadata.year != null) addTextChip('${metadata.year}', 0);
-      if (metadata case PlexMediaItem(:final editionTitle?)) addTextChip(editionTitle, 3);
       if (metadata.contentRating != null) addTextChip(formatContentRating(metadata.contentRating!), 2);
       if (metadata.durationMs != null) addTextChip(formatDurationTextual(metadata.durationMs!), 1);
       for (final label in buildMediaQualityLabels(metadata)) {
@@ -1445,9 +1439,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  /// Returns a
-  /// [MediaServerClient] for non-Plex items too, so image URLs use the
-  /// right server's transcoder.
+  /// Returns the item's [MediaServerClient], so image URLs use the right
+  /// server's transcoder.
   MediaServerClient? _getMediaClientForMetadata(BuildContext context) {
     return getServerBoundMediaClient(context);
   }
@@ -1635,10 +1628,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     try {
-      // Backend-neutral lookup. Plex returns the OnDeck episode bundled in
-      // the same response (`?includeOnDeck=1`); other backends'
-      // [fetchItemWithOnDeck] returns onDeckEpisode=null and the UI
-      // populates resume separately if needed.
+      // Backend-neutral lookup. When [fetchItemWithOnDeck] returns
+      // onDeckEpisode=null the UI populates resume separately if needed.
       final client = getServerBoundMediaClient(context);
       if (client == null) {
         // Truly orphaned item (server gone) — fall back to widget metadata
@@ -1716,8 +1707,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         unawaited(_fetchAllEpisodes());
       }
 
-      // [_loadExtras] and [_loadRelatedHubs] short-circuit for non-Plex
-      // backends; safe to call unconditionally.
+      // [_loadExtras] and [_loadRelatedHubs] short-circuit when the server
+      // has nothing to offer; safe to call unconditionally.
       unawaited(_loadExtras());
       unawaited(_loadRelatedHubs());
     } catch (e) {
@@ -1761,23 +1752,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     try {
-      // Plex has a server-side "flatten seasons" preference;
-      // Other backends have no equivalent, so fetch the prefs only when we have
-      // a Plex client and a section id. The library section id came from
-      // Plex as an int but lands in [MediaItem.libraryId] as the string
-      // form (or null on non-Plex items).
-      final sectionId = _metadata.libraryId;
-      final seasonsFuture = client.fetchChildren(_metadata.id);
-      // Prefs are a per-library nicety (Plex "flatten seasons"); a failure here
-      // must never take down the seasons list, so degrade to defaults.
-      final prefsFuture = (client is PlexClient && sectionId != null)
-          ? client.getLibrarySectionPrefs(sectionId).catchError((_) => <String, dynamic>{})
-          : Future.value(<String, dynamic>{});
-
-      final results = await Future.wait([seasonsFuture, prefsFuture]);
+      final seasons = await client.fetchChildren(_metadata.id);
       if (!_canUseDetail) return;
-      final seasons = results.first as List<MediaItem>;
-      final prefs = results[1] as Map<String, dynamic>;
 
       // Preserve serverId for each season.
       final seasonsWithServerId = seasons
@@ -1789,18 +1765,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           )
           .toList();
 
-      // Plex can override the library season mode per show; other backends fall
-      // through to "flatten when there's a single season".
-      bool shouldShowEpisodesDirectly;
-      if (client is PlexClient) {
-        shouldShowEpisodesDirectly = shouldShowPlexEpisodesDirectly(
-          show: _metadata,
-          seasons: seasonsWithServerId,
-          libraryPrefs: prefs,
-        );
-      } else {
-        shouldShowEpisodesDirectly = seasonsWithServerId.length <= 1;
-      }
+      // A show with a single season lists its episodes directly.
+      final shouldShowEpisodesDirectly = seasonsWithServerId.length <= 1;
 
       _updateSeasonTabFocusNodes(seasonsWithServerId.length);
 
@@ -1997,7 +1963,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
       } else {
         // Resolve the right backend client so other backends (where the typed
-        // PlexClient helper returns null) load episodes too.
+        // client helper returns null) load episodes too.
         final mediaClient = _getMediaClientForMetadata(context);
         if (mediaClient == null) {
           _completeSeasonEpisodesLoad(
@@ -3042,7 +3008,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return null;
   }
 
-
   Future<LibraryPage<MediaItem>> _fetchFlattenedEpisodePage(
     MediaServerClient client,
     ServerId serverId, {
@@ -3318,8 +3283,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Handle shuffle play. Routes through [MediaListPlaybackLauncher.forItem]
-  /// so Plex uses its server-side `/playQueues` and other backends build a local
-  /// shuffled queue from `fetchClientSideEpisodeQueue`.
+  /// to build a local shuffled queue from `fetchClientSideEpisodeQueue`.
   Future<void> _handleShufflePlayWithQueue(BuildContext context, MediaItem metadata) async {
     if (!_canUseDetail) return;
     if (widget.isOffline) {
@@ -4803,18 +4767,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   MediaItem? _getPrimaryTrailer() {
     if (_extras == null || _extras!.isEmpty) return null;
 
-    // If there's a trailerKey (Plex `primaryExtraKey`), try to find that specific trailer
-    final metadata = _metadata;
-    if (metadata case PlexMediaItem(:final trailerKey?)) {
-      // Extract rating key from trailerKey (e.g., "/library/metadata/52601" -> "52601")
-      final primaryKey = trailerKey.split('/').last;
-      try {
-        return _extras!.firstWhere((extra) => extra.id == primaryKey);
-      } catch (_) {
-        // Primary key not found, fall through to find any trailer
-      }
-    }
-
     try {
       return _extras!.firstWhere(_isTrailerExtra);
     } catch (_) {
@@ -4824,9 +4776,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   bool _isTrailerExtra(MediaItem extra) {
-    if (extra case PlexMediaItem(:final subtype?)) {
-      return subtype.toLowerCase() == 'trailer';
-    }
     final raw = extra.raw;
     final extraType = raw?['ExtraType'] as String?;
     final type = raw?['Type'] as String?;

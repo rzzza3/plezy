@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/models/livetv_capture_buffer.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -23,7 +22,6 @@ import 'package:plezy/widgets/video_controls/mobile_video_controls.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
-import 'package:plezy/widgets/video_controls/widgets/live_timeline_bar.dart';
 import 'package:plezy/widgets/video_controls/widgets/volume_control.dart';
 
 import '../test_helpers/media_items.dart';
@@ -116,15 +114,14 @@ void main() {
 
     /// Mounts the controls with the OSD already up and the picture playing,
     /// the state a viewer is in when they start walking the control bar.
-    /// [liveSeeks] makes it a time-shiftable live TV stream that records seeks.
-    Future<void> pumpControls(WidgetTester tester, {_Surface surface = _Surface.tv, List<int>? liveSeeks}) async {
+    Future<void> pumpControls(WidgetTester tester, {_Surface surface = _Surface.tv}) async {
       if (surface != _Surface.tv) TvDetectionService.setForceTVSync(false);
       final desktop = surface == _Surface.desktop;
       if (desktop) PlatformDetector.debugSetIsDesktopOSOverride(true);
       await tester.pumpWidget(shell(const SizedBox.expand(), desktop: desktop));
       await tester.pump();
 
-      final controls = PlexVideoControls(
+      final controls = SiloVideoControls(
         player: player,
         volumeController: volume,
         metadata: testMediaItem(id: 'auto-hide'),
@@ -132,12 +129,6 @@ void main() {
         chromeController: chrome,
         hasFirstFrame: hasFirstFrame,
         canNavigateMediaItems: false,
-        isLive: liveSeeks != null,
-        captureBuffer: liveSeeks == null
-            ? null
-            : CaptureBuffer(startedAt: _liveStartEpoch.toDouble(), seekStartSeconds: 0, seekEndSeconds: 3600),
-        liveEpochForPosition: liveSeeks == null ? null : (position) => _liveStartEpoch + position.inSeconds,
-        onLiveSeek: liveSeeks?.add,
       );
       await tester.pumpWidget(
         shell(
@@ -255,42 +246,10 @@ void main() {
       expect(chrome.controlsVisible, isFalse, reason: 'auto-hide resumes after release');
       await tester.pumpWidget(const SizedBox.shrink());
     });
-
-    testWidgets('a held live TV timeline keeps phone controls up and seeks on release', (tester) async {
-      final liveSeeks = <int>[];
-      await pumpControls(tester, surface: _Surface.phone, liveSeeks: liveSeeks);
-      final scrubber = find.descendant(
-        of: find.byType(LiveTimelineBar),
-        matching: find.byWidgetPredicate(
-          (widget) => widget is Semantics && widget.properties.label == t.videoControls.timelineSlider,
-        ),
-      );
-      expect(scrubber, findsOneWidget);
-
-      final gesture = await tester.startGesture(tester.getCenter(scrubber));
-      await gesture.moveBy(const Offset(-40, 0));
-      await tester.pump();
-
-      // Hold still well past the delay and any fade-out.
-      await tester.pump(const Duration(seconds: 6));
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(chrome.controlsVisible, isTrue, reason: 'a held scrubber keeps the chrome up');
-      expect(scrubber, findsOneWidget, reason: 'the scrubber stays mounted under the finger');
-
-      await gesture.up();
-      await tester.pump();
-      expect(liveSeeks, hasLength(1), reason: 'releasing the scrubber seeks');
-
-      await tester.pump(const Duration(seconds: 3));
-      expect(chrome.controlsVisible, isFalse, reason: 'releasing the scrubber resumes auto-hide');
-      await tester.pumpWidget(const SizedBox.shrink());
-    });
   });
 }
 
 enum _Surface { tv, desktop, phone }
-
-const _liveStartEpoch = 1767268800;
 
 /// Minimal [Player] whose playing state the test can flip, the way a remote's
 /// pause reaches the controls.

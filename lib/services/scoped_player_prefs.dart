@@ -198,7 +198,7 @@ abstract final class ScopedPlayerPrefs {
         return libraryKey == null ? null : 'library:$libraryKey';
       case PlayerSettingScope.title:
         // Series key for episodes, own key for movies — the same rule as
-        // media-version preferences. Server-scoped because raw Plex rating
+        // media-version preferences. Server-scoped because raw rating
         // keys are small integers that collide across servers; without a
         // server id (live TV placeholders) fall back to global.
         final serverId = serverIdOrNull(item.serverId);

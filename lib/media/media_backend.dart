@@ -2,41 +2,31 @@ import '../utils/app_logger.dart';
 
 /// Backend identifier for a media item, library, or server.
 ///
-/// Used as a discriminator on neutral domain types so consumers can branch on
-/// backend-specific behavior (e.g. only Plex supports server-side play queues
-/// in v1) and so persisted records can round-trip the source of an item.
+/// Silo is the only backend. The enum stays as the persisted discriminator,
+/// so stored records keep round-tripping their source and rows written by a
+/// removed backend can be recognised and dropped.
 enum MediaBackend {
-  plex,
   silo;
 
   String get id => switch (this) {
-    MediaBackend.plex => 'plex',
     MediaBackend.silo => 'silo',
   };
 
+  /// Ids written by backends Plezy no longer ships. Their rows are dropped.
+  static const removedIds = {'plex', 'jellyfin', 'emby'};
+
   static MediaBackend fromId(String id) => switch (id) {
-    'plex' => MediaBackend.plex,
     'silo' => MediaBackend.silo,
     _ => throw ArgumentError('Unknown MediaBackend id: $id'),
   };
 
   /// Like [fromId] but tolerant of persisted values, for JSON deserialization
-  /// of cached offline data and stored rows:
-  /// - `null` is the oldest stored shape, which only Plex wrote, so it reads
-  ///   as Plex.
-  /// - An unrecognized non-null id, including a backend Plezy no longer
-  ///   ships, logs a warning and returns `null`, so the caller drops the row
-  ///   instead of decoding another backend's data as Plex.
+  /// of cached offline data and stored rows. `null` (the oldest stored shape,
+  /// which only Plex wrote) and any other id, including the [removedIds],
+  /// log a warning and return `null`, so the caller drops the row instead of
+  /// decoding another backend's data as Silo.
   static MediaBackend? fromString(String? id) {
-    if (id == null) return MediaBackend.plex;
-    return switch (id) {
-      'plex' => MediaBackend.plex,
-      'silo' => MediaBackend.silo,
-      _ => _unknown(id),
-    };
-  }
-
-  static MediaBackend? _unknown(String id) {
+    if (id == 'silo') return MediaBackend.silo;
     appLogger.w('Unknown MediaBackend id "$id"; dropping the row');
     return null;
   }

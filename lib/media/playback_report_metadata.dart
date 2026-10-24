@@ -1,7 +1,7 @@
 /// Backend-neutral metadata attached to a playback report.
 ///
 /// This deliberately describes user/client intent rather than backend wire
-/// parameters. Plex maps offline replays to `offline`, `updated`, and
+/// parameters. A backend maps offline replays to `offline`, `updated`, and
 /// `continuing` timeline query params; backends without equivalent semantics
 /// can ignore the fields.
 enum PlaybackReportOrigin { live, offlineReplay }

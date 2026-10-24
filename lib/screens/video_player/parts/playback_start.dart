@@ -19,142 +19,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     // 503s observed from here on belong to this attempt's open.
     _http503Watchdog.disarm();
 
-    // Live TV mode: bypass standard playback initialization
-    if (widget.isLive) {
-      // Owned until the start commits or fails: a zap from a source that
-      // does not wait for the on-screen controls (OS media session, companion
-      // remote) would otherwise tune alongside it, and whichever adopted last
-      // would orphan the other's session. The attempt above idled the gate.
-      final startLease = _transitionGate.tryAcquire(PlaybackTransition.startingLive);
-      final replacement = _live.beginReplacement();
-      var committed = false;
-      _FrameRateStartupPlan? frameRatePlan;
-      int? openedStream;
-      try {
-        _firstFrame.resetUiForOpen();
-        await currentPlayer.requestAudioFocus();
-        await _setLiveStreamOptions(currentPlayer);
-        if (!attempt.isCurrent) return;
-
-        // Start the session inside the player (loading spinner covers
-        // Plex's tune).
-        final channel = widget.live!.channel;
-        final session = await _startLiveSession(channel);
-        if (session == null) {
-          throw PlaybackException(t.liveTv.failedToStartChannel, reason: PlaybackFailureReason.serverUnavailable);
-        }
-        if (!mounted || !attempt.isCurrent) {
-          _abandonLiveSession(session);
-          return;
-        }
-        _live.adoptSession(session);
-
-        // Show "Watch from Start" dialog when an existing capture session has >60s of history.
-        // On a fresh tune (no active recording), the buffer is empty so this won't trigger.
-        int? offsetSeconds;
-        final captureBuffer = session.captureBuffer;
-        final programBeginsAt = session.program.beginsAt;
-        if (captureBuffer != null && programBeginsAt != null) {
-          final nowEpoch = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-          final offsetProgramStart = programBeginsAt - captureBuffer.startedAt.round();
-          // If a session recording started after current program start, offset of program start at will be negative.
-          // If a session recording started before current program start, offset of program start will be positive.
-          // If guide data is not available, program start will be equal to current time.
-          final useProgramStart = offsetProgramStart > 0 && nowEpoch - programBeginsAt > 60;
-          final effectiveStart = useProgramStart ? programBeginsAt : captureBuffer.seekableStartEpoch;
-          final elapsed = nowEpoch - effectiveStart;
-          appLogger.d(
-            'Time-shift: buffer=${captureBuffer.seekableDurationSeconds}s, '
-            'beginsAt=$programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)',
-          );
-          if (elapsed > 60) {
-            // A launcher/automation deep link may pre-answer the prompt.
-            final bool? watchFromStart;
-            switch (widget.live!.startPosition) {
-              case LiveTvStartPosition.beginning:
-                watchFromStart = true;
-              case LiveTvStartPosition.live:
-                watchFromStart = false;
-              case LiveTvStartPosition.ask:
-                widget.launchObserver?.mark('blocked', blocker: 'confirmationRequired');
-                watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
-                widget.launchObserver?.mark('opening');
-                if (!mounted || !attempt.isCurrent) return;
-            }
-            if (watchFromStart == true) {
-              offsetSeconds = useProgramStart ? offsetProgramStart : captureBuffer.seekStartSeconds.round();
-            }
-          }
-        }
-
-        // Build the stream URL (with optional offset for time-shift)
-        final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds);
-        if (!attempt.isCurrent) return;
-        if (streamUrl == null || !mounted) {
-          throw PlaybackException(t.liveTv.failedToBuildStreamUrl, reason: PlaybackFailureReason.noPlayableSource);
-        }
-
-        // Track the requested epoch separately from MPV's source-local clock.
-        int? targetEpoch;
-        if (offsetSeconds != null) {
-          targetEpoch = (captureBuffer!.startedAt + offsetSeconds).round();
-          if (currentPlayer is! PlayerNative) {
-            _live.streamStartEpoch = captureBuffer.startedAt + offsetSeconds;
-          }
-          _live.atLiveEdge = false;
-          _live.playbackStartTime = DateTime.now();
-        } else {
-          _live.markStreamRestartedAtLiveEdge(captureBuffer);
-          targetEpoch = captureBuffer == null ? null : _live.streamStartEpoch.round();
-        }
-
-        frameRatePlan = _armLiveDisplayNegotiation(currentPlayer, attempt.outcome);
-        final holdPlaybackStart = frameRatePlan?.holdPlaybackStart ?? false;
-        final opened = await _openLiveStream(
-          currentPlayer,
-          streamUrl,
-          targetEpoch: targetEpoch,
-          play: !holdPlaybackStart && !PlatformDetector.isAutomotive(),
-          timeShifted: offsetSeconds != null,
-        );
-        if (opened) openedStream = _live.streamGeneration;
-        if (!attempt.isCurrent) return;
-
-        await _initVideoFilterAndPip();
-        if (!mounted || !attempt.isCurrent) return;
-
-        if (mounted) {
-          // Live TV never commits a PlaybackSession, so the session-derived
-          // versions/mediaInfo getters already read empty here.
-          _setPlayerState(() {
-            _isPlayerInitialized = true;
-          });
-          _trackManager?.mediaInfo = null;
-        }
-        // A held start is resumed by the display gate, which applies the
-        // same vehicle check.
-        if (PlatformDetector.isAutomotive() && !holdPlaybackStart) {
-          await _playWithPlaybackIntent(currentPlayer);
-        }
-        committed = attempt.isCurrent;
-      } catch (e, st) {
-        appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
-        unawaited(_sendLiveTimeline('stopped'));
-        widget.launchObserver?.mark('failed', failure: 'playbackFailed');
-        if (mounted && !_shuttingDown) {
-          showErrorSnackBar(context, t.liveTv.playbackStartFailed(reason: localizedErrorReason(e)));
-          unawaited(_handleBackButton());
-        }
-      } finally {
-        if (startLease != null) _finishLiveReplacement(startLease, replacement, committed: committed);
-        final plan = frameRatePlan;
-        if (plan != null) {
-          await _releaseLiveDisplayNegotiation(currentPlayer, plan, stream: committed ? openedStream : null);
-        }
-      }
-      return;
-    }
-
     // Remembered before anything can fail so the failure view's Retry can
     // re-run exactly this open, resolve included.
     _currentOpenRequest = _PlaybackOpenRequest(
@@ -224,6 +88,16 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           if (mounted) {
             showErrorSnackBar(context, t.videoControls.transcodeUnavailableFallback);
           }
+        }
+        // The server played another file than the one asked for: say which.
+        final requestedVersion = _requestedMediaSourceId;
+        final playedVersion = playbackContext.result.selectedVersion;
+        if (requestedVersion != null &&
+            playedVersion != null &&
+            playedVersion.id.isNotEmpty &&
+            playedVersion.id != requestedVersion &&
+            mounted) {
+          showErrorSnackBar(context, t.videoControls.versionUnavailableFallback(version: playedVersion.displayLabel));
         }
       }
       final result = playbackContext.result;
@@ -297,7 +171,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         resolveShouldAutoStart: (wtOwnsStart) => !wtOwnsStart,
         resumePosition: () => resumePosition,
         mediaClient: () => mediaClientForTracks,
-        getProfileSettings: () => context.read<AccountPreferencesController>().activePreferences,
         preferredAudioTrack: _preferredAudioTrack,
         primarySubtitleTranscoding: () => _isTranscoding,
         ensureAudioFocus: ensureAudioFocus,

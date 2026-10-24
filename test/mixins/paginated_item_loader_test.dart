@@ -70,7 +70,7 @@ class _PaginatedProbeState extends State<_PaginatedProbe>
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-MediaItem _meta(int i) => testMediaItem(id: 'k$i', backend: MediaBackend.plex, kind: MediaKind.movie, title: 't$i');
+MediaItem _meta(int i) => testMediaItem(id: 'k$i', backend: MediaBackend.silo, kind: MediaKind.movie, title: 't$i');
 
 LibraryPage<MediaItem> _result({required int start, required int size, required int totalSize}) {
   return LibraryPage<MediaItem>(

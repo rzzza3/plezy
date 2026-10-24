@@ -8,7 +8,7 @@ import '../media/media_hub.dart';
 ///
 /// Continue Watching is matched on the hub key first so synthesized rows and
 /// section-specific `*.inprogress.*` hubs are covered, then on title for
-/// backends whose resume row is only recognizable by name (Plex "On Deck").
+/// backends whose resume row is only recognizable by name ("On Deck").
 /// Everything else is keyword-matched on the title; the first match wins, so
 /// the more specific keywords are checked before the broader ones.
 IconData hubIconFor(MediaHub hub) {

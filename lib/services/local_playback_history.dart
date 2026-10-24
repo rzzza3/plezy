@@ -8,7 +8,7 @@ import 'settings_service.dart';
 /// [MediaItem.globalKey] and, for episodes/seasons, also by
 /// [MediaItem.seriesGlobalKey] (#1492).
 ///
-/// Servers have no per-version/per-sibling "last played" signal (a Plex
+/// Servers have no per-version/per-sibling "last played" signal (a server
 /// timeline report carries no media id, and guid-linked duplicates share
 /// synced watch state), so this local history is what lets the Continue
 /// Watching dedup keep the sibling the user actually played.

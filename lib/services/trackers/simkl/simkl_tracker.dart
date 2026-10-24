@@ -24,10 +24,10 @@ import 'simkl_constants.dart';
 /// /sync/history` stays for the marks that never pass through the player:
 /// manual, container, offline replay and external players.
 ///
-/// General-purpose: accepts any Plex external ID (tvdb/imdb/tmdb) directly,
+/// General-purpose: accepts any external ID (tvdb/imdb/tmdb) directly,
 /// so it fires for non-anime TV and movies too. Prefers Fribb's simkl_id
 /// when present for stricter anime match, otherwise falls back to whatever
-/// Plex exposes.
+/// the server exposes.
 class SimklTracker extends TrackerBase
     with ClientBackedTracker<SimklClient>
     implements TrackerRatingSource, RealtimeScrobbleTracker, EpisodeHistoryTracker {
@@ -221,7 +221,7 @@ class SimklTracker extends TrackerBase
           };
   }
 
-  /// Prefer Fribb's simkl_id for precision; otherwise send whatever Plex
+  /// Prefer Fribb's simkl_id for precision; otherwise send whatever the server
   /// exposes. Simkl accepts tvdb/imdb/tmdb in both movie and show shapes.
   Map<String, Object> _buildIds({required ExternalIds external, required AnimeIds? anime}) {
     final ids = <String, Object>{};

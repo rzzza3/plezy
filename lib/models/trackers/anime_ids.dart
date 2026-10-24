@@ -1,6 +1,6 @@
 import 'fribb_mapping_row.dart';
 
-/// External IDs for matching a Plex item to MAL / AniList / Simkl catalogs.
+/// External IDs for matching a library item to MAL / AniList / Simkl catalogs.
 ///
 /// Populated from a [FribbMappingRow] via the resolver. Each service's tracker
 /// picks the ID it needs (MAL uses [mal], AniList uses [anilist], etc.) and

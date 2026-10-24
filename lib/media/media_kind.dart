@@ -2,9 +2,9 @@ import '../i18n/strings.g.dart';
 
 /// Backend-neutral classification of a media item.
 ///
-/// Mirrors the categories in [PlexMediaType] but is the canonical type used by
+/// The canonical media type used by
 /// neutral domain models. Each backend's adapter is responsible for mapping
-/// its own type strings (Plex `type` field) into one
+/// its own type strings (the `type` field) into one
 /// of these values.
 enum MediaKind {
   movie,
@@ -19,7 +19,7 @@ enum MediaKind {
   clip,
   photo,
 
-  /// Filesystem-style directory row in folder browsing (Plex `/folder`
+  /// Filesystem-style directory row in folder browsing (a `/folder`
   /// listings). Not playable
   /// media itself — children are fetched via
   /// `MediaServerClient.fetchFolderChildren`.

@@ -1,7 +1,7 @@
 // Measurement harness entrypoint. NOT part of the app.
 //
 // Drives the real PlayerLinux/mpv/Video rendering path with a local file so
-// the compositing cost can be measured without a Plex server. Build with:
+// the compositing cost can be measured without a server. Build with:
 //   flutter build linux --target=lib/dev/harness_main.dart
 // Run with:
 //   PLEZY_HARNESS_MEDIA=/path/to/file.mp4 PLEZY_HARNESS_SECONDS=40 ./plezy

@@ -14,23 +14,17 @@ import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'connection/connection.dart';
-import 'connection/connection_bootstrap.dart';
 import 'connection/connection_registry.dart';
 import 'navigation/profile_navigation_scope.dart';
 import 'navigation/profile_session_screen.dart';
 import 'profiles/active_profile_binder.dart';
 import 'profiles/active_profile_provider.dart';
-import 'profiles/profile.dart';
-import 'profiles/profile_connection_cleanup.dart';
-import 'profiles/profile_connection_registry.dart';
-import 'profiles/profile_registry.dart';
 import 'profiles/profile_selection_policy.dart';
 import 'models/external_player_models.dart';
 import 'mixins/mounted_set_state_mixin.dart';
 import 'theme/mono_theme.dart';
-import 'profiles/plex_home_service.dart';
+import 'profiles/silo_household_service.dart';
 import 'screens/auth_screen.dart';
-import 'screens/profile/pin_entry_dialog.dart';
 import 'screens/profile/profile_switch_screen.dart';
 import 'services/storage_service.dart';
 import 'services/assistive_technology_service.dart';
@@ -53,8 +47,6 @@ import 'services/image_cache_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
 import 'services/playback_coordinator.dart';
-import 'providers/account_preferences_controller.dart';
-import 'services/account_preferences_repository.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/download_provider.dart';
@@ -67,13 +59,11 @@ import 'services/library_events/library_event_service.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
 import 'services/credential_vault.dart';
-import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
 import 'services/connectivity_probe.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'services/plex_api_cache.dart';
 import 'services/silo_api_cache.dart';
 import 'database/app_database.dart';
 import 'database/download_operations.dart';
@@ -1127,7 +1117,7 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
 
     if (exceptions.any(shouldDrop)) return null;
 
-    // Scrub Plex tokens and server URLs from exception messages
+    // Scrub tokens and server URLs from exception messages
     for (final e in exceptions) {
       final value = e.value;
       if (value != null) {
@@ -1241,17 +1231,6 @@ Future<bool> awaitStartupBindSettle(Future<bool> settle, {required bool hasNetwo
   return settle.timeout(MediaServerTimeouts.noNetworkStartupBind, onTimeout: () => false);
 }
 
-/// Top-level PIN prompt used by [ActiveProfileBinder] when it runs above the
-/// profile-scoped widget tree. Routes through the app-global
-/// [rootNavigatorKey] so the dialog survives profile-session remounts. Returns
-/// `null` when no Navigator is available yet (early boot, post-dispose) so the
-/// binder treats it as "PIN cancelled".
-Future<String?> _rootPinPrompt(Profile profile, {String? errorMessage}) {
-  final ctx = rootNavigatorKey.currentContext;
-  if (ctx == null) return Future.value(null);
-  return showPinEntryDialog(ctx, profile.displayName, errorMessage: errorMessage);
-}
-
 class MainApp extends StatefulWidget {
   final SettingsService settings;
   final StorageService storage;
@@ -1318,7 +1297,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _libraryEventService = LibraryEventService(_serverManager);
     _appDatabase = widget.appDatabase;
 
-    PlexApiCache.initialize(_appDatabase);
     SiloApiCache.initialize(_appDatabase);
 
     _downloadManager = DownloadManagerService(
@@ -1585,16 +1563,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             : const Duration(minutes: 2);
         if (now.difference(_lastResumeProbe) >= cooldown) {
           _lastResumeProbe = now;
-          // Await health check before reconnecting so stale "online" servers
-          // get marked offline and included in the reconnection sweep. Servers
-          // that stayed online but were failed over onto a remote endpoint
-          // while local ones exist get re-raced: a same-interface sleep/wake
-          // never fires the connectivity event that would otherwise do it.
-          unawaited(() async {
-            await _serverManager.checkServerHealth();
-            await _serverManager.reconnectOfflineServers();
-            await _serverManager.reoptimizeDemotedServers(reason: 'resume');
-          }());
+          // A sleep/wake on the same interface fires no connectivity event,
+          // so re-probe every server here.
+          unawaited(_serverManager.checkServerHealth());
         }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
@@ -1632,24 +1603,18 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     return MultiProvider(
       providers: [
         // Expose AppDatabase + ConnectionRegistry so screens (Settings, Setup)
-        // can manage stored Plex/Silo connections without re-creating
-        // the registry per-call site.
+        // can manage stored Silo connections without re-creating the
+        // registry per-call site.
         Provider<SettingsService>.value(value: widget.settings),
         Provider<StorageService>.value(value: widget.storage),
         Provider<AppDatabase>.value(value: _appDatabase),
         Provider<ConnectionRegistry>(create: (_) => ConnectionRegistry(_appDatabase)),
-        Provider<ProfileRegistry>(create: (_) => ProfileRegistry(_appDatabase)),
-        Provider<ProfileConnectionRegistry>(create: (_) => ProfileConnectionRegistry(_appDatabase)),
-        Provider<PlexHomeService>(
+        Provider<SiloHouseholdService>(
           create: (context) {
             // Hydrate the disk cache eagerly for profile resolution. Live
             // refresh is started only after MainScreen has settled the
             // startup offline decision.
-            final service = PlexHomeService(
-              connections: context.read<ConnectionRegistry>(),
-              profileConnections: context.read<ProfileConnectionRegistry>(),
-              storage: context.read<StorageService>(),
-            );
+            final service = SiloHouseholdService(connections: context.read<ConnectionRegistry>());
             unawaited(service.hydrate());
             return service;
           },
@@ -1658,19 +1623,15 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProvider<ActiveProfileProvider>(
           create: (context) {
             final provider = ActiveProfileProvider(
-              registry: context.read<ProfileRegistry>(),
-              plexHome: context.read<PlexHomeService>(),
+              households: context.read<SiloHouseholdService>(),
               connections: context.read<ConnectionRegistry>(),
-              profileConnections: context.read<ProfileConnectionRegistry>(),
               storage: context.read<StorageService>(),
             );
             unawaited(provider.initialize());
             return provider;
           },
         ),
-        ChangeNotifierProvider(
-          create: (context) => MultiServerProvider(_serverManager, _aggregationService),
-        ),
+        ChangeNotifierProvider(create: (context) => MultiServerProvider(_serverManager, _aggregationService)),
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
           create: (context) {
             final provider = OfflineModeProvider(
@@ -1687,13 +1648,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
         ),
-        // Profile binder owns the cold-start client connect: Plex token
-        // refresh + Silo client creation. Hoisted out of MainScreen so
+        // Profile binder owns the cold-start client connect. Hoisted out of
+        // MainScreen so
         // the splash can await its first settle — without this, MainScreen
         // mounts (and discover/libraries query) before any client exists.
         // It is intentionally not auto-started here: SetupScreen starts it
-        // once the active profile is hydrated and the OS connectivity check
-        // has chosen the initial bind's PIN policy.
+        // once the active profile is hydrated.
         Provider<ActiveProfileBinder>(
           lazy: false,
           create: (context) {
@@ -1701,10 +1661,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return ActiveProfileBinder(
               activeProfile: activeProfile,
               connections: context.read<ConnectionRegistry>(),
-              profileConnections: context.read<ProfileConnectionRegistry>(),
               serverManager: _serverManager,
               multiServerProvider: context.read<MultiServerProvider>(),
-              pinPrompt: _rootPinPrompt,
               shouldDeferInitialBind: (_) async {
                 final settings = await SettingsService.getInstance();
                 return activeProfile.requiresSelectionOnOpen(settings);
@@ -1785,25 +1743,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             downloadProvider: context.read<DownloadProvider>(),
           ),
           update: (_, syncService, downloadProvider, previous) => previous!,
-        ),
-        // Account preferences (server-stored: plex.tv user profile) live above the profile session so a write
-        // survives navigation, and so a profile switch clears the cache in one
-        // place. The repository is exposed separately because UI reads it
-        // directly; the controller owns and disposes it.
-        ChangeNotifierProxyProvider2<ActiveProfileProvider, ConnectionRegistry, AccountPreferencesController>(
-          create: (_) => AccountPreferencesController(),
-          update: (context, activeProfile, connections, previous) {
-            final controller = previous!;
-            controller.attach(
-              connections: connections,
-              profileConnections: context.read<ProfileConnectionRegistry>(),
-              activeProfile: activeProfile,
-            );
-            return controller;
-          },
-        ),
-        ProxyProvider<AccountPreferencesController, AccountPreferencesRepository>(
-          update: (_, controller, _) => controller.repository,
         ),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         // Shader presets are app-global — deliberately outside the
@@ -2051,42 +1990,25 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
     final storage = await StorageService.getInstance();
     await storage.clearLegacyBackendPrefsOnce();
-    final registry = ServerRegistry(storage);
-
-    // Idempotent: brings legacy SharedPreferences state (plexToken,
-    // currentUserUUID, homeUsersCache) into the new ConnectionRegistry +
-    // ProfileRegistry tables. No-op on subsequent launches.
+    await storage.clearPlezyProfilePrefsOnce();
+    // A Silo profile list is read from the server. A connection with no
+    // cached household yet (the first launch after an upgrade) gets one
+    // bounded read here so the picker has something to show; offline, the
+    // provider binds the session's profile under a provisional name.
     if (mounted) {
       try {
-        final connRegistry = context.read<ConnectionRegistry>();
-        final profileConnections = context.read<ProfileConnectionRegistry>();
-        final profileRegistry = context.read<ProfileRegistry>();
+        final households = context.read<SiloHouseholdService>();
         final activeProfiles = context.read<ActiveProfileProvider>();
-        final serverManager = context.read<MultiServerProvider>().serverManager;
-        final bootstrap = ConnectionBootstrap(
-          storage: storage,
-          connectionRegistry: connRegistry,
-          serverRegistry: registry,
-          profileRegistry: profileRegistry,
-          plexHome: context.read<PlexHomeService>(),
-        );
-        await bootstrap.run();
-        final pruned = await ProfileConnectionCleanup(
-          profileConnections: profileConnections,
-          connections: connRegistry,
-          storage: storage,
-          serverManager: serverManager,
-        ).pruneUnreferencedConnections();
-        if (pruned > 0) {
-          appLogger.i('Setup: pruned $pruned unreferenced connection${pruned == 1 ? '' : 's'}');
-        }
-        // Provider initialization starts before this screen runs the legacy
-        // migration. Reload after bootstrap so copied Plex Home users and the
-        // selected active profile are visible before setup decides binding is
-        // already settled and navigates to MainScreen.
+        final connections = await context.read<ConnectionRegistry>().list();
+        await households.hydrate();
+        await Future.wait([
+          for (final connection in connections.whereType<SiloConnection>())
+            if (!households.current.containsKey(connection.id))
+              households.refresh(connection).timeout(const Duration(seconds: 5), onTimeout: () => null),
+        ]);
         await activeProfiles.reloadFromStorage();
       } catch (e, st) {
-        appLogger.w('Boot-time migration failed', error: e, stackTrace: st);
+        appLogger.w('Boot-time household read failed', error: e, stackTrace: st);
       }
     }
 
@@ -2137,24 +2059,16 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
     if (mounted) {
       setState(() {
-        for (final conn in allConnections) {
-          if (conn is PlexAccountConnection) {
-            for (final s in conn.servers) {
-              _serverStatus[s.clientIdentifier] = (s.name, null);
-            }
-          }
+        for (final conn in allConnections.whereType<SiloConnection>()) {
+          _serverStatus[conn.serverId] = (conn.serverName, null);
         }
       });
     }
 
-    final plexCount = allConnections.whereType<PlexAccountConnection>().fold<int>(0, (n, c) => n + c.servers.length);
     final siloCount = allConnections.whereType<SiloConnection>().length;
     unawaited(
       Sentry.addBreadcrumb(
-        Breadcrumb(
-          message: 'Handing off to MainScreen with $plexCount Plex + $siloCount Silo server(s)',
-          category: 'setup',
-        ),
+        Breadcrumb(message: 'Handing off to MainScreen with $siloCount Silo server(s)', category: 'setup'),
       ),
     );
     _setStatus(t.common.connectingToServers);
@@ -2183,11 +2097,9 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // checkmarks fill in even while the user is choosing a profile.
     _bindServerStatusListener();
 
-    // Start only after the active profile snapshot is hydrated. Without a
-    // network the initial bind stays PIN-free: plex.tv cannot verify a PIN,
-    // and the capped wait below would navigate out from under the dialog.
+    // Start only after the active profile snapshot is hydrated.
     AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.bindingStarted);
-    binder.start(allowInitialPinPrompt: hasNetwork);
+    binder.start();
 
     // If "prompt for profile on launch" is on (or no profile is selected
     // yet), surface the picker BEFORE waiting for the previously-active

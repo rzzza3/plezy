@@ -80,18 +80,18 @@ void main() {
   const surface = Size(800, 600);
 
   Offset forwardZoneOf(WidgetTester tester) {
-    final rect = tester.getRect(find.byType(PlexVideoControls));
+    final rect = tester.getRect(find.byType(SiloVideoControls));
     return Offset(rect.right - rect.width * 0.1, rect.center.dy);
   }
 
   Offset backwardZoneOf(WidgetTester tester) {
-    final rect = tester.getRect(find.byType(PlexVideoControls));
+    final rect = tester.getRect(find.byType(SiloVideoControls));
     return Offset(rect.left + rect.width * 0.1, rect.center.dy);
   }
 
-  Offset neutralZoneOf(WidgetTester tester) => tester.getRect(find.byType(PlexVideoControls)).center;
+  Offset neutralZoneOf(WidgetTester tester) => tester.getRect(find.byType(SiloVideoControls)).center;
 
-  Future<void> pumpControls(WidgetTester tester, {bool isLive = false}) async {
+  Future<void> pumpControls(WidgetTester tester) async {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -105,14 +105,13 @@ void main() {
             body: SizedBox(
               width: surface.width,
               height: surface.height,
-              child: PlexVideoControls(
+              child: SiloVideoControls(
                 player: player,
                 volumeController: volume,
                 metadata: testMediaItem(id: 'mobile-skip-zones'),
                 toastController: toast,
                 chromeController: chrome,
                 canNavigateMediaItems: false,
-                isLive: isLive,
               ),
             ),
           ),
@@ -160,17 +159,6 @@ void main() {
     expect(player.seeks, [const Duration(minutes: 10, seconds: 10)]);
     expect(find.text('10s'), findsOneWidget);
     expect(chrome.controlsVisible, isFalse, reason: 'skipping must not raise the chrome');
-
-    await settleFeedback(tester);
-  });
-
-  testWidgets('a live stream without a capture buffer is not seeked by a double tap', (tester) async {
-    await pumpControls(tester, isLive: true);
-
-    await doubleTap(tester, forwardZoneOf(tester));
-    await doubleTap(tester, backwardZoneOf(tester));
-
-    expect(player.seeks, isEmpty, reason: 'there is no seekable window behind the live edge');
 
     await settleFeedback(tester);
   });

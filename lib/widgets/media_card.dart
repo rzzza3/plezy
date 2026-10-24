@@ -119,7 +119,6 @@ String _buildMediaMetadataLine(MediaItem item, {CatalogItem? catalogItem, bool c
     if (formatted.isNotEmpty) parts.add(formatted);
   }
   if (item.year case final year?) parts.add('$year');
-  if (item.editionTitle case final editionTitle?) parts.add(editionTitle);
   if (item.durationMs case final durationMs?) parts.add(formatDurationTextual(durationMs));
   if (ratingPart() case final rating?) parts.add(rating);
 
@@ -1241,8 +1240,7 @@ class _MediaCardHelpers {
     if (mi.displaySubtitle != null) return mi.displaySubtitle;
     if (mi.parentTitle != null) return mi.parentTitle;
     if (mi.year case final year?) {
-      final edition = mi.editionTitle;
-      return edition != null ? '$year · $edition' : '$year';
+      return '$year';
     }
     return null;
   }

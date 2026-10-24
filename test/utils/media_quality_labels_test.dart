@@ -1,12 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/media/media_version.dart';
-import 'package:plezy/services/plex_mappers.dart';
 import 'package:plezy/utils/media_quality_labels.dart';
 import '../test_helpers/media_items.dart';
 
@@ -85,73 +83,6 @@ void main() {
       expect(buildMediaQualityLabels(item), ['1080p', 'HDR', 'EAC3 5.1']);
     });
 
-    test('formats Plex season child fallback metadata', () {
-      final item = _mediaItemFromJson({
-        'ratingKey': '6048',
-        'type': 'episode',
-        'title': 'Hello, Ms. Cobel',
-        'Media': [
-          {
-            'id': '6136',
-            'audioChannels': '6',
-            'audioCodec': 'eac3',
-            'videoCodec': 'hevc',
-            'videoResolution': '4k',
-            'width': '3840',
-            'height': '1606',
-            'Part': [
-              {
-                'id': '6154',
-                'key': '/library/parts/6154/file.mkv',
-                'file': '/tv/Severance.S02.Hybrid.MULTI.2160p.WEB-DL.DV.HDR.H265-AOC/S02/S02E01.mkv',
-              },
-            ],
-          },
-        ],
-      }, serverId: ServerId('plex'));
-
-      expect(buildMediaQualityLabels(item), ['4K', 'DV', 'EAC3 5.1']);
-    });
-
-    test('formats Plex movie full-detail stream metadata', () {
-      final item = _mediaItemFromJson({
-        'ratingKey': 'movie-1',
-        'type': 'movie',
-        'title': 'Movie',
-        'Media': [
-          {
-            'id': 'media-1',
-            'audioChannels': 6,
-            'audioCodec': 'eac3',
-            'videoCodec': 'hevc',
-            'videoResolution': '4k',
-            'Part': [
-              {
-                'id': 'part-1',
-                'key': '/library/parts/part-1/file.mkv',
-                'Stream': [
-                  {
-                    'id': 1,
-                    'streamType': 1,
-                    'codec': 'hevc',
-                    'DOVIProfile': 8,
-                    'DOVIPresent': 1,
-                    'DOVIBLCompatID': 1,
-                    'colorTrc': 'smpte2084',
-                    'colorPrimaries': 'bt2020',
-                    'colorSpace': 'bt2020nc',
-                  },
-                  {'id': 2, 'streamType': 2, 'codec': 'eac3', 'channels': 6, 'selected': 1},
-                ],
-              },
-            ],
-          },
-        ],
-      }, serverId: ServerId('plex'));
-
-      expect(buildMediaQualityLabels(item), ['4K', 'DV P8', 'EAC3 5.1']);
-    });
-
     test('uses selected audio stream and stereo label', () {
       final item = _episodeWithVersion(
         MediaVersion(
@@ -212,7 +143,7 @@ void main() {
     test('uses the same requested version index as quality labels', () {
       final item = testMediaItem(
         id: 'episode-1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.episode,
         title: 'Episode',
         mediaVersions: const [
@@ -233,14 +164,10 @@ void main() {
   });
 }
 
-PlexMediaItem _mediaItemFromJson(Map<String, dynamic> json, {ServerId? serverId}) {
-  return PlexMappers.mediaItem(PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: serverId));
-}
-
 MediaItem _episodeWithVersion(MediaVersion? version) {
   return testMediaItem(
     id: 'episode-1',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.episode,
     title: 'Episode',
     mediaVersions: version == null ? null : [version],

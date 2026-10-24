@@ -4,6 +4,8 @@
 /// `section_type`) stay raw strings because the server treats them as open.
 library;
 
+import 'silo_playback.dart';
+
 /// A required field was missing or had the wrong JSON type. The message names
 /// the field only, never a value, so it is safe to log.
 class SiloDecodeException extends FormatException {
@@ -328,6 +330,10 @@ class SiloItemDetail {
   final List<SiloCredit> crew;
   final SiloLeafUserData? userData;
 
+  /// The files that can play this item, in server order. Empty for shows
+  /// and seasons.
+  final List<SiloFileVersion> versions;
+
   const SiloItemDetail({
     required this.contentId,
     required this.type,
@@ -362,6 +368,7 @@ class SiloItemDetail {
     this.cast = const [],
     this.crew = const [],
     this.userData,
+    this.versions = const [],
   });
 
   factory SiloItemDetail.fromJson(Object? raw) {
@@ -402,7 +409,25 @@ class SiloItemDetail {
       cast: [for (final c in siloObjectList(json['cast'], 'cast')) SiloCredit.fromJson(c, roleKey: 'character')],
       crew: [for (final c in siloObjectList(json['crew'], 'crew')) SiloCredit.fromJson(c, roleKey: 'job')],
       userData: SiloLeafUserData.tryFromJson(json['user_data']),
+      versions: _versions(json['versions']),
     );
+  }
+
+  /// A row that fails to decode is dropped rather than failing the detail:
+  /// the page still opens, and playback reads its own versions from
+  /// `/api/v2/watch/{id}`.
+  static List<SiloFileVersion> _versions(Object? raw) {
+    if (raw is! List) return const [];
+    final versions = <SiloFileVersion>[];
+    for (final row in raw) {
+      if (row is! Map<String, Object?>) continue;
+      try {
+        versions.add(SiloFileVersion.fromCatalogJson(row));
+      } on SiloDecodeException {
+        continue;
+      }
+    }
+    return versions;
   }
 }
 

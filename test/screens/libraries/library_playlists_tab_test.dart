@@ -1,47 +1,41 @@
-import 'dart:convert';
-import 'dart:math';
-
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
-import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
+import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_playlist.dart';
-import 'package:plezy/models/plex/plex_config.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/tabs/library_playlists_tab.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_client.dart';
-import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/layout_constants.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/card_inflation_budget.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/optimized_media_image.dart';
 
-import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/library_tab_scaffold.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
+import '../../test_helpers/paged_fakes.dart';
 import '../../test_helpers/prefs.dart';
 
 final _serverId = ServerId('playlist-server');
 final _library = MediaLibrary(
   id: 'movies',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Movies',
   kind: MediaKind.movie,
   serverId: _serverId,
 );
 final _musicLibrary = MediaLibrary(
   id: 'music',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: 'Music',
   kind: MediaKind.artist,
   serverId: _serverId,
@@ -238,47 +232,23 @@ class _PlaylistHarness {
 
   final String playlistType;
   final requestStarts = <int>[];
-  late final PlexClient client;
-  late final AppDatabase database;
+  late final _PlaylistClient client;
   late final MultiServerManager manager;
   late final MultiServerProvider provider;
 
   _PlaylistHarness({this.playlistType = 'video'}) {
-    database = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(database);
-    client = testPlexClient(
-      config: PlexConfig(
-        baseUrl: 'https://plex.example.com',
-        token: 'token',
-        clientIdentifier: 'client-id',
-        product: 'Plezy',
-        version: 'test',
-      ),
-      serverId: _serverId,
-      httpClient: MockClient((request) async {
-        if (request.url.path != '/playlists') return http.Response('not found', 404);
-        final start = int.tryParse(request.url.queryParameters['X-Plex-Container-Start'] ?? '') ?? 0;
-        final size = int.tryParse(request.url.queryParameters['X-Plex-Container-Size'] ?? '') ?? 200;
-        requestStarts.add(start);
-        final end = min(start + size, totalPlaylists);
-        final metadata = List.generate(end - start, (offset) {
-          final index = start + offset;
-          return {
-            'ratingKey': 'playlist-$index',
-            'type': 'playlist',
-            'playlistType': playlistType,
-            'title': 'Playlist $index',
-            'smart': false,
-          };
-        });
-        return http.Response(
-          jsonEncode({
-            'MediaContainer': {'size': metadata.length, 'totalSize': totalPlaylists, 'Metadata': metadata},
-          }),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }),
+    client = _PlaylistClient(
+      playlists: [
+        for (var index = 0; index < totalPlaylists; index++)
+          MediaPlaylist(
+            id: 'playlist-$index',
+            backend: MediaBackend.silo,
+            title: 'Playlist $index',
+            playlistType: playlistType,
+            serverId: _serverId,
+          ),
+      ],
+      requestStarts: requestStarts,
     );
     manager = MultiServerManager()..debugRegisterClientForTesting(client);
     provider = testMultiServerProvider(manager);
@@ -287,6 +257,44 @@ class _PlaylistHarness {
   Future<void> dispose() async {
     provider.dispose();
     manager.dispose();
-    await database.close();
   }
+}
+
+/// A Silo client whose playlist pages slice [playlists], recording each
+/// requested page start.
+class _PlaylistClient implements MediaServerClient {
+  _PlaylistClient({required this.playlists, required this.requestStarts});
+
+  final List<MediaPlaylist> playlists;
+  final List<int> requestStarts;
+
+  @override
+  ServerId get serverId => _serverId;
+
+  @override
+  String? get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.silo;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
+
+  @override
+  Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
+    String playlistType = 'video',
+    bool? smart,
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    requestStarts.add(start ?? 0);
+    return fakeLibraryPage(playlists, start: start, size: size);
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

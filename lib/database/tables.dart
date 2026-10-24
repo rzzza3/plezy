@@ -1,10 +1,10 @@
 import 'package:drift/drift.dart';
 
-/// Key-value cache table for media-server API responses (Plex, Silo).
+/// Key-value cache table for media-server API responses.
 /// Used for offline support - stores raw JSON responses.
 class ApiCache extends Table {
-  /// Composite key: serverId:endpoint (e.g., "abc123:/library/metadata/12345"
-  /// for Plex)
+  /// Composite key: scope:endpoint (e.g.
+  /// "silo:abc123/p-1:/silo/items/12345")
   TextColumn get cacheKey => text()();
 
   TextColumn get data => text()();
@@ -57,7 +57,7 @@ class DownloadedMedia extends Table {
   TextColumn get videoFilePath => text().nullable()();
 
   /// Stored paths of the files after the first when the downloaded version is
-  /// stacked across several files (Plex `Part 2`, `Part 3`), as a JSON array in
+  /// stacked across several files (`Part 2`, `Part 3`), as a JSON array in
   /// playback order. Each entry has the same stored form as [videoFilePath]
   /// (relative path or SAF `content://` URI), or is null while that file is
   /// not stored yet. Null for single-file downloads and rows from before v24.
@@ -72,8 +72,7 @@ class DownloadedMedia extends Table {
   TextColumn get mediaSourceId => text().nullable()();
 
   /// Owning library identity, stamped at enqueue time so downloads can be
-  /// grouped/filtered by library while offline. Plex items carry
-  /// librarySectionID/Title natively.
+  /// grouped/filtered by library while offline.
   /// Null for rows enqueued before v23 or when resolution was skipped/failed.
   TextColumn get libraryId => text().nullable()();
   TextColumn get libraryTitle => text().nullable()();
@@ -178,18 +177,15 @@ class DownloadCollectionSyncs extends Table {
 
 /// Persisted media-server connections.
 ///
-/// One row per "connection" the user has added — a Plex account (with its
-/// discovered servers and active Home profile) or a single MediaBrowser
-/// server/user. The [configJson] payload is backend-specific and parsed by the
-/// [Connection] sealed class.
+/// One row per signed-in Silo server. The [configJson] payload is parsed by
+/// the [Connection] sealed class.
 @DataClassName('ConnectionRow')
 @TableIndex(name: 'idx_connections_kind', columns: {#kind})
 class Connections extends Table {
-  /// Stable identifier for the connection. For Plex it's a generated UUID
-  /// (one per account); for Silo it's `silo:<server_id>`.
+  /// Stable identifier for the connection: `silo:<server_id>`.
   TextColumn get id => text()();
 
-  /// Backend kind: `'plex'` or `'silo'`.
+  /// Backend kind: `'silo'`. Rows of a removed backend are dropped on read.
   TextColumn get kind => text()();
 
   /// User-visible label (account email, server name).
@@ -209,30 +205,25 @@ class Connections extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Top-level profiles — see [Profile].
+/// Profiles Plezy owned before Silo profiles replaced them.
 ///
-/// A profile is the user-facing identity. Plex Home users auto-surface as
-/// `kind='plex_home'` rows when their parent Plex account is added; users
-/// can also create `kind='local'` rows manually. Each profile owns one or
-/// more connections via [ProfileConnections].
+/// Empty since schema 27, which deletes every row: profiles now come from the
+/// Silo server ([SiloHouseholdService]). The table stays because earlier
+/// migrations and the tvOS recovery image still name it.
 @DataClassName('ProfileRow')
 @TableIndex(name: 'idx_profiles_kind', columns: {#kind})
 class Profiles extends Table {
-  /// Stable identifier. For Plex Home profiles: `plex-home-{accountId}-{homeUserUuid}`
-  /// (deterministic so re-discovery is idempotent). For locals: `local-{uuid}`.
+  /// Stable identifier, e.g. `local-{uuid}`.
   TextColumn get id => text()();
 
-  /// `'local'` | `'plex_home'`.
+  /// Profile kind, e.g. `'local'`.
   TextColumn get kind => text()();
 
   TextColumn get displayName => text()();
 
-  /// Plex Home users have a thumb URL; locals fall back to initials/colour.
   TextColumn get avatarThumbUrl => text().nullable()();
 
-  /// Per-kind config:
-  /// - `local`: `{ "pinHash": "..." }`
-  /// - `plex_home`: `{ "restricted": bool, "admin": bool, "hasPassword": bool, "parentConnectionId": "..." }`
+  /// Per-kind config, e.g. `{ "pinHash": "..." }` for a local profile.
   TextColumn get configJson => text()();
 
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
@@ -244,23 +235,13 @@ class Profiles extends Table {
 }
 
 /// Many-to-many join between [Profiles] and [Connections], carrying the
-/// per-profile user-level token used when the profile is active.
-///
-/// For Plex: `userToken` is a Home-user token from `/home/users/{uuid}/switch`,
-/// `userIdentifier` is the Plex Home user UUID. An empty `userToken` is a
-/// lazy-fetch sentinel — the binder calls `/switch` on first activation.
-/// The Dart-side [ProfileConnection] model surfaces empty as `null`; the
-/// column stays non-nullable here to avoid a schema migration.
+/// per-profile user-level token. Empty since schema 27, like [Profiles].
 @DataClassName('ProfileConnectionRow')
 @TableIndex(name: 'idx_profile_connections_connection_id', columns: {#connectionId})
 @TableIndex(name: 'idx_profile_connections_profile_id', columns: {#profileId})
 class ProfileConnections extends Table {
-  // No FK on profile_id: Plex Home profiles are virtual (built by
-  // Profile.virtualPlexHome from PlexHomeService's live cache, never
-  // persisted in `profiles`), so an FK here would reject every join row
-  // they need. Profile deletion instead cleans up join rows explicitly
-  // (ProfileConnectionCleanup.removeAllProfileConnections)
-  // before calling ProfileRegistry.remove.
+  // No FK on profile_id: some joined profiles were never rows of
+  // `profiles`.
   TextColumn get profileId => text()();
   TextColumn get connectionId => text().references(Connections, #id, onDelete: KeyAction.cascade)();
   TextColumn get userToken => text().withDefault(const Constant(''))();

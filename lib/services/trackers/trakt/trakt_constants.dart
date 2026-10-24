@@ -2,11 +2,11 @@
 ///
 /// The client_id/client_secret are extractable from the binary; this is
 /// the standard pattern for native Trakt apps and is acceptable given the
-/// same threat model as the Plex token already in `SharedPreferences`.
+/// same threat model as the account tokens already in `SharedPreferences`.
 class TraktConstants {
   TraktConstants._();
 
-  // Registered Trakt app credentials. Same threat model as the Plex token in
+  // Registered Trakt app credentials. Same threat model as the account tokens in
   // SharedPreferences — extractable from the binary, but acceptable for a
   // native client app. To rotate, update the registration at
   // https://trakt.tv/oauth/applications.

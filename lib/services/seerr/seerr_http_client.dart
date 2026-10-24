@@ -35,12 +35,10 @@ class SeerrResponse {
 ///     missing or expired session and for a permission miss alike.
 ///   * The error handler rendering a handler's `next({status, message})`:
 ///     `{"message":"…"}`. With 403 on a login route that is a credential
-///     rejection (`Access denied.`, Quick Connect unavailable); on an
-///     authenticated route it is an action denial (permission, quota or
-///     blocklist), not a verdict about which permission is missing or session
-///     expiry, which middleware catches first. `/auth/jellyfin` pairs it with 401:
-///     Jellyfin's own status, forwarded with `INVALID_CREDENTIALS` as the
-///     message. No route this client calls answers 401 otherwise.
+///     rejection (`Access denied.`); on an authenticated route it is an
+///     action denial (permission, quota or blocklist), not a verdict about
+///     which permission is missing or session expiry, which middleware
+///     catches first. No route this client calls answers 401.
 ///
 /// Anything else carrying a 3xx/401/403 was not Seerr: an SSO redirect, an
 /// HTTP Basic challenge, Cloudflare Access, Traefik/Authelia forward-auth,
@@ -165,14 +163,7 @@ class SeerrHttpClient {
 
   /// Login-flow routes: unauthenticated, and rejected by Seerr's error
   /// handler (`{message}`) rather than by `isAuthenticated` middleware.
-  static const _loginPaths = {
-    '/auth/local',
-    '/auth/plex',
-    '/auth/jellyfin',
-    '/auth/jellyfin/quickconnect/initiate',
-    '/auth/jellyfin/quickconnect/check',
-    '/auth/jellyfin/quickconnect/authenticate',
-  };
+  static const _loginPaths = {'/auth/local'};
 
   /// What [res] to [path] says about the caller's standing with Seerr — and
   /// whether Seerr is the one saying it. A JSON body alone proves nothing:
@@ -188,9 +179,7 @@ class SeerrHttpClient {
     // latter dropped when undefined.
     final handlerShape = data['message'] is String && _onlyKeys(data, const {'message', 'errors'});
     if (_loginPaths.contains(path)) {
-      // Only /auth/jellyfin ever pairs it with 401 — Jellyfin's own status,
-      // forwarded with the INVALID_CREDENTIALS code as the message.
-      if (handlerShape && (code == 403 || path == '/auth/jellyfin' && data['message'] == 'INVALID_CREDENTIALS')) {
+      if (handlerShape && code == 403) {
         return SeerrRejection.credentials;
       }
       return SeerrRejection.intermediary;

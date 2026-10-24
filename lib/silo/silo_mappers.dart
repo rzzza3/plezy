@@ -1,16 +1,20 @@
 import '../media/ids.dart';
 import '../media/media_backend.dart';
+import '../media/media_file_info.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
+import '../media/media_part.dart';
 import '../media/media_person.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
 import '../media/media_source_info.dart';
+import '../media/media_version.dart';
 import '../mpv/mpv.dart';
 import '../services/playback_initialization_types.dart';
 import '../services/track_selection_service.dart';
+import '../utils/resolution_label.dart';
 import 'silo_models.dart';
 import 'silo_playback.dart';
 
@@ -304,9 +308,122 @@ MediaItem siloDetailToItem(SiloItemDetail detail, SiloOrigin origin) {
     rating: ratings?.first.value,
     ratings: ratings,
     userRating: userRating == null ? null : userRating * 2.0,
+    mediaVersions: kind == MediaKind.movie || isEpisode
+        ? [for (final version in detail.versions) siloMediaVersion(version)]
+        : null,
     serverId: origin.serverId.value,
     serverName: origin.serverName,
   );
+}
+
+/// One Silo file as a [MediaVersion]: its id is the file id the playback
+/// start body takes, so a pick survives the versions reordering. The HDR
+/// format and the edition go in the name, which is what tells two 4K files
+/// apart in the picker.
+MediaVersion siloMediaVersion(SiloFileVersion version) {
+  final video = version.videoTracks.firstOrNull;
+  final rank = siloResolutionRank(version.resolution);
+  final hdr = video?.hdrFormat ?? (version.hdr || (video?.hdr ?? false) ? 'HDR' : null);
+  final name = [?version.edition, ?hdr].join(' · ');
+  return MediaVersion(
+    id: '${version.fileId}',
+    width: video?.width,
+    height: video?.height,
+    videoResolution: rank > 0 ? resolutionLabelFromHeight(rank) : version.resolution,
+    videoCodec: version.videoCodec ?? video?.codec,
+    bitrate: version.bitrate > 0 ? version.bitrate : null,
+    container: version.container,
+    parts: [
+      MediaPart(
+        id: '${version.fileId}',
+        file: version.filePath,
+        sizeBytes: version.fileSize > 0 ? version.fileSize : null,
+        container: version.container,
+        durationMs: version.durationSeconds > 0 ? (version.durationSeconds * 1000).round() : null,
+      ),
+    ],
+    name: name.isEmpty ? null : name,
+  );
+}
+
+/// The File Info sheet's rows for an item's Silo files, after Silo's own
+/// media info (`T/ui/screens/detail/TvMediaInfoDialog.kt:158-200`).
+MediaFileInfo siloFileInfo(List<SiloFileVersion> versions) => MediaFileInfo(
+  versions: [
+    for (final version in versions)
+      MediaFileVersion(
+        id: '${version.fileId}',
+        title: version.edition,
+        container: version.container,
+        bitrateKbps: version.bitrate > 0 ? version.bitrate : null,
+        durationMs: version.durationSeconds > 0 ? (version.durationSeconds * 1000).round() : null,
+        width: version.videoTracks.firstOrNull?.width,
+        height: version.videoTracks.firstOrNull?.height,
+        videoResolutionLabel: version.resolution,
+        videoCodec: version.videoCodec ?? version.videoTracks.firstOrNull?.codec,
+        videoProfile: version.videoTracks.firstOrNull?.profile,
+        audioCodec: version.audioCodec ?? version.audioTracks.firstOrNull?.codec,
+        audioChannels: version.audioTracks.firstOrNull?.channels,
+        parts: [
+          MediaFilePart(
+            id: '${version.fileId}',
+            filePath: version.filePath ?? version.fileName,
+            fileSize: version.fileSize > 0 ? version.fileSize : null,
+            container: version.container,
+            durationMs: version.durationSeconds > 0 ? (version.durationSeconds * 1000).round() : null,
+            streams: [
+              for (final (i, track) in version.videoTracks.indexed)
+                MediaStreamDetails(
+                  kind: MediaStreamKind.video,
+                  ordinal: i + 1,
+                  codec: track.codec,
+                  profile: track.profile,
+                  width: track.width,
+                  height: track.height,
+                  frameRate: track.frameRate,
+                  videoRange: _siloVideoRange(track),
+                ),
+              for (final (i, track) in version.audioTracks.indexed)
+                MediaStreamDetails(
+                  kind: MediaStreamKind.audio,
+                  ordinal: i + 1,
+                  title: track.title,
+                  codec: track.codec,
+                  language: track.language,
+                  languageCode: track.language,
+                  channels: track.channels,
+                  channelLayout: track.channelLayout,
+                  sampleRate: track.sampleRate,
+                  isDefault: track.isDefault,
+                ),
+              for (final (i, track) in version.subtitleTracks.indexed)
+                MediaStreamDetails(
+                  kind: MediaStreamKind.subtitle,
+                  ordinal: i + 1,
+                  title: track.title,
+                  codec: track.codec,
+                  language: track.language,
+                  languageCode: track.language,
+                  isDefault: track.isDefault,
+                  isForced: track.forced,
+                ),
+            ],
+          ),
+        ],
+      ),
+  ],
+);
+
+MediaVideoRange _siloVideoRange(SiloVideoTrack track) {
+  final format = track.hdrFormat?.toLowerCase().replaceAll(RegExp(r'[\s_-]'), '') ?? '';
+  if (format.contains('dolbyvision') || format.startsWith('dv') || format.contains('dovi')) {
+    return MediaVideoRange.dolbyVision;
+  }
+  if (format.contains('hdr10+') || format.contains('hdr10plus')) return MediaVideoRange.hdr10Plus;
+  if (format.contains('hdr10')) return MediaVideoRange.hdr10;
+  if (format.contains('hlg')) return MediaVideoRange.hlg;
+  if (format.isNotEmpty || track.hdr) return MediaVideoRange.hdr;
+  return MediaVideoRange.unknown;
 }
 
 MediaItem siloSeasonToItem(SiloSeason season, SiloOrigin origin, {required String seriesId, String? seriesTitle}) =>
@@ -470,6 +587,18 @@ MediaSourceInfo siloMediaSourceInfo(
                 selected: false,
                 forced: version.subtitleTracks[i].forced,
               ),
+            for (final row in _downloadedSidecars(plan))
+              MediaSubtitleTrack(
+                id: siloSubtitleStreamId(plan, row),
+                index: row.combinedIndex,
+                codec: row.codec,
+                language: row.language,
+                languageCode: row.language,
+                title: row.label,
+                selected: false,
+                forced: row.forced,
+                usesExternalDelivery: true,
+              ),
           ],
     chapters: const [],
     mediaSourceId: '${version.fileId}',
@@ -478,22 +607,35 @@ MediaSourceInfo siloMediaSourceInfo(
   );
 }
 
+/// Direct-play ids for downloaded sidecars start here, clear of the
+/// container's tracks, which are numbered from 1.
+const int siloDownloadedSubtitleIdBase = 10000;
+
+/// Downloaded rows a direct play mounts beside the container's own tracks.
+Iterable<SiloSubtitleRow> _downloadedSidecars(SiloPlan plan) => plan.subtitleInventory.where(
+  (row) => row.isDownloaded && row.delivery == 'sidecar' && row.url != null && row.combinedIndex >= 0,
+);
+
+/// The Plezy source stream id of an inventory [row] in [plan].
+int siloSubtitleStreamId(SiloPlan plan, SiloSubtitleRow row) =>
+    plan.isTranscode ? row.combinedIndex + 1 : siloDownloadedSubtitleIdBase + row.combinedIndex;
+
 /// Sidecars for a transcode, which carries no subtitle track of its own.
-/// Direct play reads embedded tracks from the container. [playerUrl] maps a plan URL to what mpv opens, or to
-/// null when mpv cannot open it.
+/// Direct play reads embedded tracks from the container and mounts only the
+/// subtitles the server downloaded. [playerUrl] maps a plan URL to what mpv
+/// opens, or to null when mpv cannot open it.
 List<PlaybackSubtitleSidecar> siloSubtitleSidecars(SiloPlan plan, Uri? Function(String planUrl) playerUrl) => [
-  if (plan.isTranscode)
-    for (final row in plan.subtitleInventory)
-      if (row.delivery == 'sidecar' && row.url != null)
-        if (playerUrl(row.url!) case final uri?)
-          PlaybackSubtitleSidecar(
-            sourceStreamId: row.combinedIndex + 1,
-            track: SubtitleTrack.uri(
-              '$uri',
-              title: row.label ?? row.language,
-              language: row.language,
-              codec: row.codec,
-              isForced: row.forced,
-            ),
+  for (final row in plan.isTranscode ? plan.subtitleInventory : _downloadedSidecars(plan))
+    if (row.delivery == 'sidecar' && row.url != null)
+      if (playerUrl(row.url!) case final uri?)
+        PlaybackSubtitleSidecar(
+          sourceStreamId: siloSubtitleStreamId(plan, row),
+          track: SubtitleTrack.uri(
+            '$uri',
+            title: row.label ?? row.language,
+            language: row.language,
+            codec: row.codec,
+            isForced: row.forced,
           ),
+        ),
 ];

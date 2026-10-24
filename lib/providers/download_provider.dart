@@ -2,7 +2,6 @@ import 'dart:async';
 import '../media/ids.dart';
 import 'package:flutter/foundation.dart';
 import '../i18n/strings.g.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/downloads_collection_grouping.dart';
 import '../media/media_item_merge.dart';
@@ -44,10 +43,10 @@ typedef _QueueOwnership = ({String profileId, int generation});
 /// Use [all] to download everything, or [unwatched] with an optional maxCount.
 enum DownloadFilter { all, unwatched }
 
-/// Holds Plex thumb path reference for downloaded artwork.
+/// Holds the server thumb path reference for downloaded artwork.
 /// The actual file path is computed from the hash of serverId + thumb path.
 class DownloadedArtwork {
-  /// The Plex thumb path (e.g., /library/metadata/12345/thumb/1234567890)
+  /// The server thumb path
   final String? thumbPath;
 
   const DownloadedArtwork({this.thumbPath});
@@ -154,7 +153,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   DownloadProvider.forTesting({
     required this._downloadManager,
     required this._database,
-    this._activeProfileId = 'test-profile',
+    this._activeProfileId = 'silo:srv/test-profile',
   }) : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
     _metadataStore = _DownloadMetadataStore(_downloadManager, _database, activeProfileId: _activeProfileId)
       ..addListener(_onMetadataStoreChanged);
@@ -164,7 +163,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Inject the offline-mode source so queueing paths can short-circuit when
-  /// the device has no Plex connectivity. Sync-rule execution receives a
+  /// the device has no server connectivity. Sync-rule execution receives a
   /// snapshot of this state when invoked, keeping this provider as the owner.
   void setOfflineSource(OfflineModeSource? source) {
     if (!identical(_offlineSource, source)) {
@@ -291,9 +290,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     await _releaseDownloadsForProfileWhere(profileId, (_) => true);
   }
 
-  /// Preserve physical downloads across a full logout while detaching them
-  /// from profiles that are about to be deleted. The next selected profile
-  /// adopts the ownerless rows through [_loadDownloadOwners].
+  /// Preserve physical downloads across a full logout while detaching their
+  /// owners. A profile that signs in again adopts the rows made under its own
+  /// scope through [_loadDownloadOwners].
   Future<void> detachDownloadsForLogout() async {
     // Invalidate any in-flight profile reload before waiting for it: an old
     // reload may still finish its DB adoption, but cannot repopulate the
@@ -303,7 +302,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _profileGeneration++;
     await _initFuture;
     await _profileScopedReloadFuture;
-    await _downloadManager.preparePlexMetadataForLogoutTransfer();
     await _database.clearAllDownloadOwners();
     _ownedDownloadKeys.clear();
     _syncRules.clear();
@@ -535,8 +533,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) return (metadata: null, networkFilled: false, stale: false);
 
-    // MediaBrowser bulk keys are compound-scoped (`machine/user:item`); Plex
-    // keys are public. Try the exact profile namespace first, then the public
+    // Silo bulk keys are profile-scoped (`silo:<server>/<profile>:item`);
+    // try the exact profile namespace first, then the public
     // key, then the per-item lookup (which also finds cached-but-unpinned rows).
     final clientScopeId = pinned.scopesByServer[parsed.serverId];
     var cached =
@@ -777,14 +775,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     containerIdOf: (meta) => meta.grandparentId,
     containerKind: MediaKind.show,
     synthesize: (meta, showRatingKey) {
-      // Fallback: synthesize from episode metadata (missing year, summary)
-      // Only Plex consumers read `raw['key']` (library-section + folder
-      // navigation), so we synthesize the Plex URI for Plex shows. Silo
-      // items carry no raw payload.
-      final synthesizedRaw = switch (meta.backend) {
-        MediaBackend.plex => <String, dynamic>{'key': '/library/metadata/$showRatingKey'},
-        MediaBackend.silo => null,
-      };
+      // Fallback: synthesize from episode metadata (missing year, summary).
       return MediaItem(
         id: showRatingKey,
         backend: meta.backend,
@@ -793,7 +784,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         thumbPath: meta.grandparentThumbPath,
         artPath: meta.grandparentArtPath,
         serverId: meta.serverId,
-        raw: synthesizedRaw,
       );
     },
     // Counts and library identity come from the downloaded episodes, not the
@@ -1151,7 +1141,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// then album title. Uses stored album metadata (persisted alongside each
   /// track download) and falls back to synthesizing from track fields.
   /// Library identity is inherited from the stamped tracks when the album
-  /// metadata lacks it (MediaBrowser album parents carry none).
+  /// metadata lacks it (some album parents carry none).
   List<MediaItem> get downloadedAlbums {
     final list = _downloadedContainers(
       isLeaf: (meta) => meta.kind == MediaKind.track,
@@ -1900,8 +1890,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Queue every track under an album/artist. Expansion is one
   /// recursive-leaves call ([MediaServerClient.fetchPlayableDescendants]) on
-  /// every backend — Plex branches album→/children, while MediaBrowser retries
-  /// tag-only artists by album-artist credit.
+  /// the server, which also covers tag-only artists by album-artist credit.
   Future<int> _queueMusicContainerDownload(
     MediaItem container,
     MediaServerClient client,
@@ -2845,7 +2834,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
       bool isStillActive() => _activeProfileId == profileId && _profileGeneration == generation;
       await _database.adoptLegacyDownloadsForProfile(profileId, isStillActive: isStillActive);
-      await _downloadManager.adoptTransferredPlexMetadataForProfile(profileId, isStillActive: isStillActive);
       if (!isStillActive()) return;
       final ownedKeys = await _database.getDownloadOwnerKeysForProfile(profileId);
       if (!isStillActive()) return;

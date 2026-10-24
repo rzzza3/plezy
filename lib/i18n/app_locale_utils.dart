@@ -38,6 +38,6 @@ extension AppLocaleExternalFormats on AppLocale {
   /// Locale name accepted by `package:duration`.
   String get durationLocaleName => this == AppLocale.zhHant ? 'zh_Hant' : languageCode;
 
-  /// Locale identifier sent in Plex request headers.
-  String get plexLanguageCode => this == AppLocale.zhHant ? 'zh-TW' : languageCode;
+  /// Locale identifier sent to servers (Seerr `language`).
+  String get serverLanguageCode => this == AppLocale.zhHant ? 'zh-TW' : languageCode;
 }

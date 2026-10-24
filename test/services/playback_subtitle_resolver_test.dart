@@ -68,6 +68,21 @@ MediaSourceInfo _mediaInfo(List<MediaSubtitleTrack> subtitles) {
 }
 
 void main() {
+  test('a pending choice of a stored subtitle equals the plain choice of its id', () {
+    final stored = MediaSubtitleTrack(
+      id: 10001,
+      language: 'fra',
+      usesExternalDelivery: true,
+      selected: false,
+      forced: false,
+    );
+    final pending = PlaybackSourceSubtitleChoice.pending(stored);
+
+    expect(pending, const PlaybackSourceSubtitleChoice.source(10001));
+    expect(pending.pendingTrack, same(stored));
+    expect(PlaybackSubtitleResolver.subtitleTrackForSource(stored).id, 'source:10001');
+  });
+
   group('source subtitle routing', () {
     test('matches an embedded source to its loaded native track', () {
       final source = _sourceSubtitle(2, language: 'eng');
@@ -602,7 +617,7 @@ void main() {
     });
 
     test('same-language rows are told apart by their titles across episodes (#1785)', () {
-      // Real-world shape (Madoka Magica on Plex): both rows English ASS with
+      // Real-world shape (Madoka Magica): both rows English ASS with
       // the bare displayTitle "English"; only Title separates the full
       // dialogue track from the signs/songs track.
       MediaSubtitleTrack row(int id, String title, {bool selected = false}) => MediaSubtitleTrack(

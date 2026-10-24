@@ -211,7 +211,7 @@ class ScopedLoadingDialogController {
 }
 
 /// Shows the server-side 403 modal: the server refused this account or
-/// connection. Never relay the refusal's response body: Plex's names a paid
+/// connection. Never relay the refusal's response body: a server's can name a paid
 /// plan, which the app must not advertise (#2510).
 Future<void> showPlaybackNotAllowedDialog(BuildContext context) async {
   await showScopedDialog<void>(

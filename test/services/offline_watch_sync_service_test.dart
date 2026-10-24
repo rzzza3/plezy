@@ -13,7 +13,6 @@ import 'package:plezy/services/api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_mode_source.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
-import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/silo_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
@@ -65,9 +64,8 @@ class _RecordingMediaClient with PlaybackReportRecorder implements MediaServerCl
   @override
   double get watchedThreshold => 0.9;
 
-  // Mirror the real clients: Silo marks played from the stopped report, so
-  // the auto-scrobble path emits only the local watch event (#1287); Plex needs
-  // the explicit markWatched.
+  // Mirror the real client: Silo marks played from the stopped report, so
+  // the auto-scrobble path emits only the local watch event (#1287).
   @override
   bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.silo;
 
@@ -118,21 +116,6 @@ class _ScopedRecordingMediaClient extends _RecordingMediaClient implements Scope
 
   @override
   final String scopedServerId;
-}
-
-class _RecordingPlexClient extends _RecordingMediaClient implements PlexClient, ScopedMediaServerClient {
-  _RecordingPlexClient({required super.serverId, required String profileId})
-    : profileScopeId = buildPlexProfileScopeId(serverId: serverId, profileId: profileId),
-      super(backend: MediaBackend.plex);
-
-  @override
-  PlexProfileScopeId profileScopeId;
-
-  @override
-  String get scopedServerId => profileScopeId;
-
-  @override
-  Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) async {}
 }
 
 /// Stands in for a [SiloClient] bound to one profile, so the manager's scoped
@@ -344,11 +327,11 @@ void main() {
       expect(retained.lastError, 'server error');
     });
 
-    test('partial Plex offline progress replays as offline stopped progress', () async {
+    test('partial offline progress replays as offline stopped progress', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
       svc.setActiveProfileId('p1');
 
-      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.silo);
       mgr.debugRegisterClientForTesting(client);
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
       final queued = await db.getLatestWatchAction('srv:42');
@@ -369,7 +352,7 @@ void main() {
       final (svc: svc, db: _, mgr: mgr) = _makeService();
       svc.setActiveProfileId('p1');
 
-      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.silo);
       mgr.debugRegisterClientForTesting(client);
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: null);
 
@@ -385,17 +368,18 @@ void main() {
       expect(await svc.getPendingSyncCount(), 0);
     });
 
-    test('completed Plex offline progress replays at duration and marks watched', () async {
+    test('completed Silo offline progress marks watched via the stop report, not markWatched (#1287)', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
       svc.setActiveProfileId('p1');
 
-      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.silo);
       mgr.debugRegisterClientForTesting(client);
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 95000, duration: 100000);
       final queued = await db.getLatestWatchAction('srv:42');
 
       await svc.syncPendingItems();
 
+      // The stopped report at full duration marks the item played server-side…
       expect(client.started, isEmpty);
       expect(client.stopped, hasLength(1));
       expect(client.stopped.single.positionMs, 100000);
@@ -403,23 +387,6 @@ void main() {
       expect(client.stopped.single.report.isOfflineReplay, isTrue);
       expect(client.stopped.single.report.willContinue, isFalse);
       expect(client.stopped.single.report.recordedAt?.millisecondsSinceEpoch, queued!.updatedAt);
-      expect(client.watched, ['42']);
-      expect(await svc.getPendingSyncCount(), 0);
-    });
-
-    test('completed Silo offline progress marks watched via the stop report, not markWatched (#1287)', () async {
-      final (svc: svc, db: _, mgr: mgr) = _makeService();
-      svc.setActiveProfileId('p1');
-
-      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.silo);
-      mgr.debugRegisterClientForTesting(client);
-      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 95000, duration: 100000);
-
-      await svc.syncPendingItems();
-
-      // The stopped report at full duration marks the item played server-side…
-      expect(client.stopped, hasLength(1));
-      expect(client.stopped.single.positionMs, 100000);
       // …so the offline replay must NOT also call markWatched — that would
       // mark it twice.
       expect(client.watched, isEmpty);
@@ -432,7 +399,7 @@ void main() {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
 
       svc.setActiveProfileId('p1');
-      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.silo);
       mgr.debugRegisterClientForTesting(client);
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '42');
 
@@ -741,57 +708,19 @@ void main() {
       final svc = _makeService().svc;
 
       svc.setActiveProfileId('profile-a');
-      await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
-      expect(await svc.getLocalWatchStatus('plex-machine:item-1'), isTrue);
+      await svc.queueMarkWatched(serverId: ServerId('media-server'), itemId: 'item-1');
+      expect(await svc.getLocalWatchStatus('media-server:item-1'), isTrue);
       expect(await svc.getPendingSyncCount(), 1);
 
       svc.setActiveProfileId('profile-b');
-      expect(await svc.getLocalWatchStatus('plex-machine:item-1'), isNull);
+      expect(await svc.getLocalWatchStatus('media-server:item-1'), isNull);
       expect(await svc.getPendingSyncCount(), 0);
-      await svc.queueMarkUnwatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
-      expect(await svc.getLocalWatchStatus('plex-machine:item-1'), isFalse);
+      await svc.queueMarkUnwatched(serverId: ServerId('media-server'), itemId: 'item-1');
+      expect(await svc.getLocalWatchStatus('media-server:item-1'), isFalse);
       expect(await svc.getPendingSyncCount(), 1);
 
       svc.setActiveProfileId('profile-a');
-      expect(await svc.getLocalWatchStatus('plex-machine:item-1'), isTrue);
-      expect(await svc.getPendingSyncCount(), 1);
-    });
-  });
-
-  group('Plex scoped sync', () {
-    test('queues and replays through the exact active Plex profile scope', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      svc.setActiveProfileId('profile-a');
-      final clientA = _RecordingPlexClient(serverId: ServerId('plex-machine'), profileId: 'profile-a');
-      mgr.debugRegisterClientForTesting(clientA);
-
-      final queuedScope = await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
-      expect(queuedScope.clientScopeId, clientA.profileScopeId);
-      expect((await db.getPendingWatchActions()).single.clientScopeId, clientA.profileScopeId);
-
-      await svc.syncPendingItems();
-
-      expect(clientA.watched, ['item-1']);
-      expect(await svc.getPendingSyncCount(), 0);
-    });
-
-    test('does not replay a queued Plex owner action through a foreign active profile', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      svc.setActiveProfileId('profile-a');
-      final scopeA = buildPlexProfileScopeId(serverId: ServerId('plex-machine'), profileId: 'profile-a');
-      final clientB = _RecordingPlexClient(serverId: ServerId('plex-machine'), profileId: 'profile-b');
-      mgr.debugRegisterClientForTesting(clientB);
-      await db.insertWatchAction(
-        profileId: 'profile-a',
-        serverId: ServerId('plex-machine'),
-        clientScopeId: scopeA,
-        ratingKey: 'item-1',
-        actionType: OfflineActionType.watched.id,
-      );
-
-      await svc.syncPendingItems();
-
-      expect(clientB.watched, isEmpty);
+      expect(await svc.getLocalWatchStatus('media-server:item-1'), isTrue);
       expect(await svc.getPendingSyncCount(), 1);
     });
   });
@@ -1100,19 +1029,19 @@ void main() {
     test('syncs when the source comes online, not on connectivity-only notifications', () async {
       final (svc: svc, db: _, mgr: mgr) = _makeService();
       svc.setActiveProfileId('profile-a');
-      final client = _RecordingPlexClient(serverId: ServerId('plex-machine'), profileId: 'profile-a');
+      final client = _RecordingSiloClient(profileId: 'user-a');
       mgr.debugRegisterClientForTesting(client);
       final source = _FakeOfflineModeSource(initial: true);
       svc.startConnectivityMonitoring(source);
 
-      await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
+      await svc.queueMarkWatched(serverId: _siloServer, itemId: 'item-1');
       source.setOffline(false);
       await pumpEventQueue();
       expect(client.watched, ['item-1']);
 
       // The network drops while the server stays reachable: the source
       // notifies but is still online, so no pass (and no retry attempt) runs.
-      await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-2');
+      await svc.queueMarkWatched(serverId: _siloServer, itemId: 'item-2');
       source.notifyConnectivityChanged();
       await pumpEventQueue();
       expect(client.watched, ['item-1']);

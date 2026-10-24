@@ -4,7 +4,7 @@ import '../../utils/external_ids.dart';
 
 part 'trakt_ids.g.dart';
 
-/// External IDs for matching Plex items against Trakt's catalog.
+/// External IDs for matching library items against Trakt's catalog.
 ///
 /// Trakt prefers (in order): trakt > slug > imdb > tmdb > tvdb. Movies use
 /// imdb/tmdb; episodes use the show's tvdb/tmdb/imdb plus season/episode index.

@@ -32,7 +32,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     : serverId = ServerId('server-1');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async => externalIdsByItem[itemId] ?? const ExternalIds();
@@ -78,7 +78,7 @@ class _SimklRecorder {
 
 MediaItem _episode({int? viewOffsetMs, int? durationMs}) => testMediaItem(
   id: 'episode-1-3',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.episode,
   title: 'Episode 3',
   serverId: ServerId('server-1'),
@@ -92,7 +92,7 @@ MediaItem _episode({int? viewOffsetMs, int? durationMs}) => testMediaItem(
 
 MediaItem _movie() => testMediaItem(
   id: 'movie-1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: 'Movie 1',
   serverId: ServerId('server-1'),
@@ -205,7 +205,7 @@ void main() {
     });
 
     test('records the watch explicitly when a low server threshold beats Simkl own rule', () async {
-      // Plex offers 25/50/75%; at 75% a truthful stop sits below Simkl's 80%
+      // A server may offer 25/50/75%; at 75% a truthful stop sits below Simkl's 80%
       // rule, so the stop alone would only file resumable progress.
       await coordinator.startPlayback(_episode(durationMs: 100000), _client(watchedThreshold: 0.75));
       await pumpEventQueue();

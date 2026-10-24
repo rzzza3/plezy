@@ -20,14 +20,14 @@ import '../test_helpers/prefs.dart';
 
 MediaLibrary _lib(String key, {String type = 'movie', ServerId? serverId, String title = 'L'}) => MediaLibrary(
   id: key,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   title: title,
   kind: MediaKind.fromString(type),
   serverId: serverId,
 );
 
 MediaLibrary _serverLib(ServerId serverId, String id, String title) =>
-    MediaLibrary(id: id, backend: MediaBackend.plex, title: title, kind: MediaKind.movie, serverId: serverId);
+    MediaLibrary(id: id, backend: MediaBackend.silo, title: title, kind: MediaKind.movie, serverId: serverId);
 
 /// Minimal [MediaServerClient] returning canned libraries; only the surface the
 /// aggregation service touches is implemented. An optional [gate] lets a test
@@ -266,7 +266,7 @@ void main() {
     });
 
     test('libraryLabelFor resolves a missing title through the loaded library', () async {
-      // Plex search rows carry only `librarySectionKey` — a library id without
+      // Search rows can carry only a library id without
       // its title. The label falls back to the loaded library's title.
       final p = LibrariesProvider();
       await p.updateLibraryOrder([_serverLib(ServerId('A'), '1', 'Movies'), _serverLib(ServerId('A'), '2', 'Anime')]);

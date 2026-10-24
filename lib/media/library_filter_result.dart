@@ -1,6 +1,6 @@
 import 'media_filter.dart';
 
-/// Combined filter listing result. Plex returns categories with no values
+/// Combined filter listing result. A server may return categories with no values
 /// pre-loaded; Silo pre-populates [cachedValues] so the FiltersBottomSheet
 /// avoids a second round-trip per category.
 class LibraryFilterResult {

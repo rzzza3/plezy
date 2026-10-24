@@ -14,21 +14,10 @@ abstract final class SeerrConstants {
   static const Duration authTimeout = Duration(seconds: 20);
   static const Duration requestTimeout = Duration(seconds: 30);
 
-  /// Quick Connect poll cadence, matching the Seerr web UI's fixed 2000ms.
-  static const Duration quickConnectPollInterval = Duration(seconds: 2);
-
   /// TMDB keyword Seerr treats as "this series is an anime"
   /// (server/api/themoviedb/constants.ts `ANIME_KEYWORD_ID`). Seerr routes
   /// such series to a Sonarr instance's anime defaults.
   static const int animeKeywordId = 210024;
-}
-
-/// Seerr `MediaServerType` values (server/constants/server.ts), sent as
-/// `serverType` in the `/auth/jellyfin` body.
-abstract final class SeerrMediaServerType {
-  static const int plex = 1;
-  static const int jellyfin = 2;
-  static const int emby = 3;
 }
 
 /// Seerr permission bitmask (server/lib/permissions.ts). Only the bits the

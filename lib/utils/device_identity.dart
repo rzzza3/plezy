@@ -9,13 +9,13 @@ import 'platform_detector.dart';
 
 /// What this install should call itself when talking to media servers and
 /// companion peers: a real platform name, the hardware model, and the
-/// user-facing device name (Plex dashboards show it as the "Player").
+/// user-facing device name (server dashboards show it as the "Player").
 class DeviceIdentity {
   /// 'Android' | 'iOS' | 'tvOS' | 'macOS' | 'Windows' | 'Linux', falling back
   /// to [Platform.operatingSystem] when detection fails.
   final String platform;
 
-  /// Hardware model for `X-Plex-Device`, e.g. 'AFTKM' (Fire TV), 'iPhone',
+  /// Hardware model for the device header, e.g. 'AFTKM' (Fire TV), 'iPhone',
   /// 'Apple TV'. Null when unresolvable.
   final String? deviceModel;
 

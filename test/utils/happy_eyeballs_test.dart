@@ -567,7 +567,7 @@ void main() {
       });
 
       final task = startHappyEyeballsConnect(
-        'plex.invalid',
+        'media.invalid',
         plaintext.port,
         secure: true,
         lookup: resolved([InternetAddress.loopbackIPv4]),
@@ -689,7 +689,7 @@ void main() {
       });
 
       final task = await happyEyeballsConnectionFactory(
-        Uri.parse('https://plex.invalid/library/sections'),
+        Uri.parse('https://media.invalid/library/sections'),
         InternetAddress.loopbackIPv4.address,
         server.port,
       );

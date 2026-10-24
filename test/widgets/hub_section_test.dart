@@ -38,7 +38,7 @@ void main() {
   testWidgets('custom item callbacks own pointer actions', (tester) async {
     final item = testMediaItem(
       id: 'pointer_item',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Pointer Movie',
     );
@@ -67,7 +67,7 @@ void main() {
   testWidgets('custom item callbacks own D-pad actions', (tester) async {
     final item = testMediaItem(
       id: 'dpad_item',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'D-pad Movie',
     );
@@ -106,7 +106,7 @@ void main() {
     // search field). Keyboard/D-pad focus keeps scrolling the hub into view.
     final item = testMediaItem(
       id: 'scroll_item',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Scroll Movie',
     );
@@ -153,7 +153,7 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(true);
     final item = testMediaItem(
       id: 'poster_episode',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Poster Episode',
       parentIndex: 1,
@@ -192,7 +192,7 @@ void main() {
     // should fold the poster preference back to 2:3 (#2036).
     final item = testMediaItem(
       id: 'home_video',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.clip,
       title: 'Home Video',
       thumbPath: '/video-frame.jpg',
@@ -224,7 +224,7 @@ void main() {
 
     final item = testMediaItem(
       id: 'clip_wide',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.clip,
       title: 'Home Video',
       thumbPath: '/video-frame.jpg',
@@ -258,7 +258,7 @@ void main() {
 
     final items = [
       for (var i = 0; i < 3; i++)
-        testMediaItem(id: 'movie_$i', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $i'),
+        testMediaItem(id: 'movie_$i', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Movie $i'),
     ];
     final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: items, size: items.length);
 
@@ -298,7 +298,7 @@ void main() {
 
     final item = testMediaItem(
       id: 'clip_wide_tv',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.clip,
       title: 'Home Video',
       thumbPath: '/video-frame.jpg',
@@ -330,7 +330,7 @@ void main() {
   testWidgets('shows a provider result count in the existing hub header only when supplied', (tester) async {
     final item = testMediaItem(
       id: 'counted_item',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Counted Movie',
     );
@@ -354,7 +354,7 @@ void main() {
   testWidgets('restores within one owner but resets for a fresh owner', (tester) async {
     final items = [
       for (var index = 0; index < 3; index++)
-        testMediaItem(id: 'item_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Item $index'),
+        testMediaItem(id: 'item_$index', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Item $index'),
     ];
     MediaHub hub(String id) => MediaHub(id: id, title: id, type: 'movie', items: items, size: items.length);
 
@@ -417,7 +417,7 @@ void main() {
   testWidgets('visual focus follows the played item when the hub reorders', (tester) async {
     final items = [
       for (var index = 0; index < 3; index++)
-        testMediaItem(id: 'item_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Item $index'),
+        testMediaItem(id: 'item_$index', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Item $index'),
     ];
     MediaHub hub(List<MediaItem> hubItems) => MediaHub(
       id: 'continue_watching',

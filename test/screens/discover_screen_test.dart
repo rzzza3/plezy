@@ -22,11 +22,7 @@ import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
 import 'package:plezy/mixins/tab_visibility_aware.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/profiles/profile_connection.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/profiles/silo_household_service.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/discover_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
@@ -80,7 +76,7 @@ void main() {
 
     final item = testMediaItem(
       id: 'movie_1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Movie 1',
       serverId: 'server_1',
@@ -96,21 +92,12 @@ void main() {
     final companionRemoteProvider = CompanionRemoteProvider();
 
     final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final profileRegistry = _FakeProfileRegistry(db);
     final connectionRegistry = _FakeConnectionRegistry(db);
-    final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
-      connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
-      storage: storage,
-      plexHomeUserFetcher: (_) async => const [],
-    );
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      registry: profileRegistry,
-      plexHome: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final discoverProvider = DiscoverProvider(
@@ -133,7 +120,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       multiServerProvider.dispose();
-      await plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -269,19 +256,11 @@ void main() {
     final companionRemoteProvider = CompanionRemoteProvider();
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final connectionRegistry = _FakeConnectionRegistry(db);
-    final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
-      connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
-      storage: storage,
-      plexHomeUserFetcher: (_) async => const [],
-    );
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      registry: _FakeProfileRegistry(db),
-      plexHome: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final discoverProvider = DiscoverProvider(
@@ -299,7 +278,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       // multiServerProvider + its manager are torn down by testMultiServer.
-      await plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -382,19 +361,11 @@ void main() {
     final companionRemoteProvider = CompanionRemoteProvider();
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final connectionRegistry = _FakeConnectionRegistry(db);
-    final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
-      connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
-      storage: storage,
-      plexHomeUserFetcher: (_) async => const [],
-    );
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      registry: _FakeProfileRegistry(db),
-      plexHome: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final discoverProvider = DiscoverProvider(
@@ -413,7 +384,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       // multiServerProvider + its manager are torn down by testMultiServer.
-      await plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -482,7 +453,7 @@ void main() {
 
     final recommendedItem = testMediaItem(
       id: 'recommended',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Recommended',
       serverId: 'server_1',
@@ -490,7 +461,7 @@ void main() {
     );
     final continueItem = testMediaItem(
       id: 'continue',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Continue Watching',
       serverId: 'server_1',
@@ -512,21 +483,12 @@ void main() {
     final companionRemoteProvider = CompanionRemoteProvider();
 
     final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final profileRegistry = _FakeProfileRegistry(db);
     final connectionRegistry = _FakeConnectionRegistry(db);
-    final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
-      connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
-      storage: storage,
-      plexHomeUserFetcher: (_) async => const [],
-    );
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      registry: profileRegistry,
-      plexHome: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final discoverProvider = DiscoverProvider(
@@ -546,7 +508,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       multiServerProvider.dispose();
-      await plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -606,7 +568,7 @@ void main() {
       for (var i = 0; i < 3; i++)
         testMediaItem(
           id: 'movie_$i',
-          backend: MediaBackend.plex,
+          backend: MediaBackend.silo,
           kind: MediaKind.movie,
           title: 'Movie $i',
           serverId: 'server_1',
@@ -622,21 +584,12 @@ void main() {
     final companionRemoteProvider = CompanionRemoteProvider();
 
     final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final profileRegistry = _FakeProfileRegistry(db);
     final connectionRegistry = _FakeConnectionRegistry(db);
-    final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
-      connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
-      storage: storage,
-      plexHomeUserFetcher: (_) async => const [],
-    );
+    final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
     final activeProfileProvider = ActiveProfileProvider(
-      registry: profileRegistry,
-      plexHome: plexHome,
+      households: serverHome,
       connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final discoverProvider = DiscoverProvider(
@@ -655,7 +608,7 @@ void main() {
       librariesProvider.dispose();
       hiddenLibrariesProvider.dispose();
       multiServerProvider.dispose();
-      await plexHome.dispose();
+      serverHome.dispose();
       await db.close();
     });
 
@@ -852,7 +805,7 @@ class _GatedDiscover {
           id: 'hub_1',
           title: 'Recommended',
           type: 'movie',
-          items: [testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie 1')],
+          items: [testMediaItem(id: 'movie_1', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Movie 1')],
           size: 1,
         ),
       );
@@ -886,19 +839,11 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
   final companionRemoteProvider = CompanionRemoteProvider();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final connectionRegistry = _FakeConnectionRegistry(db);
-  final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
   final storage = await StorageService.getInstance();
-  final plexHome = PlexHomeService(
-    connections: connectionRegistry,
-    profileConnections: profileConnectionRegistry,
-    storage: storage,
-    plexHomeUserFetcher: (_) async => const [],
-  );
+  final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
   final activeProfileProvider = ActiveProfileProvider(
-    registry: _FakeProfileRegistry(db),
-    plexHome: plexHome,
+    households: serverHome,
     connections: connectionRegistry,
-    profileConnections: profileConnectionRegistry,
     storage: storage,
   );
   final discoverProvider = DiscoverProvider(
@@ -920,7 +865,7 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
     librariesProvider.dispose();
     hiddenLibrariesProvider.dispose();
     // multiServerProvider + its manager are torn down by testMultiServer.
-    await plexHome.dispose();
+    serverHome.dispose();
     await db.close();
   });
 
@@ -994,18 +939,10 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final storage = await StorageService.getInstance();
   final connectionRegistry = _FakeConnectionRegistry(db);
-  final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
-  final plexHome = PlexHomeService(
-    connections: connectionRegistry,
-    profileConnections: profileConnectionRegistry,
-    storage: storage,
-    plexHomeUserFetcher: (_) async => const [],
-  );
+  final serverHome = SiloHouseholdService(connections: connectionRegistry, loader: (_) async => null);
   final activeProfileProvider = ActiveProfileProvider(
-    registry: _FakeProfileRegistry(db),
-    plexHome: plexHome,
+    households: serverHome,
     connections: connectionRegistry,
-    profileConnections: profileConnectionRegistry,
     storage: storage,
   );
   final discoverProvider = DiscoverProvider(
@@ -1024,7 +961,7 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
     librariesProvider.dispose();
     hiddenLibrariesProvider.dispose();
     multiServerProvider.dispose();
-    await plexHome.dispose();
+    serverHome.dispose();
     await db.close();
   });
 
@@ -1077,10 +1014,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async =>
@@ -1119,10 +1056,10 @@ class _GatedHubsFakeClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async =>
@@ -1152,16 +1089,6 @@ class _GatedHubsFakeClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeProfileRegistry extends ProfileRegistry {
-  _FakeProfileRegistry(super.db);
-
-  @override
-  Stream<List<Profile>> watchProfiles() => Stream.value(const []);
-
-  @override
-  Future<List<Profile>> list() async => const [];
-}
-
 class _FakeConnectionRegistry extends ConnectionRegistry {
   _FakeConnectionRegistry(super.db);
 
@@ -1170,11 +1097,4 @@ class _FakeConnectionRegistry extends ConnectionRegistry {
 
   @override
   Future<List<Connection>> list() async => const [];
-}
-
-class _FakeProfileConnectionRegistry extends ProfileConnectionRegistry {
-  _FakeProfileConnectionRegistry(super.db);
-
-  @override
-  Stream<List<ProfileConnection>> watchAll() => Stream.value(const []);
 }

@@ -7,7 +7,7 @@ import 'catalog_cast_member.dart';
 import 'catalog_metadata.dart';
 
 /// External catalog providers that can back the Explore tab.
-enum CatalogSourceId { plex, trakt, mal, anilist, simkl, seerr, mdblist }
+enum CatalogSourceId { trakt, mal, anilist, simkl, seerr, mdblist }
 
 /// Normalized airing/production status across providers (Trakt `status`,
 /// MAL `status`). Null when unknown or uninteresting (released movies).
@@ -15,9 +15,8 @@ enum CatalogAirStatus { airing, ended, canceled, upcoming }
 
 /// External ids identifying a catalog item across providers and media
 /// servers. A superset of [ExternalIds] that also carries provider-native
-/// ids (Plex rating key, Trakt id/slug, MAL, AniList, and Simkl).
+/// ids (Trakt id/slug, MAL, AniList, and Simkl).
 class CatalogItemIds {
-  final String? plex;
   final int? trakt;
   final String? slug;
   final int? mal;
@@ -27,17 +26,7 @@ class CatalogItemIds {
   final int? tmdb;
   final int? tvdb;
 
-  const CatalogItemIds({
-    this.plex,
-    this.trakt,
-    this.slug,
-    this.mal,
-    this.anilist,
-    this.simkl,
-    this.imdb,
-    this.tmdb,
-    this.tvdb,
-  });
+  const CatalogItemIds({this.trakt, this.slug, this.mal, this.anilist, this.simkl, this.imdb, this.tmdb, this.tvdb});
 
   factory CatalogItemIds.fromExternal(ExternalIds ids) =>
       CatalogItemIds(imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb);
@@ -49,7 +38,6 @@ class CatalogItemIds {
       mal != null ||
       anilist != null ||
       simkl != null ||
-      plex != null ||
       trakt != null ||
       slug != null;
 
@@ -62,7 +50,6 @@ class CatalogItemIds {
     if (mal != null) return 'mal:$mal';
     if (anilist != null) return 'anilist:$anilist';
     if (simkl != null) return 'simkl:$simkl';
-    if (plex != null) return 'plex:$plex';
     if (trakt != null) return 'trakt:$trakt';
     if (slug != null) return 'slug:$slug';
     return null;
@@ -85,7 +72,6 @@ class CatalogItemIds {
     if (anilist != null) return 'anilist:$anilist';
     if (simkl != null) return 'simkl:$simkl';
     if (trakt != null) return 'trakt:$trakt';
-    if (plex != null) return 'plex:$plex';
     if (slug != null) return 'slug:$slug';
     return canonicalKey;
   }
@@ -100,7 +86,6 @@ class CatalogItemIds {
     if (mal != null) 'mal:$mal',
     if (anilist != null) 'anilist:$anilist',
     if (simkl != null) 'simkl:$simkl',
-    if (plex != null) 'plex:$plex',
     if (trakt != null) 'trakt:$trakt',
     if (slug != null) 'slug:$slug',
   ];
@@ -110,7 +95,6 @@ class CatalogItemIds {
   /// Union of both id sets, preferring this one per key. A row entry and a
   /// detail body routinely carry different subsets of the same identity.
   CatalogItemIds mergedWith(CatalogItemIds other) => CatalogItemIds(
-    plex: plex ?? other.plex,
     trakt: trakt ?? other.trakt,
     slug: slug ?? other.slug,
     mal: mal ?? other.mal,
@@ -122,7 +106,6 @@ class CatalogItemIds {
   );
 
   Map<String, Object?> toJson() => {
-    if (plex != null) 'plex': plex,
     if (trakt != null) 'trakt': trakt,
     if (slug != null) 'slug': slug,
     if (mal != null) 'mal': mal,
@@ -134,7 +117,6 @@ class CatalogItemIds {
   };
 
   factory CatalogItemIds.fromJson(Map<String, Object?> json) => CatalogItemIds(
-    plex: json['plex'] as String?,
     trakt: json['trakt'] as int?,
     slug: json['slug'] as String?,
     mal: json['mal'] as int?,
@@ -210,7 +192,7 @@ class CatalogItem {
   /// Transparent title treatment (Trakt `images.logo`), for spotlight art.
   final String? logoUrl;
 
-  /// Wide banner art (Plex `banner`), distinct from the 16:9 backdrop.
+  /// Wide banner art (`banner`), distinct from the 16:9 backdrop.
   final String? bannerUrl;
 
   /// Dominant cover colour as `#rrggbb` (AniList `coverImage.color`), for
@@ -297,7 +279,7 @@ class CatalogItem {
   /// social recommendation, so this is a list of people, not a count.
   final List<CatalogRecommender>? recommenders;
 
-  /// Age-appropriateness prose beyond [certification] (Plex Common Sense).
+  /// Age-appropriateness prose beyond [certification] (e.g. Common Sense).
   final String? contentAdvisory;
 
   /// Production budget and box-office revenue in USD.
@@ -486,7 +468,7 @@ class CatalogItem {
   /// the image pipeline loads directly.
   MediaItem toMediaItem() => MediaItem(
     id: 'catalog:${source.name}:$identityKey',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: kind,
     title: title,
     summary: overview,

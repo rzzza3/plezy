@@ -11,7 +11,7 @@ import '../../../widgets/focusable_list_tile.dart';
 import 'filter_operator_row.dart';
 import 'filter_summary.dart';
 
-/// Inclusive numeric bounds for a field Plex declares as an integer
+/// Inclusive numeric bounds for a field the server declares as an integer
 /// (`year`, `mediaSize`, `duration`, …).
 ///
 /// Each bound is its own clause — `year>>=2000` plus `year<<=2010` — because
@@ -66,7 +66,7 @@ class _FilterNumberPageState extends State<FilterNumberPage> {
     return null;
   }
 
-  /// Entered value in the field's stored unit. Plex keeps durations in
+  /// Entered value in the field's stored unit. The server keeps durations in
   /// milliseconds and sizes in bytes, so a typed 90 minutes has to leave as
   /// 5400000 — sent as typed, `duration>>=90` matches every item.
   String? _stored(String entered) {
@@ -133,11 +133,11 @@ class _FilterNumberPageState extends State<FilterNumberPage> {
   }
 }
 
-/// Relative date windows for a field Plex declares as a date (`addedAt`,
+/// Relative date windows for a field the server declares as a date (`addedAt`,
 /// `originallyAvailableAt`, `lastViewedAt`).
 ///
 /// Absolute dates are deliberately absent: a date picker is a poor D-pad
-/// target, and Plex evaluates its own relative syntax (`-30d`) server-side,
+/// target, and the server evaluates its own relative syntax (`-30d`) server-side,
 /// which is what "added recently" actually means. Each window is one clause.
 class FilterDatePage extends StatelessWidget {
   final MediaFilter filter;

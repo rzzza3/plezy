@@ -116,14 +116,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     SubtitlePreference? preferredSecondarySubtitleTrack,
     bool preserveSubtitleSourceIdentity = true,
   }) async {
-    await _waitForProfileSettingsIfNeeded();
-    if (!mounted) return const PlaybackSubtitleSelection.off();
-
     return PlaybackSubtitleResolver.resolve(
       metadata: metadata,
       mediaInfo: result.mediaInfo,
       sidecars: result.subtitleSidecars,
-      profileSettings: context.read<AccountPreferencesController>().activePreferences,
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
@@ -195,7 +191,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
   /// A shuffled queue opts out of resume when the user asked for it (#2303):
   /// every item opens at 0:00, including episodes reached through
-  /// auto-advance and Plex server-side window refetches. Explicit requests
+  /// auto-advance. Explicit requests
   /// still win, so callers only ask when no request is in play.
   bool _opensShuffledFromBeginning(SettingsService settings) =>
       mounted &&
@@ -456,12 +452,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           }
           // The switch's decoder refresh seeks back to the window start; with
           // no switch, playback would otherwise begin the stepped frames in.
-          // Live rewinds only within its cache: nothing here needs the flush.
           if (!switched && measurement.windowStart != null && isCurrent()) {
             await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
               reason: 'measurement window rewind',
               targetPosition: measurement.windowStart,
-              dropIfUncached: false,
             );
           }
         }
@@ -716,7 +710,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required Player forPlayer,
     required MediaItem metadata,
     required MediaServerClient? mediaClient,
-    required MediaServerUserProfile? Function() getProfileSettings,
     AudioTrack? preferredAudioTrack,
     SubtitlePreference? preferredSubtitleTrack,
     SubtitlePreference? preferredSecondarySubtitleTrack,
@@ -726,10 +719,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return TrackManager(
       player: forPlayer,
       isActive: () => mounted && player == forPlayer,
-      // Plex writes track changes immediately.
-      persistTrackPreference: mediaClient is PlexClient ? _plexTrackPersister(mediaClient) : null,
-      getProfileSettings: getProfileSettings,
-      waitForProfileSettings: _waitForProfileSettingsIfNeeded,
       metadata: metadata,
       mediaInfo: _currentMediaInfo,
       preferredAudioTrack: preferredAudioTrack,
@@ -868,7 +857,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }) async {
     await _applyNetworkStreamTuning(
       player: player,
-      isNetworkVod: !isLocalMedia && !widget.isLive,
+      isNetworkVod: !isLocalMedia,
       isTranscoding: isTranscoding,
       selectedVersion: selectedVersion,
     );
@@ -997,7 +986,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     // passes the resolver's reporting client; start reads the screen's media
     // client inside [beforeTrackSetup].
     required MediaServerClient? Function() mediaClient,
-    required MediaServerUserProfile? Function() getProfileSettings,
     // start: the launch-time preference; reload: the carried-over selection.
     required AudioTrack? preferredAudioTrack,
     // Transcode signal for the server-rendered-primary-subtitle rule. Known
@@ -1131,12 +1119,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     if (beforeTrackSetup != null && !await beforeTrackSetup()) return false;
 
-    // Track manager: owns track selection and Plex immediate stream writes.
+    // Track manager: owns track selection and immediate stream writes.
     final trackManager = _buildTrackManager(
       forPlayer: currentPlayer,
       metadata: metadata,
       mediaClient: mediaClient(),
-      getProfileSettings: getProfileSettings,
       preferredAudioTrack: preferredAudioTrack,
       // A declined preference stays alive for the native passes instead of
       // being frozen into off: the resolver's off verdict would turn a

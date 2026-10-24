@@ -20,7 +20,7 @@ import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
-// `TrackManager` orchestrates the player + Plex client + SettingsService
+// `TrackManager` orchestrates the player + server client + SettingsService
 // singleton. Most paths require a real (or fake) Player surface plus an
 // initialized SettingsService.
 //
@@ -43,7 +43,7 @@ import '../test_helpers/media_items.dart';
 //   - `onBackendSwitched` — wraps applyTrackSelectionWhenReady and is
 //     therefore gated on the same SettingsService dependency.
 
-MediaItem _meta() => testMediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie);
+MediaItem _meta() => testMediaItem(id: 'rk1', backend: MediaBackend.silo, kind: MediaKind.movie);
 
 /// Player that records calls and can be configured per-test.
 class _FakePlayer with PlayerStreamControllersMixin implements Player {
@@ -216,7 +216,7 @@ void main() {
   setUp(resetSharedPreferencesForTest);
 
   group('applyTrackSelectionWhenReady', () {
-    test('waits for player subtitle tracks when Plex metadata advertises subtitles', () async {
+    test('waits for player subtitle tracks when server metadata advertises subtitles', () async {
       await SettingsService.getInstance();
       final player = _FakePlayer(
         tracks: const Tracks(
@@ -507,7 +507,7 @@ void main() {
       });
     });
 
-    test('waits through a partial catalog until the selected Plex subtitle arrives', () async {
+    test('waits through a partial catalog until the selected server subtitle arrives', () async {
       await SettingsService.getInstance();
       final player = _FakePlayer(
         tracks: const Tracks(

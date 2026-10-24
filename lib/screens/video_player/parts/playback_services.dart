@@ -183,7 +183,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // When server comes back online while buffering, force mpv to reconnect
     // immediately instead of waiting for ffmpeg's exponential backoff.
-    if (!_isOfflinePlayback && !widget.isLive) {
+    if (!_isOfflinePlayback) {
       final serverId = _currentMetadata.serverId;
       if (serverId != null) {
         final serverManager = context.read<MultiServerProvider>().serverManager;
@@ -208,30 +208,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       }
     }
 
-    if (widget.isLive) {
-      _playerStreamSubscriptions.add(
-        currentPlayer.streams.sourceReady.listen((source) {
-          if (!mounted || player != currentPlayer) return;
-          if (_live.calibrateClockSource(source)) {
-            _setPlayerState(() {});
-          }
-        }),
-      );
-      _playerStreamSubscriptions.add(
-        currentPlayer.streams.sourceFailed.listen((source) {
-          if (!mounted || player != currentPlayer) return;
-          _live.failClockSource(source);
-          _setPlayerState(() {});
-        }),
-      );
-    }
-
     _playerStreamSubscriptions.add(
       currentPlayer.streams.playbackRestart.listen((_) async {
         if (!mounted || player != currentPlayer) return;
         _lastLogError = null;
         _fatalHttpStatuses.clear();
-        _resetLiveLadderOnPlaybackRestart();
         await _markFirstFrameReady(currentPlayer, settingsService);
       }),
     );
@@ -312,7 +293,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     }
     if (!mounted || _shuttingDown) return;
 
-    _stopLiveTimelineUpdates();
     _detachPipStateListener();
     _clearAutoPipEnteringCallback();
     final pipInitialized = _pipInitialized;
@@ -400,19 +380,14 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     if (currentPlayer == null) return;
 
-    // Live reporting belongs to [_sendLiveTimeline]'s heartbeats against the
-    // tuner session. A [PlaybackProgressTracker] here would post a second,
-    // item-shaped timeline for a channel placeholder that has no watch state.
-    if (!widget.isLive) {
-      _rebindProgressTracker(
-        metadata: metadata,
-        mediaClient: mediaClient,
-        offlineWatchService: offlineWatchService,
-        playSessionId: playSessionId,
-        playMethod: playMethod,
-        mediaInfo: mediaInfo,
-      );
-    }
+    _rebindProgressTracker(
+      metadata: metadata,
+      mediaClient: mediaClient,
+      offlineWatchService: offlineWatchService,
+      playSessionId: playSessionId,
+      playMethod: playMethod,
+      mediaInfo: mediaInfo,
+    );
 
     _publishMediaControlsMetadata(metadata, mediaClient);
 
@@ -420,12 +395,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // every connected service. Both accept the neutral [MediaServerClient]; null
     // short-circuits cleanly.
     if (mediaClient != null) {
-      // Discord renders a timeline the live placeholder does not have; the
-      // tracker coordinator takes the live decision itself.
-      if (!widget.isLive) {
-        unawaited(DiscordRPCService.instance.startPlayback(metadata, mediaClient));
-      }
-      unawaited(TrackerCoordinator.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
+      unawaited(DiscordRPCService.instance.startPlayback(metadata, mediaClient));
+      unawaited(TrackerCoordinator.instance.startPlayback(metadata, mediaClient));
     }
   }
 
@@ -486,17 +457,13 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           if (session == null || sourceStreamId == null) return null;
           final burned = PlaybackSubtitleResolver.burnsCurrentSelection(
             isTranscoding: _isTranscoding,
-            isLive: widget.isLive,
             choice: PlaybackSourceSubtitleChoice.source(sourceStreamId),
             sidecars: session.context.result.subtitleSidecars,
           );
           return burned ? sourceStreamId : null;
         },
-        onPausedKeepalive: mediaClient is PlexClient && effectivePlayMethod == 'Transcode'
-            ? () => mediaClient.pingTranscodeSession(_playbackTranscodeSessionId)
-            : null,
         onScrobbled: () async {
-          // Other episodes of a Plex multi-episode file share this item's
+          // Other episodes of a multi-episode file share this item's
           // part — watching the file watched them too (#1500). Reusing
           // markWatchedFromPlaybackStop keeps the local watched-event
           // emission and the double-scrobble guard (#1287); the
@@ -542,21 +509,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     }
     _playbackServicesDeferred = false;
 
-    // Live TV keeps the timeline heartbeats instead of the progress tracker
-    // (see [_rebindProgressTracker]'s gate below), but it still owns an OS
-    // media session: Assistant, the Now Playing card and AVRCP remotes drive
-    // the same transport surface VOD does, and [MediaControlsScreenController]
-    // already carries the live capability policy. Only the steps that cannot
-    // serve a live stream are gated, so a live screen cannot silently skip a
-    // per-item service added here later.
-    if (widget.isLive) _startLiveTimelineUpdates();
-
     // Get a live reporting client when possible. Downloaded/local playback
     // still uses this path when the server is reachable.
     final mediaClient = _playbackContext?.reportingClient ?? _getOnlineMediaServerClient(context);
-    // Live never reports progress, so it neither queues offline updates nor
-    // needs the provider that owns them.
-    final offlineWatchService = widget.isLive ? null : context.read<OfflineWatchSyncService>();
+    final offlineWatchService = context.read<OfflineWatchSyncService>();
 
     // Initialize media controls manager (must exist before the per-item
     // helper wires its metadata update).
@@ -619,9 +575,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           position: position,
           speed: currentPlayer.state.rate,
         );
-        // Live reports through [_sendLiveTimeline] alone; Discord and the
-        // trackers were never started for it.
-        if (widget.isLive) return;
         DiscordRPCService.instance.updatePosition(position);
         TrackerCoordinator.instance.updatePosition(position);
         // Keep the trackers' known duration current — mpv only emits on the
@@ -631,14 +584,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       }),
     );
 
-    if (!widget.isLive) {
-      // Listen to playback rate changes for Discord Rich Presence
-      _mediaControlSubscriptions.add(
-        currentPlayer.streams.rate.listen((rate) {
-          DiscordRPCService.instance.updatePlaybackSpeed(rate);
-        }),
-      );
-    }
+    // Listen to playback rate changes for Discord Rich Presence
+    _mediaControlSubscriptions.add(
+      currentPlayer.streams.rate.listen((rate) {
+        DiscordRPCService.instance.updatePlaybackSpeed(rate);
+      }),
+    );
 
     _mediaControlSubscriptions.add(
       currentPlayer.streams.seekable.listen((_) {
@@ -690,18 +641,14 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         _mediaControls.pushPlaybackState();
       },
       onSeek: (position) {
-        // A live stream has no absolute position to seek to: the session
-        // never advertises SEEK_TO for one, and a stray event must not
-        // resolve into a VOD seek against a moving live edge.
-        if (widget.isLive) return;
         final currentPlayer = player;
         if (currentPlayer != null) {
           unawaited(_seekPlayback(clampSeekPosition(currentPlayer, position)));
         }
       },
-      // Next/previous mean what the on-screen buttons mean: a channel zap on
-      // live TV, the adjacent item otherwise. Both targets refuse a step
-      // that has nowhere to go, so no adjacency gate is repeated here.
+      // Next/previous mean what the on-screen buttons mean: the adjacent
+      // item. Both targets refuse a step that has nowhere to go, so no
+      // adjacency gate is repeated here.
       onNext: () => unawaited(_navigateToNextItem()),
       onPrevious: () => unawaited(_navigateToPreviousItem()),
       onStop: () => unawaited(_handleBackButton()),
@@ -710,9 +657,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       onSkipForward: (_) => _skipByConfiguredStep(forward: true),
       onSkipBackward: (_) => _skipByConfiguredStep(forward: false),
       onSetSpeed: (speed) {
-        // Rate changes do not apply to a live stream; the session leaves the
-        // command un-advertised, and a stray event stays inert.
-        if (widget.isLive) return;
         unawaited(_setPlaybackRate(speed));
       },
     );

@@ -6,9 +6,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/navigation/navigation_tabs.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/profiles/silo_household_service.dart';
 import 'package:plezy/screens/settings/general_settings_screen.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -24,9 +22,8 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
-  Future<({AppDatabase database, PlexHomeService plexHome, ActiveProfileProvider activeProfile})> pumpGeneralScreen(
-    WidgetTester tester,
-  ) async {
+  Future<({AppDatabase database, SiloHouseholdService households, ActiveProfileProvider activeProfile})>
+  pumpGeneralScreen(WidgetTester tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1400);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -34,20 +31,9 @@ void main() {
 
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     final connections = ConnectionRegistry(database);
-    final profileConnections = ProfileConnectionRegistry(database);
-    final profiles = ProfileRegistry(database);
-    final plexHome = PlexHomeService(
-      connections: connections,
-      profileConnections: profileConnections,
-      plexHomeUserFetcher: (_) async => const [],
-    );
+    final serverHome = SiloHouseholdService(connections: connections, loader: (_) async => null);
     // Never initialized: zero profiles, so hasMultipleProfiles stays false.
-    final activeProfile = ActiveProfileProvider(
-      registry: profiles,
-      plexHome: plexHome,
-      connections: connections,
-      profileConnections: profileConnections,
-    );
+    final activeProfile = ActiveProfileProvider(households: serverHome, connections: connections);
 
     await tester.pumpWidget(
       ChangeNotifierProvider<ActiveProfileProvider>.value(
@@ -56,17 +42,17 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    return (database: database, plexHome: plexHome, activeProfile: activeProfile);
+    return (database: database, households: serverHome, activeProfile: activeProfile);
   }
 
   Future<void> disposeHarness(
     WidgetTester tester,
-    ({AppDatabase database, PlexHomeService plexHome, ActiveProfileProvider activeProfile}) harness,
+    ({AppDatabase database, SiloHouseholdService households, ActiveProfileProvider activeProfile}) harness,
   ) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
     harness.activeProfile.dispose();
-    await harness.plexHome.dispose();
+    harness.households.dispose();
     await harness.database.close();
   }
 

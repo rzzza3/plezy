@@ -2,7 +2,7 @@ import '../media/download_resolution.dart';
 import '../media/media_item.dart';
 
 /// Maps a per-item image path/URL to the actual downloadable URL.
-/// Plex resolves paths through `getThumbnailUrl` (token-aware); absolute URLs
+/// Relative paths resolve through `getThumbnailUrl` (token-aware); absolute URLs
 /// pass through. Returning `null` or an empty string skips the entry.
 typedef ArtworkUrlResolver = String? Function(String path);
 

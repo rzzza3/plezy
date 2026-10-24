@@ -13,7 +13,7 @@
 ///   AniList, Simkl, Trakt and MDBList live here in plaintext.
 /// * Seerr sessions — `SeerrSessionStore` persists a raw `connect.sid` cookie
 ///   alongside a vault-protected password.
-/// * [legacyPlexTokenPref] — the pre-connection-registry Plex token slot. It is
+/// * [legacyPlexTokenPref] — the pre-connection-registry account token slot. It is
 ///   drained by the connection migration but can linger on old installs.
 ///
 /// Two subsystems consult this list, both added for #1732:
@@ -43,7 +43,7 @@ String siloSessionPrefFor(String serverId) => '$siloSessionPref.$serverId';
 
 bool isSiloSessionPrefKey(String key) => key.startsWith('$siloSessionPref.');
 
-/// Legacy single-slot Plex token, superseded by the connection registry.
+/// Legacy single-slot account token from the removed backend, superseded by the connection registry.
 const String legacyPlexTokenPref = 'plex_token';
 
 /// Unscoped base keys used by `TrackerAccountStore`, one per tracker service.

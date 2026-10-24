@@ -8,7 +8,7 @@
 /// hashes, and interpolates exactly like its underlying string.
 library;
 
-/// Identifies a media server, e.g. a Plex `machineIdentifier`. This is the key
+/// Identifies a media server, e.g. a Silo `server_id`. This is the key
 /// under which a [MediaServerClient] is registered and the left half of a
 /// `serverId:ratingKey` global key.
 extension type const ServerId._(String value) implements String {

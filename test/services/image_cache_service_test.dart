@@ -180,15 +180,15 @@ void main() {
 
   group('artwork credentials', () {
     const token = 'secret-token';
-    const plexUrl =
-        'https://srv.example:32400/photo/:/transcode?width=200&minSize=1'
-        '&url=%2Flibrary%2Fmetadata%2F1%2Fthumb%2F99%3FX-Plex-Token%3D$token&X-Plex-Token=$token';
+    const credentialedUrl =
+        'https://srv.example/image/transcode?width=200&minSize=1'
+        '&url=%2Fitems%2F1%2Fthumb%3Faccess_token%3D$token&access_token=$token';
 
-    test('redaction blanks outer and nested Plex tokens and api_key params', () {
+    test('redaction blanks outer and nested access tokens and api_key params', () {
       expect(
-        redactArtworkUrl(plexUrl),
-        'https://srv.example:32400/photo/:/transcode?width=200&minSize=1'
-        '&url=%2Flibrary%2Fmetadata%2F1%2Fthumb%2F99%3FX-Plex-Token%3D&X-Plex-Token=',
+        redactArtworkUrl(credentialedUrl),
+        'https://srv.example/image/transcode?width=200&minSize=1'
+        '&url=%2Fitems%2F1%2Fthumb%3Faccess_token%3D&access_token=',
       );
       expect(
         redactArtworkUrl('https://media.example/Items/1/Images/Primary?maxWidth=300&api_key=$token'),
@@ -201,7 +201,7 @@ void main() {
       final dir = await Directory.systemTemp.createTemp('artwork_cache_test');
       addTearDown(() => dir.delete(recursive: true));
       final requests = <http.BaseRequest>[];
-      final manager = PlexImageCacheManager.forTesting(
+      final manager = ArtworkCacheManager.forTesting(
         httpClientFactory: () => MockClient((request) async {
           requests.add(request);
           return http.Response.bytes([1, 2, 3], 200);
@@ -210,15 +210,15 @@ void main() {
       );
 
       // No explicit key: the cache falls back to keying the entry by its URL.
-      final downloaded = await manager.getFileStream(plexUrl).firstWhere((r) => r is FileInfo) as FileInfo;
-      final cached = await manager.getFileFromCache(redactArtworkUrl(plexUrl));
+      final downloaded = await manager.getFileStream(credentialedUrl).firstWhere((r) => r is FileInfo) as FileInfo;
+      final cached = await manager.getFileFromCache(redactArtworkUrl(credentialedUrl));
       await manager.dispose();
 
-      expect(requests.single.url.queryParameters['X-Plex-Token'], token);
-      expect(requests.single.url.queryParameters['url'], contains('X-Plex-Token=$token'));
+      expect(requests.single.url.queryParameters['access_token'], token);
+      expect(requests.single.url.queryParameters['url'], contains('access_token=$token'));
       expect(requests.single.headers.keys.map((k) => k.toLowerCase()), isNot(contains('x-plezy-credentialed-url')));
       expect(downloaded.originalUrl, isNot(contains(token)));
-      expect(cached?.originalUrl, redactArtworkUrl(plexUrl));
+      expect(cached?.originalUrl, redactArtworkUrl(credentialedUrl));
 
       final persisted = <String>[];
       await for (final entity in dir.list(recursive: true)) {

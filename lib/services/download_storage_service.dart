@@ -189,7 +189,7 @@ class DownloadStorageService {
 
   /// Get artwork file path from a server-side thumb path (synchronous, requires initialization).
   /// Works for any backend — the thumb path is hashed alongside the serverId,
-  /// so any backend's thumb path (e.g. Plex `/library/metadata/.../thumb`)
+  /// so any backend's thumb path (e.g. an item thumb path)
   /// round-trips cleanly.
   /// Returns path to cached artwork file using hash of the thumb URL, or null if not initialized.
   /// Example: artwork/a1b2c3d4e5f6.jpg

@@ -15,8 +15,8 @@ import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
 
-const _library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies');
-const _libraryB = MediaLibrary(id: '2', backend: MediaBackend.plex, title: 'Shows');
+const _library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies');
+const _libraryB = MediaLibrary(id: '2', backend: MediaBackend.silo, title: 'Shows');
 
 class _ProbeTab extends BaseLibraryTab<String> {
   const _ProbeTab({super.key, required this.loadedItems, required super.onBack})
@@ -209,7 +209,7 @@ void main() {
   });
 
   testWidgets('a push-marked library reloads once when its tab is next activated (#1646)', (tester) async {
-    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    const library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies', serverId: 's1');
     final provider = LibrariesProvider();
     addTearDown(provider.dispose);
     await provider.updateLibraryOrder(const [library]);
@@ -263,7 +263,7 @@ void main() {
   });
 
   testWidgets('a failed activation reload leaves the library stale for the next activation', (tester) async {
-    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    const library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies', serverId: 's1');
     final provider = LibrariesProvider();
     addTearDown(provider.dispose);
     await provider.updateLibraryOrder(const [library]);
@@ -312,7 +312,7 @@ void main() {
   });
 
   testWidgets('a live push swaps items in place without clearing (#1646)', (tester) async {
-    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    const library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies', serverId: 's1');
     final key = GlobalKey<_ControlledTabState>();
     var loadCalls = 0;
     final second = Completer<List<String>>();
@@ -366,7 +366,7 @@ void main() {
   });
 
   testWidgets('a live push for a different library or hidden tab does nothing', (tester) async {
-    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    const library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies', serverId: 's1');
     final key = GlobalKey<_ControlledTabState>();
     var loadCalls = 0;
     Future<List<String>> load(MediaLibrary _) async {
@@ -408,7 +408,7 @@ void main() {
   });
 
   testWidgets('a push landing mid-fetch keeps the library stale (#1646)', (tester) async {
-    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    const library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies', serverId: 's1');
     final provider = LibrariesProvider();
     addTearDown(provider.dispose);
     await provider.updateLibraryOrder(const [library]);
@@ -458,7 +458,7 @@ void main() {
   });
 
   testWidgets('live passes skip a screen hidden behind another main tab', (tester) async {
-    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    const library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies', serverId: 's1');
     final key = GlobalKey<_ControlledTabState>();
     var loadCalls = 0;
     Future<List<String>> load(MediaLibrary _) async {
@@ -488,7 +488,7 @@ void main() {
   });
 
   testWidgets('a push dropped under an opaque route replays in place once the tab is visible again', (tester) async {
-    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    const library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies', serverId: 's1');
     final provider = LibrariesProvider();
     addTearDown(provider.dispose);
     await provider.updateLibraryOrder(const [library]);
@@ -552,7 +552,7 @@ void main() {
   });
 
   testWidgets('re-enabling TickerMode leaves an inactive tab to its activation reload', (tester) async {
-    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    const library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies', serverId: 's1');
     final provider = LibrariesProvider();
     addTearDown(provider.dispose);
     await provider.updateLibraryOrder(const [library]);
@@ -611,7 +611,7 @@ void main() {
   });
 
   testWidgets('an event naming only unknown library ids live-refreshes via the whole-server fallback', (tester) async {
-    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    const library = MediaLibrary(id: '1', backend: MediaBackend.silo, title: 'Movies', serverId: 's1');
     final provider = LibrariesProvider();
     addTearDown(provider.dispose);
     await provider.updateLibraryOrder(const [library]);

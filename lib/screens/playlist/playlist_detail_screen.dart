@@ -65,7 +65,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   bool get hasItems => items.isNotEmpty;
 
   /// True when the playlist can't be reordered or have items removed.
-  /// Currently only Plex smart playlists (server-side rule-based; managed via
+  /// Smart playlists (server-side rule-based; managed via
   /// filter rules, not direct edits).
   bool get _isReadOnly => widget.playlist.smart;
 
@@ -124,7 +124,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       ),
       // Delete goes through the neutral
       // [MediaServerClient.deletePlaylist]. Smart
-      // playlists are still skipped — they're a Plex concept and are
+      // playlists are still skipped — they're a server concept and are
       // managed server-side via filter rules, not via DELETE.
       if (!widget.playlist.smart)
         FocusableAction(
@@ -643,7 +643,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// [_cardKeys]. Playlist entries can repeat a media id, so the playlist item
   /// id wins when the backend exposes one.
   String _itemKeyId(MediaItem item) => switch (item) {
-    PlexMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
+    SiloMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
     _ => item.id,
   };
 
@@ -726,7 +726,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
             // (read-only, no reordering or removal)
             buildFocusableGrid(items: items, onRefresh: updateItem, shape: _isAudioPlaylist ? CardShape.square : null)
           else
-            // Plex regular playlists: sliver reorderable list
+            // Regular playlists: sliver reorderable list
             _buildReorderableList(),
           if (_continuation.isLoading || _continuation.error != null)
             ContinuationStatusSliver(

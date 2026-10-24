@@ -110,7 +110,7 @@ Future<AnchoredSortResult?> showAnchoredSortMenu(
 ///
 /// Edits are reported through [onFiltersChanged] as they happen; the returned
 /// future completes when the panel is dismissed, which is when the caller
-/// commits. [cachedValues] answers value listings inline (MediaBrowser filter
+/// commits. [cachedValues] answers value listings inline (filter
 /// discovery payloads); categories missing from it go through
 /// [loadFilterValues].
 Future<void> showAnchoredFilterPanel(

@@ -124,7 +124,7 @@ void main() {
       await refuse(['hevc']);
 
       expect(VideoDecodeCapabilities.transcodeVideoCodecs, [RankedVideoCodec.h264]);
-      // Only the refusal counts as the user's: Plex gates direct play on it alone.
+      // Only the refusal counts as the user's: direct play is gated on it alone.
       expect(VideoDecodeCapabilities.isRefusedByUser(RankedVideoCodec.hevc), isTrue);
       expect(VideoDecodeCapabilities.isRefusedByUser(RankedVideoCodec.av1), isFalse);
     });

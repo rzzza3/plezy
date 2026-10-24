@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_file_info.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/silo/silo_artwork.dart';
@@ -145,6 +146,114 @@ void main() {
     expect(item.writers, ['Writer A']);
     expect(item.userRating, 8.0);
     expect(item.isWatched, isTrue);
+  });
+
+  group('versions', () {
+    Map<String, Object?> detail(List<Object?> versions, {String type = 'movie'}) => {
+      'content_id': 'movie-1',
+      'type': type,
+      'title': 'Movie A',
+      'cast': [],
+      'crew': [],
+      'versions': versions,
+      'subtitles': [],
+    };
+    final uhd = {
+      'file_id': '41',
+      'file_name': 'Movie A 2160p.mkv',
+      'file_path': '/media/Movie A/Movie A 2160p.mkv',
+      'resolution': '2160p',
+      'codec_video': 'hevc',
+      'codec_audio': 'truehd',
+      'hdr': true,
+      'container': 'mkv',
+      'file_size': 60000000000,
+      'duration': 7200.5,
+      'bitrate': 66000,
+      'video_tracks': [
+        {
+          'codec': 'hevc',
+          'width': 3840,
+          'height': 2160,
+          'frame_rate': 23.976,
+          'hdr': true,
+          'hdr_format': 'Dolby Vision',
+        },
+      ],
+      'audio_tracks': [
+        {'codec': 'truehd', 'channels': 8, 'layout': '7.1', 'language': 'eng', 'title': 'Atmos', 'default': true},
+      ],
+      'subtitle_tracks': [
+        {'codec': 'pgs', 'language': 'eng', 'forced': true},
+      ],
+    };
+    final hd = {
+      'file_id': '42',
+      'resolution': '1080p',
+      'codec_video': 'h264',
+      'container': 'mp4',
+      'file_size': 8000000000,
+      'duration': 7200,
+      'bitrate': 8500,
+      'edition_raw': "Director's Cut",
+    };
+
+    test('a movie lists its files as versions, file id as the source id', () {
+      final item = siloDetailToItem(SiloItemDetail.fromJson(detail([uhd, hd])), _origin);
+
+      final versions = item.mediaVersions!;
+      expect([for (final v in versions) v.id], ['41', '42']);
+      expect((versions[0].videoResolution, versions[0].width, versions[0].height), ('4k', 3840, 2160));
+      expect((versions[0].videoCodec, versions[0].container, versions[0].bitrate), ('hevc', 'mkv', 66000));
+      expect(versions[0].name, 'Dolby Vision');
+      expect(versions[0].parts.single.sizeBytes, 60000000000);
+      expect((versions[1].videoResolution, versions[1].bitrate, versions[1].name), ('1080', 8500, "Director's Cut"));
+      expect(versions[0].displayLabel, contains('4K'));
+      expect(versions[1].displayLabel, startsWith("Director's Cut · 1080p"));
+    });
+
+    test('versions survive the MediaItem JSON round trip', () {
+      final item = siloDetailToItem(SiloItemDetail.fromJson(detail([uhd, hd])), _origin);
+
+      final restored = MediaItem.fromJson(jsonDecode(jsonEncode(item.toJson())) as Map<String, dynamic>);
+
+      expect([for (final v in restored.mediaVersions!) v.id], ['41', '42']);
+    });
+
+    test('a malformed file row is dropped and the detail still opens', () {
+      final parsed = SiloItemDetail.fromJson(
+        detail([
+          {'file_id': 42},
+          hd,
+        ]),
+      );
+
+      expect([for (final v in parsed.versions) v.fileId], [42]);
+    });
+
+    test('a show carries no versions', () {
+      final item = siloDetailToItem(SiloItemDetail.fromJson(detail([], type: 'series')), _origin);
+
+      expect(item.mediaVersions, isNull);
+    });
+
+    test('file info lists every file with its streams (TvMediaInfoDialog.kt:158-200)', () {
+      final info = siloFileInfo(SiloItemDetail.fromJson(detail([uhd, hd])).versions);
+
+      final first = info.versions.first;
+      expect((first.id, first.container, first.bitrateKbps, first.durationMs), ('41', 'mkv', 66000, 7200500));
+      expect((first.videoCodec, first.audioCodec, first.audioChannels), ('hevc', 'truehd', 8));
+      expect(first.resolutionFormatted, '3840x2160');
+      final part = first.parts.single;
+      expect((part.fileName, part.fileSize), ('Movie A 2160p.mkv', 60000000000));
+      final video = part.streamsOfKind(MediaStreamKind.video).single;
+      expect((video.frameRate, video.videoRange), (23.976, MediaVideoRange.dolbyVision));
+      final audio = part.streamsOfKind(MediaStreamKind.audio).single;
+      expect((audio.channelLayout, audio.language, audio.isDefault), ('7.1', 'eng', true));
+      expect(part.streamsOfKind(MediaStreamKind.subtitle).single.isForced, isTrue);
+      expect(info.versions.last.title, "Director's Cut");
+      expect(info.versions.last.resolutionFormatted, '1080p');
+    });
   });
 
   test('a detail without its required arrays is refused (CatalogDetailReadV2Models.kt:17-81)', () {

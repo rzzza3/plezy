@@ -162,13 +162,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     // tests) still previews with the ladder's non-profile tiers.
     final probed = _playbackSources[target.globalKey];
     final source = probed?.source;
-    final preview = source == null
-        ? null
-        : previewPlaybackTracks(
-            probed!.item,
-            source,
-            profile: context.watch<AccountPreferencesController?>()?.activePreferences,
-          );
+    final preview = source == null ? null : previewPlaybackTracks(probed!.item, source);
     final videoLabels = probed?.mediaIndex == null
         ? const <String>[]
         : buildMediaVideoLabels(probed!.item, versionIndex: probed.mediaIndex!, partIndex: source?.partIndex);

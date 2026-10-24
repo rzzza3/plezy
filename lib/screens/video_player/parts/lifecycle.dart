@@ -78,24 +78,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     }
 
     final isTv = PlatformDetector.isTV();
-    if (widget.isLive && shouldStopLiveSessionForTvBackground(isTv: isTv, policy: _live.session?.backgroundPolicy)) {
-      _stopLiveSessionForTvBackground();
-
-      // Start the server cleanup before releasing the native stream. tvOS may
-      // suspend the process shortly after this lifecycle callback returns.
-      final stoppedReport = _sendStoppedProgressOnce();
-      try {
-        await currentPlayer.stop();
-      } catch (e, stackTrace) {
-        appLogger.w('Failed to stop live player while backgrounding', error: e, stackTrace: stackTrace);
-      }
-      await stoppedReport;
-      if (!mounted || _shuttingDown || currentPlayer != player) return;
-      await _mediaControls.suspendForTvBackground('hidden_live_stopped');
-      _recordLifecycleState('hidden', action: 'live_stopped_exit_on_resume');
-      return;
-    }
-
     final isAutomotive = PlatformDetector.isAutomotive();
     final shouldPauseForBackground = shouldPauseVideoForBackground(
       isHandheld: PlatformDetector.isMobile(context),
@@ -141,8 +123,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
 
     if (!mounted || _shuttingDown || currentPlayer != player) return;
 
-    _suspendLiveTimelineForBackground();
-
     if (isTv) {
       await _mediaControls.suspendForTvBackground('hidden');
       if (_armTvBackgroundPlayerSuspendTimer()) {
@@ -162,12 +142,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     if (_shuttingDown) return;
     _recordLifecycleState('resumed', action: 'begin');
     _watchTogetherProvider?.setBackgrounded(false);
-
-    if (_consumeLiveExitOnResume()) {
-      _recordLifecycleState('resumed', action: 'exit_stopped_live_session');
-      await _handleBackButton();
-      return;
-    }
 
     if (Platform.isAndroid && _androidAutoPipTransitionInFlight && !PipService().isPipActive.value) {
       _setAndroidAutoPipTransitionInFlight(false, reason: 'resume_without_pip');
@@ -217,7 +191,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       await _mediaControls.restoreAfterResume();
     }
 
-    _resumeLiveTimelineAfterBackgroundIfNeeded();
     _recordLifecycleState('resumed', action: 'complete');
   }
 
@@ -228,7 +201,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     if (!shouldSuspendPlayerForTvBackground(
       isAndroid: Platform.isAndroid,
       isTv: PlatformDetector.isTV(),
-      isLive: widget.isLive,
       alreadySuspended: _tvSuspend.suspended,
     )) {
       return false;
@@ -256,9 +228,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   Future<void> _suspendPlayerForTvBackground() async {
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null || !_isPlayerInitialized) return;
-    // A live stream's tuned session is also its time-shift buffer. Stopping
-    // it would force a re-tune at the live edge and discard pause state.
-    if (widget.isLive) return;
     if (_tvSuspend.suspended || _shouldSkipForPip) return;
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
     if (lifecycleState == AppLifecycleState.resumed || lifecycleState == AppLifecycleState.inactive) return;
@@ -282,7 +251,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     // returning before the restore runs would let it advance over a released
     // player. The restore puts it back once the item has reopened.
     _episode.autoPlayTimer?.cancel();
-    // Stop the heartbeat timer first: its paused tick also pings any Plex
+    // Stop the heartbeat timer first: its paused tick also pings any
     // transcode session, which would keep that alive past the stop report.
     // Start the stopped report before releasing the native stream — the same
     // ordering as the live background path and the reload flow, because

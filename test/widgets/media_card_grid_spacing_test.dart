@@ -18,7 +18,7 @@ void main() {
     await SettingsService.getInstance();
   });
 
-  final movie = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Test movie');
+  final movie = testMediaItem(id: 'movie_1', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Test movie');
 
   Widget app(Widget child) => MaterialApp(
     theme: monoTheme(dark: true),

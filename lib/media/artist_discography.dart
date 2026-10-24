@@ -1,6 +1,6 @@
 import 'media_item.dart';
 
-/// Release-format sections of an artist's discography, mirroring how Plex's
+/// Release-format sections of an artist's discography, mirroring how a music server's
 /// own clients split an artist's music library into Albums, Singles & EPs,
 /// Live, and Compilations. Declaration order is display order.
 enum DiscographyGroupKind { albums, singlesAndEps, live, compilations }

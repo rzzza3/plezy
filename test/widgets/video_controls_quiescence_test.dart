@@ -89,7 +89,7 @@ void main() {
                 child: SizedBox(
                   width: 1280,
                   height: 720,
-                  child: PlexVideoControls(
+                  child: SiloVideoControls(
                     player: player,
                     volumeController: volume,
                     metadata: testMediaItem(id: 'quiescence'),

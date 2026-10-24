@@ -15,8 +15,8 @@ import '../utils/app_logger.dart';
 import '../utils/track_label_builder.dart';
 
 /// Persists a track choice for the current part to the server and reports
-/// whether the server stored it. Plex only: backends that keep no
-/// server-side stream selection leave this null.
+/// whether the server stored it. Backends that keep no server-side stream
+/// selection (Silo) leave this null.
 ///
 /// A server refusal (non-2xx) throws [MediaServerHttpException] with its
 /// status code; transport failures keep their own [MediaServerHttpException]
@@ -36,15 +36,17 @@ class TrackManager {
   /// Returns false once the owning widget is unmounted or disposed.
   final bool Function() isActive;
 
-  /// Writes a track choice to Plex immediately. `null` for backends that keep
+  /// Writes a track choice to the server immediately. `null` for backends that keep
   /// no server-side stream selection and for playback with no server.
   final TrackPreferencePersister? persistTrackPreference;
 
-  /// Resolves the user's profile settings (may be null during loading).
-  final MediaServerUserProfile? Function() getProfileSettings;
+  /// Resolves the user's server-side track preferences, when the server
+  /// has any.
+  final MediaServerUserProfile? Function()? getProfileSettings;
 
-  /// Waits until profile settings are available (offline path).
-  final Future<void> Function() waitForProfileSettings;
+  /// Awaited before each selection. A test seam for the generation guard:
+  /// nothing in the app waits here since account preferences went away.
+  final Future<void> Function()? waitForProfileSettings;
 
   /// Shows a transient message to the user (e.g., snackbar).
   final void Function(String message, {Duration? duration})? showMessage;
@@ -110,8 +112,8 @@ class TrackManager {
     required this.player,
     required this.isActive,
     this.persistTrackPreference,
-    required this.getProfileSettings,
-    required this.waitForProfileSettings,
+    this.getProfileSettings,
+    this.waitForProfileSettings,
     required this.metadata,
     this.mediaInfo,
     this.preferredAudioTrack,
@@ -216,7 +218,7 @@ class TrackManager {
     final realSubtitleTracks = tracks.subtitle
         .where((track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id)
         .toList(growable: false);
-    final service = TrackSelectionService(metadata: metadata, plexMediaInfo: mediaInfo);
+    final service = TrackSelectionService(metadata: metadata, serverMediaInfo: mediaInfo);
 
     // A burned-in primary is already in the picture, so no native track is ever coming for it.
     // Waiting for one holds up audio and rate setup for the five-second fallback and then logs a
@@ -303,10 +305,10 @@ class TrackManager {
     final idleCompleter = Completer<void>();
     _selectionIdleCompleter = idleCompleter;
     try {
-      await waitForProfileSettings();
+      await waitForProfileSettings?.call();
       if (!selectionIsActive()) return false;
 
-      final profileSettings = getProfileSettings();
+      final profileSettings = getProfileSettings?.call();
       // Keeps the settings singleton live before the synchronous scoped read.
       await SettingsService.getInstance();
       if (!selectionIsActive()) return false;
@@ -315,7 +317,7 @@ class TrackManager {
         player: player,
         profileSettings: profileSettings,
         metadata: metadata,
-        plexMediaInfo: mediaInfo,
+        serverMediaInfo: mediaInfo,
       );
 
       return await trackService.selectAndApplyTracks(
@@ -462,12 +464,12 @@ class TrackManager {
     final partId = await _guardTrackChange(info, 'audio');
     if (partId == null || info == null) return;
 
-    final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
-    final streamID = matchedPlex?.id;
+    final matchedServer = findServerTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
+    final streamID = matchedServer?.id;
     if (streamID != null) {
       appLogger.d('Matched audio to streamID $streamID');
     } else {
-      appLogger.e('Could not match audio track to any Plex track');
+      appLogger.e('Could not match audio track to any server track');
     }
 
     await _saveTrackPreferences(partId: partId, trackType: 'audio', streamID: streamID);
@@ -488,16 +490,16 @@ class TrackManager {
       streamID = sourceStreamId;
       appLogger.d('Using authoritative subtitle streamID $streamID');
     } else if (info != null) {
-      final matchedPlex = findPlexTrackForMpvSubtitle(
+      final matchedServer = findServerTrackForMpvSubtitle(
         track,
         info.subtitleTracks,
         allMpvTracks: player.state.tracks.subtitle,
       );
-      streamID = matchedPlex?.id;
+      streamID = matchedServer?.id;
       if (streamID != null) {
         appLogger.d('Matched subtitle to streamID $streamID');
       } else {
-        appLogger.e('Could not match subtitle track to any Plex track');
+        appLogger.e('Could not match subtitle track to any server track');
       }
     }
 

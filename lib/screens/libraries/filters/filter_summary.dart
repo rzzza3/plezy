@@ -4,7 +4,7 @@ import '../../../media/media_filter.dart';
 
 /// Display names for filter values, keyed by server + library + field + value.
 ///
-/// Plex value ids are opaque (`genre=239`), so the title has to be remembered
+/// Value ids are opaque (`genre=239`), so the title has to be remembered
 /// from the moment the user picked it; otherwise a restored selection would
 /// summarise as a number. Process-wide and bounded — it is a label cache, not
 /// state.
@@ -66,7 +66,7 @@ String _clauseSummary(
 }) {
   final String labels;
   if (filter.hasValueList) {
-    // Plex value ids are opaque, so a restored selection can carry values the
+    // Value ids are opaque, so a restored selection can carry values the
     // name cache has never seen. Summarising those as a count is truthful;
     // echoing `Not 190` at the viewer is not. Opening the field remembers the
     // titles, after which this reads normally.
@@ -138,7 +138,7 @@ String _upperBoundLabel(MediaFilter filter, String value) {
 String _boundLabel(MediaFilter filter, String value) =>
     filter.editorKind == FilterEditorKind.date ? relativeDateLabel(value) : value;
 
-/// Relative date windows the date editor offers, as Plex's own relative
+/// Relative date windows the date editor offers, as the server's own relative
 /// syntax (`-30d`). Verified against PMS 1.43: `addedAt>>=-30d` resolves
 /// server-side, so nothing has to be converted to an absolute timestamp.
 const List<String> relativeDateWindows = ['-7d', '-30d', '-90d', '-1y'];

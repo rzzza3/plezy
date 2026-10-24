@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 import 'tables.dart';
-import 'plex_metadata_recovery.dart';
 import 'tvos_database_recovery_store.dart';
 import '../models/download_models.dart';
 import '../services/base_shared_preferences_service.dart';
@@ -376,7 +375,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => _schemaVersionOverride ?? 26;
+  int get schemaVersion => _schemaVersionOverride ?? 27;
 
   @override
   MigrationStrategy get migration {
@@ -575,7 +574,7 @@ class AppDatabase extends _$AppDatabase {
           for (final row in transferRows) {
             final cacheKey = row.read<String>('cache_key');
             try {
-              final sanitized = sanitizePlexMetadataForOwnerlessTransfer(row.read<String>('data'));
+              final sanitized = _withoutProfilePrivateFields(row.read<String>('data'));
               await customStatement('UPDATE api_cache SET data = ? WHERE cache_key = ?', [sanitized, cacheKey]);
             } on FormatException catch (error, stackTrace) {
               appLogger.w(
@@ -780,6 +779,10 @@ class AppDatabase extends _$AppDatabase {
           appLogger.i('Removing Plex, Jellyfin and Emby data (v26 migration)');
           await purgeNonSiloBackendData();
         }
+        if (from < 27 && to >= 27) {
+          appLogger.i('Removing Plezy profiles and the data they owned (v27 migration)');
+          await purgePlezyProfileData();
+        }
       },
     );
   }
@@ -834,6 +837,65 @@ class AppDatabase extends _$AppDatabase {
         OR queue_json LIKE '%"backend":"jellyfin"%'
         OR queue_json LIKE '%"backend":"emby"%'
     ''');
+  }
+
+  /// Deletes what Plezy's own profiles owned, now that Silo profiles replace
+  /// them: the profile rows and their connection joins, download ownership,
+  /// sync rules and download collections, and music session snapshots.
+  /// Connections other than Silo's go too, though v26 already removed them.
+  ///
+  /// Silo downloads and their `silo:<server_id>/<profile_id>` scope stay;
+  /// with no owner row left, each is reclaimed by the profile of its own
+  /// scope on activation ([adoptLegacyDownloadsForProfile]). Queued offline
+  /// watch actions carry the same scope, so it becomes their owner instead
+  /// of being lost unsynced. A second run finds nothing to delete.
+  @visibleForTesting
+  Future<void> purgePlezyProfileData() async {
+    await customStatement('DELETE FROM profile_connections');
+    await customStatement('DELETE FROM profiles');
+    await customStatement("DELETE FROM connections WHERE kind != 'silo'");
+    await customStatement('DELETE FROM download_owners');
+    await customStatement('DELETE FROM sync_rule_downloads');
+    await customStatement('DELETE FROM sync_rules');
+    await customStatement('DELETE FROM download_collection_syncs');
+    await customStatement('DELETE FROM download_collections');
+    await customStatement('DELETE FROM music_sessions');
+    await customStatement('''
+      UPDATE offline_watch_progress
+      SET profile_id = CASE WHEN ${_siloScoped('client_scope_id')} THEN client_scope_id END
+    ''');
+  }
+
+  /// Fields of a legacy metadata payload that belong to one profile: watch
+  /// state and ratings, at any depth. The v17 migration strips them before
+  /// moving an ownerless download's metadata where any profile can adopt it.
+  static const _profilePrivateMetadataFields = {
+    'lastRatedAt',
+    'lastViewedAt',
+    'skipCount',
+    'userRating',
+    'viewCount',
+    'viewOffset',
+    'viewedLeafCount',
+  };
+
+  /// [source] without [_profilePrivateMetadataFields]. Throws
+  /// [FormatException] for a payload that is not a JSON object.
+  static String _withoutProfilePrivateFields(String source) {
+    final decoded = jsonDecode(source);
+    if (decoded is! Map<String, dynamic>) throw const FormatException('Invalid metadata cache payload');
+    Object? scrub(Object? value) {
+      if (value is Map<String, dynamic>) {
+        return <String, dynamic>{
+          for (final entry in value.entries)
+            if (!_profilePrivateMetadataFields.contains(entry.key)) entry.key: scrub(entry.value),
+        };
+      }
+      if (value is List) return <Object?>[for (final item in value) scrub(item)];
+      return value;
+    }
+
+    return jsonEncode(scrub(decoded));
   }
 
   /// Shrinks the file once the v26 purge has freed the old backends' pages.

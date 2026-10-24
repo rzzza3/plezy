@@ -15,9 +15,6 @@ import '../media/media_server_client.dart';
 import '../media/playback_rate.dart';
 import '../models/player_setting_scope.dart';
 import '../profiles/active_profile_provider.dart';
-import '../profiles/profile_connection_registry.dart';
-import '../profiles/profile_registry.dart';
-import '../profiles/profile_merge.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
@@ -28,7 +25,6 @@ import '../screens/libraries/library_browse_grouping.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/video_player_navigation.dart';
 import 'agent_control_protocol.dart';
-import 'plex_client.dart';
 import 'scoped_player_prefs.dart';
 import 'settings_service.dart';
 import 'shader_service.dart';
@@ -737,9 +733,7 @@ class AgentScopedSettingsCommands {
           // domain with whatever that returns.
           choices[filter.filter] = const [];
         } else {
-          final values =
-              result.cachedValues[filter.filter] ??
-              (client is PlexClient ? await client.getFilterValues(filter.key) : const <MediaFilterValue>[]);
+          final values = result.cachedValues[filter.filter] ?? const <MediaFilterValue>[];
           guard.check();
           choices[filter.filter] = values.map((v) => libraryFilterValueId(v.key, filter.filter)).toList();
         }
@@ -879,56 +873,8 @@ class AgentScopedSettingsCommands {
   Future<List<_ScopedSetting>> _profileEntries(Map<String, dynamic> scope, _ScopedGuard guard) async {
     final active = guard.active;
     final profile = active.active!;
-    final registry = guard.context.context.read<ProfileRegistry>();
-    final links = guard.context.context.read<ProfileConnectionRegistry>();
-    final rows = visibleProfileConnections(profile, await links.listForProfile(guard.profileId));
-    guard.check();
     final entries = <_ScopedSetting>[
-      if (profile.isLocal)
-        _valueEntry(
-          guard,
-          'name',
-          'string',
-          'immediate',
-          defaultValue: null,
-          resetSupported: false,
-          constraints: const {'nonEmpty': true, 'trim': true},
-          read: () async => {
-            'value': (await registry.list()).where((p) => p.id == guard.profileId).firstOrNull?.displayName,
-          },
-          normalize: (v) {
-            if (v is! String || v.trim().isEmpty) _invalid('A nonempty profile name is required.');
-            return (v).trim();
-          },
-          write: (v, reset) => registry.rename(guard.profileId, v as String, checkCurrent: guard.check),
-        )
-      else
-        _readOnly(
-          'name',
-          'string',
-          'backendOwned',
-          () => {'value': profile.displayName},
-          'Plex owns this profile name.',
-        ),
-      _valueEntry(
-        guard,
-        'default_connection',
-        'string',
-        'nextProfileBinding',
-        defaultValue: null,
-        resetSupported: false,
-        choices: rows.map((r) => r.connectionId).toList(),
-        read: () async => {
-          'value': (await links.listForProfile(guard.profileId)).where((r) => r.isDefault).firstOrNull?.connectionId,
-        },
-        normalize: (v) {
-          if (v is! String || !rows.any((r) => r.connectionId == v)) {
-            _invalid('The connection is not assigned to the active profile.');
-          }
-          return v;
-        },
-        write: (v, reset) => links.setDefault(guard.profileId, v as String, checkCurrent: guard.check),
-      ),
+      _readOnly('name', 'string', 'backendOwned', () => {'value': profile.displayName}, 'Silo owns this profile name.'),
     ];
     return entries;
   }
@@ -1052,13 +998,10 @@ class _ScopedGuard {
     if (scope['profileId'] != null && scope['profileId'] != profileId) {
       throw const AgentControlException('invalidScope', 'Only the active profile may be targeted.');
     }
-    _profileLinks = {
-      for (final row in active.connectionsByProfile[profileId] ?? const []) row.connectionId: row.userIdentifier,
-    };
-    final connectionIds = {..._profileLinks.keys, if (active.active?.parentConnectionId case final String id) id};
+    final connectionId = active.active?.connectionId;
     _connections = {
-      for (final id in connectionIds)
-        if (active.connectionsById[id] != null) id: active.connectionsById[id]!,
+      if (connectionId != null && active.connectionsById[connectionId] != null)
+        connectionId: active.connectionsById[connectionId]!,
     };
     check();
   }
@@ -1070,7 +1013,6 @@ class _ScopedGuard {
   late final int committedIdentity;
   final Map<String, ({MediaServerClient client, Object authentication})> _clients = {};
   final Map<String, MediaLibrary> _libraries = {};
-  late final Map<String, String> _profileLinks;
   late final Map<String, Connection> _connections;
 
   bool isVisible(String id) =>
@@ -1092,11 +1034,6 @@ class _ScopedGuard {
 
   void check() {
     checkProfileIdentity();
-    final links = active.connectionsByProfile[profileId] ?? const [];
-    if (links.length != _profileLinks.length ||
-        links.any((row) => _profileLinks[row.connectionId] != row.userIdentifier)) {
-      throw const AgentControlException('sessionChanged', 'The profile connection assignments changed.');
-    }
     final registry = context.context.read<ConnectionRegistry>();
     for (final entry in _connections.entries) {
       final current = active.connectionsById[entry.key];

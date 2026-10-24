@@ -710,8 +710,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         return _showDownloads ? _kDownloads : null;
       case NavigationTabId.settings:
         return _kSettings;
-      case NavigationTabId.liveTv:
-        return 'liveTv';
     }
   }
 
@@ -741,7 +739,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required List<_LibraryNavRow> visibleRows,
     required List<_LibraryNavRow> hiddenRows,
     required bool hasHiddenLibraries,
-    required bool hasLiveTv,
     required bool hasNowPlaying,
     required bool hasExplore,
     required bool hasProfile,
@@ -758,7 +755,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       _kReconnect,
       if (hasHiddenLibraries) _kHiddenLibraries,
       if (_showFullscreenToggle) _kFullscreen,
-      if (hasLiveTv) 'liveTv',
       ..._focusKeysForLibraryRows(visibleRows),
       if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
     };
@@ -824,7 +820,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     List<_LibraryNavRow> visibleRows,
     List<_LibraryNavRow> hiddenRows, {
     required bool hasHiddenLibraries,
-    required bool hasLiveTv,
     required bool hasNowPlaying,
     required bool hasExplore,
     required bool isCollapsed,
@@ -839,7 +834,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           _kHome,
           if (hasNowPlaying) _kNowPlaying,
           if (hasExplore) _kExplore,
-          if (hasLiveTv) 'liveTv',
         ],
         if (_showDownloads) _kDownloads,
         if (!widget.isOfflineMode) ...[
@@ -868,7 +862,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
           ],
         ],
-        if (hasLiveTv) 'liveTv',
         if (hasExplore) _kExplore,
         _kSearch,
       ],
@@ -973,7 +966,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final isCollapsed = !_shouldExpand;
     final effectiveCollapsedWidth = collapsedWidthForContext(context);
     final horizontalPadding = horizontalPaddingForContext(context, isCollapsed: isCollapsed);
-    final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
     // Nullable watch: rail tests (and any host without the profile session
     // scope) simply never show the Explore item.
     final hasExploreSource = context.watch<CatalogSourcesProvider?>()?.hasAnySource ?? false;
@@ -1019,7 +1011,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             visibleRows: visibleRows,
             hiddenRows: hiddenRows,
             hasHiddenLibraries: hiddenLibraries.isNotEmpty,
-            hasLiveTv: hasLiveTv,
             hasNowPlaying: nowPlayingTrack != null,
             hasExplore: hasExplore,
             hasProfile: activeProfile != null,
@@ -1029,7 +1020,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           visibleRows,
           hiddenRows,
           hasHiddenLibraries: hiddenLibraries.isNotEmpty,
-          hasLiveTv: hasLiveTv,
           hasNowPlaying: nowPlayingTrack != null,
           hasExplore: hasExplore,
           isCollapsed: isCollapsed,
@@ -1045,7 +1035,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             activeProfiles: activeProfiles,
             nowPlayingTrack: nowPlayingTrack,
             musicService: musicService,
-            hasLiveTv: hasLiveTv,
             hasExplore: hasExplore,
             visibleRows: visibleRows,
             hiddenRows: hiddenRows,
@@ -1154,18 +1143,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                         isCollapsed: isCollapsed,
                                       ),
                                       const SizedBox(height: _itemGap),
-                                      if (context.watch<MultiServerProvider>().hasLiveTv) ...[
-                                        _buildNavItem(
-                                          icon: Symbols.live_tv_rounded,
-                                          selectedIcon: Symbols.live_tv_rounded,
-                                          label: Translations.of(context).navigation.liveTv,
-                                          isSelected: widget.selectedTab == NavigationTabId.liveTv,
-                                          onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
-                                          focusNode: _focusTracker.get('liveTv'),
-                                          isCollapsed: isCollapsed,
-                                        ),
-                                        const SizedBox(height: _itemGap),
-                                      ],
                                       if (hasExplore) ...[
                                         _buildNavItem(
                                           icon: Symbols.explore_rounded,
@@ -1281,7 +1258,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required ActiveProfileProvider? activeProfiles,
     required MediaItem? nowPlayingTrack,
     required MusicPlaybackService? musicService,
-    required bool hasLiveTv,
     required bool hasExplore,
     required List<_LibraryNavRow> visibleRows,
     required List<_LibraryNavRow> hiddenRows,
@@ -1388,13 +1364,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                   _kExplore,
                                   Symbols.explore_rounded,
                                   strings.navigation.explore,
-                                ),
-                              if (hasLiveTv)
-                                destination(
-                                  NavigationTabId.liveTv,
-                                  'liveTv',
-                                  Symbols.live_tv_rounded,
-                                  strings.navigation.liveTv,
                                 ),
                             ],
                             if (_showDownloads)

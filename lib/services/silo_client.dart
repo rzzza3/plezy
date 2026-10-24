@@ -20,7 +20,7 @@ import '../media/media_server_client.dart';
 import '../media/media_sort.dart';
 import '../media/media_source_info.dart';
 import '../media/playback_report_metadata.dart';
-import '../media/media_version.dart';
+import '../media/media_file_info.dart';
 import '../media/server_capabilities.dart';
 import '../silo/silo_app.dart';
 import '../silo/silo_catalog.dart';
@@ -32,6 +32,7 @@ import '../silo/silo_media_proxy.dart';
 import '../silo/silo_models.dart';
 import '../silo/silo_playback.dart';
 import '../silo/silo_playback_session.dart';
+import '../silo/silo_subtitles.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController;
 import 'api_cache.dart';
@@ -63,6 +64,11 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   /// The one session this client is playing, and its proxy route.
   SiloPlaybackSession? _playback;
   SiloMediaRoute? _route;
+
+  /// Set when a stored subtitle replanned [_playback] after its route was
+  /// opened, so the next reload of the same file mounts that plan instead of
+  /// starting a new session.
+  SiloPlaybackSession? _replanned;
 
   /// A stopped report holds the session for a moment, so a reload that only
   /// changes the audio or quality can replan it instead of starting anew.
@@ -396,6 +402,20 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     return item;
   }
 
+  /// File Info reads the catalog detail, which lists every file of a movie
+  /// or episode with its streams.
+  @override
+  Future<MediaFileInfo?> getFileInfo(MediaItem item) async {
+    final SiloItemDetail detail;
+    try {
+      detail = await catalog.itemDetail(item.id);
+    } on MediaServerHttpException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
+    return detail.versions.isEmpty ? null : siloFileInfo(detail.versions);
+  }
+
   MediaItem _detailItem(SiloItemDetail detail) {
     _remember(detail.contentId, switch (siloKind(detail.type)) {
       MediaKind.show => _SiloSeries(title: detail.title, posterUrl: detail.posterUrl),
@@ -671,14 +691,20 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final start = options.startPosition == null ? null : options.startPosition!.inMilliseconds / 1000;
     final previous = _playback;
     final sameItem = previous != null && !previous.isStopped && previous.detail.contentId == options.metadata.id;
-    final versions = sameItem ? [for (final v in previous.detail.versions) v.fileId] : const <int>[];
-    final index = options.selectedMediaIndex;
-    final fileId = index >= 0 && index < versions.length ? versions[index] : null;
+    final fileId = siloRequestedFileId(
+      sourceId: options.selectedMediaSourceId,
+      index: options.selectedMediaIndex,
+      sessionFileIds: sameItem ? [for (final v in previous.detail.versions) v.fileId] : const [],
+    );
 
     final audio = chosenAudio ?? (sameItem ? siloCarriedAudioOrdinal(carriedAudio, previous.playingVersion) : null);
     final operation = sameItem && (fileId == null || fileId == previous.playingVersion.fileId)
         ? previous.replanForReload(quality: quality, audioTrackIndex: audio, startSeconds: start)
         : null;
+    if (operation == null && sameItem && identical(previous, _replanned)) {
+      _replanned = null;
+      return _initialization(previous);
+    }
     if (operation != null) {
       try {
         await previous!.replan(
@@ -709,19 +735,36 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
         reason: PlaybackFailureReason.authenticationRequired,
       );
     }
+    final device = await SiloApp.playbackFacts();
+    Future<SiloPlaybackSession> startSession({required bool pinFile}) async =>
+        SiloPlaybackSession.start(http, await SiloApp.playbackJournal(), (
+          contentId: options.metadata.id,
+          profileId: profile,
+          device: device,
+          fileId: fileId,
+          pinFile: pinFile,
+          quality: quality,
+          startPosition: start,
+          audioTrackIndex: chosenAudio,
+          carriedAudio: carriedAudio,
+          bandwidthCapKbps: preset.videoBitrateKbps,
+        ));
+    // A picked file the server cannot play here, for example a 4K HDR file
+    // when its 4K transcoding is off, is retried with the server choosing;
+    // the player tells the user which version is playing.
+    Future<SiloPlaybackSession> startPicked() async {
+      if (fileId == null) return startSession(pinFile: false);
+      try {
+        return await startSession(pinFile: true);
+      } on SiloPlaybackFailure catch (failure) {
+        appLogger.i('Silo playback: picked file refused (${failure.reason}), letting the server choose');
+        return startSession(pinFile: false);
+      }
+    }
+
     final SiloPlaybackSession playback;
     try {
-      playback = await SiloPlaybackSession.start(http, await SiloApp.playbackJournal(), (
-        contentId: options.metadata.id,
-        profileId: profile,
-        device: await SiloApp.playbackFacts(),
-        fileId: fileId,
-        quality: quality,
-        startPosition: start,
-        audioTrackIndex: chosenAudio,
-        carriedAudio: carriedAudio,
-        bandwidthCapKbps: preset.videoBitrateKbps,
-      ));
+      playback = await startPicked();
     } on SiloPlaybackFailure catch (failure) {
       appLogger.i('Silo playback: refused (${failure.reason})');
       throw PlaybackException(failure.message);
@@ -771,10 +814,7 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     final mediaIndex = playback.detail.versions.indexOf(version);
     final mediaInfo = siloMediaSourceInfo(version, plan, videoUrl: videoUrl, mediaIndex: mediaIndex);
     return PlaybackInitializationResult(
-      availableVersions: [
-        for (final v in playback.detail.versions)
-          MediaVersion(id: '${v.fileId}', videoResolution: v.resolution, bitrate: v.bitrate, container: v.container),
-      ],
+      availableVersions: [for (final v in playback.detail.versions) siloMediaVersion(v)],
       videoUrl: videoUrl,
       mediaInfo: mediaInfo,
       subtitleSidecars: siloSubtitleSidecars(plan, sidecar),
@@ -909,9 +949,65 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   Future<void> _endPlayback() async {
     final playback = _playback;
     _playback = null;
+    _replanned = null;
     _route?.close();
     _route = null;
     if (playback != null && !playback.isStopped) await playback.stop();
+  }
+
+  /// The live session playing [itemId], if any. Subtitle search works on
+  /// the file it plays.
+  SiloPlaybackSession? _playbackOf(String itemId) {
+    final playback = _playback;
+    return playback != null && !playback.isStopped && playback.detail.contentId == itemId ? playback : null;
+  }
+
+  /// Provider subtitles for the file [itemId] is playing, in [language]
+  /// (ISO 639-1). Null when no session plays it.
+  Future<SiloSubtitleSearch?> searchSubtitles(String itemId, {required String language}) async {
+    final playback = _playbackOf(itemId);
+    if (playback == null) return null;
+    final found = await SiloSubtitles(http).search(playback.playingVersion.fileId, [language]);
+    appLogger.i('Silo subtitles: search found ${found.results.length} (${found.warnings.length} warnings)');
+    return found;
+  }
+
+  /// Stores [candidate] on the server, then replans the live session with
+  /// `track_change` so the stored row joins its inventory, as Silo does for
+  /// `subtitle_inventory_changed` (`T/ui/screens/player/TvPlayerViewModel.kt:5684-5695`,
+  /// `A/player/PlaybackSessionManager.kt:2542-2547`). Returns the new row as
+  /// a source track, or null when the replanned inventory cannot mount it.
+  /// The next reload of the same file mounts the replanned plan.
+  Future<MediaSubtitleTrack?> storeSubtitle(
+    String itemId,
+    SiloSubtitleCandidate candidate, {
+    required Duration position,
+  }) async {
+    final playback = _playbackOf(itemId);
+    if (playback == null) return null;
+    final storedId = await SiloSubtitles(http).download(playback.playingVersion.fileId, candidate);
+    appLogger.i('Silo subtitles: stored a ${candidate.format} subtitle');
+    final before = {for (final row in playback.plan.subtitleInventory) row.trackId};
+    final plan = await playback.replan(
+      operation: SiloReplanOperation.trackChange,
+      positionSeconds: _source(playback, position),
+    );
+    if (!identical(_playback, playback)) return null;
+    _replanned = playback;
+    final row =
+        plan.subtitleInventory.where((r) => r.syncKey == 'stored-$storedId').firstOrNull ??
+        plan.subtitleInventory.where((r) => r.isDownloaded && !before.contains(r.trackId)).firstOrNull;
+    final streamId = row == null ? null : siloSubtitleStreamId(plan, row);
+    final track = streamId == null
+        ? null
+        : siloMediaSourceInfo(
+            playback.playingVersion,
+            plan,
+            videoUrl: '',
+            mediaIndex: 0,
+          ).subtitleTracks.where((t) => t.id == streamId).firstOrNull;
+    appLogger.i('Silo subtitles: replanned inventory ${track == null ? 'lacks' : 'has'} the stored row');
+    return track;
   }
 
   /// Intro and credits from watch detail (`S/network/apiv2/WatchDetailV2Api.kt:43-49`).

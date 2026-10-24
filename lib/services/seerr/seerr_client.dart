@@ -16,19 +16,14 @@ import '../../models/seerr/seerr_user.dart';
 import '../../utils/app_logger.dart';
 import '../trackers/future_coalescer.dart';
 import 'seerr_auth_service.dart';
-import 'seerr_constants.dart';
 import 'seerr_exceptions.dart';
 import 'seerr_http_client.dart';
-
-/// Supplies the profile's current Plex account token at silent-re-auth time,
-/// so plex-method sessions never store a token copy that could go stale.
-typedef SeerrPlexTokenSupplier = Future<String?> Function();
 
 /// Authenticated Seerr API client, scoped to one [SeerrSession].
 ///
 /// When the instance no longer knows the session (see [_probeSession])
-/// it re-logins silently via [SeerrAuthService.reauth] (password methods use
-/// the stored secret; plex uses [plexTokenSupplier]), swaps the cookie, and
+/// it re-logins silently via [SeerrAuthService.reauth] with the stored
+/// secret, swaps the cookie, and
 /// retries once. Concurrent re-auths coalesce within this client binding so a
 /// burst of in-flight rejections triggers a single login POST.
 class SeerrClient {
@@ -40,7 +35,6 @@ class SeerrClient {
   SeerrSession _session;
   final SeerrHttpClient _http;
   final SeerrAuthService _auth;
-  final SeerrPlexTokenSupplier? plexTokenSupplier;
 
   /// Fired when re-auth fails permanently (rejected credentials, no stored
   /// secret). The owning provider clears local state.
@@ -53,7 +47,6 @@ class SeerrClient {
     SeerrSession session, {
     required this.onSessionInvalidated,
     this.onSessionUpdated,
-    this.plexTokenSupplier,
     SeerrAuthService? authService,
     http.Client? httpClient,
   }) : _session = session,
@@ -219,7 +212,7 @@ class SeerrClient {
   }
 
   // ---------- Internals ----------
-  String get _language => LocaleSettings.currentLocale.plexLanguageCode;
+  String get _language => LocaleSettings.currentLocale.serverLanguageCode;
 
   Future<dynamic> _request(
     String method,
@@ -344,22 +337,13 @@ class SeerrClient {
     if (!_isCurrentCookie(cookieGeneration)) return;
     final previous = _session;
     appLogger.d('Seerr: session expired, re-authenticating silently');
-    final plexToken = previous.method == SeerrAuthMethod.plex
-        ? await _resolvePlexToken().timeout(SeerrConstants.authTimeout, onTimeout: () => null)
-        : null;
-    if (!_isCurrentCookie(cookieGeneration)) return;
-    final next = await _auth.reauth(previous, plexToken: plexToken);
+    final next = await _auth.reauth(previous);
     if (!_isCurrentCookie(cookieGeneration)) return;
     // Invalidate every read issued for the old cookie, even if the server
     // happened to issue the same cookie value on the replacement login.
     _cookieGeneration++;
     _adopt(next);
   }
-
-  /// Owns the `Future<String?>` type: calling `.timeout(onTimeout: () =>
-  /// null)` directly on the supplier's future trips the covariant-generics
-  /// runtime check when a caller hands us a `Future<String> Function()`.
-  Future<String?> _resolvePlexToken() async => plexTokenSupplier == null ? null : await plexTokenSupplier!();
 
   /// Adopt a refreshed session, merging the product discriminator instead of
   /// wholesale-replacing it: a re-auth completes from the snapshot taken when

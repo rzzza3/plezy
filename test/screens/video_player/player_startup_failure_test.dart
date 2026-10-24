@@ -16,7 +16,6 @@ import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player_base.dart';
-import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -87,7 +86,6 @@ void main() {
     final client = _FailingStreamClient();
     final multi = testMultiServer(clients: [client]);
     final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
-    final accountPreferences = AccountPreferencesController();
     // The chrome the cleared spinner reveals is the production one: desktop
     // controls query the real window plugin, and the header renders the clock
     // and the Watch Together indicator.
@@ -100,7 +98,6 @@ void main() {
       messenger.setMockMethodCallHandler(windowChannel, null);
       tester.view.reset();
       offlineWatch.dispose();
-      accountPreferences.dispose();
     });
 
     final key = GlobalKey<VideoPlayerScreenState>();
@@ -131,7 +128,6 @@ void main() {
               ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
               ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
               ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-              ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
               ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
               ChangeNotifierProvider(create: (_) => WatchTogetherProvider()),
               Provider<AppDatabase>.value(value: db),

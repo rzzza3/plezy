@@ -51,7 +51,7 @@ void main() {
     await _pumpRatingSheet(
       tester,
       viewport: const Size(1280, 800),
-      serverClient: _StubServerClient(ServerCapabilities.plex),
+      serverClient: _StubServerClient(ServerCapabilities.silo),
       profileUuid: _profileUuid,
       item: testMediaItem(id: 'ep-1', kind: MediaKind.episode, serverId: 'server-1', serverName: 'Living Room'),
     );
@@ -71,7 +71,7 @@ void main() {
     expect(tester.getRect(find.text(t.rateSheet.server)).top, serverRowTop);
   });
 
-  for (final (caps, expected) in [(ServerCapabilities.plex, 5.0), (ServerCapabilities.silo, 6.0)]) {
+  for (final (caps, expected) in [(ServerCapabilities.silo, 6.0)]) {
     testWidgets('a half-star tap rates ${expected / 2} stars when wholeStarRating is ${caps.wholeStarRating}', (
       tester,
     ) async {
@@ -91,7 +91,7 @@ void main() {
     });
   }
 
-  testWidgets('a Silo server row names Silo, not Plex', (tester) async {
+  testWidgets('a Silo server row names Silo', (tester) async {
     await _pumpRatingSheet(
       tester,
       viewport: const Size(1280, 800),
@@ -106,7 +106,7 @@ void main() {
     await _pumpRatingSheet(
       tester,
       viewport: const Size(1280, 800),
-      serverClient: _StubServerClient(ServerCapabilities.plex, externalIdsError: StateError('server unreachable')),
+      serverClient: _StubServerClient(ServerCapabilities.silo, externalIdsError: StateError('server unreachable')),
       profileUuid: _profileUuid,
       item: testMediaItem(id: 'movie-1', kind: MediaKind.movie, serverId: 'server-1', serverName: 'Living Room'),
     );
@@ -220,7 +220,7 @@ void _resetTrackerBindings() {
 /// [capabilities] (which decides whether the server row renders at all),
 /// [backend], [serverName], and [serverId].
 class _StubServerClient implements MediaServerClient {
-  _StubServerClient(this.capabilities, {this.externalIdsError, this.backend = MediaBackend.plex});
+  _StubServerClient(this.capabilities, {this.externalIdsError, this.backend = MediaBackend.silo});
 
   @override
   final ServerCapabilities capabilities;

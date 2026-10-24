@@ -7,7 +7,7 @@ import 'package:plezy/media/media_playlist.dart';
 /// tests intentionally avoid equality assertions.
 MediaPlaylist _playlist({
   String id = 'pl1',
-  MediaBackend backend = MediaBackend.plex,
+  MediaBackend backend = MediaBackend.silo,
   String title = 'My Playlist',
   String playlistType = 'video',
   bool smart = false,
@@ -57,7 +57,7 @@ void main() {
 
   group('MediaPlaylist construction', () {
     test('tolerates all-optional fields being null', () {
-      final minimal = MediaPlaylist(id: 'pl', backend: MediaBackend.plex, title: 'Min', playlistType: 'video');
+      final minimal = MediaPlaylist(id: 'pl', backend: MediaBackend.silo, title: 'Min', playlistType: 'video');
       expect(minimal.summary, isNull);
       expect(minimal.guid, isNull);
       expect(minimal.smart, isFalse);

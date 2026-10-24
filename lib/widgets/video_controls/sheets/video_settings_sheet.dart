@@ -782,7 +782,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   /// server. Mirrors the library File Info entry's gate.
   MediaServerClient? _fileInfoClient() {
     final item = _state.metadata;
-    if (_state.isLive || item == null || !item.kind.hasFileInfo) return null;
+    if (item == null || !item.kind.hasFileInfo) return null;
     return context.tryGetMediaClientForServer(serverIdOrNull(_state.serverId));
   }
 
@@ -793,8 +793,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return ListView(
       shrinkWrap: true,
       children: [
-        // Playback Speed - hidden for live TV and when user cannot control playback
-        if (_state.canControl && !_state.isLive)
+        // Playback Speed - hidden when user cannot control playback
+        if (_state.canControl)
           StreamBuilder<double>(
             stream: widget.player.streams.rate,
             initialData: widget.player.state.rate,

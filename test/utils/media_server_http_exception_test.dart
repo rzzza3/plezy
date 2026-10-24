@@ -94,9 +94,12 @@ void main() {
       final e = MediaServerHttpException(
         type: MediaServerHttpErrorType.connectionError,
         message: 'dns failed',
-        requestUri: Uri.parse('https://clients.plex.tv/api/v2/resources?X-Plex-Token=secret'),
+        requestUri: Uri.parse('https://accounts.example.test/api/v2/resources?access_token=secret'),
       );
-      expect(e.toString(), 'MediaServerHttpException(connectionError: dns failed: clients.plex.tv/api/v2/resources)');
+      expect(
+        e.toString(),
+        'MediaServerHttpException(connectionError: dns failed: accounts.example.test/api/v2/resources)',
+      );
     });
   });
 

@@ -53,7 +53,7 @@ void main() {
   });
 }
 
-const _album = MediaItem.plex(
+const _album = MediaItem.silo(
   id: 'album_1',
   kind: MediaKind.album,
   title: 'Test Album',
@@ -68,7 +68,7 @@ List<MediaItem> _multiDiscTracks() {
   MediaItem track({required String id, required String title, required int disc, required int number}) {
     return testMediaItem(
       id: id,
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.track,
       title: title,
       parentId: 'album_1',
@@ -137,10 +137,10 @@ class _FakeMusicClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<List<MediaItem>> fetchAlbumTracks(String albumId) async {

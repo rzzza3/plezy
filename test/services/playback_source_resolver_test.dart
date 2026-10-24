@@ -25,7 +25,7 @@ import '../test_helpers/prefs.dart';
 import '../test_helpers/saf_fakes.dart';
 
 class _PlaybackClient implements MediaServerClient {
-  _PlaybackClient({this.clientBackend = MediaBackend.plex, PlaybackInitializationResult? result})
+  _PlaybackClient({this.clientBackend = MediaBackend.silo, PlaybackInitializationResult? result})
     : result =
           result ??
           PlaybackInitializationResult(availableVersions: const [], videoUrl: 'https://example.com/video.mp4');
@@ -71,7 +71,7 @@ void main() {
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
       PlaybackInitializationOptions(
-        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
         selectedMediaIndex: 0,
         qualityPreset: TranscodeQualityPreset.original,
       ),
@@ -96,7 +96,7 @@ void main() {
         PlaybackInitializationOptions(
           metadata: testMediaItem(
             id: 'missing-download',
-            backend: MediaBackend.plex,
+            backend: MediaBackend.silo,
             kind: MediaKind.movie,
             serverId: 'srv',
           ),
@@ -111,33 +111,7 @@ void main() {
     );
   });
 
-  test('plex direct playback adds playback session header to stream headers', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final manager = MultiServerManager();
-    addTearDown(() async {
-      manager.dispose();
-      await db.close();
-    });
-
-    final client = _PlaybackClient();
-    manager.debugRegisterClientForTesting(client, online: true);
-
-    final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
-      PlaybackInitializationOptions(
-        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
-        selectedMediaIndex: 0,
-        qualityPreset: TranscodeQualityPreset.original,
-        sessionIdentifier: 'playback-session-id',
-      ),
-      offlineLibraryMode: false,
-    );
-
-    expect(context.sourceKind, PlaybackSourceKind.remoteDirect);
-    expect(context.streamHeaders, containsPair('X-Test', 'token'));
-    expect(context.streamHeaders, containsPair('X-Plex-Session-Identifier', 'playback-session-id'));
-  });
-
-  test('non-plex direct playback does not add plex session header', () async {
+  test('direct playback passes the client stream headers through unchanged', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final manager = MultiServerManager();
     addTearDown(() async {
@@ -159,53 +133,7 @@ void main() {
     );
 
     expect(context.sourceKind, PlaybackSourceKind.remoteDirect);
-    expect(context.streamHeaders, isNot(contains('X-Plex-Session-Identifier')));
-  });
-
-  group('plex track session', () {
-    Future<Map<String, String>?> trackStreamHeaders(String videoUrl) async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      final manager = MultiServerManager();
-      addTearDown(() async {
-        manager.dispose();
-        await db.close();
-      });
-      manager.debugRegisterClientForTesting(
-        _PlaybackClient(
-          result: PlaybackInitializationResult(availableVersions: const [], videoUrl: videoUrl),
-        ),
-        online: true,
-      );
-
-      final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
-        PlaybackInitializationOptions(
-          metadata: testMediaItem(id: 'track-1', backend: MediaBackend.plex, kind: MediaKind.track, serverId: 'srv'),
-          selectedMediaIndex: 0,
-          qualityPreset: TranscodeQualityPreset.original,
-          sessionIdentifier: 'playback-session-id',
-        ),
-        offlineLibraryMode: false,
-      );
-      return context.streamHeaders;
-    }
-
-    test('a track that names its session in the stream URL gets no session header', () async {
-      // Gapless playback sends the playing track's headers with the next
-      // track's request; PMS refuses a music transcode start whose header
-      // names another active session with HTTP 400.
-      final headers = await trackStreamHeaders(
-        'https://example.com/music/:/transcode/universal/start.mp3'
-        '?session=transcode-id&X-Plex-Session-Identifier=playback-session-id',
-      );
-
-      expect(headers, {'X-Test': 'token'});
-    });
-
-    test('a track whose stream URL does not name its session keeps the session header', () async {
-      final headers = await trackStreamHeaders('https://example.com/library/parts/1/file.flac');
-
-      expect(headers, containsPair('X-Plex-Session-Identifier', 'playback-session-id'));
-    });
+    expect(context.streamHeaders, {'X-Test': 'token'});
   });
 
   group('downloaded copy under a capped quality preset (issue #2466)', () {
@@ -252,7 +180,7 @@ void main() {
     Future<PlaybackContext> resolveAt720p({required bool downloadOutranksQuality}) {
       return PlaybackSourceResolver(serverManager: manager, database: db).resolve(
         PlaybackInitializationOptions(
-          metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+          metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
           selectedMediaIndex: 0,
           qualityPreset: TranscodeQualityPreset.p720_2mbps,
         ),
@@ -281,7 +209,7 @@ void main() {
       // the version on disk beats failing, as it does with no client at all.
       final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
         PlaybackInitializationOptions(
-          metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+          metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.silo, kind: MediaKind.movie, serverId: 'srv'),
           selectedMediaIndex: 1,
           qualityPreset: TranscodeQualityPreset.original,
         ),

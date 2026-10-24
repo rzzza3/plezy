@@ -22,7 +22,7 @@ import 'package:plezy/screens/collection_detail_screen.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -56,7 +56,7 @@ void main() {
   testWidgets('music collection contents use square grid geometry and cards', (tester) async {
     final album = testMediaItem(
       id: 'album_1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.album,
       title: 'Album 1',
       serverId: 'server_1',
@@ -82,7 +82,7 @@ void main() {
     final items = [
       testMediaItem(
         id: 'movie_1',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'First movie',
         serverId: 'server_1',
@@ -90,7 +90,7 @@ void main() {
       ),
       testMediaItem(
         id: 'movie_2',
-        backend: MediaBackend.plex,
+        backend: MediaBackend.silo,
         kind: MediaKind.movie,
         title: 'Second movie',
         serverId: 'server_1',
@@ -221,7 +221,7 @@ void main() {
     // poster and the screen decides whether to blur it.
     final posterOnly = MediaItem(
       id: 'collection_3',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.collection,
       title: 'Poster only',
       thumbPath: '/library/metadata/collection_3/thumb',
@@ -231,7 +231,7 @@ void main() {
     );
     final withArt = MediaItem(
       id: 'collection_4',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.collection,
       title: 'With art',
       thumbPath: '/library/metadata/collection_4/thumb',
@@ -297,7 +297,7 @@ void main() {
 
 final _collection = MediaItem(
   id: 'collection_1',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.collection,
   title: 'Music Collection',
   libraryId: 'music',
@@ -307,7 +307,7 @@ final _collection = MediaItem(
 
 final _movieCollection = MediaItem(
   id: 'collection_2',
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.collection,
   title: 'Sinners',
   summary: 'Kara no Kyōkai: a series of ten animated films by ufotable adapting Kinoko Nasu\'s novels.',
@@ -318,7 +318,7 @@ final _movieCollection = MediaItem(
 
 MediaItem _movie(String id, String title, {required int year}) => testMediaItem(
   id: id,
-  backend: MediaBackend.plex,
+  backend: MediaBackend.silo,
   kind: MediaKind.movie,
   title: title,
   year: year,
@@ -332,7 +332,7 @@ Future<_CollectionHarness> _createHarness(List<MediaItem> items, {int? pageSize}
   await SettingsService.getInstance();
 
   final database = AppDatabase.forTesting(NativeDatabase.memory());
-  PlexApiCache.initialize(database);
+  SiloApiCache.initialize(database);
 
   final downloadManager = DownloadManagerService(
     database: database,
@@ -391,10 +391,10 @@ class _CollectionClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => MediaBackend.silo;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities => ServerCapabilities.silo;
 
   @override
   Future<LibraryPage<MediaItem>> fetchCollectionPage(

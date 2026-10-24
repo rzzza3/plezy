@@ -244,11 +244,12 @@ Future<void> _seedSchema25(File file) async {
       'local-a',
       const MediaItem.silo(id: 'track-1', kind: MediaKind.track, serverId: 'silo-srv').toJson(),
     );
-    await _seedMusicSession(
-      db,
-      'local-b',
-      const MediaItem.plex(id: 'track-2', kind: MediaKind.track, serverId: 'plex-machine').toJson(),
-    );
+    await _seedMusicSession(db, 'local-b', {
+      'backend': 'plex',
+      'id': 'track-2',
+      'kind': 'track',
+      'serverId': 'plex-machine',
+    });
     await _seedMusicSession(
       db,
       'local-c',
@@ -293,7 +294,7 @@ void main() {
 
   group('schema 26 migration', () {
     test('removes every Plex, Jellyfin and Emby row', () async {
-      final db = AppDatabase.forTesting(NativeDatabase(file));
+      final db = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 26);
       addTearDown(db.close);
 
       expect((await db.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 26);
@@ -333,7 +334,7 @@ void main() {
     });
 
     test('keeps Silo rows unchanged, with their scopes and progress', () async {
-      final db = AppDatabase.forTesting(NativeDatabase(file));
+      final db = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 26);
       addTearDown(db.close);
 
       final download = await db.getDownloadedMedia(_silo.globalKey);
@@ -361,7 +362,7 @@ void main() {
     });
 
     test('keeps local profiles and drops Plex Home rows', () async {
-      final db = AppDatabase.forTesting(NativeDatabase(file));
+      final db = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 26);
       addTearDown(db.close);
 
       final profiles = await db.select(db.profiles).get();
@@ -369,13 +370,13 @@ void main() {
     });
 
     test('is idempotent when run again or reopened', () async {
-      final db = AppDatabase.forTesting(NativeDatabase(file));
+      final db = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 26);
       final migrated = await _snapshot(db);
       await db.purgeNonSiloBackendData();
       expect(await _snapshot(db), migrated);
       await db.close();
 
-      final reopened = AppDatabase.forTesting(NativeDatabase(file));
+      final reopened = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 26);
       addTearDown(reopened.close);
       expect(await _snapshot(reopened), migrated);
     });
@@ -394,7 +395,7 @@ void main() {
       await seeded.close();
       final before = await file.length();
 
-      final db = AppDatabase.forTesting(NativeDatabase(file));
+      final db = AppDatabase.forTesting(NativeDatabase(file), schemaVersion: 26);
       await db.customSelect('SELECT 1').get();
       await db.close();
 
@@ -403,7 +404,7 @@ void main() {
     });
 
     test('a fresh schema 26 database keeps Silo rows written after creation', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final db = AppDatabase.forTesting(NativeDatabase.memory(), schemaVersion: 26);
       addTearDown(db.close);
       await _seedBackend(db, _silo);
 

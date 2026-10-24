@@ -59,7 +59,6 @@ void main() {
     final reloads = <Duration>[];
     var fault = faultSeen;
     final recovery = SpuriousEofRecovery(
-      isLive: false,
       isOffline: () => false,
       isTranscoding: () => transcoding,
       transitionGate: PlaybackTransitionGate(),

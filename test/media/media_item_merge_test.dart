@@ -10,7 +10,7 @@ import '../test_helpers/media_items.dart';
 void main() {
   MediaItem item({String? serverId, String? serverName, String? libraryId, String? libraryTitle}) => testMediaItem(
     id: 'item',
-    backend: MediaBackend.plex,
+    backend: MediaBackend.silo,
     kind: MediaKind.movie,
     serverId: serverId,
     serverName: serverName,

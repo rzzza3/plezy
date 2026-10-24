@@ -55,15 +55,15 @@ class PlaybackInitializationOptions {
   /// sidecar-capable backends keep subtitle delivery independent.
   final SubtitlePreference? preferredSubtitleTrack;
 
-  /// Plex transcode `X-Plex-Session-Identifier`. Required for Plex transcode.
+  /// Transcode session identifier, for backends whose transcode needs one.
   final String? sessionIdentifier;
 
-  /// Plex transcode `playSessionId`. Same as [sessionIdentifier] — required
-  /// for Plex transcode.
+  /// Transcode `playSessionId`. Same as [sessionIdentifier], for backends
+  /// whose transcode needs one.
   final String? transcodeSessionId;
 
   /// Where playback is about to start, in item time. An item stacked across
-  /// several files (Plex `Part 1`, `Part 2`) opens the file holding it; see
+  /// several files (`Part 1`, `Part 2`) opens the file holding it; see
   /// [MediaSourceInfo.partTimeline]. Null starts from the first file.
   final Duration? startPosition;
 
@@ -120,7 +120,7 @@ class ExternalPlaybackTarget {
 
 /// Reason the transcode branch fell back to direct play.
 enum TranscodeFallbackReason {
-  /// Plex decision said only direct-play is available.
+  /// Decision said only direct-play is available.
   directPlayOnly,
 
   /// The decision endpoint errored (HTTP error, code >= 2000, parse failure).
@@ -211,7 +211,7 @@ enum PlaybackFailureReason {
   authenticationRequired,
 
   /// The server answered HTTP 403: it knows this account and refuses it this
-  /// item or this connection (e.g. Plex's remote-playback rules). Signing in again changes nothing.
+  /// item or this connection (e.g. remote-playback rules). Signing in again changes nothing.
   playbackNotAllowed,
   serverUnavailable,
   cancelled,
@@ -234,7 +234,7 @@ class PlaybackException implements Exception {
 /// Maps a transport-level failure raised while initializing playback onto a
 /// display-safe [PlaybackException].
 ///
-/// Backend-neutral on purpose: Plex and Silo both throw the same
+/// Backend-neutral on purpose: every backend throws the same
 /// [MediaServerException] hierarchy, so both clients classify identically.
 PlaybackException classifyPlaybackFailure(Object error) {
   if (error is MediaServerHttpException && error.statusCode == 403) {

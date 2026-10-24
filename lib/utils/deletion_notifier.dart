@@ -11,7 +11,7 @@ enum DeletionOrigin { local, serverPush }
 
 /// Event representing a media item deletion with parent chain for hierarchical invalidation
 class DeletionEvent with HierarchicalEventMixin {
-  /// The id of the deleted item (Plex ratingKey, …).
+  /// The id of the deleted item (Silo content id, …).
   @override
   final String itemId;
 

@@ -11,15 +11,13 @@ void main() {
     int? parentIndex,
     int? index,
     int? year,
-    String? editionTitle,
-  }) => MediaItem.plex(
+  }) => MediaItem.silo(
     id: 'item',
     kind: kind,
     grandparentTitle: grandparentTitle,
     parentIndex: parentIndex,
     index: index,
     year: year,
-    editionTitle: editionTitle,
   );
 
   test('formats episodes with show and season/episode numbers', () {
@@ -29,9 +27,8 @@ void main() {
     );
   });
 
-  test('falls back through show, year and edition, then media kind', () {
+  test('falls back through show and year, then media kind', () {
     expect(formatQueueItemSubtitle(item(grandparentTitle: 'Show')), 'Show');
-    expect(formatQueueItemSubtitle(item(year: 2026, editionTitle: 'Director Cut')), '2026 \u00b7 Director Cut');
     expect(formatQueueItemSubtitle(item(year: 2026)), '2026');
     expect(formatQueueItemSubtitle(item()), t.common.mediaKind.movie);
   });

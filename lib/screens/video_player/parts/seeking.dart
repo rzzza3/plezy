@@ -18,13 +18,13 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     final target = clampSeekPosition(currentPlayer, position);
     // Parked on a dead stream (#1520): a native seek would land inside the
     // drained cache — rebuild the stream at the target instead.
-    if (_eofRecovery.parked && !widget.isLive && _transitionGate.transition == PlaybackTransition.idle) {
+    if (_eofRecovery.parked && _transitionGate.transition == PlaybackTransition.idle) {
       await _eofRecovery.retry(reason: 'seek', resumePosition: target);
       return;
     }
     // Outside a Silo stream's seek window: the server reanchors on reopen.
     final client = _getMediaServerClient(context);
-    if (!widget.isLive && client is SiloClient && client.reopensToSeek(target)) {
+    if (client is SiloClient && client.reopensToSeek(target)) {
       if (!(isCurrent?.call() ?? true)) return;
       await _reloadMediaInPlace(
         metadata: _currentMetadata,
@@ -37,7 +37,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     }
     // A stacked item's other file: a native seek cannot leave the open one.
     final partTimeline = _currentMediaInfo?.partTimeline;
-    if (!widget.isLive && partTimeline != null && !partTimeline.covers(target)) {
+    if (partTimeline != null && !partTimeline.covers(target)) {
       if (!(isCurrent?.call() ?? true)) return;
       await _openStackedPartAt(target, reason: 'stacked part seek');
       return;
@@ -76,7 +76,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
   /// file, so the caller runs the normal completion flow.
   bool _advanceStackedPart() {
     final partTimeline = _currentMediaInfo?.partTimeline;
-    if (widget.isLive || partTimeline == null || !partTimeline.hasNext) return false;
+    if (partTimeline == null || !partTimeline.hasNext) return false;
     if (_transitionGate.transition != PlaybackTransition.idle) return false;
     final next = partTimeline.parts[partTimeline.currentIndex + 1];
     appLogger.i(
@@ -102,24 +102,15 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
   }
 
   /// Relative seek shared by the companion remote, the OS media-control skip
-  /// commands and the screen's own transport keys, including the live-TV
-  /// capture-buffer branch.
+  /// commands and the screen's own transport keys.
   ///
-  /// Off live TV the step is accumulated rather than dispatched: all three
+  /// The step is accumulated rather than dispatched: all three
   /// sources arrive in bursts faster than a native seek completes, and
   /// [_performSeekPlayback] serialises on the in-flight one — so a seek per
   /// event would have every queued event rebase off the same stale position.
   void _seekRelative(Duration delta) {
     final currentPlayer = player;
     if (currentPlayer == null) return;
-    // Live TV keeps its own epoch accumulator: an absolute target is
-    // meaningless against a moving live edge (#1253). Without a capture
-    // buffer there is no window to step through at all, so the skip is
-    // dropped rather than handed to the VOD accumulator.
-    if (widget.isLive) {
-      if (_live.captureBuffer != null) _liveSeek.seekBy(delta.inSeconds);
-      return;
-    }
     _relativeSkip.seekBy(delta);
   }
 }

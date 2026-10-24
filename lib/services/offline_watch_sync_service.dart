@@ -18,8 +18,6 @@ import '../utils/global_key_utils.dart';
 import 'offline_mode_source.dart';
 import '../utils/watch_state_notifier.dart';
 import 'multi_server_manager.dart';
-import 'plex_client.dart';
-import 'settings_service.dart';
 import 'trackers/tracker_coordinator.dart';
 import 'watch_state_resolver.dart';
 
@@ -35,9 +33,7 @@ typedef _OfflineWatchReplayResult = ({
 });
 
 /// Service for managing offline watch progress and syncing it back to the
-/// owning server. Backend-neutral over [MediaServerClient] — Plex actions
-/// hit `/:/scrobble` and `/:/timeline`, while MediaBrowser actions use their
-/// dialect's played-item route and `/Sessions/Playing*` through the same queue.
+/// owning server, through the neutral [MediaServerClient] surface.
 ///
 /// Handles:
 /// - Queuing progress updates when offline
@@ -68,21 +64,8 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   /// Callback to refresh download provider metadata after sync
   VoidCallback? onWatchStatesRefreshed;
 
-  /// Get watched threshold for a server. Cascades:
-  /// 1. Plex's fetched server prefs (`/:/prefs`)
-  /// 2. MediaBrowser's fixed [MediaServerClient.watchedThreshold] (0.9)
-  /// 3. Cached value in SettingsService (mirrored by PlexClient.fetchServerPrefs)
-  /// 4. Default 90%
-  double getWatchedThreshold(ServerId serverId) {
-    final client = _serverManager.getClient(serverId);
-    if (client is PlexClient && client.serverPrefs.isNotEmpty) {
-      return client.watchedThreshold;
-    }
-    // No client bound (offline) or Plex prefs not loaded yet — use the
-    // mirror written on the last successful prefs fetch.
-    final cached = SettingsService.instanceOrNull?.read(SettingsService.watchedThresholdPref(serverId)) ?? 90;
-    return cached / 100.0;
-  }
+  /// Watched threshold for a server: the bound client's, or 90% offline.
+  double getWatchedThreshold(ServerId serverId) => _serverManager.getClient(serverId)?.watchedThreshold ?? 0.9;
 
   /// Minimum interval between syncs.
   /// Mobile: no throttle (always sync on resume for cross-device updates)
@@ -112,9 +95,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   /// itself queued (offline). The online path writes straight to the server and
   /// queues nothing, so without this the older progress row survives and
   /// [syncPendingItems] later rewrites the resume position the mark cleared —
-  /// on MediaBrowser that pins the item to Continue Watching for good (#1812).
-  /// Plex is unaffected in practice (PMS discards a replay whose `updated`
-  /// timestamp is stale) but the queue entry is meaningless there too.
+  /// which can pin the item to Continue Watching for good (#1812).
   ///
   /// Progress recorded *after* the mark is a genuine rewatch: it is queued
   /// later, so it is never touched here.
@@ -291,7 +272,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
   /// Called when servers connect on app startup.
   ///
-  /// Triggers the initial sync now that PlexClients are available.
+  /// Triggers the initial sync now that clients are available.
   /// Only runs once per app session.
   void onServersConnected() {
     if (isDisposed) return;
@@ -547,10 +528,6 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
     if (activeScopeId != null) return activeScopeId;
     final download = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), itemId));
     final downloadedScope = resolveActiveClientScopeId(serverId: serverId, cacheServerId: download?.clientScopeId);
-    final profileId = _activeProfileId;
-    if (downloadedScope != null && isPlexProfileScopeId(downloadedScope) && profileId != null && profileId.isNotEmpty) {
-      return buildPlexProfileScopeId(serverId: serverId, profileId: profileId);
-    }
     return downloadedScope;
   }
 
@@ -636,7 +613,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   /// Sync a single action to the server.
   ///
   /// Uses the neutral [MediaServerClient] surface so every backend receives
-  /// the same queued state Plex's `/:/scrobble` and `/:/timeline` do.
+  /// the same queued state.
   Future<_OfflineWatchReplayResult> _syncAction(
     MediaServerClient client,
     OfflineWatchProgressItem action, {
@@ -689,7 +666,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
             try {
               await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
             } catch (e) {
-              // Plex sometimes 5xxs the start when nothing follows; the stop
+              // A server may 5xx the start when nothing follows; the stop
               // call is the one that persists the resume position, so
               // continue.
               appLogger.d('Offline progress: started call failed (continuing)', error: e);
@@ -708,8 +685,8 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
         if (action.shouldMarkWatched) {
           // A backend that persists the played state from the stopped report
-          // needs nothing more. Plex still needs the explicit transport call, but replay must not
-          // emit another semantic event for an action already emitted offline.
+          // needs nothing more. Any other needs the explicit transport call, but replay must
+          // not emit another semantic event for an action already emitted offline.
           if (!client.marksWatchedOnPlaybackStopped) {
             await client.markWatched(item);
             persisted = true;

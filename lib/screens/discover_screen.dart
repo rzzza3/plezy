@@ -5,7 +5,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
-import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
@@ -25,7 +24,6 @@ import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import '../widgets/toolbar_scrim.dart';
 import '../widgets/system_clock.dart';
 import '../providers/discover_provider.dart';
-import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/app_menu.dart';
@@ -117,7 +115,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
-  final _serverActivitiesButtonKey = GlobalKey<ServerActivitiesButtonState>();
   final _userMenuKey = GlobalKey<AppMenuButtonState<String>>();
 
   /// Backend-neutral hero client lookup. Returns the actual
@@ -827,15 +824,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ],
                     ),
                   ),
-                  // Server Tasks — Plex-only (`/activities` API), hide the
-                  // button entirely on profiles without a Plex server so the
-                  // chrome doesn't show a permanently empty popover.
-                  if (PlatformDetector.isDesktop(context) &&
-                      context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
-                    FocusableAction(
-                      onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
-                      child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
-                    ),
                   // User menu — profiles + sign out. On TV the sidebar's
                   // profile row opens it instead.
                   if (!PlatformDetector.isTV()) _buildUserMenuAction(context),

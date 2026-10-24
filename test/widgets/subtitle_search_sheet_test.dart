@@ -1,18 +1,15 @@
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:plezy/database/app_database.dart';
+import 'package:plezy/connection/connection.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/media/ids.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/silo_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/video_controls/sheets/subtitle_search_sheet.dart';
 import 'package:provider/provider.dart';
 
-import '../test_helpers/backend_client_fixtures.dart';
+import '../silo/fake_silo.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/theme.dart';
 
@@ -60,7 +57,7 @@ void main() {
       // No MultiServerProvider, so the search resolves to no client and the
       // results area is empty. A shrink-wrapping body would collapse here.
       final emptyHeight = _sheetHeight(tester);
-      final fieldTop = tester.getTopLeft(find.byType(TextField)).dy;
+      final buttonTop = tester.getTopLeft(find.text('English')).dy;
       expect(emptyHeight, 720, reason: 'search surface fills the windowed height ceiling');
 
       // Switching to the language picker and filtering it down to a couple of
@@ -73,32 +70,35 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Zulu'), findsOneWidget);
       expect(_sheetHeight(tester), emptyHeight, reason: 'per-keystroke match count must not resize the sheet');
-      expect(tester.getTopLeft(find.byType(TextField)).dy, fieldTop);
+      await tester.tap(find.text('Zulu'));
+      await tester.pumpAndSettle();
+      expect(_sheetHeight(tester), emptyHeight);
+      expect(tester.getTopLeft(find.text('Zulu')).dy, buttonTop);
     });
   });
 
-  group('search error contract', () {
-    late AppDatabase database;
+  group('search contract', () {
+    setUp(() => LocaleSettings.setLocaleSync(AppLocale.en));
 
-    setUp(() {
-      LocaleSettings.setLocaleSync(AppLocale.en);
-      database = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(database);
-    });
-
-    tearDown(() => database.close());
-
-    testWidgets('HTTP 500 from searchSubtitles shows the sheet error state, not "no subtitles found"', (tester) async {
-      final client = testPlexClient(serverId: ServerId('server'), handler: (_) async => http.Response('{}', 500));
+    testWidgets('with no live Silo session for the item, nothing is searched and no error shows', (tester) async {
+      final fake = FakeSilo((_) => jsonResponse({}, 500));
+      final (session, _) = await tester.runAsync(signedInSession) ?? (throw StateError('no session'));
+      final client = SiloClient(
+        connection: SiloConnection(
+          origin: siloTestOrigin.toString(),
+          serverId: 'server',
+          serverName: 'Silo',
+          username: 'alice',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        profileId: 'p-1',
+        http: siloHttpFor(fake, session),
+      );
       final provider = testMultiServer(clients: [client]).provider;
 
       await _pumpSearchSheet(tester, multiServer: provider);
 
-      // [PlexClient._wrapListApiCall] rethrows HTTP failures; the sheet's
-      // catch must render its error text instead of an empty-result state,
-      // and that text is the localized reason, never the raw exception.
-      expect(find.text(t.errors.searchFailed(error: t.errors.reasonServerError)), findsOneWidget);
-      expect(find.textContaining('HTTP 500'), findsNothing);
+      expect(fake.to('/api/v2/subtitles/search'), isEmpty, reason: 'search needs the file the session plays');
       expect(find.text(t.videoControls.noSubtitlesFound), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });

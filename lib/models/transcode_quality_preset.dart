@@ -1,4 +1,4 @@
-/// Video transcode quality presets modeled on Plex Web's custom-quality table.
+/// Video transcode quality presets modeled on a common custom-quality table.
 ///
 /// When a non-[original] preset is selected, playback asks the active backend
 /// for a capped transcode stream. [original] bypasses transcoding entirely and

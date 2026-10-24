@@ -6,12 +6,12 @@ import 'package:provider/provider.dart';
 
 import '../connection/connection_registry.dart';
 import '../focus/covered_route_focus_boundary.dart';
+import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../profiles/active_profile_provider.dart';
-import '../profiles/plex_home_service.dart';
-import '../profiles/profile_connection_registry.dart';
+import '../profiles/silo_household_service.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/companion_remote_provider.dart';
 import '../providers/discover_provider.dart';
@@ -41,16 +41,6 @@ import '../widgets/music/mini_player.dart';
 import '../widgets/agent_control_scope.dart';
 import 'profile_navigation_scope.dart';
 import 'settings_shortcut.dart';
-
-CatalogSourcesProvider _createCatalogSourcesProvider(BuildContext context) {
-  return CatalogSourcesProvider(
-    plexSessionSupplier: () => resolvePlexDiscoverSession(
-      activeProfile: context.read<ActiveProfileProvider>(),
-      connections: context.read<ConnectionRegistry>(),
-      profileConnections: context.read<ProfileConnectionRegistry>(),
-    ),
-  );
-}
 
 /// Root route for an active profile session.
 ///
@@ -108,7 +98,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
   }
 
   /// The keyed remount below recreates every session-scoped provider on a
-  /// profile switch, but [ApiCache] is app-global and its Plex rows are
+  /// profile switch, but [ApiCache] is app-global and its rows are
   /// keyed by server only — one home user's cached responses would serve
   /// the next user's session. Clear the volatile rows at the seam itself;
   /// doing it from inside MainScreen can't work, the remount unmounts it
@@ -170,13 +160,6 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
               ChangeNotifierProvider(
                 create: (context) {
                   final provider = SeerrAccountProvider();
-                  provider.bindPlexTokenSupplier(
-                    buildSeerrPlexTokenSupplier(
-                      activeProfile: context.read<ActiveProfileProvider>(),
-                      connections: context.read<ConnectionRegistry>(),
-                      profileConnections: context.read<ProfileConnectionRegistry>(),
-                    ),
-                  );
                   unawaited(
                     provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
                       appLogger.w('Seerr profile hydrate failed', error: e, stackTrace: s);
@@ -192,7 +175,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 CatalogSourcesProvider
               >(
                 create: (context) {
-                  final provider = _createCatalogSourcesProvider(context);
+                  final provider = CatalogSourcesProvider();
                   unawaited(
                     provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
                       appLogger.w('Catalog sources profile hydrate failed', error: e, stackTrace: s);
@@ -201,9 +184,8 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   return provider;
                 },
                 update: (context, trackers, seerr, activeProfile, previous) {
-                  final provider = previous ?? _createCatalogSourcesProvider(context);
+                  final provider = previous ?? CatalogSourcesProvider();
                   provider.update(trackers, seerr);
-                  unawaited(provider.onProfileBindingStateChanged(activeProfile.isBinding));
                   return provider;
                 },
               ),
@@ -270,14 +252,13 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
               ChangeNotifierProvider(
                 create: (context) {
                   final provider = CompanionRemoteProvider();
-                  // Keep a running host's crypto identity live: a home user
-                  // removed or a borrowed connection revoked mid-session must
-                  // stop controlling the broadcast.
+                  // Keep a running host's crypto identity live: a profile
+                  // removed or a server signed out mid-session must stop
+                  // controlling the broadcast.
                   provider.bindProfileServices(
                     connections: context.read<ConnectionRegistry>(),
                     activeProfile: context.read<ActiveProfileProvider>(),
-                    profileConnections: context.read<ProfileConnectionRegistry>(),
-                    plexHome: context.read<PlexHomeService>(),
+                    households: context.read<SiloHouseholdService>(),
                   );
                   return provider;
                 },
@@ -360,6 +341,12 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
           canPop: false,
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) return;
+            // Android TV delivers a press's platform back just before its
+            // KeyUp. When the KeyDown already closed a dialog (its
+            // DismissAction pops on KeyDown), BackKeySuppressorObserver has
+            // armed the KeyUp suppressor, and this back is the same press:
+            // forwarding it would pop the screen under the dialog too.
+            if (BackKeyUpSuppressor.isSuppressing) return;
             unawaited(_navigatorKey.currentState?.maybePop());
           },
           child: MultiProvider(

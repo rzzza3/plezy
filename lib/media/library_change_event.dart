@@ -4,28 +4,28 @@ import 'ids.dart';
 /// server push channel (#1646).
 ///
 /// Deliberately coarse for additions and updates: raw notifications arrive
-/// mid-scan when backends disagree about what an id even means (Plex emits
-/// per-state timeline floods, MediaBrowser batches server-side), and every
+/// mid-scan when backends disagree about what an id even means (a server can emit
+/// per-state timeline floods, others batch server-side), and every
 /// consumer responds by refetching its own views anyway. The one exact
 /// carve-out is [removedItemIds]: a removal names an item the app may be
 /// displaying right now, so those ids ride along for in-place drops through
-/// `DeletionNotifier` — the same split Plex Web uses (deletions patch stores
+/// `DeletionNotifier` — the same split web clients use (deletions patch stores
 /// directly; additions go through container refetch).
 class LibraryChangeEvent {
   /// Server whose library changed.
   final ServerId serverId;
 
-  /// Backend-native ids of the affected libraries (Plex section ids,
-  /// MediaBrowser collection-folder ids). Empty when the backend did not say,
+  /// Backend-native ids of the affected libraries (section ids,
+  /// collection-folder ids). Empty when the backend did not say,
   /// which consumers must read as [targetsWholeServer] — never as "nothing".
   final Set<String> libraryIds;
 
-  /// Backend-native ids of removed items, when the backend named them (Plex
-  /// settled `type: -1` timeline entries, MediaBrowser `ItemsRemoved`).
+  /// Backend-native ids of removed items, when the backend named them (a server
+  /// settled `type: -1` timeline entries, `ItemsRemoved`).
   final Set<String> removedItemIds;
 
   /// Advisory flags describing what the change contained. A backend that
-  /// cannot distinguish (Plex settles adds and metadata updates identically)
+  /// cannot distinguish (a server may settle adds and metadata updates identically)
   /// sets the closest superset.
   final bool itemsAdded;
   final bool itemsRemoved;

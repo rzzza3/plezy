@@ -14,7 +14,7 @@ typedef WatchlistCandidate = ({CatalogSource source, CatalogItemIds ids});
 ///
 /// The item's external ids come from its owning server ([client]); each
 /// source then maps them to its own id forms (MAL and AniList go through
-/// Fribb; Plex Discover matches server-side). A source that cannot hold the
+/// Fribb). A source that cannot hold the
 /// item (non-anime on MAL, no usable ids) is simply absent from the result.
 /// Per-source resolution failures are logged and skipped so one flaky
 /// provider does not hide the rest, and reported through [onSourceFailed] so a

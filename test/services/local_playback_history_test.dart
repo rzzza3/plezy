@@ -18,7 +18,7 @@ void main() {
   test('recordPlayback writes item and series keys for an episode', () async {
     final episode = testMediaItem(
       id: 'ep-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.episode,
       title: 'Episode 1',
       serverId: 'srv-1',
@@ -35,7 +35,7 @@ void main() {
   test('recordPlayback writes only the item key for a movie', () async {
     final movie = testMediaItem(
       id: 'movie-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Movie',
       serverId: 'srv-1',
@@ -50,7 +50,7 @@ void main() {
   test('repeat writes for the same item within the rewrite window are skipped', () async {
     final movie = testMediaItem(
       id: 'movie-1',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Movie',
       serverId: 'srv-1',
@@ -70,7 +70,7 @@ void main() {
 
     final movie = testMediaItem(
       id: 'fresh',
-      backend: MediaBackend.plex,
+      backend: MediaBackend.silo,
       kind: MediaKind.movie,
       title: 'Fresh',
       serverId: 'srv-1',

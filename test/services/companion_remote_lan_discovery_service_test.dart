@@ -124,7 +124,7 @@ void main() {
 RemoteAuthContext _authContext({required String id, required List<int> discoveryKey}) {
   return RemoteAuthContext(
     id: id,
-    backend: 'plex',
+    backend: 'silo',
     connectionId: 'connection-$id',
     homeSecret: List<int>.filled(32, 7),
     discoveryKey: discoveryKey,

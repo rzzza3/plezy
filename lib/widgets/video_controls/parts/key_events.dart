@@ -1,6 +1,6 @@
 part of '../video_controls.dart';
 
-extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
+extension _SiloVideoControlsKeyEventMethods on _SiloVideoControlsState {
   Future<void> _initKeyboardService() async {
     _keyboardService = await KeyboardShortcutsService.getInstance();
   }
@@ -240,8 +240,8 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // Releasing a key ends its seek burst, before the KeyUp is consumed below.
     // Two independent reasons to fire:
     //  - a released hidden-chrome arrow must reset the acceleration tier even
-    //    when nothing is pending, because live TV (and a zero-duration item)
-    //    seeks straight through onLiveSeekBy without touching the accumulator;
+    //    when nothing is pending, because a zero-duration item seeks without
+    //    touching the accumulator;
     //  - any key holding a pending target commits it now, so rebound shortcuts
     //    and Shift+arrow large seeks land promptly rather than on the debounce.
     if (event is KeyUpEvent &&

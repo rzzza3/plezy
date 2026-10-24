@@ -328,7 +328,7 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   /// Chip display order. `folder`/`unknown` are never search kinds, and
-  /// `clip`/`photo` rows (e.g. Plex extras)
+  /// `clip`/`photo` rows (e.g. extras)
   /// stay reachable under "All" without a chip of their own.
   static const List<MediaKind> _kindFilterOrder = [
     MediaKind.movie,

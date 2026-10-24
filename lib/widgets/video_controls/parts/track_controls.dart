@@ -2,7 +2,7 @@ part of '../video_controls.dart';
 
 final Expando<LatestAsyncWrite<String>> _subtitleVisibilityWrites = Expando<LatestAsyncWrite<String>>();
 
-extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
+extension _SiloVideoControlsTrackMethods on _SiloVideoControlsState {
   void _toggleSubtitles() {
     // Restoring always works: backends without a renderer-level visibility
     // switch hide subtitles by deselecting them, so the current track reads
@@ -34,7 +34,6 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
   /// switching is unavailable, while this hint is about what is on screen.
   bool _hasBurnedSourceSubtitle() => PlaybackSubtitleResolver.burnsCurrentSelection(
     isTranscoding: widget.isTranscoding,
-    isLive: widget.isLive,
     choice: widget.selectedSubtitleChoice,
     sidecars: widget.sourceSubtitleSidecars,
   );
@@ -205,25 +204,20 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
       onToggleAmbientLighting: widget.player.playerType != 'exoplayer' ? widget.onToggleAmbientLighting : null,
       canControl: widget.canControl,
-      isLive: widget.isLive,
       subtitlesVisible: _subtitlesVisible,
       showQueueButton: playbackState.isQueueActive && widget.canNavigateMediaItems,
       onQueueItemSelected: playbackState.isQueueActive && widget.canNavigateMediaItems ? _onQueueItemSelected : null,
       ratingKey: widget.metadata.id,
-      mediaTitle: widget.metadata.title,
+      playerPosition: () => widget.player.state.position,
       onSubtitleDownloaded: _onSubtitleDownloaded,
-      // Plex proxies OpenSubtitles via its server-side plugin; other backends
-      // don't expose an equivalent so the Search Subtitles tile is hidden
-      // for their items. The check uses the registered client type for
-      // this metadata's serverId.
-      subtitleSearchSupported: _isPlexBackedMetadata(),
+      // The server searches its subtitle providers for the playing file.
+      subtitleSearchSupported: _serverSearchesSubtitles(),
     );
   }
 
-  /// True when the active server supports external subtitle search (Plex
-  /// today). Requires a server id because the download callback needs the
-  /// Plex client/token for that server.
-  bool _isPlexBackedMetadata() {
+  /// True when this item's server searches subtitle providers. Requires a
+  /// server id because the search and download go to that server's client.
+  bool _serverSearchesSubtitles() {
     try {
       final serverId = widget.metadata.serverId;
       if (serverId == null) return false;
