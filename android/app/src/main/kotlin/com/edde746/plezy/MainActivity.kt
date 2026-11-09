@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Color
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
@@ -34,7 +35,7 @@ import com.edde746.plezy.mpv.MpvPlayerPlugin
 import com.edde746.plezy.shared.AssistiveTechnologyMonitor
 import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.MediaCodecQuery
-import com.edde746.plezy.shared.ThemeHelper
+import com.edde746.plezy.shared.SiloVideoCapabilities
 import com.edde746.plezy.watchnext.WatchNextPlugin
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterTextureView
@@ -95,6 +96,16 @@ class MainActivity : FlutterActivity() {
     private const val SYSTEM_BARS_SETTLE_MS = 400L
 
     private var selectedFlutterRenderer = FlutterRenderer.IMPELLER
+
+    // The palette Flutter last reported (AppTheme.name), for the next cold start.
+    private const val LAUNCH_THEME_KEY = "splash_theme"
+    private val SLATE_WINDOW_COLOR = Color.rgb(0x15, 0x1A, 0x21)
+
+    // Anything but Slate, including values older builds stored, opens on black.
+    private fun launchWindowColor(mode: String?): Int = if (mode == "slate") SLATE_WINDOW_COLOR else Color.BLACK
+
+    private fun splashThemeFor(mode: String?): Int =
+      if (mode == "slate") R.style.SplashTheme_Slate else R.style.SplashTheme_Oled
   }
 
   private val PIP_CHANNEL = "com.plezy/pip"
@@ -485,19 +496,20 @@ class MainActivity : FlutterActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     // Snapshot the previous process phase before this launch can overwrite it.
     initializeStartupPhaseStore()
-    // Apply persisted theme color to the window background before anything
-    // else renders.  This prevents a white flash between the native splash
-    // screen and Flutter's first frame for non-default themes (e.g. OLED).
-    val prefs = getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE)
-    val savedTheme = prefs.getString("splash_theme", null)
-    ThemeHelper.themeColor(savedTheme)?.let { window.decorView.setBackgroundColor(it) }
+    // Paint the window in the user's palette (OLED black unless they picked
+    // Slate) before anything else renders, so there is no flash before
+    // Flutter's first frame.
+    val launchTheme = getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE).getString(LAUNCH_THEME_KEY, null)
+    window.decorView.setBackgroundColor(launchWindowColor(launchTheme))
 
     super.onCreate(savedInstanceState)
     lastConfig = Configuration(resources.configuration)
 
     // Disable the Android splash screen fade-out animation to avoid
-    // a flicker before Flutter draws its first frame.
+    // a flicker before Flutter draws its first frame. The splash theme is
+    // persisted by the system, so later cold starts open in the same palette.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      splashScreen.setSplashScreenTheme(splashThemeFor(launchTheme))
       splashScreen.setOnExitAnimationListener { splashScreenView -> splashScreenView.remove() }
     }
 
@@ -854,6 +866,7 @@ class MainActivity : FlutterActivity() {
         "getDeviceName" -> result.success(getDeviceName())
         "getPerformanceSignals" -> result.success(getPerformanceSignals())
         "getVideoDecodeCapabilities" -> result.success(MediaCodecQuery.hardwareVideoDecodeSupport())
+        "getSiloPlaybackCapabilities" -> result.success(SiloVideoCapabilities.probe(this))
         "getBackgroundWorkSignals" -> result.success(
           BackgroundWorkClassifier.toMap(BackgroundWorkDiagnostics.read(this))
         )
@@ -947,29 +960,17 @@ class MainActivity : FlutterActivity() {
     externalPlayerChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
     userCertificateChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
 
-    // Splash screen theme: persist user's chosen theme for next launch (API 31+)
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "getRenderer" -> result.success(selectedFlutterRenderer.diagnosticName)
         "setSplashTheme" -> {
           val mode = call.argument<String>("mode")
-
-          // Persist for next cold start & update window background now
-          getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE)
-            .edit().putString("splash_theme", mode).apply()
-          ThemeHelper.themeColor(mode)?.let { window.decorView.setBackgroundColor(it) }
-
+          getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE).edit().putString(LAUNCH_THEME_KEY, mode).apply()
+          window.decorView.setBackgroundColor(launchWindowColor(mode))
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val themeId = when (mode) {
-              "dark" -> R.style.SplashTheme_Dark
-              "oled" -> R.style.SplashTheme_Oled
-              "light" -> R.style.SplashTheme_Light
-              "system" -> android.content.res.Resources.ID_NULL
-              else -> android.content.res.Resources.ID_NULL
-            }
-            splashScreen.setSplashScreenTheme(themeId)
+            splashScreen.setSplashScreenTheme(splashThemeFor(mode))
           }
-          result.success(true)
+          result.success(null)
         }
         else -> result.notImplemented()
       }

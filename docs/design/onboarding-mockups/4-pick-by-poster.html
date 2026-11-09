@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pick by Poster</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* Connect + sign in on one screen: the right column wakes up once the server answers */
+  .two { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; }
+  .col { padding: 190px 110px 0 150px; transition: opacity 600ms var(--ease), filter 600ms var(--ease); }
+  .col + .col { padding-left: 110px; border-left: 1.5px solid var(--outline); }
+  .col .wake { transition: opacity 600ms var(--ease), transform 600ms var(--ease); }
+  .col.sleep .wake { opacity: 0; transform: translateY(14px); visibility: hidden; }
+  .col .pending { margin-top: 54px; font-size: 24px; color: var(--muted); display: none; align-items: center; gap: 14px; }
+  .col.sleep .pending { display: flex; }
+  .col .h1 { font-size: 56px; }
+  .col .lede { margin-top: 16px; font-size: 26px; }
+  .codebox { display: flex; gap: 40px; align-items: center; margin-top: 54px; }
+  .codebox .code { font-size: 76px; font-weight: 700; letter-spacing: 6px; font-variant-numeric: tabular-nums; }
+  .profiles { display: flex; gap: 56px; margin-top: 70px; justify-content: center; }
+  .prof { display: flex; flex-direction: column; align-items: center; gap: 18px; font-size: 28px; font-weight: 500; color: var(--muted); }
+  .prof .av { width: 180px; height: 180px; border-radius: 50%; display: grid; place-items: center; font-size: 76px; font-weight: 500; color: var(--text); outline: 5px solid transparent; outline-offset: 7px; transition: all var(--normal) var(--ease); }
+  .prof.f { color: var(--text); } .prof.f .av { outline-color: #fff; transform: scale(1.06); }
+
+  /* Poster wall */
+  .wallhead { position: absolute; left: 150px; top: 84px; width: 1220px; }
+  .wallhead .h1 { font-size: 54px; }
+  .wallhead .lede { font-size: 24px; margin-top: 12px; }
+  .wallclip { position: absolute; left: 130px; top: 270px; width: 1290px; bottom: 0; overflow: hidden; padding: 20px; }
+  .wall { display: grid; grid-template-columns: repeat(6, 186px); gap: 22px 22px; transition: transform 520ms var(--ease); }
+  .wall .poster { width: 186px; height: 279px; }
+  .wall .poster .tick { transform: scale(0); transition: transform var(--normal) var(--ease); }
+  .wall .poster.on .tick { transform: scale(1); }
+  .wall .poster.on img { filter: brightness(0.62); }
+  .wallclip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 120px; background: linear-gradient(0deg, var(--bg), rgba(14,15,18,0)); pointer-events: none; }
+
+  .take { position: absolute; top: 0; right: 0; bottom: 0; width: 470px; background: var(--surface); padding: 76px 52px 44px; display: flex; flex-direction: column; }
+  .take .h2 { font-size: 34px; }
+  .take .small { margin-top: 10px; line-height: 1.4; }
+  .grp { margin-top: 30px; }
+  .grp .label { margin-left: 0; }
+  .grp .chips { display: flex; flex-wrap: wrap; gap: 10px; min-height: 52px; }
+  .tchip { height: 50px; padding: 0 20px; border-radius: 25px; display: inline-flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 500; background: var(--surface-2); border: 1.5px solid var(--outline); animation: pop 520ms var(--ease) both; }
+  .tchip b { font-size: 16px; min-width: 26px; height: 26px; border-radius: 13px; background: rgba(237,237,237,0.16); display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+  .tchip.ghost { color: var(--muted); border-style: dashed; animation: none; }
+  .take .foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+  .take .foot .btn { justify-content: center; }
+  .take .count { font-size: 22px; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+
+  /* Review */
+  .review { position: absolute; inset: 0; padding: 110px 150px; }
+  .review .lede { margin-top: 16px; }
+  .rgroups { margin-top: 56px; display: flex; flex-direction: column; gap: 6px; width: 1500px; }
+  .rg { background: var(--surface); padding: 30px 36px; border-radius: 6px; display: grid; grid-template-columns: 300px 1fr; align-items: center; gap: 30px; }
+  .rg:first-child { border-radius: 22px 22px 6px 6px; } .rg:last-child { border-radius: 6px 6px 22px 22px; }
+  .rg .k { font-size: 28px; font-weight: 500; } .rg .k .small { display: block; font-size: 19px; margin-top: 6px; font-weight: 400; }
+  .rg .chips { display: flex; flex-wrap: wrap; gap: 12px; }
+  .rg .chip { height: 58px; font-size: 23px; }
+  .rg .chip.add { color: var(--muted); background: transparent; border-style: dashed; }
+  .rg .chip .x { display: none; font-size: 20px; }
+  .rg .chip.f .x { display: flex; }
+  .review .actions { display: flex; gap: 18px; margin-top: 46px; }
+  .chip.leave { animation: leave 380ms var(--ease) forwards; }
+  @keyframes leave { to { opacity: 0; transform: scale(0.8); } }
+</style></head>
+<body><div class="screen">
+  <section class="scene on" id="s1"><div class="two">
+    <div class="col">
+      <h1 class="h1">Connect to Silo</h1>
+      <p class="lede">The address you open Silo with in a browser.</p>
+      <div style="margin-top:54px"><div class="label">Server address</div>
+        <div class="field" id="addr"><span class="lead"><svg class="i"><use href="#i-server"/></svg></span><span class="val"></span><span class="ph">silo.example.com</span></div>
+        <div class="status-line" id="addr-st" style="margin-top:20px"></div></div>
+      <div style="margin-top:36px"><div class="btn" id="b1">Connect</div></div>
+    </div>
+    <div class="col sleep" id="col2">
+      <h2 class="h1">Then sign in</h2>
+      <p class="lede">On your phone or computer, go to <b style="color:var(--text)">silo.ashgrove.net/link</b> and enter this code.</p>
+      <div class="pending"><svg class="i"><use href="#i-lock"/></svg>Your sign-in code appears once the server answers.</div>
+      <div class="wake"><div class="codebox"><div class="qrslot"></div><div><div class="code">K7QM‑24RX</div><div class="small" style="margin-top:12px">Or scan the code</div></div></div>
+      <div class="status-line" id="code-st" style="margin-top:44px"></div>
+      <div style="margin-top:30px"><div class="btn ghost" id="b2"><svg class="i"><use href="#i-key"/></svg>Use a password instead</div></div></div>
+    </div>
+  </div></section>
+
+  <section class="scene" id="s2"><div style="position:absolute;inset:0;padding-top:250px;text-align:center">
+    <h2 class="h1">Who's watching?</h2>
+    <div class="profiles" id="profiles"></div>
+  </div></section>
+
+  <section class="scene" id="s3">
+    <div class="wallhead">
+      <h2 class="h1">Pick a few things you'd watch tonight</h2>
+      <p class="lede">All from your library. Your picks shape the sidebar and the rows on your Library; nothing leaves your server.</p>
+    </div>
+    <div class="wallclip"><div class="wall" id="wall"></div></div>
+    <aside class="take">
+      <h3 class="h2">Your Library will lead with</h3>
+      <p class="small">Updates with each pick. You can fix anything on the next screen.</p>
+      <div class="grp"><div class="label">Sidebar</div><div class="chips" id="t-libs"><span class="tchip ghost">Pick a title</span></div></div>
+      <div class="grp"><div class="label">Networks</div><div class="chips" id="t-nets"><span class="tchip ghost">Pick a title</span></div></div>
+      <div class="grp"><div class="label">Genres</div><div class="chips" id="t-gens"><span class="tchip ghost">Pick a title</span></div></div>
+      <div class="foot"><div class="count" id="count">Pick at least 3</div><div class="btn" id="b3" disabled>Build my Library</div><div class="btn ghost" id="skip3">Skip, use the defaults</div></div>
+    </aside>
+  </section>
+
+  <section class="scene" id="s4"><div class="review">
+    <h2 class="h1">Here's what we took from your picks</h2>
+    <p class="lede">Remove anything that doesn't fit, or add more. It all lives in Settings later.</p>
+    <div class="rgroups">
+      <div class="rg"><div class="k">Sidebar<span class="small">Pinned libraries</span></div><div class="chips" id="r-libs"></div></div>
+      <div class="rg"><div class="k">Networks<span class="small">In this order</span></div><div class="chips" id="r-nets"></div></div>
+      <div class="rg"><div class="k">Genres<span class="small">In this order</span></div><div class="chips" id="r-gens"></div></div>
+    </div>
+    <div class="actions"><div class="btn" id="b4">Looks right</div><div class="btn ghost" id="back4"><svg class="i"><use href="#i-back"/></svg>Pick again</div></div>
+  </div></section>
+
+  <section class="scene" id="s5"></section>
+</div>
+<script src="shared.js"></script>
+<script>
+// Sample library items with what TMDB matching would say about them.
+const WALL = [
+  ['s-avatar', 'movies', 'Disney+', ['Science Fiction', 'Action']], ['s-hxh', 'anime', 'Crunchyroll', ['Animation', 'Action']],
+  ['s-talladega', 'movies', null, ['Comedy']], ['s-paradise', 'shows', 'Hulu', ['Drama', 'Thriller']],
+  ['s-obsession', 'movies', 'Netflix', ['Thriller']], ['s-ponyo', 'kids', null, ['Animation', 'Family']],
+  ['s-dastaar', 'shows', 'Netflix', ['Drama', 'War']], ['s-mononoke', 'anime', null, ['Animation', 'Fantasy']],
+  ['s-hitlist', 'movies', null, ['Crime', 'Thriller']], ['s-supergirl', 'shows', 'HBO', ['Action', 'Science Fiction']],
+  ['s-michael', 'movies', null, ['Drama', 'Music']], ['s-whittaker', 'sports', null, []],
+  ['s-hauntedween', 'movies', 'Peacock', ['Horror']], ['s-mrmrs', 'movies', null, ['Romance', 'Comedy']],
+  ['s-bombay', 'world', 'Prime Video', ['Drama']], ['s-tunnel', 'anime', null, ['Animation', 'Romance']],
+  ['s-fnaf', 'movies', 'Peacock', ['Horror']], ['s-hei', 'kids', null, ['Animation', 'Fantasy']],
+  ['s-bullet', 'movies', null, ['Action']], ['s-mothers', 'world', 'Netflix', ['Drama']],
+  ['s-hayride', 'movies', null, ['Horror']], ['s-duck', 'kids', null, ['Family', 'Comedy']],
+  ['s-cemetery', 'movies', null, ['Horror']], ['s-hawa', 'world', null, ['Drama']],
+];
+const picks = new Set();
+function tally() {
+  const libs = {}, nets = {}, gens = {};
+  for (const i of picks) { const [, l, n, g] = WALL[i]; libs[l] = (libs[l] || 0) + 1; if (n) nets[n] = (nets[n] || 0) + 1; g.forEach((x) => (gens[x] = (gens[x] || 0) + 1)); }
+  const sort = (o) => Object.entries(o).sort((a, b) => b[1] - a[1]);
+  return { libs: sort(libs), nets: sort(nets), gens: sort(gens) };
+}
+const libName = (id) => LIBS.find((l) => l.id === id).name;
+let shown = { libs: new Set(), nets: new Set(), gens: new Set() };
+function renderTake() {
+  const t = tally();
+  const put = (id, list, key, name = (x) => x) => {
+    const el = $('#' + id);
+    if (!list.length) return;
+    el.innerHTML = list.slice(0, 6).map(([k, n]) => `<span class="tchip" style="${shown[key].has(k) ? 'animation:none' : ''}">${name(k)}<b>${n}</b></span>`).join('');
+    list.forEach(([k]) => shown[key].add(k));
+  };
+  put('t-libs', t.libs, 'libs', libName); put('t-nets', t.nets, 'nets'); put('t-gens', t.gens, 'gens');
+  const n = picks.size;
+  $('#count').textContent = n < 3 ? `Pick at least ${3 - n} more` : `${n} picked`;
+  if (n >= 3) $('#b3').removeAttribute('disabled');
+}
+window.BUILD = () => {
+  $('.qrslot').innerHTML = qr(210);
+  $('#profiles').innerHTML = PROFILES.map((p) => `<div class="prof" id="pr-${p.id}"><div class="av" style="background:${p.tint}">${p.name[0]}</div>${p.name}</div>`).join('');
+  $('#wall').innerHTML = WALL.map(([p], i) => `<div class="poster" data-i="${i}"><img src="${A(p)}"><span class="tick">${ic('check')}</span></div>`).join('');
+};
+const P = (i) => $(`#wall [data-i="${i}"]`);
+const pick = (el) => { const i = +el.dataset.i; picks.has(i) ? picks.delete(i) : picks.add(i); el.classList.toggle('on'); renderTake(); };
+function scrollWall(row) { $('#wall').style.transform = `translateY(${-Math.max(0, row - 1) * 301}px)`; }
+
+window.SCRIPT = async () => {
+  await wait(800);
+  focus('#addr'); await wait(300);
+  await press('#addr', null, 200);
+  await typeInto('#addr', SERVER.host, 65);
+  await move('down', '#b1', 380);
+  await press('#b1', () => { $('#addr-st').innerHTML = '<span class="spin"></span><span>Checking the server…</span>'; }, 1100);
+  $('#addr-st').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Found Ashgrove</span>`;
+  $('#col2').classList.remove('sleep');
+  $('#code-st').innerHTML = '<span class="spin"></span><span>Waiting for approval…</span>';
+  focus('#b2');
+  await wait(2600);
+  $('#code-st').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Signed in as sam</span>`;
+  await wait(900);
+
+  show('s2'); focus('#pr-sam'); await wait(1000);
+  await press('#pr-sam', null, 300);
+
+  show('s3'); focus(P(0)); await wait(1400);
+  await move('right', P(1), 380); await press(null, pick, 600);
+  await move('right', P(2), 300); await move('right', P(3), 380); await press(null, pick, 600);
+  await move('right', P(4), 380); await press(null, pick, 650);
+  await move('down', P(10), 380); await press(null, pick, 600);
+  await move('left', P(9), 300); await move('left', P(8), 300); await move('left', P(7), 300);
+  await move('left', P(6), 380); await press(null, pick, 600);
+  await move('down', P(12), 0); scrollWall(2); await wait(450);
+  await move('right', P(13), 300); await move('right', P(14), 380); await press(null, pick, 600);
+  await move('down', P(20), 0); scrollWall(3); await wait(450);
+  await move('left', P(19), 380); await press(null, pick, 800);
+  await move('right', '#b3', 450);
+  await press('#b3', null, 200);
+
+  const t = tally();
+  $('#r-libs').innerHTML = t.libs.map(([k]) => `<span class="chip on">${libName(k)}<span class="x">${ic('close')}</span></span>`).join('') + `<span class="chip add">${ic('add')}Add</span>`;
+  $('#r-nets').innerHTML = t.nets.map(([k]) => `<span class="chip on" data-n="${k}">${k}<span class="x">${ic('close')}</span></span>`).join('') + `<span class="chip add">${ic('add')}Add</span>`;
+  $('#r-gens').innerHTML = t.gens.slice(0, 8).map(([k]) => `<span class="chip on" data-g="${k}">${k}<span class="x">${ic('close')}</span></span>`).join('') + `<span class="chip add" id="addg">${ic('add')}Add</span>`;
+  show('s4'); focus('#b4'); await wait(2200);
+  const war = $('[data-g="War"]'), music = $('[data-g="Music"]');
+  await move('up', $('#r-gens .chip'), 380);
+  for (const c of $$('#r-gens .chip').slice(1)) { if (c === war) break; await move('right', c, 240); }
+  await move('right', war, 420);
+  await press(null, (el) => { el.classList.add('leave'); setTimeout(() => el.remove(), 380); }, 700);
+  focus(music); await wait(400);
+  await move('down', '#b4', 500);
+  await press('#b4', null, 300);
+
+  $('#s5').innerHTML = homeHTML({ libs: t.libs.map(([k]) => k), networks: t.nets.map(([k]) => k),
+    genres: $$('#r-gens .chip.on').map((c) => c.dataset.g) });
+  show('s5'); focus($('#s5 .wcard'));
+  await wait(3200);
+};
+</script>
+</body></html>

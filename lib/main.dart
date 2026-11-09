@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart' as material show ThemeMode;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -48,7 +47,6 @@ import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
 import 'services/playback_coordinator.dart';
 import 'providers/multi_server_provider.dart';
-import 'providers/theme_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
@@ -59,6 +57,7 @@ import 'services/library_events/library_event_service.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
 import 'services/credential_vault.dart';
+import 'services/tmdb/tmdb_client.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
@@ -171,9 +170,7 @@ void _bootstrapApp() {
       ),
       discard: (dependencies) => dependencies.appDatabase.close(),
       onCommitted: (dependencies) => _startNonessentialInitialization(dependencies.settings),
-      lightTheme: monoTheme(dark: false),
-      darkTheme: monoTheme(dark: true),
-      resolveTheme: _resolveStartupTheme,
+      theme: appTheme,
       // Android runs the Flutter surface in transparent mode over a window
       // whose background MainActivity already restored, so the loading frame
       // can leave the launch screen on display. Every other platform composites
@@ -181,20 +178,6 @@ void _bootstrapApp() {
       transparentWhileLoading: Platform.isAndroid,
     ),
   );
-}
-
-/// Resolves the theme the app will settle on, for the frames that precede it.
-///
-/// Both singletons are memoised and awaited again by the gate, so this costs
-/// one preference load and one platform-channel round trip, shared. TV
-/// detection has to come first: the `themeMode` default is TV-aware and
-/// [TvDetectionService.isTVSync] answers false until its singleton exists,
-/// which would make a fresh Android TV install resolve the light theme.
-Future<StartupThemeResolution> _resolveStartupTheme() async {
-  final settings = await SettingsService.getInstance();
-  await TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode));
-  final mode = settings.read(SettingsService.themeMode);
-  return (themeMode: ThemeProvider.materialThemeModeFor(mode), darkTheme: ThemeProvider.darkThemeFor(mode));
 }
 
 /// Wraps [step] so a failure names the gate phase it came from.
@@ -604,9 +587,6 @@ Future<void> showRepairOutcomeDialog(
   );
 }
 
-/// Theme the startup frames adopt once the persisted preference is readable.
-typedef StartupThemeResolution = ({material.ThemeMode themeMode, ThemeData darkTheme});
-
 /// Mounts a Flutter-owned startup frame before invoking the asynchronous
 /// initialization gate. The generic seam keeps frame ordering, failure, and
 /// retry behavior testable without constructing platform services.
@@ -620,10 +600,7 @@ class StartupBootstrap<T> extends StatefulWidget {
     this.onCommitted,
     this.describeFailure = describeStartupFailure,
     this.repair = repairStartupStorage,
-    this.lightTheme,
-    this.darkTheme,
-    this.themeMode = material.ThemeMode.system,
-    this.resolveTheme,
+    this.theme,
     this.transparentWhileLoading = false,
   });
 
@@ -647,15 +624,7 @@ class StartupBootstrap<T> extends StatefulWidget {
   /// `ScaffoldMessenger` from it.
   final Future<StartupRepairResult> Function(BuildContext context, StartupFailureRecord record, Object error)? repair;
 
-  final ThemeData? lightTheme;
-  final ThemeData? darkTheme;
-  final material.ThemeMode themeMode;
-
-  /// Reads the persisted theme so the startup frames match the one the app
-  /// settles on. Until it answers, [themeMode] resolves from platform
-  /// brightness, which disagrees with the app's own default on every device
-  /// that reports light while running the dark or OLED theme (#1833).
-  final Future<StartupThemeResolution> Function()? resolveTheme;
+  final ThemeData? theme;
 
   /// Whether the platform window behind Flutter already paints the launch
   /// background, so the loading frame must not cover it.
@@ -686,35 +655,13 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
   bool _restartRequired = false;
   int _generation = 0;
 
-  /// Persisted theme for the startup frames, null until [StartupBootstrap.resolveTheme] answers.
-  StartupThemeResolution? _resolvedTheme;
-
   @override
   void initState() {
     super.initState();
-    unawaited(_resolveTheme());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.firstFrame);
       if (mounted) unawaited(_initialize());
     });
-  }
-
-  /// Adopts the persisted theme for the startup frames.
-  ///
-  /// Deliberately best-effort and unbounded: on Android the loading frame is
-  /// transparent, so a slow answer costs spinner contrast rather than the
-  /// launch, and a store this cannot read is the gate's failure to report —
-  /// reporting it twice would race the diagnostic record.
-  Future<void> _resolveTheme() async {
-    final resolve = widget.resolveTheme;
-    if (resolve == null) return;
-    try {
-      final resolved = await resolve();
-      if (!mounted) return;
-      setState(() => _resolvedTheme = resolved);
-    } catch (error, stackTrace) {
-      appLogger.d('Could not resolve the persisted startup theme', error: error, stackTrace: stackTrace);
-    }
   }
 
   Future<void> _initialize() async {
@@ -810,15 +757,12 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
   Widget build(BuildContext context) {
     if (_completed) return widget.buildApp(context, _value as T);
 
-    final resolved = _resolvedTheme;
     return TranslationProvider(
       child: Builder(
         builder: (context) => InputModeTracker(
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: widget.lightTheme,
-            darkTheme: resolved?.darkTheme ?? widget.darkTheme,
-            themeMode: resolved?.themeMode ?? widget.themeMode,
+            theme: widget.theme,
             home: Builder(builder: _buildBootstrapHome),
           ),
         ),
@@ -1160,6 +1104,7 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   return event;
 }
 
+/// The shaders' licenses, and the network and genre pages' display font's.
 void _registerShaderLicenses() {
   LicenseRegistry.addLicense(() async* {
     yield const LicenseEntryWithLineBreaks(
@@ -1210,6 +1155,11 @@ void _registerShaderLicenses() {
       'IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN '
       'CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.',
     );
+  });
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks([
+      'Big Shoulders Display',
+    ], await rootBundle.loadString('assets/big-shoulders-display-OFL.txt'));
   });
 }
 
@@ -1281,6 +1231,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   DateTime _lastRssEviction = DateTime(0);
   int _lastEvictionRss = 0;
 
+  /// The theme preference, watched on Android to keep the launch window in step.
+  ValueNotifier<AppTheme>? _appThemeListenable;
+
   @override
   void initState() {
     super.initState();
@@ -1318,6 +1271,23 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         return AppExitResponse.exit;
       },
     );
+
+    if (Platform.isAndroid) {
+      _appThemeListenable = widget.settings.listenable(SettingsService.appTheme)..addListener(_syncLaunchTheme);
+      unawaited(_syncLaunchTheme());
+    }
+  }
+
+  /// Tells MainActivity which palette the next cold start opens on, so the
+  /// window behind the launch screen and the first Flutter frame match.
+  Future<void> _syncLaunchTheme() async {
+    final theme = _appThemeListenable?.value;
+    if (theme == null) return;
+    try {
+      await const MethodChannel('com.plezy/theme').invokeMethod<void>('setSplashTheme', {'mode': theme.name});
+    } catch (e) {
+      appLogger.d('Could not persist the launch theme', error: e);
+    }
   }
 
   Future<void> _shutdownForExit() => _shutdownFuture ??= _runShutdownForExit().timeout(
@@ -1383,6 +1353,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _removeConnectivitySyncListener();
     _memoryCheckTimer?.cancel();
     _appLifecycleListener.dispose();
+    _appThemeListenable?.removeListener(_syncLaunchTheme);
     if (_shutdownFuture == null) {
       _libraryEventService.dispose();
       _downloadManager.dispose();
@@ -1609,6 +1580,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         Provider<StorageService>.value(value: widget.storage),
         Provider<AppDatabase>.value(value: _appDatabase),
         Provider<ConnectionRegistry>(create: (_) => ConnectionRegistry(_appDatabase)),
+        // App-wide TMDB access (build-time token, no user account).
+        Provider<TmdbClient>(create: (_) => TmdbClient(), dispose: (_, c) => c.dispose()),
         Provider<SiloHouseholdService>(
           create: (context) {
             // Hydrate the disk cache eagerly for profile resolution. Live
@@ -1744,7 +1717,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           ),
           update: (_, syncService, downloadProvider, previous) => previous!,
         ),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
         // Shader presets are app-global — deliberately outside the
         // profile-scoped session in ProfileSessionScreen.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
@@ -1765,64 +1737,61 @@ class _AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return TranslationProvider(
-          child: Builder(
-            builder: (context) {
-              return Listener(
-                onPointerDown: (event) {
-                  if ((event.buttons & kBackMouseButton) != 0) {
-                    unawaited(() async {
-                      final rootNavigator = rootNavigatorKey.currentState;
-                      if (rootNavigator?.canPop() ?? false) {
-                        await rootNavigator?.maybePop();
-                        return;
-                      }
-                      await profileNavigationRegistry.maybePopProfileRoute();
-                    }());
+    return TranslationProvider(
+      child: Builder(
+        builder: (context) {
+          return Listener(
+            onPointerDown: (event) {
+              if ((event.buttons & kBackMouseButton) != 0) {
+                unawaited(() async {
+                  final rootNavigator = rootNavigatorKey.currentState;
+                  if (rootNavigator?.canPop() ?? false) {
+                    await rootNavigator?.maybePop();
+                    return;
                   }
-                },
-                behavior: HitTestBehavior.translucent,
-                child: InputModeTracker(
-                  child: MaterialApp(
-                    title: t.app.title,
-                    debugShowCheckedModeBanner: false,
-                    theme: themeProvider.lightTheme,
-                    darkTheme: themeProvider.darkTheme,
-                    themeMode: themeProvider.materialThemeMode,
-                    navigatorKey: rootNavigatorKey,
-                    navigatorObservers: [BackKeySuppressorObserver()],
-                    home: SetupScreen(databaseRecoveryOutcome: databaseRecoveryOutcome),
-                    // Siri Remote select + gamepad A report as
-                    // LogicalKeyboardKey.{select,gameButtonA} which aren't
-                    // in Flutter's default shortcut set — Material-level
-                    // widgets (menu items, showModalBottomSheet actions)
-                    // ignore them. Map both to ActivateIntent so tapping
-                    // select on tvOS activates the focused widget.
-                    shortcuts: <ShortcutActivator, Intent>{
-                      ...WidgetsApp.defaultShortcuts,
-                      const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
-                      const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
-                      const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
-                      const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
-                      const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
-                    },
-                    builder: (context, child) {
-                      final shell = rootShell(child);
-                      if (!agentControlEnabled) return shell;
-                      return AgentControlScope(
-                        commandContext: () => rootNavigatorKey.currentState?.overlay?.context,
-                        child: shell,
-                      );
-                    },
-                  ),
-                ),
-              );
+                  await profileNavigationRegistry.maybePopProfileRoute();
+                }());
+              }
             },
-          ),
-        );
-      },
+            behavior: HitTestBehavior.translucent,
+            child: InputModeTracker(
+              child: SettingValueBuilder<AppTheme>(
+                pref: SettingsService.appTheme,
+                builder: (context, theme, _) => MaterialApp(
+                  title: t.app.title,
+                  debugShowCheckedModeBanner: false,
+                  theme: appThemeFor(theme),
+                  navigatorKey: rootNavigatorKey,
+                  navigatorObservers: [BackKeySuppressorObserver()],
+                  home: SetupScreen(databaseRecoveryOutcome: databaseRecoveryOutcome),
+                  // Siri Remote select + gamepad A report as
+                  // LogicalKeyboardKey.{select,gameButtonA} which aren't
+                  // in Flutter's default shortcut set — Material-level
+                  // widgets (menu items, showModalBottomSheet actions)
+                  // ignore them. Map both to ActivateIntent so tapping
+                  // select on tvOS activates the focused widget.
+                  shortcuts: <ShortcutActivator, Intent>{
+                    ...WidgetsApp.defaultShortcuts,
+                    const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
+                    const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
+                    const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
+                    const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
+                    const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
+                  },
+                  builder: (context, child) {
+                    final shell = rootShell(child);
+                    if (!agentControlEnabled) return shell;
+                    return AgentControlScope(
+                      commandContext: () => rootNavigatorKey.currentState?.overlay?.context,
+                      child: shell,
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

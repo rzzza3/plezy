@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fly Into Place</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="fx.css">
+<style>
+  /* The real Library tab is underneath from the first frame; setup assembles it piece by piece. */
+  #home .home .rail { transform: translateX(-150px); transition: transform 900ms var(--ease); }
+  #home.rail-in .home .rail { transform: none; }
+  #home .home .rail .avatar { opacity: 0; }
+  #home .home .status, #home .home .greet, #home .home .region { opacity: 0; transition: opacity 700ms var(--ease); }
+  #home .home .region.show { opacity: 1; }
+  #home .home .region .h-section { transition: opacity 500ms; }
+  .glow { position: absolute; width: 1400px; height: 1400px; border-radius: 50%; left: 260px; top: -160px; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(237,237,237,0.07), rgba(237,237,237,0)); transition: transform 1600ms var(--ease), opacity 1000ms; }
+
+  /* One card morphs through connect → checking → code → profile → the sidebar avatar */
+  #mc { position: absolute; z-index: 30; overflow: hidden; background: var(--surface); border: 1.5px solid var(--outline); box-shadow: 0 40px 100px rgba(0,0,0,0.55);
+    transition: left 900ms var(--m), top 900ms var(--m), width 900ms var(--m), height 900ms var(--m), border-radius 900ms var(--m), background 500ms, border-color 500ms; }
+  #mc > div { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 380ms var(--ease), visibility 0s 380ms; }
+  #mc.pill > .p-pill, #mc.input > .p-input, #mc.spin > .p-spin, #mc.code > .p-code, #mc.av > .p-av { opacity: 1; visibility: visible; transition: opacity 420ms 380ms var(--ease), visibility 0s; }
+  #mc.pill { background: var(--text); border-color: var(--text); }
+  #mc.pill.f { outline: 5px solid #fff; outline-offset: 6px; }
+  .p-pill { display: grid; place-items: center; color: var(--bg); font-size: 30px; font-weight: 500; }
+  .p-pill span { display: flex; align-items: center; gap: 14px; } .p-pill .i { font-size: 32px; }
+  .p-input { padding: 60px 70px; } .p-input .h1 { font-size: 54px; }
+  .p-spin { display: grid; place-items: center; } .p-spin .spin { width: 56px; height: 56px; border-width: 5px; }
+  .p-code { padding: 64px 72px; display: flex; gap: 64px; align-items: center; }
+  .p-code .h1 { font-size: 56px; }
+  .p-code .code { font-size: 104px; font-weight: 700; letter-spacing: 6px; white-space: nowrap; margin: 30px 0; font-variant-numeric: tabular-nums; }
+  #mc.av { background: #4a4d57; border-color: transparent; }
+  .p-av { display: grid; place-items: center; font-size: var(--avf, 92px); font-weight: 500; transition: font-size 900ms var(--m) !important; }
+  .side-av { position: absolute; z-index: 29; width: 220px; height: 220px; border-radius: 50%; display: grid; place-items: center; font-size: 92px; font-weight: 500; left: 850px; top: 380px; box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    transition: transform 900ms cubic-bezier(0.34,1.56,0.64,1), left 900ms var(--ease), opacity 500ms, outline-color var(--fast); outline: 6px solid transparent; outline-offset: 8px; opacity: 0; }
+  .side-av.out { opacity: 1; }
+  .side-av.f, #mc.av.f { outline: 6px solid #fff; outline-offset: 8px; }
+  .names { position: absolute; top: 640px; left: 0; right: 0; display: flex; justify-content: center; gap: 0; font-size: 32px; font-weight: 500; color: var(--muted); opacity: 0; transition: opacity 500ms; }
+  .names span { width: 290px; text-align: center; } .names span.on { color: var(--text); }
+  .whohead { position: absolute; top: 210px; left: 0; right: 0; text-align: center; }
+
+  /* Step UI */
+  .ui { position: absolute; z-index: 20; }
+  .ui .h1 { font-size: 58px; }
+  .ui .lede { font-size: 25px; margin-top: 12px; }
+  .lrows { display: flex; flex-direction: column; gap: 4px; margin-top: 44px; width: 900px; }
+  .lrow { display: flex; align-items: center; gap: 26px; height: 100px; padding: 0 30px 0 22px; background: var(--surface); border-radius: 6px; transition: background var(--fast), transform var(--normal) var(--ease); }
+  .lrow:first-child { border-radius: 20px 20px 6px 6px; } .lrow:last-child { border-radius: 6px 6px 20px 20px; }
+  .lrow .nm { font-size: 27px; font-weight: 500; flex: 1; } .lrow .ct { font-size: 20px; color: var(--muted); }
+  .lrow .ico { width: 64px; height: 52px; border-radius: 26px; display: grid; place-items: center; font-size: 28px; background: var(--raise); transition: opacity 300ms; }
+  .lrow.off .ico { opacity: 0.25; }
+  .lrow.f { background: #33363e; outline: 3px solid #fff; outline-offset: 3px; transform: scale(1.015); position: relative; z-index: 2; }
+  .tgrid { display: grid; grid-template-columns: repeat(5, 250px); gap: 20px; margin-top: 34px; }
+  .tgrid .ntile { width: 250px; height: 132px; } .tgrid .ntile .wm { font-size: 29px; }
+  .cgrid { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 40px; width: 1500px; }
+  .flyer .ntile, .flyer .gtile { box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
+  .flyer .item { background: var(--raise); border-radius: 35px; display: grid; place-items: center; font-size: 30px; }
+</style></head>
+<body><div class="screen">
+  <div class="glow" id="glow"></div>
+  <div id="home"></div>
+
+  <div id="mc" class="pill">
+    <div class="p-pill"><span><svg class="i"><use href="#i-server"/></svg>Connect to Silo</span></div>
+    <div class="p-input">
+      <h1 class="h1">Where's your server?</h1>
+      <p class="lede" style="margin-top:14px">The address you open Silo with in a browser.</p>
+      <div style="margin-top:44px"><div class="field" id="addr"><span class="lead"><svg class="i"><use href="#i-server"/></svg></span><span class="val"></span><span class="ph">silo.example.com</span></div></div>
+      <div style="margin-top:34px"><div class="btn" id="b1">Connect</div></div>
+    </div>
+    <div class="p-spin"><span class="spin"></span></div>
+    <div class="p-code">
+      <div style="flex:1"><h2 class="h1">Sign in to Ashgrove</h2>
+        <p class="lede" style="margin-top:14px">On your phone, go to <b style="color:var(--text)">silo.ashgrove.net/link</b> and enter</p>
+        <div class="code" id="code">K7QM‑24RX</div>
+        <div class="status-line" id="st2"><span class="spin"></span><span>Waiting for approval…</span></div></div>
+      <div id="qrhold"></div>
+    </div>
+    <div class="p-av">S</div>
+  </div>
+  <div class="side-av" id="av-jo" style="background:#3d4a52">J</div>
+  <div class="side-av" id="av-kids" style="background:#4d4652">K</div>
+  <h2 class="h1 whohead" id="whohead" style="opacity:0">Who's watching?</h2>
+  <div class="names" id="names"><span class="on">Sam</span><span>Jo</span><span>Kids</span></div>
+
+  <section class="ui" id="u-libs" style="left:300px;top:110px;display:none">
+    <h2 class="h1" id="h-libs">Pin libraries to your sidebar.</h2>
+    <p class="lede">Watch them land on the left. Unpin any you won't open often.</p>
+    <div class="lrows" id="lrows"></div>
+    <div style="margin-top:34px"><div class="btn" id="b-libs">Next</div></div>
+  </section>
+
+  <section class="ui" id="u-nets" style="left:170px;top:80px;display:none">
+    <h2 class="h1" id="h-nets">Pick your networks.</h2>
+    <div class="tgrid" id="tgrid"></div>
+  </section>
+
+  <section class="ui" id="u-gens" style="left:170px;top:80px;display:none">
+    <h2 class="h1" id="h-gens">Now your genres.</h2>
+    <div class="cgrid" id="cgrid"></div>
+  </section>
+  <div class="ui" style="right:110px;top:96px;display:none" id="nextwrap"><div class="btn" id="b-next">Next</div></div>
+</div>
+<script src="shared.js"></script>
+<script src="fx.js"></script>
+<script>
+const nets = [], gens = [];
+const allN = Object.values(NETWORKS).flat();
+const H = (s) => $('#home ' + s);
+const MC = {
+  pill: [740, 490, 440, 100, 50], input: [460, 300, 1000, 470, 34], spin: [890, 470, 140, 140, 70],
+  code: [300, 250, 1320, 560, 34], av: [850, 380, 220, 220, 110],
+};
+function mc(state, geo = MC[state]) {
+  const m = $('#mc'); m.className = state;
+  const [x, y, w, h, r] = geo;
+  Object.assign(m.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', borderRadius: r + 'px' });
+}
+window.BUILD = () => {
+  document.documentElement.style.setProperty('--m', SPRING);
+  $('#home').innerHTML = homeHTML({ libs: [], networks: [], genres: [] });
+  $('#qrhold').innerHTML = qr(280);
+  $('#lrows').innerHTML = LIBS.map((l) => `<div class="lrow" id="lr-${l.id}"><span class="ico">${ic(l.icon)}</span><span class="nm">${l.name}</span><span class="ct">${l.count}</span><div class="switch on"></div></div>`).join('');
+  $('#tgrid').innerHTML = NETWORKS.Streaming.map(([n, c]) => ntile(n, c, DEFAULT_NETWORKS.includes(n))).join('');
+  $('#cgrid').innerHTML = GENRES.map((g) => `<span class="chip${DEFAULT_GENRES.includes(g) ? ' on' : ''}" data-g="${g}"><span class="ck">${ic('check')}</span>${g}</span>`).join('');
+  mc('pill');
+};
+const railItem = (id) => H(`[data-lib="${id}"]`);
+async function landLib(id) {
+  const it = railItem(id); it.style.transition = 'none'; it.style.opacity = 0; it.classList.remove('gone'); void it.offsetWidth; it.style.transition = '';
+  await fly(`#lr-${id} .ico`, it, { html: `<div class="item">${ic(LIBS.find((l) => l.id === id).icon)}</div>`, dur: 760, arc: -60 });
+  it.style.opacity = 1; pulse(it, 1.18);
+}
+async function unpinLib(id) {
+  const it = railItem(id), row = $('#lr-' + id);
+  row.classList.add('off'); row.querySelector('.switch').classList.remove('on');
+  const p = fly(it, `#lr-${id} .ico`, { html: `<div class="item">${ic(LIBS.find((l) => l.id === id).icon)}</div>`, dur: 700, arc: -40 });
+  it.style.opacity = 0; it.classList.add('gone');
+  await p;
+}
+function makeTile(n) { const d = document.createElement('div'); d.innerHTML = ntile(n, allN.find((x) => x[0] === n)[1]); return d.firstChild; }
+function makeG(g) { const d = document.createElement('div'); d.innerHTML = `<div class="gtile" data-gt="${g}"><img src="${A(GENRE_ART[g] || 's-paradise')}"><span>${g}</span></div>`; return d.firstChild; }
+async function addNet(src) {
+  const n = src.dataset.net, t = makeTile(n); t.style.visibility = 'hidden';
+  H('.net-track').append(t); nets.push(n); src.classList.add('on');
+  await fly(src, t, { html: ntile(n, allN.find((x) => x[0] === n)[1]), dur: 820, arc: -140 });
+  t.style.visibility = ''; ripple(t);
+}
+async function dropNet(src) {
+  const n = src.dataset.net, t = H(`.net-track [data-net="${n}"]`);
+  src.classList.remove('on'); nets.splice(nets.indexOf(n), 1);
+  const p = fly(t, src, { html: ntile(n, allN.find((x) => x[0] === n)[1]), dur: 700, arc: -60 });
+  const rest = $$('#home .net-track .ntile').filter((x) => x !== t);
+  flip(rest, () => t.remove());
+  await p;
+}
+async function addGen(src) {
+  const g = src.dataset.g, t = makeG(g); t.style.visibility = 'hidden';
+  H('.gen-track').append(t); gens.push(g); src.classList.add('on');
+  await fly(src, t, { html: `<div class="gtile"><img src="${A(GENRE_ART[g] || 's-paradise')}"><span>${g}</span></div>`, dur: 820, arc: -120 });
+  t.style.visibility = ''; ripple(t);
+}
+async function dropGen(src) {
+  const g = src.dataset.g, t = H(`.gen-track [data-gt="${g}"]`);
+  src.classList.remove('on'); gens.splice(gens.indexOf(g), 1);
+  const p = fly(t, src, { html: `<div class="chip">${g}</div>`, dur: 650, arc: -60 });
+  flip($$('#home .gen-track .gtile').filter((x) => x !== t), () => t.remove());
+  await p;
+}
+
+window.SCRIPT = async () => {
+  await wait(700);
+  focus('#mc'); $('#mc').animate([{ transform: 'scale(0.6)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900, easing: BOUNCE });
+  await wait(1300);
+  await press('#mc', () => { focus(null); mc('input'); }, 1100);
+  focus('#addr'); await press('#addr', null, 150);
+  await typeInto('#addr', SERVER.host, 60);
+  await move('down', '#b1', 380);
+  await press('#b1', () => { focus(null); mc('spin'); }, 1400);
+  mc('code'); $('#glow').style.transform = 'translate(300px, 200px) scale(1.2)';
+  await wait(500);
+  reels('#code', 'K7QM-24RX', { spins: 12, stagger: 110, dur: 1100 });
+  await wait(3600);
+  $('#st2').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Signed in as sam</span>`;
+  shine('#mc');
+  await wait(1200);
+
+  mc('av'); $('#glow').style.transform = 'translate(0, 100px) scale(0.8)';
+  await wait(700);
+  $('#av-jo').classList.add('out'); $('#av-kids').classList.add('out');
+  $('#av-jo').style.transform = 'none'; $('#av-kids').style.transform = 'translateX(290px)';
+  $('#mc').style.left = '560px';
+  await wait(150);
+  $('#whohead').style.transition = 'opacity 600ms'; $('#whohead').style.opacity = 1; $('#names').style.opacity = 1;
+  $('#names').style.transform = 'translateX(0)';
+  await wait(800);
+  focus('#mc'); $('#mc').classList.add('f'); await wait(700);
+  await move('right', '#av-jo', 380);
+  await move('left', '#mc', 380);
+  await press('#mc', null, 100);
+  $('#av-jo').style.transform = 'translateX(0) scale(0.6)'; $('#av-kids').style.transform = 'translateX(0) scale(0.6)';
+  $('#av-jo').style.left = $('#av-kids').style.left = '560px';
+  $('#av-jo').classList.remove('out'); $('#av-kids').classList.remove('out');
+  $('#whohead').style.opacity = 0; $('#names').style.opacity = 0;
+  focus(null);
+  await wait(450);
+
+  $('#home').classList.add('rail-in');
+  const av = rectOf(H('.rail .avatar'));
+  $('#mc').style.setProperty('--avf', '20px');
+  mc('av', [av.x, av.y, av.w, av.h, av.w / 2]);
+  await wait(950);
+  H('.rail .avatar').style.opacity = 1; $('#mc').style.display = 'none';
+  pulse(H('.rail .avatar'), 1.3);
+
+  $('#u-libs').style.display = ''; inWords('#h-libs');
+  $$('.lrow').forEach((r, i) => r.animate([{ transform: 'translateX(120px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 800, delay: 150 + i * 70, easing: OUT, fill: 'backwards' }));
+  await wait(1100);
+  for (const l of LIBS) { landLib(l.id); await wait(230); }
+  await wait(900);
+  focus('#lr-movies'); await wait(500);
+  for (const id of ['shows', 'anime', 'kids']) await move('down', '#lr-' + id, 300);
+  await press(null, () => unpinLib('kids'), 800);
+  await move('down', '#lr-sports', 340);
+  await press(null, () => unpinLib('sports'), 900);
+  await move('down', '#lr-world', 300);
+  await move('down', '#b-libs', 380);
+  await press('#b-libs', null, 100);
+  outWords('#h-libs');
+  $('#u-libs').animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-40px)' }], { duration: 450, easing: IN, fill: 'forwards' });
+  await wait(450); $('#u-libs').style.display = 'none';
+
+  $('#u-nets').style.display = ''; inWords('#h-nets');
+  H('[data-region="networks"]').classList.add('show');
+  $$('#tgrid .ntile').forEach((t, i) => t.animate([{ transform: 'translateY(-60px) scale(0.8)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: i * 50, easing: BOUNCE, fill: 'backwards' }));
+  await wait(1000);
+  const T = (i) => $$('#tgrid .ntile')[i];
+  for (const n of DEFAULT_NETWORKS) { addNet($(`#tgrid [data-net="${n}"]`)); await wait(260); }
+  await wait(1000);
+  $('#nextwrap').style.display = '';
+  focus(T(0)); await wait(500);
+  for (const i of [1, 2]) await move('right', T(i), 280);
+  await move('right', T(3), 340);
+  await press(null, (el) => dropNet(el), 900);
+  await move('down', T(8), 380);
+  await press(null, (el) => addNet(el), 1000);
+  await move('left', T(7), 280); await move('left', T(6), 280); await move('left', T(5), 340);
+  await move('up', T(0), 0); await move('up', T(4), 340);
+  await press(null, (el) => addNet(el), 1100);
+  await move('right', '#b-next', 400);
+  await press('#b-next', null, 100);
+  outWords('#h-nets');
+  $('#u-nets').animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-40px)' }], { duration: 450, easing: IN, fill: 'forwards' });
+  await wait(450); $('#u-nets').style.display = 'none';
+
+  $('#u-gens').style.display = ''; inWords('#h-gens');
+  H('[data-region="genres"]').classList.add('show');
+  $$('#cgrid .chip').forEach((c, i) => c.animate([{ transform: 'scale(0.3)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 650, delay: i * 35, easing: BOUNCE, fill: 'backwards' }));
+  await wait(900);
+  const C = (g) => $(`#cgrid [data-g="${g}"]`);
+  for (const g of DEFAULT_GENRES) { addGen(C(g)); await wait(220); }
+  await wait(1100);
+  focus(C('Action')); await wait(400);
+  for (const g of ['Adventure', 'Animation', 'Comedy']) await move('right', C(g), 230);
+  await move('right', C('Crime'), 320);
+  await press(null, (el) => addGen(el), 950);
+  for (const g of ['Documentary', 'Drama', 'Family', 'Fantasy', 'History']) await move('right', C(g), 200);
+  await move('right', C('Horror'), 320);
+  await press(null, (el) => dropGen(el), 950);
+  await move('up', '#b-next', 400);
+  await press('#b-next', null, 100);
+
+  outWords('#h-gens'); $('#nextwrap').style.display = 'none';
+  $('#u-gens').animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-40px)' }], { duration: 450, easing: IN, fill: 'forwards' });
+  await wait(450); $('#u-gens').style.display = 'none';
+  $('#glow').style.opacity = 0;
+  H('.status').style.opacity = 1;
+  H('.greet').style.opacity = 1; inWords(H('.greet'));
+  H('[data-region="cw"]').classList.add('show');
+  $$('#home [data-region="cw"] .wcard').forEach((c, i) => c.animate([{ transform: 'translateX(380px) rotateY(-30deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 1000, delay: 250 + i * 90, easing: OUT, fill: 'backwards' }));
+  await wait(1500);
+  focus(H('.wcard'));
+  await wait(3000);
+};
+</script>
+</body></html>

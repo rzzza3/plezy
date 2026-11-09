@@ -97,7 +97,7 @@ class Translations$app$zh extends Translations$app$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'TBD';
 }
 
 // Path: auth
@@ -107,7 +107,7 @@ class Translations$auth$zh extends Translations$auth$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get localDataRecoveryRequired => 'Plezy 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。';
+	@override String get localDataRecoveryRequired => 'TBD 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。';
 }
 
 // Path: common
@@ -207,7 +207,7 @@ class Translations$settings$zh extends Translations$settings$en {
 
 	// Translations
 	@override String get title => '设置';
-	@override String get supportDeveloper => '支持 Plezy';
+	@override String get supportDeveloper => '支持 TBD';
 	@override String get supportDeveloperDescription => '通过 Liberapay 捐赠支持开发';
 	@override String get language => '语言';
 	@override String get theme => '主题';
@@ -229,6 +229,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get lightTheme => '浅色';
 	@override String get darkTheme => '深色';
 	@override String get oledTheme => 'OLED';
+	@override String get slateTheme => '石板灰';
 	@override String get libraryDensity => '媒体库密度';
 	@override String get displayScale => '界面缩放';
 	@override String get compact => '紧凑';
@@ -346,7 +347,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get importSettingsDescription => '从文件恢复偏好设置';
 	@override String get importSettingsConfirm => '这将替换您当前的设置。继续吗？';
 	@override String get importSettingsSuccess => '设置已导入';
-	@override String get importSettingsInvalidFile => '此文件不是有效的 Plezy 设置导出';
+	@override String get importSettingsInvalidFile => '此文件不是有效的 TBD 设置导出';
 	@override String get importSettingsNoUser => '导入设置前请先登录';
 	@override String get shortcutsReset => '快捷键已重置为默认值';
 	@override String get about => '关于';
@@ -409,8 +410,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord 动态状态';
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
-	@override String get services => '服务';
-	@override String get servicesDescription => '连接 Trakt、MyAnimeList、Seerr 等';
 	@override String get manageLibrariesDescription => '重新排序和隐藏媒体库';
 	@override String get companionRemoteServer => '远程控制服务器';
 	@override String get companionRemoteServerDescription => '允许同一网络中的移动设备控制此应用';
@@ -466,7 +465,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get forceTvMode => '强制 TV 模式';
 	@override String get forceTvModeDescription => '强制 TV 布局。适用于无法自动检测的设备。需要重启。';
 	@override String get startInFullscreen => '以全屏模式启动';
-	@override String get startInFullscreenDescription => '启动时以全屏模式打开 Plezy';
+	@override String get startInFullscreenDescription => '启动时以全屏模式打开 TBD';
 	@override String get exitFullscreenOnPlayerClose => '关闭播放器时退出全屏';
 	@override String get exitFullscreenOnPlayerCloseDescription => '关闭视频播放器时自动退出全屏模式';
 	@override String get autoHidePerformanceOverlay => '自动隐藏性能叠加层';
@@ -512,7 +511,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get playerScopeGlobal => '所有位置';
 	@override String get playerScopeLibrary => '按媒体库';
 	@override String get playerScopeTitle => '按剧集或电影';
-	@override String get exportDialogTitle => '导出 Plezy 设置';
+	@override String get exportDialogTitle => '导出 TBD 设置';
 }
 
 // Path: search
@@ -1016,10 +1015,8 @@ class Translations$connections$zh extends Translations$connections$en {
 	@override String get sectionTitle => '连接';
 	@override String get addConnection => '添加连接';
 	@override String sessionExpiredOne({required Object name}) => '${name} 的会话已过期';
-	@override String sessionExpiredMany({required Object count}) => '${count} 个服务器的会话已过期';
 	@override String accessDeniedOne({required Object name}) => '${name} 拒绝此账户访问';
 	@override String accessDeniedMany({required Object count}) => '${count} 台服务器拒绝此账户访问';
-	@override String get signInAgain => '重新登录';
 }
 
 // Path: accountPreferences
@@ -1173,9 +1170,9 @@ class Translations$startup$zh extends Translations$startup$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get failedTitle => 'Plezy 无法启动';
+	@override String get failedTitle => 'TBD 无法启动';
 	@override String get failedBody => '启动过程中出现问题。以下详情指出了失败的原因。';
-	@override String get failedBodyRepairable => 'Plezy 的已保存设置文件已损坏，必须先重建才能启动。重试没有用——请选择“修复存储”。';
+	@override String get failedBodyRepairable => 'TBD 的已保存设置文件已损坏，必须先重建才能启动。重试没有用——请选择“修复存储”。';
 	@override String get phaseLabel => '步骤';
 	@override String get showDetails => '显示详情';
 	@override String get hideDetails => '隐藏详情';
@@ -1184,16 +1181,16 @@ class Translations$startup$zh extends Translations$startup$en {
 	@override String get uploadDetails => '上传详情';
 	@override String get repairStorage => '修复存储';
 	@override String get repairTitle => '修复已存储的数据？';
-	@override String get repairBodyCommon => 'Plezy 的设置文件已损坏且无法读取。修复会将所有设置重置为默认值。';
+	@override String get repairBodyCommon => 'TBD 的设置文件已损坏且无法读取。修复会将所有设置重置为默认值。';
 	@override String get repairBodyOneCredential => '有一项已保存的登录信息已损坏且无法读取。修复只会移除这一项，其他设置保持不变。';
 	@override String get repairBodySignInsKept => '你的服务器和个人资料应保持登录状态。';
 	@override String get repairBodySignInsLost => '保护已保存登录信息的密钥无法从此文件中恢复，因此你需要重新登录每个服务器和个人资料。媒体服务器上的内容不受影响。';
-	@override String get repairBodySessionsUncertain => '追踪服务（MAL、AniList、Simkl、Trakt）和 Seerr 是分开存储的，可能保留也可能无法保留。Plezy 会明确告诉你保留了哪些。';
+	@override String get repairBodySessionsUncertain => '追踪服务（MAL、AniList、Simkl、Trakt）和 Seerr 是分开存储的，可能保留也可能无法保留。TBD 会明确告诉你保留了哪些。';
 	@override String get repairConfirm => '修复';
 	@override String get repairSucceeded => '存储已修复';
 	@override String get repairNeedsRestart => '存储已修复 — 需要重启';
-	@override String get restartRequiredBody => '你的数据已修复，但 Plezy 需要重新启动后才能使用。请关闭 Plezy 并重新打开。';
-	@override String get quitPlezy => '退出 Plezy';
+	@override String get restartRequiredBody => '你的数据已修复，但 TBD 需要重新启动后才能使用。请关闭 TBD 并重新打开。';
+	@override String get quitPlezy => '退出 TBD';
 	@override String get repairFailed => '修复失败';
 	@override String get repairKeptSignIns => '你的服务器和个人资料仍然保持登录状态。';
 	@override String get repairLostSignIns => '保护已保存登录信息的密钥无法恢复。你需要重新登录每个服务器和个人资料。';
@@ -1202,7 +1199,7 @@ class Translations$startup$zh extends Translations$startup$en {
 	@override String get backupWarning => '其中包含你的登录凭据。请勿上传或分享。';
 	@override String get deleteBackup => '删除副本';
 	@override String get backupDeleted => '副本已删除。';
-	@override String get previousFailureTitle => 'Plezy 上次启动失败';
+	@override String get previousFailureTitle => 'TBD 上次启动失败';
 }
 
 // Path: licenses
@@ -1813,11 +1810,11 @@ class Translations$trakt$zh extends Translations$trakt$en {
 	@override String get connected => '已连接';
 	@override String connectedAs({required Object username}) => '已以 @${username} 身份连接';
 	@override String get disconnectConfirm => '断开 Trakt 账户？';
-	@override String get disconnectConfirmBody => 'Plezy 将停止向 Trakt 发送事件。你可随时重新连接。';
+	@override String get disconnectConfirmBody => 'TBD 将停止向 Trakt 发送事件。你可随时重新连接。';
 	@override String get scrobble => '实时同步播放状态';
 	@override String get scrobbleDescription => '播放期间将播放、暂停和停止事件发送到 Trakt。';
 	@override String get watchedSync => '同步已观看状态';
-	@override String get watchedSyncDescription => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。';
+	@override String get watchedSyncDescription => '在 TBD 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。';
 }
 
 // Path: seerr
@@ -1834,10 +1831,10 @@ class Translations$seerr$zh extends Translations$seerr$en {
 	@override String get checkServer => '继续';
 	@override String get signInWithLocal => '使用本地账户';
 	@override String get email => '邮箱';
-	@override String get noSignInMethods => '此 Seerr 实例未提供 Plezy 支持的登录方式。';
+	@override String get noSignInMethods => '此 Seerr 实例未提供 TBD 支持的登录方式。';
 	@override String get instance => '实例';
 	@override String get disconnectConfirm => '断开 Seerr 连接？';
-	@override String get disconnectConfirmBody => 'Plezy 将忘记此 Seerr 实例。可随时重新连接。';
+	@override String get disconnectConfirmBody => 'TBD 将忘记此 Seerr 实例。可随时重新连接。';
 	@override String get request => '请求';
 	@override String get request4k => '请求 4K';
 	@override String get seasons => '季';
@@ -1862,7 +1859,7 @@ class Translations$seerr$zh extends Translations$seerr$en {
 	@override String get statusBlocklisted => '已加入屏蔽列表';
 	@override String couldNotReach({required Object url, required Object error}) => '无法连接到 ${url}：${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} 上没有 Seerr 实例（HTTP ${status}）';
-	@override String get behindAuthProxy => '响应来自需要身份验证的反向代理（SSO 或 HTTP 认证），而非 Seerr。Plezy 无法通过它登录：请让 Seerr 的 /api/v1 路径为此应用绕过代理，或使用可直接访问 Seerr 的地址。';
+	@override String get behindAuthProxy => '响应来自需要身份验证的反向代理（SSO 或 HTTP 认证），而非 Seerr。TBD 无法通过它登录：请让 Seerr 的 /api/v1 路径为此应用绕过代理，或使用可直接访问 Seerr 的地址。';
 	@override String get invalidUrl => '输入服务器地址，例如 https://seerr.example.com';
 	@override String get notInitialized => '此 Seerr 实例尚未完成首次运行设置';
 	@override String get noStoredCredentials => '没有已保存的凭据可用于重新登录';
@@ -1890,7 +1887,7 @@ class Translations$services$zh extends Translations$services$en {
 	@override String get scrobble => '自动记录进度';
 	@override String get scrobbleDescription => '观看完一集或一部电影后更新你的列表。';
 	@override String disconnectConfirm({required Object service}) => '断开 ${service} 连接？';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy 将停止更新 ${service}。可随时重新连接。';
+	@override String disconnectConfirmBody({required Object service}) => 'TBD 将停止更新 ${service}。可随时重新连接。';
 	@override String connectFailed({required Object service}) => '无法连接到 ${service}。请重试。';
 	@override late final Translations$services$names$zh names = Translations$services$names$zh.internal(_root);
 	@override late final Translations$services$deviceCode$zh deviceCode = Translations$services$deviceCode$zh.internal(_root);
@@ -2362,14 +2359,14 @@ class Translations$downloads$backgroundWarning$zh extends Translations$downloads
 	@override String get bannerAction => '详情';
 	@override String get sheetTitle => '后台下载已被阻止';
 	@override String get sheetTitleDegraded => '后台下载可能受限';
-	@override String get sheetIntro => 'Android 正在阻止 Plezy 在后台稳定下载。';
-	@override String get sheetIntroDegraded => '你的设备限制了 Plezy 在后台下载的时机。';
-	@override String get reasonBackgroundRestricted => 'Plezy 的后台使用受到限制。请将其电池用量或后台使用设置为“不受限制”。';
-	@override String get reasonStandbyRestricted => 'Android 已将 Plezy 置于受限待机状态。请将其电池用量设为“不受限制”。';
+	@override String get sheetIntro => 'Android 正在阻止 TBD 在后台稳定下载。';
+	@override String get sheetIntroDegraded => '你的设备限制了 TBD 在后台下载的时机。';
+	@override String get reasonBackgroundRestricted => 'TBD 的后台使用受到限制。请将其电池用量或后台使用设置为“不受限制”。';
+	@override String get reasonStandbyRestricted => 'Android 已将 TBD 置于受限待机状态。请将其电池用量设为“不受限制”。';
 	@override String get reasonDownloadChannelBlocked => '下载通知已关闭，因此可能无法查看进度或进行控制。';
 	@override String get reasonNotificationsDisabled => '通知已关闭。在 Android 13 或更高版本中，长时间后台下载需要开启通知。';
 	@override String get reasonDataSaver => '流量节省程序已开启，会阻止使用移动数据进行后台下载。使用 Wi-Fi 时下载应仍可进行。';
-	@override String get reasonOemUnknown => 'Plezy 在后台时，下载曾多次停止。请检查 Plezy 的电池用量或后台使用设置。';
+	@override String get reasonOemUnknown => 'TBD 在后台时，下载曾多次停止。请检查 TBD 的电池用量或后台使用设置。';
 	@override String get openSettings => '打开设置';
 	@override String get stillNotWorking => '设备专属帮助';
 	@override String get stillNotWorkingDescription => '查看适用于你设备的操作步骤；如果问题仍然存在，请通过设置 › 查看日志发送日志。';
@@ -2427,13 +2424,13 @@ class Translations$companionRemote$pairing$zh extends Translations$companionRemo
 	@override String get connecting => '正在连接…';
 	@override String get searchingForDevices => '正在搜索设备…';
 	@override String get noDevicesFound => '未在网络中找到设备';
-	@override String get noDevicesHint => '请在桌面端打开 Plezy，并确保设备连接到同一 Wi-Fi 网络';
+	@override String get noDevicesHint => '请在桌面端打开 TBD，并确保设备连接到同一 Wi-Fi 网络';
 	@override String get availableDevices => '可用设备';
 	@override String get manualConnection => '手动连接';
 	@override String get validationHostRequired => '请输入主机地址';
 	@override String get validationHostFormat => '格式必须为 IP:端口（例如 192.168.1.100:48632）';
 	@override String get connectionTimedOut => '连接超时。请在两台设备上使用同一网络。';
-	@override String get sessionNotFound => '未找到设备。请确认 Plezy 正在主机上运行。';
+	@override String get sessionNotFound => '未找到设备。请确认 TBD 正在主机上运行。';
 	@override String failedToConnect({required Object error}) => '连接失败：${error}';
 }
 
@@ -2511,7 +2508,7 @@ class Translations$services$deviceCode$zh extends Translations$services$deviceCo
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => '在 ${service} 上激活 Plezy';
+	@override String title({required Object service}) => '在 ${service} 上激活 TBD';
 	@override String get instructions => '扫描二维码，或访问下方地址并输入此代码：';
 	@override String openToActivate({required Object service}) => '打开 ${service} 以激活';
 	@override String get copyCode => '复制激活代码';
@@ -2571,8 +2568,8 @@ class Translations$services$libraryFilter$zh extends Translations$services$libra
 extension on TranslationsZh {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
-			'auth.localDataRecoveryRequired' => 'Plezy 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。',
+			'app.title' => 'TBD',
+			'auth.localDataRecoveryRequired' => 'TBD 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。',
 			'common.cancel' => '取消',
 			'common.save' => '保存',
 			'common.close' => '关闭',
@@ -2657,7 +2654,7 @@ extension on TranslationsZh {
 			'update.latestVersion' => '当前已是最新版本',
 			'update.checkFailed' => '无法检查更新',
 			'settings.title' => '设置',
-			'settings.supportDeveloper' => '支持 Plezy',
+			'settings.supportDeveloper' => '支持 TBD',
 			'settings.supportDeveloperDescription' => '通过 Liberapay 捐赠支持开发',
 			'settings.language' => '语言',
 			'settings.theme' => '主题',
@@ -2679,6 +2676,7 @@ extension on TranslationsZh {
 			'settings.lightTheme' => '浅色',
 			'settings.darkTheme' => '深色',
 			'settings.oledTheme' => 'OLED',
+			'settings.slateTheme' => '石板灰',
 			'settings.libraryDensity' => '媒体库密度',
 			'settings.displayScale' => '界面缩放',
 			'settings.compact' => '紧凑',
@@ -2796,7 +2794,7 @@ extension on TranslationsZh {
 			'settings.importSettingsDescription' => '从文件恢复偏好设置',
 			'settings.importSettingsConfirm' => '这将替换您当前的设置。继续吗？',
 			'settings.importSettingsSuccess' => '设置已导入',
-			'settings.importSettingsInvalidFile' => '此文件不是有效的 Plezy 设置导出',
+			'settings.importSettingsInvalidFile' => '此文件不是有效的 TBD 设置导出',
 			'settings.importSettingsNoUser' => '导入设置前请先登录',
 			'settings.shortcutsReset' => '快捷键已重置为默认值',
 			'settings.about' => '关于',
@@ -2859,8 +2857,6 @@ extension on TranslationsZh {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord 动态状态',
 			'settings.discordRichPresenceDescription' => '在 Discord 上显示您正在观看的内容',
-			'settings.services' => '服务',
-			'settings.servicesDescription' => '连接 Trakt、MyAnimeList、Seerr 等',
 			'settings.manageLibrariesDescription' => '重新排序和隐藏媒体库',
 			'settings.companionRemoteServer' => '远程控制服务器',
 			'settings.companionRemoteServerDescription' => '允许同一网络中的移动设备控制此应用',
@@ -2916,7 +2912,7 @@ extension on TranslationsZh {
 			'settings.forceTvMode' => '强制 TV 模式',
 			'settings.forceTvModeDescription' => '强制 TV 布局。适用于无法自动检测的设备。需要重启。',
 			'settings.startInFullscreen' => '以全屏模式启动',
-			'settings.startInFullscreenDescription' => '启动时以全屏模式打开 Plezy',
+			'settings.startInFullscreenDescription' => '启动时以全屏模式打开 TBD',
 			'settings.exitFullscreenOnPlayerClose' => '关闭播放器时退出全屏',
 			'settings.exitFullscreenOnPlayerCloseDescription' => '关闭视频播放器时自动退出全屏模式',
 			'settings.autoHidePerformanceOverlay' => '自动隐藏性能叠加层',
@@ -2962,7 +2958,7 @@ extension on TranslationsZh {
 			'settings.playerScopeGlobal' => '所有位置',
 			'settings.playerScopeLibrary' => '按媒体库',
 			'settings.playerScopeTitle' => '按剧集或电影',
-			'settings.exportDialogTitle' => '导出 Plezy 设置',
+			'settings.exportDialogTitle' => '导出 TBD 设置',
 			'search.hint' => '搜索电影、剧集、音乐…',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -3083,9 +3079,9 @@ extension on TranslationsZh {
 			'fileInfo.previewIndex' => '预览索引',
 			'fileInfo.packetLength' => '数据包长度',
 			'fileInfo.filePresent' => '文件存在',
+			'fileInfo.fileReadable' => '服务器可读',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.fileReadable' => '服务器可读',
 			'fileInfo.streamPath' => '流路径',
 			'fileInfo.optimizedForStreaming' => '已针对流式传输优化',
 			'fileInfo.has64bitOffsets' => '64 位偏移量',
@@ -3371,10 +3367,8 @@ extension on TranslationsZh {
 			'connections.sectionTitle' => '连接',
 			'connections.addConnection' => '添加连接',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的会话已过期',
-			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 个服务器的会话已过期',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} 拒绝此账户访问',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} 台服务器拒绝此账户访问',
-			'connections.signInAgain' => '重新登录',
 			'accountPreferences.sectionTitle' => '账户偏好',
 			'accountPreferences.unavailable' => '无法访问此账户',
 			'accountPreferences.autoSelectAudio' => '按语言选择音频',
@@ -3487,9 +3481,9 @@ extension on TranslationsZh {
 			'logs.clearLogs' => '清除日志',
 			'logs.copyLogs' => '复制日志',
 			'logs.uploadLogs' => '上传日志',
-			'startup.failedTitle' => 'Plezy 无法启动',
+			'startup.failedTitle' => 'TBD 无法启动',
 			'startup.failedBody' => '启动过程中出现问题。以下详情指出了失败的原因。',
-			'startup.failedBodyRepairable' => 'Plezy 的已保存设置文件已损坏，必须先重建才能启动。重试没有用——请选择“修复存储”。',
+			'startup.failedBodyRepairable' => 'TBD 的已保存设置文件已损坏，必须先重建才能启动。重试没有用——请选择“修复存储”。',
 			'startup.phaseLabel' => '步骤',
 			'startup.showDetails' => '显示详情',
 			'startup.hideDetails' => '隐藏详情',
@@ -3498,16 +3492,16 @@ extension on TranslationsZh {
 			'startup.uploadDetails' => '上传详情',
 			'startup.repairStorage' => '修复存储',
 			'startup.repairTitle' => '修复已存储的数据？',
-			'startup.repairBodyCommon' => 'Plezy 的设置文件已损坏且无法读取。修复会将所有设置重置为默认值。',
+			'startup.repairBodyCommon' => 'TBD 的设置文件已损坏且无法读取。修复会将所有设置重置为默认值。',
 			'startup.repairBodyOneCredential' => '有一项已保存的登录信息已损坏且无法读取。修复只会移除这一项，其他设置保持不变。',
 			'startup.repairBodySignInsKept' => '你的服务器和个人资料应保持登录状态。',
 			'startup.repairBodySignInsLost' => '保护已保存登录信息的密钥无法从此文件中恢复，因此你需要重新登录每个服务器和个人资料。媒体服务器上的内容不受影响。',
-			'startup.repairBodySessionsUncertain' => '追踪服务（MAL、AniList、Simkl、Trakt）和 Seerr 是分开存储的，可能保留也可能无法保留。Plezy 会明确告诉你保留了哪些。',
+			'startup.repairBodySessionsUncertain' => '追踪服务（MAL、AniList、Simkl、Trakt）和 Seerr 是分开存储的，可能保留也可能无法保留。TBD 会明确告诉你保留了哪些。',
 			'startup.repairConfirm' => '修复',
 			'startup.repairSucceeded' => '存储已修复',
 			'startup.repairNeedsRestart' => '存储已修复 — 需要重启',
-			'startup.restartRequiredBody' => '你的数据已修复，但 Plezy 需要重新启动后才能使用。请关闭 Plezy 并重新打开。',
-			'startup.quitPlezy' => '退出 Plezy',
+			'startup.restartRequiredBody' => '你的数据已修复，但 TBD 需要重新启动后才能使用。请关闭 TBD 并重新打开。',
+			'startup.quitPlezy' => '退出 TBD',
 			'startup.repairFailed' => '修复失败',
 			'startup.repairKeptSignIns' => '你的服务器和个人资料仍然保持登录状态。',
 			'startup.repairLostSignIns' => '保护已保存登录信息的密钥无法恢复。你需要重新登录每个服务器和个人资料。',
@@ -3516,7 +3510,7 @@ extension on TranslationsZh {
 			'startup.backupWarning' => '其中包含你的登录凭据。请勿上传或分享。',
 			'startup.deleteBackup' => '删除副本',
 			'startup.backupDeleted' => '副本已删除。',
-			'startup.previousFailureTitle' => 'Plezy 上次启动失败',
+			'startup.previousFailureTitle' => 'TBD 上次启动失败',
 			'licenses.relatedPackages' => '相关软件包',
 			'licenses.license' => '许可证',
 			'licenses.licenseNumber' => ({required Object number}) => '许可证 ${number}',
@@ -3597,11 +3591,11 @@ extension on TranslationsZh {
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '${n} 条评论', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} 票',
 			'explore.stats.watching' => ({required Object n}) => '${n} 人正在观看',
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} 人已看完',
 			'explore.stats.onHold' => ({required Object n}) => '${n} 人搁置',
 			'explore.stats.dropped' => ({required Object n}) => '${n} 人弃番',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => '冬季',
 			'explore.season.spring' => '春季',
 			'explore.season.summer' => '夏季',
@@ -3915,14 +3909,14 @@ extension on TranslationsZh {
 			'downloads.backgroundWarning.bannerAction' => '详情',
 			'downloads.backgroundWarning.sheetTitle' => '后台下载已被阻止',
 			'downloads.backgroundWarning.sheetTitleDegraded' => '后台下载可能受限',
-			'downloads.backgroundWarning.sheetIntro' => 'Android 正在阻止 Plezy 在后台稳定下载。',
-			'downloads.backgroundWarning.sheetIntroDegraded' => '你的设备限制了 Plezy 在后台下载的时机。',
-			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy 的后台使用受到限制。请将其电池用量或后台使用设置为“不受限制”。',
-			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android 已将 Plezy 置于受限待机状态。请将其电池用量设为“不受限制”。',
+			'downloads.backgroundWarning.sheetIntro' => 'Android 正在阻止 TBD 在后台稳定下载。',
+			'downloads.backgroundWarning.sheetIntroDegraded' => '你的设备限制了 TBD 在后台下载的时机。',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'TBD 的后台使用受到限制。请将其电池用量或后台使用设置为“不受限制”。',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android 已将 TBD 置于受限待机状态。请将其电池用量设为“不受限制”。',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => '下载通知已关闭，因此可能无法查看进度或进行控制。',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => '通知已关闭。在 Android 13 或更高版本中，长时间后台下载需要开启通知。',
 			'downloads.backgroundWarning.reasonDataSaver' => '流量节省程序已开启，会阻止使用移动数据进行后台下载。使用 Wi-Fi 时下载应仍可进行。',
-			'downloads.backgroundWarning.reasonOemUnknown' => 'Plezy 在后台时，下载曾多次停止。请检查 Plezy 的电池用量或后台使用设置。',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'TBD 在后台时，下载曾多次停止。请检查 TBD 的电池用量或后台使用设置。',
 			'downloads.backgroundWarning.openSettings' => '打开设置',
 			'downloads.backgroundWarning.stillNotWorking' => '设备专属帮助',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => '查看适用于你设备的操作步骤；如果问题仍然存在，请通过设置 › 查看日志发送日志。',
@@ -3989,13 +3983,13 @@ extension on TranslationsZh {
 			'companionRemote.pairing.connecting' => '正在连接…',
 			'companionRemote.pairing.searchingForDevices' => '正在搜索设备…',
 			'companionRemote.pairing.noDevicesFound' => '未在网络中找到设备',
-			'companionRemote.pairing.noDevicesHint' => '请在桌面端打开 Plezy，并确保设备连接到同一 Wi-Fi 网络',
+			'companionRemote.pairing.noDevicesHint' => '请在桌面端打开 TBD，并确保设备连接到同一 Wi-Fi 网络',
 			'companionRemote.pairing.availableDevices' => '可用设备',
 			'companionRemote.pairing.manualConnection' => '手动连接',
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
 			'companionRemote.pairing.validationHostFormat' => '格式必须为 IP:端口（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '连接超时。请在两台设备上使用同一网络。',
-			'companionRemote.pairing.sessionNotFound' => '未找到设备。请确认 Plezy 正在主机上运行。',
+			'companionRemote.pairing.sessionNotFound' => '未找到设备。请确认 TBD 正在主机上运行。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
 			'companionRemote.remote.disconnectConfirm' => '确定要断开遥控会话吗？',
 			'companionRemote.remote.reconnecting' => '正在重新连接…',
@@ -4111,11 +4105,11 @@ extension on TranslationsZh {
 			'externalPlayer.customPlayers' => '自定义播放器',
 			'externalPlayer.systemDefault' => '系统默认',
 			'externalPlayer.addCustomPlayer' => '添加自定义播放器',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerName' => '播放器名称',
 			'externalPlayer.playerNameHint' => '我的播放器',
 			'externalPlayer.playerCommand' => '命令',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerPackage' => '包名',
 			'externalPlayer.playerUrlScheme' => 'URL 方案',
 			'externalPlayer.off' => '关闭',
@@ -4156,11 +4150,11 @@ extension on TranslationsZh {
 			'trakt.connected' => '已连接',
 			'trakt.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
 			'trakt.disconnectConfirm' => '断开 Trakt 账户？',
-			'trakt.disconnectConfirmBody' => 'Plezy 将停止向 Trakt 发送事件。你可随时重新连接。',
+			'trakt.disconnectConfirmBody' => 'TBD 将停止向 Trakt 发送事件。你可随时重新连接。',
 			'trakt.scrobble' => '实时同步播放状态',
 			'trakt.scrobbleDescription' => '播放期间将播放、暂停和停止事件发送到 Trakt。',
 			'trakt.watchedSync' => '同步已观看状态',
-			'trakt.watchedSyncDescription' => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。',
+			'trakt.watchedSyncDescription' => '在 TBD 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => '连接 Seerr',
 			'seerr.serverUrl' => '服务器 URL',
@@ -4168,10 +4162,10 @@ extension on TranslationsZh {
 			'seerr.checkServer' => '继续',
 			'seerr.signInWithLocal' => '使用本地账户',
 			'seerr.email' => '邮箱',
-			'seerr.noSignInMethods' => '此 Seerr 实例未提供 Plezy 支持的登录方式。',
+			'seerr.noSignInMethods' => '此 Seerr 实例未提供 TBD 支持的登录方式。',
 			'seerr.instance' => '实例',
 			'seerr.disconnectConfirm' => '断开 Seerr 连接？',
-			'seerr.disconnectConfirmBody' => 'Plezy 将忘记此 Seerr 实例。可随时重新连接。',
+			'seerr.disconnectConfirmBody' => 'TBD 将忘记此 Seerr 实例。可随时重新连接。',
 			'seerr.request' => '请求',
 			'seerr.request4k' => '请求 4K',
 			'seerr.seasons' => '季',
@@ -4196,7 +4190,7 @@ extension on TranslationsZh {
 			'seerr.statusBlocklisted' => '已加入屏蔽列表',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '无法连接到 ${url}：${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} 上没有 Seerr 实例（HTTP ${status}）',
-			'seerr.behindAuthProxy' => '响应来自需要身份验证的反向代理（SSO 或 HTTP 认证），而非 Seerr。Plezy 无法通过它登录：请让 Seerr 的 /api/v1 路径为此应用绕过代理，或使用可直接访问 Seerr 的地址。',
+			'seerr.behindAuthProxy' => '响应来自需要身份验证的反向代理（SSO 或 HTTP 认证），而非 Seerr。TBD 无法通过它登录：请让 Seerr 的 /api/v1 路径为此应用绕过代理，或使用可直接访问 Seerr 的地址。',
 			'seerr.invalidUrl' => '输入服务器地址，例如 https://seerr.example.com',
 			'seerr.notInitialized' => '此 Seerr 实例尚未完成首次运行设置',
 			'seerr.noStoredCredentials' => '没有已保存的凭据可用于重新登录',
@@ -4215,14 +4209,14 @@ extension on TranslationsZh {
 			'services.scrobble' => '自动记录进度',
 			'services.scrobbleDescription' => '观看完一集或一部电影后更新你的列表。',
 			'services.disconnectConfirm' => ({required Object service}) => '断开 ${service} 连接？',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy 将停止更新 ${service}。可随时重新连接。',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'TBD 将停止更新 ${service}。可随时重新连接。',
 			'services.connectFailed' => ({required Object service}) => '无法连接到 ${service}。请重试。',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
-			'services.deviceCode.title' => ({required Object service}) => '在 ${service} 上激活 Plezy',
+			'services.deviceCode.title' => ({required Object service}) => '在 ${service} 上激活 TBD',
 			'services.deviceCode.instructions' => '扫描二维码，或访问下方地址并输入此代码：',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '打开 ${service} 以激活',
 			'services.deviceCode.copyCode' => '复制激活代码',

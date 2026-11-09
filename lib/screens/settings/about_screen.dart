@@ -10,7 +10,11 @@ import '../../theme/mono_tokens.dart';
 import 'licenses_screen.dart';
 
 class AboutScreen extends StatelessWidget {
-  const AboutScreen({super.key});
+  /// Rows appended below the licenses group; the settings pane adds updates
+  /// and the donate link here.
+  final List<Widget> extra;
+
+  const AboutScreen({super.key, this.extra = const []});
 
   static final Future<PackageInfo> _packageInfoFuture = PackageInfo.fromPlatform();
 
@@ -67,6 +71,8 @@ class AboutScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+
+                  ...extra,
 
                   const SizedBox(height: 24),
                 ]),

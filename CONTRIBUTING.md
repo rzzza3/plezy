@@ -85,6 +85,17 @@ python3 scripts/maestro/run_maestro_ci.py profile-regressions --disposable-emula
 The target refuses to start without `--disposable-emulator`. Each profile flow writes to its own Jellyfin log and
 diagnostics directory under `build/maestro-profile-regressions/`.
 
+### TMDB
+
+The app-wide `TmdbClient` (`lib/services/tmdb/`) reads TMDB with a build-time token instead of a user account. Pass
+your v4 API Read Access Token from https://www.themoviedb.org/settings/api:
+
+```bash
+flutter run -d DEVICE --dart-define=TMDB_READ_ACCESS_TOKEN=YOUR_TOKEN
+```
+
+Without it the app still runs, `TmdbClient.isConfigured` is false, and TMDB calls throw `TmdbNotConfiguredException`.
+
 ### Agent controls
 
 Opted-in debug and profile builds expose `ext.plezy.agent` over Flutter's authenticated Dart VM service.

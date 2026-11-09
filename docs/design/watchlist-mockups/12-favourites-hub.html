@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>12 · Favourites hub — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .top { position: absolute; left: var(--pad-x); right: 62px; top: 44px; display: flex; align-items: center; z-index: 5; }
+
+  /* Rotating hero of favourites (Disney+ home carousel). */
+  .hero { position: absolute; left: var(--pad-x); right: 62px; top: 136px; height: 430px; border-radius: 24px; overflow: hidden; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; object-position: center 62%; }
+  .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,11,13,0.88) 0%, rgba(10,11,13,0.55) 34%, rgba(10,11,13,0) 62%); }
+  .hero .in { position: absolute; left: 56px; bottom: 50px; z-index: 2; width: 760px; }
+  .hero h1 { font-size: 84px; font-weight: 700; letter-spacing: -1.6px; margin: 0; line-height: 1; }
+  .hero .meta { margin-top: 16px; font-size: 23px; }
+  .hero .actions { margin-top: 28px; }
+  .hero .btn-primary { height: 68px; font-size: 25px; }
+  .hero .btn-circle { width: 68px; height: 68px; font-size: 27px; }
+  .hero.focus { outline: 4px solid #fff; outline-offset: 5px; }
+  .dots { position: absolute; right: 44px; bottom: 40px; z-index: 2; display: flex; gap: 10px; }
+  .dots i { width: 10px; height: 10px; border-radius: 5px; background: rgba(237,237,237,0.45); }
+  .dots i.on { width: 34px; background: #fff; }
+
+  /* Category tiles, each a fan of its own posters (Disney+ brand tiles). */
+  .cats { position: absolute; left: var(--pad-x); right: 62px; top: 610px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  .cat { position: relative; height: 176px; border-radius: 18px; overflow: hidden; background: linear-gradient(160deg, #2a2d34, #17191e); border: 1px solid rgba(255,255,255,0.1); padding: 26px 28px; }
+  .cat .nm { font-size: 28px; font-weight: 700; position: relative; z-index: 2; }
+  .cat .ct { font-size: 20px; color: var(--muted); margin-top: 6px; position: relative; z-index: 2; font-variant-numeric: tabular-nums; }
+  .cat .fan { position: absolute; right: 18px; bottom: -34px; width: 200px; height: 190px; }
+  .cat .fan img { position: absolute; bottom: 0; width: 98px; height: 147px; object-fit: cover; border-radius: 8px; box-shadow: 0 10px 22px rgba(0,0,0,0.5); }
+  .cat .fan img:nth-child(1) { right: 96px; transform: rotate(-9deg); }
+  .cat .fan img:nth-child(2) { right: 48px; transform: rotate(-2deg); bottom: 10px; z-index: 1; }
+  .cat .fan img:nth-child(3) { right: 0; transform: rotate(7deg); z-index: 2; }
+  .cat .fan.wide img { width: 150px; height: 84px; }
+  .cat .fan.wide img:nth-child(1) { right: 54px; bottom: 54px; }
+  .cat .fan.wide img:nth-child(2) { right: 26px; bottom: 30px; }
+  .cat .fan.wide img:nth-child(3) { right: 0; bottom: 6px; }
+
+  .row-wrap { position: absolute; left: var(--pad-x); right: 0; top: 836px; }
+  .row-wrap .h-section { margin-bottom: 22px; font-size: 30px; }
+  .row { display: flex; gap: 16px; }
+  .poster .art { width: 152px; height: 228px; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+  <div class="top">
+    <div class="tabs">
+      <span class="tab"><i data-i="bookmark"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab on"><i data-i="heartf"></i>Favourites <span class="n">11</span></span>
+    </div>
+  </div>
+
+  <section class="hero focus">
+    <img src="assets/b-ponyo-hill.jpg" alt="">
+    <div class="in">
+      <h1>Ponyo</h1>
+      <div class="meta muted">Movie · 2008 · Watched twice · Favourite since March</div>
+      <div class="actions">
+        <span class="btn-primary"><i data-i="play"></i>Watch again</span>
+        <span class="btn-circle solid"><i data-i="heartf"></i></span>
+        <span class="btn-circle"><i data-i="info"></i></span>
+      </div>
+    </div>
+    <div class="dots"><i></i><i class="on"></i><i></i><i></i><i></i></div>
+  </section>
+
+  <div class="cats">
+    <div class="cat"><div class="nm">Movies</div><div class="ct">6 titles</div><div class="fan"><img src="assets/p-degaulle.jpg" alt=""><img src="assets/s-supergirl.jpg" alt=""><img src="assets/s-mononoke.jpg" alt=""></div></div>
+    <div class="cat"><div class="nm">TV Shows</div><div class="ct">5 titles</div><div class="fan wide"><img src="assets/w-mortimer.jpg" alt=""><img src="assets/w-topgear.jpg" alt=""><img src="assets/w-got.jpg" alt=""></div></div>
+    <div class="cat"><div class="nm">Animation</div><div class="ct">4 titles</div><div class="fan"><img src="assets/s-tunnel.jpg" alt=""><img src="assets/s-hei.jpg" alt=""><img src="assets/s-ponyo.jpg" alt=""></div></div>
+    <div class="cat"><div class="nm">Has new episodes</div><div class="ct">2 titles</div><div class="fan wide"><img src="assets/w-traitors.jpg" alt=""><img src="assets/w-crystal.jpg" alt=""></div></div>
+  </div>
+
+  <section class="row-wrap">
+    <h2 class="h-section">Recently favourited</h2>
+    <div class="row">
+      <div class="card poster"><div class="art"><img src="assets/s-ponyo.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/s-mononoke.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/s-tunnel.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/s-supergirl.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/p-degaulle.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/s-hei.jpg" alt=""></div></div>
+    </div>
+  </section>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

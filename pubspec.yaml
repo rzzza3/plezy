@@ -155,6 +155,7 @@ flutter:
     - assets/mdblist_mark.svg
     - assets/go-noto-current-regular.ttf
     - assets/go-noto-kurrent-hangul.ttf
+    - assets/big-shoulders-display-OFL.txt
     - assets/shaders/nvscaler/
     - assets/shaders/artcnn/
     - assets/shaders/anime4k/
@@ -169,3 +170,7 @@ flutter:
     - family: Go Noto Current Hangul
       fonts:
         - asset: assets/go-noto-kurrent-hangul.ttf
+    # The network and genre pages' display face (variable weight).
+    - family: Big Shoulders Display
+      fonts:
+        - asset: assets/big-shoulders-display.ttf

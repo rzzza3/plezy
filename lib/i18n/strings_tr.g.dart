@@ -97,7 +97,7 @@ class _Translations$app$tr extends Translations$app$en {
 	final TranslationsTr _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'TBD';
 }
 
 // Path: auth
@@ -107,7 +107,7 @@ class _Translations$auth$tr extends Translations$auth$en {
 	final TranslationsTr _root; // ignore: unused_field
 
 	// Translations
-	@override String get localDataRecoveryRequired => 'Plezy yerel giriş ve bekleyen oynatma verilerini güvenli bir şekilde kurtaramadı. Lütfen tekrar giriş yapın.';
+	@override String get localDataRecoveryRequired => 'TBD yerel giriş ve bekleyen oynatma verilerini güvenli bir şekilde kurtaramadı. Lütfen tekrar giriş yapın.';
 }
 
 // Path: common
@@ -207,7 +207,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 
 	// Translations
 	@override String get title => 'Ayarlar';
-	@override String get supportDeveloper => 'Plezy\'yi Destekleyin';
+	@override String get supportDeveloper => 'TBD\'yi Destekleyin';
 	@override String get supportDeveloperDescription => 'Geliştirmeyi fonlamak için Liberapay üzerinden bağış yapın';
 	@override String get language => 'Dil';
 	@override String get theme => 'Tema';
@@ -229,6 +229,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get lightTheme => 'Açık';
 	@override String get darkTheme => 'Koyu';
 	@override String get oledTheme => 'OLED';
+	@override String get slateTheme => 'Arduvaz';
 	@override String get libraryDensity => 'Kitaplık Yoğunluğu';
 	@override String get displayScale => 'Ekran ölçeği';
 	@override String get compact => 'Sıkışık';
@@ -346,7 +347,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get importSettingsDescription => 'Tercihleri bir dosyadan geri yükleyin';
 	@override String get importSettingsConfirm => 'Bu işlem mevcut ayarlarınızın üzerine yazacak. Devam edilsin mi?';
 	@override String get importSettingsSuccess => 'Ayarlar içe aktarıldı';
-	@override String get importSettingsInvalidFile => 'Bu dosya geçerli bir Plezy ayar dosyası değil';
+	@override String get importSettingsInvalidFile => 'Bu dosya geçerli bir TBD ayar dosyası değil';
 	@override String get importSettingsNoUser => 'Ayarları içe aktarmadan önce giriş yapın';
 	@override String get shortcutsReset => 'Kısayollar varsayılana sıfırlandı';
 	@override String get about => 'Hakkında';
@@ -409,8 +410,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String maxVolumePercent({required Object percent}) => '%${percent}';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discord\'da ne izlediğinizi gösterin';
-	@override String get services => 'Servisler';
-	@override String get servicesDescription => 'Trakt, MyAnimeList, Seerr ve daha fazlasını bağlayın';
 	@override String get manageLibrariesDescription => 'Kitaplıkları yeniden sıralayın ve gizleyin';
 	@override String get companionRemoteServer => 'Yardımcı Uzaktan Kumanda Sunucusu';
 	@override String get companionRemoteServerDescription => 'Ağınızdaki mobil cihazların bu uygulamayı kontrol etmesine izin verin';
@@ -466,7 +465,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get forceTvMode => 'TV modunu zorla';
 	@override String get forceTvModeDescription => 'TV düzenini zorla. Otomatik algılamayan cihazlar içindir. Yeniden başlatma gerektirir.';
 	@override String get startInFullscreen => 'Tam ekranda başlat';
-	@override String get startInFullscreenDescription => 'Plezy\'yi açılışta tam ekran modunda aç';
+	@override String get startInFullscreenDescription => 'TBD\'yi açılışta tam ekran modunda aç';
 	@override String get exitFullscreenOnPlayerClose => 'Oynatıcı kapandığında tam ekrandan çık';
 	@override String get exitFullscreenOnPlayerCloseDescription => 'Video oynatıcıyı kapatırken otomatik olarak tam ekrandan çık';
 	@override String get autoHidePerformanceOverlay => 'Performans Katmanını Otomatik Gizle';
@@ -512,7 +511,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get playerScopeGlobal => 'Her yerde';
 	@override String get playerScopeLibrary => 'Kitaplık başına';
 	@override String get playerScopeTitle => 'Dizi veya film başına';
-	@override String get exportDialogTitle => 'Plezy ayarlarını dışa aktar';
+	@override String get exportDialogTitle => 'TBD ayarlarını dışa aktar';
 }
 
 // Path: search
@@ -1017,10 +1016,8 @@ class _Translations$connections$tr extends Translations$connections$en {
 	@override String get sectionTitle => 'Bağlantılar';
 	@override String get addConnection => 'Bağlantı ekle';
 	@override String sessionExpiredOne({required Object name}) => '${name} için oturum süresi doldu';
-	@override String sessionExpiredMany({required Object count}) => '${count} sunucu için oturum süresi doldu';
 	@override String accessDeniedOne({required Object name}) => '${name} bu hesabın erişimini reddetti';
 	@override String accessDeniedMany({required Object count}) => '${count} sunucu bu hesabın erişimini reddetti';
-	@override String get signInAgain => 'Tekrar giriş yap';
 }
 
 // Path: accountPreferences
@@ -1175,9 +1172,9 @@ class _Translations$startup$tr extends Translations$startup$en {
 	final TranslationsTr _root; // ignore: unused_field
 
 	// Translations
-	@override String get failedTitle => 'Plezy başlatılamadı';
+	@override String get failedTitle => 'TBD başlatılamadı';
 	@override String get failedBody => 'Başlatma sırasında bir şeyler ters gitti. Aşağıdaki ayrıntılar neyin başarısız olduğunu gösteriyor.';
-	@override String get failedBodyRepairable => 'Plezy\'nin kayıtlı ayar dosyası hasarlı ve Plezy başlamadan önce yeniden oluşturulması gerekiyor. Tekrar denemek işe yaramaz — Depolama Alanını Onar\'ı seçin.';
+	@override String get failedBodyRepairable => 'TBD\'nin kayıtlı ayar dosyası hasarlı ve TBD başlamadan önce yeniden oluşturulması gerekiyor. Tekrar denemek işe yaramaz — Depolama Alanını Onar\'ı seçin.';
 	@override String get phaseLabel => 'Adım';
 	@override String get showDetails => 'Ayrıntıları göster';
 	@override String get hideDetails => 'Ayrıntıları gizle';
@@ -1186,16 +1183,16 @@ class _Translations$startup$tr extends Translations$startup$en {
 	@override String get uploadDetails => 'Ayrıntıları yükle';
 	@override String get repairStorage => 'Depolama Alanını Onar';
 	@override String get repairTitle => 'Kayıtlı veriler onarılsın mı?';
-	@override String get repairBodyCommon => 'Plezy\'nin ayar dosyası hasarlı ve okunamıyor. Onarım, her ayarı varsayılanına sıfırlar.';
+	@override String get repairBodyCommon => 'TBD\'nin ayar dosyası hasarlı ve okunamıyor. Onarım, her ayarı varsayılanına sıfırlar.';
 	@override String get repairBodyOneCredential => 'Kayıtlı bir giriş hasarlı ve okunamıyor. Onarım yalnızca onu kaldırır; diğer ayarlarınıza dokunulmaz.';
 	@override String get repairBodySignInsKept => 'Sunucularınız ve profilleriniz giriş yapılı kalmalı.';
 	@override String get repairBodySignInsLost => 'Kayıtlı girişlerinizi koruyan anahtar bu dosyadan kurtarılamıyor, bu yüzden her sunucuya ve profile yeniden giriş yapmanız gerekecek. Medya sunucunuzdaki hiçbir şey etkilenmez.';
-	@override String get repairBodySessionsUncertain => 'Takip hizmetleri (MAL, AniList, Simkl, Trakt) ve Seerr ayrı olarak saklanır; korunup korunmayacakları belirsizdir. Plezy tam olarak neyi koruduğunu size söyleyecek.';
+	@override String get repairBodySessionsUncertain => 'Takip hizmetleri (MAL, AniList, Simkl, Trakt) ve Seerr ayrı olarak saklanır; korunup korunmayacakları belirsizdir. TBD tam olarak neyi koruduğunu size söyleyecek.';
 	@override String get repairConfirm => 'Onar';
 	@override String get repairSucceeded => 'Depolama alanı onarıldı';
 	@override String get repairNeedsRestart => 'Depolama alanı onarıldı — yeniden başlatma gerekli';
-	@override String get restartRequiredBody => 'Verileriniz onarıldı, ancak Plezy\'nin bunları kullanabilmesi için temiz bir başlangıç yapması gerekiyor. Plezy\'yi kapatıp yeniden açın.';
-	@override String get quitPlezy => 'Plezy\'den Çık';
+	@override String get restartRequiredBody => 'Verileriniz onarıldı, ancak TBD\'nin bunları kullanabilmesi için temiz bir başlangıç yapması gerekiyor. TBD\'yi kapatıp yeniden açın.';
+	@override String get quitPlezy => 'TBD\'den Çık';
 	@override String get repairFailed => 'Onarım başarısız oldu';
 	@override String get repairKeptSignIns => 'Sunucularınız ve profilleriniz hâlâ giriş yapılı.';
 	@override String get repairLostSignIns => 'Kayıtlı girişlerinizi koruyan anahtar kurtarılamadı. Her sunucuya ve profile yeniden giriş yapmanız gerekecek.';
@@ -1204,7 +1201,7 @@ class _Translations$startup$tr extends Translations$startup$en {
 	@override String get backupWarning => 'Giriş bilgilerinizi içerir. Yüklemeyin veya paylaşmayın.';
 	@override String get deleteBackup => 'Kopyayı Sil';
 	@override String get backupDeleted => 'Kopya silindi.';
-	@override String get previousFailureTitle => 'Plezy geçen sefer başlatılamadı';
+	@override String get previousFailureTitle => 'TBD geçen sefer başlatılamadı';
 }
 
 // Path: licenses
@@ -1819,11 +1816,11 @@ class _Translations$trakt$tr extends Translations$trakt$en {
 	@override String get connected => 'Bağlandı';
 	@override String connectedAs({required Object username}) => '@${username} olarak bağlandı';
 	@override String get disconnectConfirm => 'Trakt hesabının bağlantısı kesilsin mi?';
-	@override String get disconnectConfirmBody => 'Plezy, Trakt\'a olay göndermeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.';
+	@override String get disconnectConfirmBody => 'TBD, Trakt\'a olay göndermeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.';
 	@override String get scrobble => 'Gerçek zamanlı scrobble';
 	@override String get scrobbleDescription => 'Oynatma sırasında Trakt\'a oynatma, duraklatma ve durdurma olayları gönderin.';
 	@override String get watchedSync => 'İzleme durumunu eşitle';
-	@override String get watchedSyncDescription => 'Plezy\'de ögeleri izlendi olarak işaretlediğinizde, Trakt üzerinde de izlendi olarak işaretlenir.';
+	@override String get watchedSyncDescription => 'TBD\'de ögeleri izlendi olarak işaretlediğinizde, Trakt üzerinde de izlendi olarak işaretlenir.';
 }
 
 // Path: seerr
@@ -1840,10 +1837,10 @@ class _Translations$seerr$tr extends Translations$seerr$en {
 	@override String get checkServer => 'Devam Et';
 	@override String get signInWithLocal => 'Yerel hesap kullan';
 	@override String get email => 'E-posta';
-	@override String get noSignInMethods => 'Bu Seerr örneği Plezy\'nin desteklediği bir giriş yöntemi sunmuyor.';
+	@override String get noSignInMethods => 'Bu Seerr örneği TBD\'nin desteklediği bir giriş yöntemi sunmuyor.';
 	@override String get instance => 'Örnek (Instance)';
 	@override String get disconnectConfirm => 'Seerr bağlantısı kesilsin mi?';
-	@override String get disconnectConfirmBody => 'Plezy bu Seerr örneğini unutacak. İstediğiniz zaman yeniden bağlanabilirsiniz.';
+	@override String get disconnectConfirmBody => 'TBD bu Seerr örneğini unutacak. İstediğiniz zaman yeniden bağlanabilirsiniz.';
 	@override String get request => 'İstek Gönder';
 	@override String get request4k => '4K İstek Gönder';
 	@override String get seasons => 'Sezonlar';
@@ -1868,7 +1865,7 @@ class _Translations$seerr$tr extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'Engelleme listesinde';
 	@override String couldNotReach({required Object url, required Object error}) => '${url} adresine ulaşılamadı: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} adresinde Seerr örneği bulunamadı (HTTP ${status})';
-	@override String get behindAuthProxy => 'Seerr yerine kimlik doğrulayan bir ters proxy (SSO veya HTTP kimlik doğrulaması) yanıt verdi. Plezy bunun üzerinden giriş yapamaz: bu uygulama için Seerr\'in /api/v1 yolunun proxy\'yi atlamasına izin verin veya Seerr\'e doğrudan ulaşan bir adres kullanın.';
+	@override String get behindAuthProxy => 'Seerr yerine kimlik doğrulayan bir ters proxy (SSO veya HTTP kimlik doğrulaması) yanıt verdi. TBD bunun üzerinden giriş yapamaz: bu uygulama için Seerr\'in /api/v1 yolunun proxy\'yi atlamasına izin verin veya Seerr\'e doğrudan ulaşan bir adres kullanın.';
 	@override String get invalidUrl => 'https://seerr.example.com gibi bir sunucu adresi girin';
 	@override String get notInitialized => 'Bu Seerr örneği ilk çalıştırma kurulumunu tamamlamadı';
 	@override String get noStoredCredentials => 'Yeniden giriş yapmak için kullanılabilir kayıtlı kimlik bilgisi yok';
@@ -1896,7 +1893,7 @@ class _Translations$services$tr extends Translations$services$en {
 	@override String get scrobble => 'İlerlemeyi otomatik takip et';
 	@override String get scrobbleDescription => 'Bir bölümü veya filmi bitirdiğinizde listenizi güncelleyin.';
 	@override String disconnectConfirm({required Object service}) => '${service} bağlantısı kesilsin mi?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy, ${service} güncellemeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.';
+	@override String disconnectConfirmBody({required Object service}) => 'TBD, ${service} güncellemeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.';
 	@override String connectFailed({required Object service}) => '${service} ile bağlantı kurulamadı. Tekrar deneyin.';
 	@override late final _Translations$services$names$tr names = _Translations$services$names$tr._(_root);
 	@override late final _Translations$services$deviceCode$tr deviceCode = _Translations$services$deviceCode$tr._(_root);
@@ -2370,14 +2367,14 @@ class _Translations$downloads$backgroundWarning$tr extends Translations$download
 	@override String get bannerAction => 'Detaylar';
 	@override String get sheetTitle => 'Arka plan indirmeleri engellendi';
 	@override String get sheetTitleDegraded => 'Arka plan indirmeleri sınırlı olabilir';
-	@override String get sheetIntro => 'Android, Plezy\'nin arka planda güvenilir şekilde indirme yapmasını engelliyor.';
-	@override String get sheetIntroDegraded => 'Cihazınız, Plezy\'nin arka planda ne zaman indirme yapabileceğini sınırlıyor.';
-	@override String get reasonBackgroundRestricted => 'Plezy\'nin arka plan kullanımı kısıtlanmış. Pil veya arka plan kullanımını "Kısıtlanmamış" olarak ayarlayın.';
-	@override String get reasonStandbyRestricted => 'Android, Plezy\'yi kısıtlı bekleme durumuna aldı. Pil kullanımını "Kısıtlanmamış" olarak ayarlayın.';
+	@override String get sheetIntro => 'Android, TBD\'nin arka planda güvenilir şekilde indirme yapmasını engelliyor.';
+	@override String get sheetIntroDegraded => 'Cihazınız, TBD\'nin arka planda ne zaman indirme yapabileceğini sınırlıyor.';
+	@override String get reasonBackgroundRestricted => 'TBD\'nin arka plan kullanımı kısıtlanmış. Pil veya arka plan kullanımını "Kısıtlanmamış" olarak ayarlayın.';
+	@override String get reasonStandbyRestricted => 'Android, TBD\'yi kısıtlı bekleme durumuna aldı. Pil kullanımını "Kısıtlanmamış" olarak ayarlayın.';
 	@override String get reasonDownloadChannelBlocked => 'İndirme bildirimleri kapalı; bu nedenle ilerleme ve kontroller kullanılamayabilir.';
 	@override String get reasonNotificationsDisabled => 'Bildirimler kapalı. Android 13 ve sonraki sürümlerde uzun arka plan indirmeleri için gereklidir.';
 	@override String get reasonDataSaver => 'Veri Tasarrufu açık; bu, mobil veride arka plan indirmelerini engeller. Wi-Fi üzerinde indirmeler yine de çalışır.';
-	@override String get reasonOemUnknown => 'Plezy arka plandayken indirmeler tekrar tekrar durdu. Plezy\'nin pil veya arka plan kullanım ayarlarını kontrol edin.';
+	@override String get reasonOemUnknown => 'TBD arka plandayken indirmeler tekrar tekrar durdu. TBD\'nin pil veya arka plan kullanım ayarlarını kontrol edin.';
 	@override String get openSettings => 'Ayarları aç';
 	@override String get stillNotWorking => 'Cihaza özel yardım';
 	@override String get stillNotWorkingDescription => 'Cihazınıza yönelik adımlara bakın veya sorun sürerse Ayarlar › Günlükleri Görüntüle bölümünden bir günlük gönderin.';
@@ -2435,13 +2432,13 @@ class _Translations$companionRemote$pairing$tr extends Translations$companionRem
 	@override String get connecting => 'Bağlanılıyor...';
 	@override String get searchingForDevices => 'Cihazlar aranıyor...';
 	@override String get noDevicesFound => 'Ağınızda cihaz bulunamadı';
-	@override String get noDevicesHint => 'Masaüstünde Plezy\'yi açın ve aynı Wi-Fi ağını kullanın';
+	@override String get noDevicesHint => 'Masaüstünde TBD\'yi açın ve aynı Wi-Fi ağını kullanın';
 	@override String get availableDevices => 'Kullanılabilir Cihazlar';
 	@override String get manualConnection => 'Manuel Bağlantı';
 	@override String get validationHostRequired => 'Lütfen ana bilgisayar adresini girin';
 	@override String get validationHostFormat => 'Biçim IP:port şeklinde olmalıdır (ör. 192.168.1.100:48632)';
 	@override String get connectionTimedOut => 'Bağlantı zaman aşımına uğradı. Her iki cihazda da aynı ağı kullanın.';
-	@override String get sessionNotFound => 'Cihaz bulunamadı. Plezy\'nin ana bilgisayarda çalıştığından emin olun.';
+	@override String get sessionNotFound => 'Cihaz bulunamadı. TBD\'nin ana bilgisayarda çalıştığından emin olun.';
 	@override String failedToConnect({required Object error}) => 'Bağlantı başarısız: ${error}';
 }
 
@@ -2519,7 +2516,7 @@ class _Translations$services$deviceCode$tr extends Translations$services$deviceC
 	final TranslationsTr _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => 'Plezy\'yi ${service} üzerinde etkinleştirin';
+	@override String title({required Object service}) => 'TBD\'yi ${service} üzerinde etkinleştirin';
 	@override String get instructions => 'QR kodunu tarayın veya aşağıdaki adresi ziyaret edip bu kodu girin:';
 	@override String openToActivate({required Object service}) => 'Etkinleştirmek için ${service} servisini açın';
 	@override String get copyCode => 'Etkinleştirme kodunu kopyala';
@@ -2579,8 +2576,8 @@ class _Translations$services$libraryFilter$tr extends Translations$services$libr
 extension on TranslationsTr {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
-			'auth.localDataRecoveryRequired' => 'Plezy yerel giriş ve bekleyen oynatma verilerini güvenli bir şekilde kurtaramadı. Lütfen tekrar giriş yapın.',
+			'app.title' => 'TBD',
+			'auth.localDataRecoveryRequired' => 'TBD yerel giriş ve bekleyen oynatma verilerini güvenli bir şekilde kurtaramadı. Lütfen tekrar giriş yapın.',
 			'common.cancel' => 'İptal',
 			'common.save' => 'Kaydet',
 			'common.close' => 'Kapat',
@@ -2665,7 +2662,7 @@ extension on TranslationsTr {
 			'update.latestVersion' => 'En son sürümü kullanıyorsunuz',
 			'update.checkFailed' => 'Güncellemeler kontrol edilemedi',
 			'settings.title' => 'Ayarlar',
-			'settings.supportDeveloper' => 'Plezy\'yi Destekleyin',
+			'settings.supportDeveloper' => 'TBD\'yi Destekleyin',
 			'settings.supportDeveloperDescription' => 'Geliştirmeyi fonlamak için Liberapay üzerinden bağış yapın',
 			'settings.language' => 'Dil',
 			'settings.theme' => 'Tema',
@@ -2687,6 +2684,7 @@ extension on TranslationsTr {
 			'settings.lightTheme' => 'Açık',
 			'settings.darkTheme' => 'Koyu',
 			'settings.oledTheme' => 'OLED',
+			'settings.slateTheme' => 'Arduvaz',
 			'settings.libraryDensity' => 'Kitaplık Yoğunluğu',
 			'settings.displayScale' => 'Ekran ölçeği',
 			'settings.compact' => 'Sıkışık',
@@ -2804,7 +2802,7 @@ extension on TranslationsTr {
 			'settings.importSettingsDescription' => 'Tercihleri bir dosyadan geri yükleyin',
 			'settings.importSettingsConfirm' => 'Bu işlem mevcut ayarlarınızın üzerine yazacak. Devam edilsin mi?',
 			'settings.importSettingsSuccess' => 'Ayarlar içe aktarıldı',
-			'settings.importSettingsInvalidFile' => 'Bu dosya geçerli bir Plezy ayar dosyası değil',
+			'settings.importSettingsInvalidFile' => 'Bu dosya geçerli bir TBD ayar dosyası değil',
 			'settings.importSettingsNoUser' => 'Ayarları içe aktarmadan önce giriş yapın',
 			'settings.shortcutsReset' => 'Kısayollar varsayılana sıfırlandı',
 			'settings.about' => 'Hakkında',
@@ -2867,8 +2865,6 @@ extension on TranslationsTr {
 			'settings.maxVolumePercent' => ({required Object percent}) => '%${percent}',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Discord\'da ne izlediğinizi gösterin',
-			'settings.services' => 'Servisler',
-			'settings.servicesDescription' => 'Trakt, MyAnimeList, Seerr ve daha fazlasını bağlayın',
 			'settings.manageLibrariesDescription' => 'Kitaplıkları yeniden sıralayın ve gizleyin',
 			'settings.companionRemoteServer' => 'Yardımcı Uzaktan Kumanda Sunucusu',
 			'settings.companionRemoteServerDescription' => 'Ağınızdaki mobil cihazların bu uygulamayı kontrol etmesine izin verin',
@@ -2924,7 +2920,7 @@ extension on TranslationsTr {
 			'settings.forceTvMode' => 'TV modunu zorla',
 			'settings.forceTvModeDescription' => 'TV düzenini zorla. Otomatik algılamayan cihazlar içindir. Yeniden başlatma gerektirir.',
 			'settings.startInFullscreen' => 'Tam ekranda başlat',
-			'settings.startInFullscreenDescription' => 'Plezy\'yi açılışta tam ekran modunda aç',
+			'settings.startInFullscreenDescription' => 'TBD\'yi açılışta tam ekran modunda aç',
 			'settings.exitFullscreenOnPlayerClose' => 'Oynatıcı kapandığında tam ekrandan çık',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Video oynatıcıyı kapatırken otomatik olarak tam ekrandan çık',
 			'settings.autoHidePerformanceOverlay' => 'Performans Katmanını Otomatik Gizle',
@@ -2970,7 +2966,7 @@ extension on TranslationsTr {
 			'settings.playerScopeGlobal' => 'Her yerde',
 			'settings.playerScopeLibrary' => 'Kitaplık başına',
 			'settings.playerScopeTitle' => 'Dizi veya film başına',
-			'settings.exportDialogTitle' => 'Plezy ayarlarını dışa aktar',
+			'settings.exportDialogTitle' => 'TBD ayarlarını dışa aktar',
 			'search.hint' => 'Film, dizi, müzik ara...',
 			'search.tryDifferentTerm' => 'Farklı bir arama terimi deneyin',
 			'search.searchYourMedia' => 'Medyanızda arayın',
@@ -3091,9 +3087,9 @@ extension on TranslationsTr {
 			'fileInfo.previewIndex' => 'Önizleme Dizini',
 			'fileInfo.packetLength' => 'Paket Uzunluğu',
 			'fileInfo.filePresent' => 'Dosya Mevcut',
+			'fileInfo.fileReadable' => 'Sunucu Tarafından Okunabilir',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.fileReadable' => 'Sunucu Tarafından Okunabilir',
 			'fileInfo.streamPath' => 'Akış Yolu',
 			'fileInfo.optimizedForStreaming' => 'Akış İçin Optimize Edilmiş',
 			'fileInfo.has64bitOffsets' => '64-bit Ofsetler',
@@ -3379,10 +3375,8 @@ extension on TranslationsTr {
 			'connections.sectionTitle' => 'Bağlantılar',
 			'connections.addConnection' => 'Bağlantı ekle',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} için oturum süresi doldu',
-			'connections.sessionExpiredMany' => ({required Object count}) => '${count} sunucu için oturum süresi doldu',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} bu hesabın erişimini reddetti',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} sunucu bu hesabın erişimini reddetti',
-			'connections.signInAgain' => 'Tekrar giriş yap',
 			'accountPreferences.sectionTitle' => 'Hesap tercihleri',
 			'accountPreferences.unavailable' => 'Bu hesaba ulaşılamıyor',
 			'accountPreferences.autoSelectAudio' => 'Sesi dile göre seç',
@@ -3495,9 +3489,9 @@ extension on TranslationsTr {
 			'logs.clearLogs' => 'Günlükleri Temizle',
 			'logs.copyLogs' => 'Günlükleri Kopyala',
 			'logs.uploadLogs' => 'Günlükleri Yükle',
-			'startup.failedTitle' => 'Plezy başlatılamadı',
+			'startup.failedTitle' => 'TBD başlatılamadı',
 			'startup.failedBody' => 'Başlatma sırasında bir şeyler ters gitti. Aşağıdaki ayrıntılar neyin başarısız olduğunu gösteriyor.',
-			'startup.failedBodyRepairable' => 'Plezy\'nin kayıtlı ayar dosyası hasarlı ve Plezy başlamadan önce yeniden oluşturulması gerekiyor. Tekrar denemek işe yaramaz — Depolama Alanını Onar\'ı seçin.',
+			'startup.failedBodyRepairable' => 'TBD\'nin kayıtlı ayar dosyası hasarlı ve TBD başlamadan önce yeniden oluşturulması gerekiyor. Tekrar denemek işe yaramaz — Depolama Alanını Onar\'ı seçin.',
 			'startup.phaseLabel' => 'Adım',
 			'startup.showDetails' => 'Ayrıntıları göster',
 			'startup.hideDetails' => 'Ayrıntıları gizle',
@@ -3506,16 +3500,16 @@ extension on TranslationsTr {
 			'startup.uploadDetails' => 'Ayrıntıları yükle',
 			'startup.repairStorage' => 'Depolama Alanını Onar',
 			'startup.repairTitle' => 'Kayıtlı veriler onarılsın mı?',
-			'startup.repairBodyCommon' => 'Plezy\'nin ayar dosyası hasarlı ve okunamıyor. Onarım, her ayarı varsayılanına sıfırlar.',
+			'startup.repairBodyCommon' => 'TBD\'nin ayar dosyası hasarlı ve okunamıyor. Onarım, her ayarı varsayılanına sıfırlar.',
 			'startup.repairBodyOneCredential' => 'Kayıtlı bir giriş hasarlı ve okunamıyor. Onarım yalnızca onu kaldırır; diğer ayarlarınıza dokunulmaz.',
 			'startup.repairBodySignInsKept' => 'Sunucularınız ve profilleriniz giriş yapılı kalmalı.',
 			'startup.repairBodySignInsLost' => 'Kayıtlı girişlerinizi koruyan anahtar bu dosyadan kurtarılamıyor, bu yüzden her sunucuya ve profile yeniden giriş yapmanız gerekecek. Medya sunucunuzdaki hiçbir şey etkilenmez.',
-			'startup.repairBodySessionsUncertain' => 'Takip hizmetleri (MAL, AniList, Simkl, Trakt) ve Seerr ayrı olarak saklanır; korunup korunmayacakları belirsizdir. Plezy tam olarak neyi koruduğunu size söyleyecek.',
+			'startup.repairBodySessionsUncertain' => 'Takip hizmetleri (MAL, AniList, Simkl, Trakt) ve Seerr ayrı olarak saklanır; korunup korunmayacakları belirsizdir. TBD tam olarak neyi koruduğunu size söyleyecek.',
 			'startup.repairConfirm' => 'Onar',
 			'startup.repairSucceeded' => 'Depolama alanı onarıldı',
 			'startup.repairNeedsRestart' => 'Depolama alanı onarıldı — yeniden başlatma gerekli',
-			'startup.restartRequiredBody' => 'Verileriniz onarıldı, ancak Plezy\'nin bunları kullanabilmesi için temiz bir başlangıç yapması gerekiyor. Plezy\'yi kapatıp yeniden açın.',
-			'startup.quitPlezy' => 'Plezy\'den Çık',
+			'startup.restartRequiredBody' => 'Verileriniz onarıldı, ancak TBD\'nin bunları kullanabilmesi için temiz bir başlangıç yapması gerekiyor. TBD\'yi kapatıp yeniden açın.',
+			'startup.quitPlezy' => 'TBD\'den Çık',
 			'startup.repairFailed' => 'Onarım başarısız oldu',
 			'startup.repairKeptSignIns' => 'Sunucularınız ve profilleriniz hâlâ giriş yapılı.',
 			'startup.repairLostSignIns' => 'Kayıtlı girişlerinizi koruyan anahtar kurtarılamadı. Her sunucuya ve profile yeniden giriş yapmanız gerekecek.',
@@ -3524,7 +3518,7 @@ extension on TranslationsTr {
 			'startup.backupWarning' => 'Giriş bilgilerinizi içerir. Yüklemeyin veya paylaşmayın.',
 			'startup.deleteBackup' => 'Kopyayı Sil',
 			'startup.backupDeleted' => 'Kopya silindi.',
-			'startup.previousFailureTitle' => 'Plezy geçen sefer başlatılamadı',
+			'startup.previousFailureTitle' => 'TBD geçen sefer başlatılamadı',
 			'licenses.relatedPackages' => 'İlgili Paketler',
 			'licenses.license' => 'Lisans',
 			'licenses.licenseNumber' => ({required Object number}) => 'Lisans ${number}',
@@ -3605,11 +3599,11 @@ extension on TranslationsTr {
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '${n} yorum', other: '${n} yorum', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} oy',
 			'explore.stats.watching' => ({required Object n}) => '${n} izliyor',
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} tamamladı',
 			'explore.stats.onHold' => ({required Object n}) => '${n} bekletiyor',
 			'explore.stats.dropped' => ({required Object n}) => '${n} bıraktı',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Kış',
 			'explore.season.spring' => 'İlkbahar',
 			'explore.season.summer' => 'Yaz',
@@ -3923,14 +3917,14 @@ extension on TranslationsTr {
 			'downloads.backgroundWarning.bannerAction' => 'Detaylar',
 			'downloads.backgroundWarning.sheetTitle' => 'Arka plan indirmeleri engellendi',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Arka plan indirmeleri sınırlı olabilir',
-			'downloads.backgroundWarning.sheetIntro' => 'Android, Plezy\'nin arka planda güvenilir şekilde indirme yapmasını engelliyor.',
-			'downloads.backgroundWarning.sheetIntroDegraded' => 'Cihazınız, Plezy\'nin arka planda ne zaman indirme yapabileceğini sınırlıyor.',
-			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy\'nin arka plan kullanımı kısıtlanmış. Pil veya arka plan kullanımını "Kısıtlanmamış" olarak ayarlayın.',
-			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android, Plezy\'yi kısıtlı bekleme durumuna aldı. Pil kullanımını "Kısıtlanmamış" olarak ayarlayın.',
+			'downloads.backgroundWarning.sheetIntro' => 'Android, TBD\'nin arka planda güvenilir şekilde indirme yapmasını engelliyor.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Cihazınız, TBD\'nin arka planda ne zaman indirme yapabileceğini sınırlıyor.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'TBD\'nin arka plan kullanımı kısıtlanmış. Pil veya arka plan kullanımını "Kısıtlanmamış" olarak ayarlayın.',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android, TBD\'yi kısıtlı bekleme durumuna aldı. Pil kullanımını "Kısıtlanmamış" olarak ayarlayın.',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'İndirme bildirimleri kapalı; bu nedenle ilerleme ve kontroller kullanılamayabilir.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Bildirimler kapalı. Android 13 ve sonraki sürümlerde uzun arka plan indirmeleri için gereklidir.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'Veri Tasarrufu açık; bu, mobil veride arka plan indirmelerini engeller. Wi-Fi üzerinde indirmeler yine de çalışır.',
-			'downloads.backgroundWarning.reasonOemUnknown' => 'Plezy arka plandayken indirmeler tekrar tekrar durdu. Plezy\'nin pil veya arka plan kullanım ayarlarını kontrol edin.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'TBD arka plandayken indirmeler tekrar tekrar durdu. TBD\'nin pil veya arka plan kullanım ayarlarını kontrol edin.',
 			'downloads.backgroundWarning.openSettings' => 'Ayarları aç',
 			'downloads.backgroundWarning.stillNotWorking' => 'Cihaza özel yardım',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Cihazınıza yönelik adımlara bakın veya sorun sürerse Ayarlar › Günlükleri Görüntüle bölümünden bir günlük gönderin.',
@@ -3997,13 +3991,13 @@ extension on TranslationsTr {
 			'companionRemote.pairing.connecting' => 'Bağlanılıyor...',
 			'companionRemote.pairing.searchingForDevices' => 'Cihazlar aranıyor...',
 			'companionRemote.pairing.noDevicesFound' => 'Ağınızda cihaz bulunamadı',
-			'companionRemote.pairing.noDevicesHint' => 'Masaüstünde Plezy\'yi açın ve aynı Wi-Fi ağını kullanın',
+			'companionRemote.pairing.noDevicesHint' => 'Masaüstünde TBD\'yi açın ve aynı Wi-Fi ağını kullanın',
 			'companionRemote.pairing.availableDevices' => 'Kullanılabilir Cihazlar',
 			'companionRemote.pairing.manualConnection' => 'Manuel Bağlantı',
 			'companionRemote.pairing.validationHostRequired' => 'Lütfen ana bilgisayar adresini girin',
 			'companionRemote.pairing.validationHostFormat' => 'Biçim IP:port şeklinde olmalıdır (ör. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Bağlantı zaman aşımına uğradı. Her iki cihazda da aynı ağı kullanın.',
-			'companionRemote.pairing.sessionNotFound' => 'Cihaz bulunamadı. Plezy\'nin ana bilgisayarda çalıştığından emin olun.',
+			'companionRemote.pairing.sessionNotFound' => 'Cihaz bulunamadı. TBD\'nin ana bilgisayarda çalıştığından emin olun.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Bağlantı başarısız: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Uzaktan kumanda oturumundan ayrılmak istiyor musunuz?',
 			'companionRemote.remote.reconnecting' => 'Yeniden bağlanılıyor...',
@@ -4119,11 +4113,11 @@ extension on TranslationsTr {
 			'externalPlayer.customPlayers' => 'Özel Oynatıcılar',
 			'externalPlayer.systemDefault' => 'Sistem Varsayılanı',
 			'externalPlayer.addCustomPlayer' => 'Özel Oynatıcı Ekle',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Oynatıcı Adı',
 			'externalPlayer.playerNameHint' => 'Oynatıcım',
 			'externalPlayer.playerCommand' => 'Komut',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerPackage' => 'Paket Adı',
 			'externalPlayer.playerUrlScheme' => 'URL Şeması',
 			'externalPlayer.off' => 'Kapalı',
@@ -4164,11 +4158,11 @@ extension on TranslationsTr {
 			'trakt.connected' => 'Bağlandı',
 			'trakt.connectedAs' => ({required Object username}) => '@${username} olarak bağlandı',
 			'trakt.disconnectConfirm' => 'Trakt hesabının bağlantısı kesilsin mi?',
-			'trakt.disconnectConfirmBody' => 'Plezy, Trakt\'a olay göndermeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.',
+			'trakt.disconnectConfirmBody' => 'TBD, Trakt\'a olay göndermeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.',
 			'trakt.scrobble' => 'Gerçek zamanlı scrobble',
 			'trakt.scrobbleDescription' => 'Oynatma sırasında Trakt\'a oynatma, duraklatma ve durdurma olayları gönderin.',
 			'trakt.watchedSync' => 'İzleme durumunu eşitle',
-			'trakt.watchedSyncDescription' => 'Plezy\'de ögeleri izlendi olarak işaretlediğinizde, Trakt üzerinde de izlendi olarak işaretlenir.',
+			'trakt.watchedSyncDescription' => 'TBD\'de ögeleri izlendi olarak işaretlediğinizde, Trakt üzerinde de izlendi olarak işaretlenir.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerr Bağla',
 			'seerr.serverUrl' => 'Sunucu URL\'si',
@@ -4176,10 +4170,10 @@ extension on TranslationsTr {
 			'seerr.checkServer' => 'Devam Et',
 			'seerr.signInWithLocal' => 'Yerel hesap kullan',
 			'seerr.email' => 'E-posta',
-			'seerr.noSignInMethods' => 'Bu Seerr örneği Plezy\'nin desteklediği bir giriş yöntemi sunmuyor.',
+			'seerr.noSignInMethods' => 'Bu Seerr örneği TBD\'nin desteklediği bir giriş yöntemi sunmuyor.',
 			'seerr.instance' => 'Örnek (Instance)',
 			'seerr.disconnectConfirm' => 'Seerr bağlantısı kesilsin mi?',
-			'seerr.disconnectConfirmBody' => 'Plezy bu Seerr örneğini unutacak. İstediğiniz zaman yeniden bağlanabilirsiniz.',
+			'seerr.disconnectConfirmBody' => 'TBD bu Seerr örneğini unutacak. İstediğiniz zaman yeniden bağlanabilirsiniz.',
 			'seerr.request' => 'İstek Gönder',
 			'seerr.request4k' => '4K İstek Gönder',
 			'seerr.seasons' => 'Sezonlar',
@@ -4204,7 +4198,7 @@ extension on TranslationsTr {
 			'seerr.statusBlocklisted' => 'Engelleme listesinde',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url} adresine ulaşılamadı: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} adresinde Seerr örneği bulunamadı (HTTP ${status})',
-			'seerr.behindAuthProxy' => 'Seerr yerine kimlik doğrulayan bir ters proxy (SSO veya HTTP kimlik doğrulaması) yanıt verdi. Plezy bunun üzerinden giriş yapamaz: bu uygulama için Seerr\'in /api/v1 yolunun proxy\'yi atlamasına izin verin veya Seerr\'e doğrudan ulaşan bir adres kullanın.',
+			'seerr.behindAuthProxy' => 'Seerr yerine kimlik doğrulayan bir ters proxy (SSO veya HTTP kimlik doğrulaması) yanıt verdi. TBD bunun üzerinden giriş yapamaz: bu uygulama için Seerr\'in /api/v1 yolunun proxy\'yi atlamasına izin verin veya Seerr\'e doğrudan ulaşan bir adres kullanın.',
 			'seerr.invalidUrl' => 'https://seerr.example.com gibi bir sunucu adresi girin',
 			'seerr.notInitialized' => 'Bu Seerr örneği ilk çalıştırma kurulumunu tamamlamadı',
 			'seerr.noStoredCredentials' => 'Yeniden giriş yapmak için kullanılabilir kayıtlı kimlik bilgisi yok',
@@ -4223,14 +4217,14 @@ extension on TranslationsTr {
 			'services.scrobble' => 'İlerlemeyi otomatik takip et',
 			'services.scrobbleDescription' => 'Bir bölümü veya filmi bitirdiğinizde listenizi güncelleyin.',
 			'services.disconnectConfirm' => ({required Object service}) => '${service} bağlantısı kesilsin mi?',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy, ${service} güncellemeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'TBD, ${service} güncellemeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.',
 			'services.connectFailed' => ({required Object service}) => '${service} ile bağlantı kurulamadı. Tekrar deneyin.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
-			'services.deviceCode.title' => ({required Object service}) => 'Plezy\'yi ${service} üzerinde etkinleştirin',
+			'services.deviceCode.title' => ({required Object service}) => 'TBD\'yi ${service} üzerinde etkinleştirin',
 			'services.deviceCode.instructions' => 'QR kodunu tarayın veya aşağıdaki adresi ziyaret edip bu kodu girin:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Etkinleştirmek için ${service} servisini açın',
 			'services.deviceCode.copyCode' => 'Etkinleştirme kodunu kopyala',

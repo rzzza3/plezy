@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>7 · Status board — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .top { position: absolute; left: var(--pad-x); right: 62px; top: 44px; display: flex; align-items: center; z-index: 5; }
+
+  .board { position: absolute; left: var(--pad-x); right: 62px; top: 150px; bottom: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .col { min-width: 0; }
+  .col-head { display: flex; align-items: baseline; gap: 14px; padding: 0 6px 20px; border-bottom: 1px solid var(--outline); margin-bottom: 18px; }
+  .col-head h2 { font-size: 30px; font-weight: 500; margin: 0; }
+  .col-head .count { font-size: 22px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .col-head .sp { flex: 1; }
+  .col-head .act { font-size: 19px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
+  .col-head .act .i { font-size: 20px; }
+
+  .stack { display: flex; flex-direction: column; gap: 12px; height: 860px; overflow: hidden; -webkit-mask-image: linear-gradient(180deg, #000 84%, transparent); mask-image: linear-gradient(180deg, #000 84%, transparent); }
+  .it { display: flex; gap: 20px; padding: 14px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid transparent; }
+  .it .th { position: relative; width: 208px; height: 117px; flex: none; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+  .it .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .it .th .progress { height: 5px; }
+  .it .body { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .it .tt { font-size: 23px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .it .ss { font-size: 18px; color: var(--muted); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .it .go { margin-top: 12px; display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; height: 38px; padding: 0 16px 0 12px; border-radius: 19px; background: rgba(237,237,237,0.1); font-size: 17px; font-weight: 500; }
+  .it .go .i { font-size: 18px; }
+  .it.on { background: var(--raise); outline: 4px solid #fff; outline-offset: 3px; }
+  .it.on .go { background: var(--text); color: var(--bg); }
+</style>
+</head>
+<body>
+<div class="screen">
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+
+  <div class="top">
+    <div class="tabs">
+      <span class="tab on"><i data-i="bookmarkf"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab"><i data-i="heart"></i>Favourites <span class="n">11</span></span>
+    </div>
+  </div>
+
+  <div class="board">
+    <section class="col">
+      <div class="col-head"><h2>In progress</h2><span class="count">4</span></div>
+      <div class="stack">
+        <div class="it on"><div class="th"><img src="assets/w-got.jpg" alt=""><div class="progress"><i style="width:48%"></i></div></div><div class="body"><div class="tt">Game of Thrones</div><div class="ss">S5 E1 · The Wars To Come</div><span class="go"><i data-i="resume"></i>Resume · 26min left</span></div></div>
+        <div class="it"><div class="th"><img src="assets/w-holiday.jpg" alt=""><div class="progress"><i style="width:38%"></i></div></div><div class="body"><div class="tt">Holiday Touchdown</div><div class="ss">Movie · 2026</div><span class="go"><i data-i="resume"></i>Resume · 52min left</span></div></div>
+        <div class="it"><div class="th"><img src="assets/w-meg.jpg" alt=""><div class="progress"><i style="width:36%"></i></div></div><div class="body"><div class="tt">The Meg</div><div class="ss">Movie · 2018</div><span class="go"><i data-i="resume"></i>Resume · 1h 12min left</span></div></div>
+        <div class="it"><div class="th"><img src="assets/w-topgear.jpg" alt=""><div class="progress"><i style="width:12%"></i></div></div><div class="body"><div class="tt">Top Gear</div><div class="ss">S13 E1 · Episode 1</div><span class="go"><i data-i="resume"></i>Resume · 54min left</span></div></div>
+      </div>
+    </section>
+
+    <section class="col">
+      <div class="col-head"><h2>New episodes</h2><span class="count">2</span></div>
+      <div class="stack">
+        <div class="it"><div class="th"><img src="assets/w-crystal.jpg" alt=""></div><div class="body"><div class="tt">Crystal Lake</div><div class="ss">S1 E2 · added yesterday</div><span class="go"><i data-i="play"></i>Play S1 E2</span></div></div>
+        <div class="it"><div class="th"><img src="assets/w-traitors.jpg" alt=""></div><div class="body"><div class="tt">The Traitors</div><div class="ss">S5 E6 · A Murder of Necessity</div><span class="go"><i data-i="play"></i>Play S5 E6</span></div></div>
+      </div>
+    </section>
+
+    <section class="col">
+      <div class="col-head"><h2>Not started</h2><span class="count">12</span><span class="sp"></span><span class="act"><i data-i="sort"></i>Newest</span></div>
+      <div class="stack">
+        <div class="it"><div class="th"><img src="assets/w-ponyo.jpg" alt=""></div><div class="body"><div class="tt">Ponyo</div><div class="ss">Movie · 2008 · 1h 41min</div><span class="go"><i data-i="play"></i>Play</span></div></div>
+        <div class="it"><div class="th"><img src="assets/w-mortimer.jpg" alt=""></div><div class="body"><div class="tt">Mortimer &amp; Whitehouse: Gone Fishing</div><div class="ss">TV · 8 series</div><span class="go"><i data-i="play"></i>Play S1 E1</span></div></div>
+        <div class="it"><div class="th"><img src="assets/w-dusk.jpg" alt=""></div><div class="body"><div class="tt">From Dusk Till Dawn 3</div><div class="ss">Movie · 2000 · 1h 33min</div><span class="go"><i data-i="play"></i>Play</span></div></div>
+        <div class="it"><div class="th"><img src="assets/p-degaulle.jpg" alt="" style="object-position:center 30%"></div><div class="body"><div class="tt">De Gaulle: Résistance</div><div class="ss">Movie · 2026 · 2h 4min</div><span class="go"><i data-i="play"></i>Play</span></div></div>
+        <div class="it"><div class="th"><img src="assets/p-dontmove.jpg" alt="" style="object-position:center 45%"></div><div class="body"><div class="tt">Don't Move</div><div class="ss">Movie · 2026</div><span class="go"><i data-i="play"></i>Play</span></div></div>
+        <div class="it"><div class="th"><img src="assets/p-barrio.jpg" alt="" style="object-position:center 40%"></div><div class="body"><div class="tt">Barrio Triste</div><div class="ss">Movie · 2026</div><span class="go"><i data-i="play"></i>Play</span></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

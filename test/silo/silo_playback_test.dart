@@ -741,6 +741,154 @@ void main() {
     });
   });
 
+  group('video probe (PlaybackCapabilityDetector.kt:336-396)', () {
+    // A Shield-shaped reply as the platform channel delivers it: untyped maps.
+    Map<Object?, Object?> shield({String evidence = 'exact', bool panelHdr10 = true, bool panelDv = false}) => {
+      'videoDecode': [
+        {
+          'codec': 'hevc',
+          'decoder_name': 'OMX.Nvidia.h265.decode',
+          'profiles': ['main', 'main 10'],
+          'levels': [153],
+          'bit_depths': [8, 10],
+          'max_width': 3840,
+          'max_height': 2160,
+          'max_frame_rate': 60.0,
+          'max_bitrate_kbps': 120000,
+          'hardware': true,
+        },
+        {
+          'codec': 'h264',
+          'decoder_name': 'OMX.Nvidia.h264.decode',
+          'profiles': ['high'],
+          'levels': [51],
+          'bit_depths': [8],
+          'max_width': 3840,
+          'max_height': 2160,
+          'hardware': true,
+        },
+        {
+          'codec': 'dolby_vision',
+          'decoder_name': 'OMX.Nvidia.DOVI.decode',
+          'profiles': ['profile 5', 'profile 8'],
+          'bit_depths': [10],
+          'max_width': 3840,
+          'max_height': 2160,
+          'hardware': true,
+        },
+      ],
+      'decoderHdr': {
+        'hdr10': true,
+        'hdr10_plus': false,
+        'hlg': true,
+        'dolby_vision_profiles': [5, 8],
+        'dolby_vision_profile_levels': [
+          {'profile': 5, 'max_level': 9},
+          {'profile': 8, 'max_level': 9},
+        ],
+      },
+      'display': {
+        'hdr_evidence': evidence,
+        'hdr_types': {
+          'hdr10': panelHdr10,
+          'hdr10_plus': false,
+          'hlg': panelHdr10,
+          'dolby_vision_profiles': panelDv ? [for (var p = 0; p <= 10; p++) p] : <int>[],
+        },
+        'display_id': '0',
+      },
+    };
+
+    test('a missing or malformed reply is no probe', () {
+      expect(SiloVideoProbe.fromChannel(null), isNull);
+      expect(SiloVideoProbe.fromChannel('nope'), isNull);
+    });
+
+    test('native HDR is decoder and display both, with the decoder DV bounds', () {
+      final hdr10Only = SiloVideoProbe.fromChannel(shield())!;
+      expect(hdr10Only.nativeHdr, {
+        'hdr10': true,
+        'hdr10_plus': false,
+        'hlg': true,
+        'dolby_vision_profiles': <int>[],
+        'dolby_vision_profile_levels': <Object>[],
+      });
+      expect(hdr10Only.hasNativeHdr, isTrue);
+
+      final dv = SiloVideoProbe.fromChannel(shield(panelDv: true))!;
+      expect(dv.nativeHdr['dolby_vision_profiles'], [5, 8]);
+      expect(dv.nativeHdr['dolby_vision_profile_levels'], [
+        {'profile': 5, 'max_level': 9},
+        {'profile': 8, 'max_level': 9},
+      ]);
+    });
+
+    test('an SDR or unknown display claims no HDR', () {
+      expect(SiloVideoProbe.fromChannel(shield(panelHdr10: false))!.hasNativeHdr, isFalse);
+      expect(SiloVideoProbe.fromChannel(shield(evidence: 'unknown'))!.hasNativeHdr, isFalse);
+    });
+
+    test('Dolby Vision off keeps only profile 5', () {
+      final probe = SiloVideoProbe.fromChannel(shield(panelDv: true), dolbyVisionAllowed: false)!;
+      expect(probe.nativeHdr['dolby_vision_profiles'], [5]);
+      expect(probe.nativeHdr['dolby_vision_profile_levels'], [
+        {'profile': 5, 'max_level': 9},
+      ]);
+    });
+
+    test('software rows cover mpv codecs without hardware, never HEVC or AV1, at 1080p', () {
+      final probe = SiloVideoProbe.fromChannel(shield())!;
+      final software = [
+        for (final row in probe.videoDecode)
+          if (row['hardware'] == false) row,
+      ];
+      expect([for (final row in software) row['codec']], ['vp9', 'vp8', 'mpeg2video', 'mpeg4', 'vc1']);
+      expect(software.every((row) => row['max_height'] == 1080), isTrue);
+
+      final noHevc = SiloVideoProbe(
+        hardwareDecode: const [],
+        decoderHdr: const {},
+        displayEvidence: 'exact',
+        displayHdr: const {},
+      );
+      expect(noHevc.videoCodecs, isNot(contains('hevc')));
+      expect(noHevc.videoCodecs, isNot(contains('av1')));
+      expect(noHevc.maxResolution, '1080p');
+    });
+
+    test('capabilities and context carry the probe at exact evidence', () {
+      final probe = SiloVideoProbe.fromChannel(shield())!;
+      final caps = siloMpvCodecCapabilities(probe);
+      expect(caps['video_evidence'], 'exact');
+      expect(caps['hdr'], isTrue);
+      expect(caps['max_resolution'], '2160p');
+      expect(caps['codecs_video_hardware'], ['hevc', 'h264', 'dolby_vision']);
+      expect(caps['codecs_video'], containsAll(['hevc', 'h264', 'dolby_vision', 'vp9']));
+      expect(caps['hdr_details'], probe.nativeHdr);
+      expect((caps['video_decode']! as List).first, containsPair('max_height', 2160));
+
+      final context = siloMpvPlaybackContext(_tv, probe);
+      final output = context['output']! as Map<String, Object?>;
+      expect(output['hdr_details'], probe.nativeHdr);
+      expect(output['display'], {'hdr_evidence': 'exact', 'hdr_types': probe.displayHdr, 'display_id': '0'});
+      final deliveries = context['deliveries']! as Map<String, Object?>;
+      for (final delivery in deliveries.values) {
+        delivery as Map<String, Object?>;
+        expect(delivery['hdr_details'], probe.nativeHdr);
+        expect(delivery['video_codecs'], probe.videoCodecs);
+      }
+    });
+
+    test('without a probe the declared capabilities are unchanged', () {
+      final caps = siloMpvCodecCapabilities();
+      expect(caps['video_evidence'], 'declared');
+      expect(caps['hdr'], isFalse);
+      expect(caps.containsKey('hdr_details'), isFalse);
+      final output = siloMpvPlaybackContext(_tv)['output']! as Map<String, Object?>;
+      expect(output, {'current_sink': 'local_output'});
+    });
+  });
+
   group('start body (PlaybackSessionManager.kt:352-381, PlaybackV2Api.kt:69-74)', () {
     final detail = SiloWatchDetail.fromJson(_watch(userData: {'position_seconds': 600.0}), 'movie-tmdb-1');
     final version = selectSiloVersion(detail.versions);
@@ -1061,6 +1209,7 @@ SiloPlaybackRequest _request({double? start = 593, AudioTrack? carriedAudio, int
   contentId: 'movie-tmdb-1',
   profileId: 'p-1',
   device: _tv,
+  video: null,
   fileId: fileId,
   pinFile: pinFile,
   quality: 'auto',

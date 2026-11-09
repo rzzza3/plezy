@@ -97,7 +97,7 @@ class _Translations$app$kk extends Translations$app$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'TBD';
 }
 
 // Path: auth
@@ -107,7 +107,7 @@ class _Translations$auth$kk extends Translations$auth$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get localDataRecoveryRequired => 'Plezy жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.';
+	@override String get localDataRecoveryRequired => 'TBD жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.';
 }
 
 // Path: common
@@ -207,7 +207,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 
 	// Translations
 	@override String get title => 'Баптаулар';
-	@override String get supportDeveloper => 'Plezy жобасын қолдау';
+	@override String get supportDeveloper => 'TBD жобасын қолдау';
 	@override String get supportDeveloperDescription => 'Дамытуды қаржыландыру үшін Liberapay арқылы демеушілік жасаңыз';
 	@override String get language => 'Тіл';
 	@override String get theme => 'Тақырып';
@@ -346,7 +346,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get importSettingsDescription => 'Параметрлерді файлдан қалпына келтіріңіз';
 	@override String get importSettingsConfirm => 'Бұл ағымдағы баптауларыңыздың үстінен жазады. Жалғастырасыз ба?';
 	@override String get importSettingsSuccess => 'Баптаулар импортталды';
-	@override String get importSettingsInvalidFile => 'Бұл файл дұрыс Plezy баптаулар файлы емес';
+	@override String get importSettingsInvalidFile => 'Бұл файл дұрыс TBD баптаулар файлы емес';
 	@override String get importSettingsNoUser => 'Баптауларды импорттау алдында жүйеге кіріңіз';
 	@override String get shortcutsReset => 'Пернелер тіркесі әдепкі күйге қайтарылды';
 	@override String get about => 'Қолданба туралы';
@@ -409,8 +409,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String maxVolumePercent({required Object percent}) => '%${percent}';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discord-та не көріп жатқаныңызды көрсету';
-	@override String get services => 'Қызметтер';
-	@override String get servicesDescription => 'Trakt, MyAnimeList, Seerr және т.б. қосыңыз';
 	@override String get manageLibrariesDescription => 'Кітапханаларды қайта реттеу және жасыру';
 	@override String get companionRemoteServer => 'Көмекші пульт сервері';
 	@override String get companionRemoteServerDescription => 'Желідегі мобильді құрылғыларға осы қолданбаны басқаруға рұқсат беру';
@@ -466,7 +464,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get forceTvMode => 'TV режимін мәжбүрлеу';
 	@override String get forceTvModeDescription => 'TV интерфейсін мәжбүрлеу. Автоматты түрде анықталмайтын құрылғылар үшін. Қайта іске қосу қажет.';
 	@override String get startInFullscreen => 'Толық экранда бастау';
-	@override String get startInFullscreenDescription => 'Plezy-ді ашқанда толық экран режимінде ашу';
+	@override String get startInFullscreenDescription => 'TBD-ді ашқанда толық экран режимінде ашу';
 	@override String get exitFullscreenOnPlayerClose => 'Ойнатқыш жабылғанда толық экраннан шығу';
 	@override String get exitFullscreenOnPlayerCloseDescription => 'Видео ойнатқышты жапқанда автоматты түрде толық экраннан шығу';
 	@override String get autoHidePerformanceOverlay => 'Өнімділік панелін авто-жасыру';
@@ -512,7 +510,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get playerScopeGlobal => 'Барлық жерде';
 	@override String get playerScopeLibrary => 'Кітапхана бойынша';
 	@override String get playerScopeTitle => 'Сериал немесе фильм бойынша';
-	@override String get exportDialogTitle => 'Plezy параметрлерін экспорттау';
+	@override String get exportDialogTitle => 'TBD параметрлерін экспорттау';
 }
 
 // Path: search
@@ -1017,10 +1015,8 @@ class _Translations$connections$kk extends Translations$connections$en {
 	@override String get sectionTitle => 'Қосылымдар';
 	@override String get addConnection => 'Қосылым қосу';
 	@override String sessionExpiredOne({required Object name}) => '${name} үшін сеанс мерзімі өтті';
-	@override String sessionExpiredMany({required Object count}) => '${count} сервер үшін сеанс мерзімі өтті';
 	@override String accessDeniedOne({required Object name}) => '${name} бұл тіркелгіге кіруден бас тартты';
 	@override String accessDeniedMany({required Object count}) => '${count} сервер бұл тіркелгіге кіруден бас тартты';
-	@override String get signInAgain => 'Қайтадан кіру';
 }
 
 // Path: accountPreferences
@@ -1175,9 +1171,9 @@ class _Translations$startup$kk extends Translations$startup$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get failedTitle => 'Plezy іске қосылмады';
+	@override String get failedTitle => 'TBD іске қосылмады';
 	@override String get failedBody => 'Іске қосу кезінде қате орын алды. Төмендегі мәліметтер ненің сәтсіз аяқталғанын көрсетеді.';
-	@override String get failedBodyRepairable => 'Plezy сақталған баптаулар файлы зақымдалған және Plezy іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.';
+	@override String get failedBodyRepairable => 'TBD сақталған баптаулар файлы зақымдалған және TBD іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.';
 	@override String get phaseLabel => 'Қадам';
 	@override String get showDetails => 'Мәліметтерді көрсету';
 	@override String get hideDetails => 'Мәліметтерді жасыру';
@@ -1186,16 +1182,16 @@ class _Translations$startup$kk extends Translations$startup$en {
 	@override String get uploadDetails => 'Мәліметтерді жүктеп жіберу';
 	@override String get repairStorage => 'Сақтауды қалпына келтіру';
 	@override String get repairTitle => 'Сақталған деректер қалпына келтірілсін бе?';
-	@override String get repairBodyCommon => 'Plezy баптаулар файлы зақымдалған және оқылмайды. Қалпына келтіру барлық баптауды әдепкі мәнге қайтарады.';
+	@override String get repairBodyCommon => 'TBD баптаулар файлы зақымдалған және оқылмайды. Қалпына келтіру барлық баптауды әдепкі мәнге қайтарады.';
 	@override String get repairBodyOneCredential => 'Бір сақталған кіру деректері зақымдалған және оқылмайды. Қалпына келтіру тек соны өшіреді; қалған баптауларыңызға тиіспейді.';
 	@override String get repairBodySignInsKept => 'Серверлеріңіз бен профильдеріңіз кірген күйінде қалады.';
 	@override String get repairBodySignInsLost => 'Сақталған кіру деректерін қорғайтын кілт осы файлдан қалпына келтірілмейді, сондықтан әрбір сервер мен профильге қайта кіруге тура келеді. Медиа серверіңіздегі ештеңеге әсер етілмейді.';
-	@override String get repairBodySessionsUncertain => 'Tracker-лар (MAL, AniList, Simkl, Trakt) және Seerr бөлек сақталады және сақталуы да, сақталмауы да мүмкін. Plezy не сақталғанын нақты айтады.';
+	@override String get repairBodySessionsUncertain => 'Tracker-лар (MAL, AniList, Simkl, Trakt) және Seerr бөлек сақталады және сақталуы да, сақталмауы да мүмкін. TBD не сақталғанын нақты айтады.';
 	@override String get repairConfirm => 'Қалпына келтіру';
 	@override String get repairSucceeded => 'Сақтау қалпына келтірілді';
 	@override String get repairNeedsRestart => 'Сақтау қалпына келтірілді — қайта іске қосу қажет';
-	@override String get restartRequiredBody => 'Деректеріңіз қалпына келтірілді, бірақ Plezy оларды пайдаланар алдында жаңадан іске қосылуы керек. Plezy жабыңыз да, қайта ашыңыз.';
-	@override String get quitPlezy => 'Plezy бағдарламасынан шығу';
+	@override String get restartRequiredBody => 'Деректеріңіз қалпына келтірілді, бірақ TBD оларды пайдаланар алдында жаңадан іске қосылуы керек. TBD жабыңыз да, қайта ашыңыз.';
+	@override String get quitPlezy => 'TBD бағдарламасынан шығу';
 	@override String get repairFailed => 'Қалпына келтіру сәтсіз аяқталды';
 	@override String get repairKeptSignIns => 'Серверлеріңіз бен профильдеріңіз әлі кірген күйде.';
 	@override String get repairLostSignIns => 'Сақталған кіру деректерін қорғайтын кілт қалпына келтірілмеді. Әрбір сервер мен профильге қайта кіруге тура келеді.';
@@ -1204,7 +1200,7 @@ class _Translations$startup$kk extends Translations$startup$en {
 	@override String get backupWarning => 'Онда сіздің кіру деректеріңіз бар. Оны жүктеп жібермеңіз немесе бөліспеңіз.';
 	@override String get deleteBackup => 'Көшірмені өшіру';
 	@override String get backupDeleted => 'Көшірме өшірілді.';
-	@override String get previousFailureTitle => 'Plezy соңғы рет іске қосыла алмады';
+	@override String get previousFailureTitle => 'TBD соңғы рет іске қосыла алмады';
 }
 
 // Path: licenses
@@ -1819,11 +1815,11 @@ class _Translations$trakt$kk extends Translations$trakt$en {
 	@override String get connected => 'Қосылды';
 	@override String connectedAs({required Object username}) => '@${username} ретінде қосылды';
 	@override String get disconnectConfirm => 'Trakt ажыратылсын ба?';
-	@override String get disconnectConfirmBody => 'Plezy Trakt-қа деректер жіберуді тоқтатады.';
+	@override String get disconnectConfirmBody => 'TBD Trakt-қа деректер жіберуді тоқтатады.';
 	@override String get scrobble => 'Нақты уақытта бақылау';
 	@override String get scrobbleDescription => 'Ойнату кезінде Trakt-қа деректер жіберу.';
 	@override String get watchedSync => 'Көру мәртебесін синхрондау';
-	@override String get watchedSyncDescription => 'Plezy-де белгіленгенде Trakt-та да белгіленеді.';
+	@override String get watchedSyncDescription => 'TBD-де белгіленгенде Trakt-та да белгіленеді.';
 }
 
 // Path: seerr
@@ -1843,7 +1839,7 @@ class _Translations$seerr$kk extends Translations$seerr$en {
 	@override String get noSignInMethods => 'Бұл Seerr қолдау көрсетілетін кіру әдісін ұсынбайды.';
 	@override String get instance => 'Инстанция';
 	@override String get disconnectConfirm => 'Seerr ажыратылсын ба?';
-	@override String get disconnectConfirmBody => 'Plezy бұл Seerr серверін ұмытады. Кез келген уақытта қайта қосыла аласыз.';
+	@override String get disconnectConfirmBody => 'TBD бұл Seerr серверін ұмытады. Кез келген уақытта қайта қосыла аласыз.';
 	@override String get request => 'Сұрау салу';
 	@override String get request4k => '4K сұрау салу';
 	@override String get seasons => 'Маусымдар';
@@ -1868,7 +1864,7 @@ class _Translations$seerr$kk extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'Бұғаттау тізімінде';
 	@override String couldNotReach({required Object url, required Object error}) => '${url} мекенжайына қосылу мүмкін болмады: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} мекенжайында Seerr данасы жоқ (HTTP ${status})';
-	@override String get behindAuthProxy => 'Seerr орнына аутентификация жасайтын кері прокси (SSO немесе HTTP auth) жауап берді. Plezy оның арқылы кіре алмайды: осы қолданба үшін Seerr-дің /api/v1 жолы проксиді айналып өтуіне рұқсат етіңіз немесе Seerr-ге тікелей жететін мекенжайды пайдаланыңыз.';
+	@override String get behindAuthProxy => 'Seerr орнына аутентификация жасайтын кері прокси (SSO немесе HTTP auth) жауап берді. TBD оның арқылы кіре алмайды: осы қолданба үшін Seerr-дің /api/v1 жолы проксиді айналып өтуіне рұқсат етіңіз немесе Seerr-ге тікелей жететін мекенжайды пайдаланыңыз.';
 	@override String get invalidUrl => 'Сервер мекенжайын енгізіңіз, мысалы: https://seerr.example.com';
 	@override String get notInitialized => 'Бұл Seerr данасының бастапқы баптауы аяқталмаған';
 	@override String get noStoredCredentials => 'Қайта кіру үшін сақталған тіркелгі деректері жоқ';
@@ -1896,7 +1892,7 @@ class _Translations$services$kk extends Translations$services$en {
 	@override String get scrobble => 'Барысты автоматты бақылау';
 	@override String get scrobbleDescription => 'Эпизодты немесе фильмді көріп болғанда тізіміңізді жаңарту.';
 	@override String disconnectConfirm({required Object service}) => '${service} ажыратылсын ба?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy ${service} жаңартуды тоқтатады. Кез келген уақытта қайта қосыла аласыз.';
+	@override String disconnectConfirmBody({required Object service}) => 'TBD ${service} жаңартуды тоқтатады. Кез келген уақытта қайта қосыла аласыз.';
 	@override String connectFailed({required Object service}) => '${service} қосылу мүмкін болмады. Қайтадан байқап көріңіз.';
 	@override late final _Translations$services$names$kk names = _Translations$services$names$kk._(_root);
 	@override late final _Translations$services$deviceCode$kk deviceCode = _Translations$services$deviceCode$kk._(_root);
@@ -2370,14 +2366,14 @@ class _Translations$downloads$backgroundWarning$kk extends Translations$download
 	@override String get bannerAction => 'Толығырақ';
 	@override String get sheetTitle => 'Фондық жүктеулер бұғатталған';
 	@override String get sheetTitleDegraded => 'Фондық жүктеулер шектелуі мүмкін';
-	@override String get sheetIntro => 'Android Plezy-дің фонда сенімді жүктеуіне кедергі келтіруде.';
-	@override String get sheetIntroDegraded => 'Құрылғыңыз Plezy-дің фонда қашан жүктей алатынын шектеп отыр.';
-	@override String get reasonBackgroundRestricted => 'Plezy-дің фондық жұмысы шектелген. Батарея немесе фондық пайдалануды "Шектеусіз" етіп қойыңыз.';
-	@override String get reasonStandbyRestricted => 'Android Plezy-ді шектеулі күту режиміне ауыстырды. Батарея пайдалануын "Шектеусіз" етіп қойыңыз.';
+	@override String get sheetIntro => 'Android TBD-дің фонда сенімді жүктеуіне кедергі келтіруде.';
+	@override String get sheetIntroDegraded => 'Құрылғыңыз TBD-дің фонда қашан жүктей алатынын шектеп отыр.';
+	@override String get reasonBackgroundRestricted => 'TBD-дің фондық жұмысы шектелген. Батарея немесе фондық пайдалануды "Шектеусіз" етіп қойыңыз.';
+	@override String get reasonStandbyRestricted => 'Android TBD-ді шектеулі күту режиміне ауыстырды. Батарея пайдалануын "Шектеусіз" етіп қойыңыз.';
 	@override String get reasonDownloadChannelBlocked => 'Жүктеу хабарландырулары өшірілген, сондықтан жүктеу барысы мен басқару элементтері қолжетімсіз болуы мүмкін.';
 	@override String get reasonNotificationsDisabled => 'Хабарландырулар өшірілген. Android 13 және одан жаңа нұсқаларда ұзақ фондық жүктеулер үшін олар қажет.';
 	@override String get reasonDataSaver => 'Трафикті үнемдеу қосулы, бұл мобильді деректер арқылы фондық жүктеулерді бұғаттайды. Wi-Fi арқылы жүктеулер жұмыс істеуі тиіс.';
-	@override String get reasonOemUnknown => 'Plezy фонда тұрғанда жүктеулер бірнеше рет тоқтады. Plezy-дің батарея немесе фондық пайдалану баптауларын тексеріңіз.';
+	@override String get reasonOemUnknown => 'TBD фонда тұрғанда жүктеулер бірнеше рет тоқтады. TBD-дің батарея немесе фондық пайдалану баптауларын тексеріңіз.';
 	@override String get openSettings => 'Баптауларды ашу';
 	@override String get stillNotWorking => 'Құрылғыға арналған көмек';
 	@override String get stillNotWorkingDescription => 'Құрылғыңызға арналған қадамдарды қараңыз немесе мәселе жалғасса Баптаулар › Журналдарды көру бөлімінен журнал жіберіңіз.';
@@ -2435,7 +2431,7 @@ class _Translations$companionRemote$pairing$kk extends Translations$companionRem
 	@override String get connecting => 'Қосылуда...';
 	@override String get searchingForDevices => 'Құрылғылар ізделуде...';
 	@override String get noDevicesFound => 'Желіде құрылғылар табылмады';
-	@override String get noDevicesHint => 'ПК-де Plezy-ді ашып, бір Wi-Fi-ға қосылыңыз';
+	@override String get noDevicesHint => 'ПК-де TBD-ді ашып, бір Wi-Fi-ға қосылыңыз';
 	@override String get availableDevices => 'Қолжетімді құрылғылар';
 	@override String get manualConnection => 'Қолмен қосылу';
 	@override String get validationHostRequired => 'Хост мекенжайын енгізіңіз';
@@ -2519,7 +2515,7 @@ class _Translations$services$deviceCode$kk extends Translations$services$deviceC
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => 'Plezy-ді ${service} қызметінде белсендіру';
+	@override String title({required Object service}) => 'TBD-ді ${service} қызметінде белсендіру';
 	@override String get instructions => 'QR кодын сканерлеңіз немесе төмендегі мекенжайға өтіп, мына кодты енгізіңіз:';
 	@override String openToActivate({required Object service}) => 'Белсендіру үшін ${service} ашу';
 	@override String get copyCode => 'Белсендіру кодын көшіру';
@@ -2579,8 +2575,8 @@ class _Translations$services$libraryFilter$kk extends Translations$services$libr
 extension on TranslationsKk {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
-			'auth.localDataRecoveryRequired' => 'Plezy жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.',
+			'app.title' => 'TBD',
+			'auth.localDataRecoveryRequired' => 'TBD жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.',
 			'common.cancel' => 'Бас тарту',
 			'common.save' => 'Сақтау',
 			'common.close' => 'Жабу',
@@ -2665,7 +2661,7 @@ extension on TranslationsKk {
 			'update.latestVersion' => 'Сізде ең соңғы нұсқа орнатылған',
 			'update.checkFailed' => 'Жаңартуларды тексеру мүмкін болмады',
 			'settings.title' => 'Баптаулар',
-			'settings.supportDeveloper' => 'Plezy жобасын қолдау',
+			'settings.supportDeveloper' => 'TBD жобасын қолдау',
 			'settings.supportDeveloperDescription' => 'Дамытуды қаржыландыру үшін Liberapay арқылы демеушілік жасаңыз',
 			'settings.language' => 'Тіл',
 			'settings.theme' => 'Тақырып',
@@ -2804,7 +2800,7 @@ extension on TranslationsKk {
 			'settings.importSettingsDescription' => 'Параметрлерді файлдан қалпына келтіріңіз',
 			'settings.importSettingsConfirm' => 'Бұл ағымдағы баптауларыңыздың үстінен жазады. Жалғастырасыз ба?',
 			'settings.importSettingsSuccess' => 'Баптаулар импортталды',
-			'settings.importSettingsInvalidFile' => 'Бұл файл дұрыс Plezy баптаулар файлы емес',
+			'settings.importSettingsInvalidFile' => 'Бұл файл дұрыс TBD баптаулар файлы емес',
 			'settings.importSettingsNoUser' => 'Баптауларды импорттау алдында жүйеге кіріңіз',
 			'settings.shortcutsReset' => 'Пернелер тіркесі әдепкі күйге қайтарылды',
 			'settings.about' => 'Қолданба туралы',
@@ -2867,8 +2863,6 @@ extension on TranslationsKk {
 			'settings.maxVolumePercent' => ({required Object percent}) => '%${percent}',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Discord-та не көріп жатқаныңызды көрсету',
-			'settings.services' => 'Қызметтер',
-			'settings.servicesDescription' => 'Trakt, MyAnimeList, Seerr және т.б. қосыңыз',
 			'settings.manageLibrariesDescription' => 'Кітапханаларды қайта реттеу және жасыру',
 			'settings.companionRemoteServer' => 'Көмекші пульт сервері',
 			'settings.companionRemoteServerDescription' => 'Желідегі мобильді құрылғыларға осы қолданбаны басқаруға рұқсат беру',
@@ -2924,7 +2918,7 @@ extension on TranslationsKk {
 			'settings.forceTvMode' => 'TV режимін мәжбүрлеу',
 			'settings.forceTvModeDescription' => 'TV интерфейсін мәжбүрлеу. Автоматты түрде анықталмайтын құрылғылар үшін. Қайта іске қосу қажет.',
 			'settings.startInFullscreen' => 'Толық экранда бастау',
-			'settings.startInFullscreenDescription' => 'Plezy-ді ашқанда толық экран режимінде ашу',
+			'settings.startInFullscreenDescription' => 'TBD-ді ашқанда толық экран режимінде ашу',
 			'settings.exitFullscreenOnPlayerClose' => 'Ойнатқыш жабылғанда толық экраннан шығу',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Видео ойнатқышты жапқанда автоматты түрде толық экраннан шығу',
 			'settings.autoHidePerformanceOverlay' => 'Өнімділік панелін авто-жасыру',
@@ -2970,7 +2964,7 @@ extension on TranslationsKk {
 			'settings.playerScopeGlobal' => 'Барлық жерде',
 			'settings.playerScopeLibrary' => 'Кітапхана бойынша',
 			'settings.playerScopeTitle' => 'Сериал немесе фильм бойынша',
-			'settings.exportDialogTitle' => 'Plezy параметрлерін экспорттау',
+			'settings.exportDialogTitle' => 'TBD параметрлерін экспорттау',
 			'search.hint' => 'Фильмдер, сериалдар, музыка іздеу...',
 			'search.tryDifferentTerm' => 'Басқа іздеу сөзін байқап көріңіз',
 			'search.searchYourMedia' => 'Медиафайлдардан іздеу',
@@ -3091,10 +3085,10 @@ extension on TranslationsKk {
 			'fileInfo.previewIndex' => 'Алдын ала қарау индексі',
 			'fileInfo.packetLength' => 'Пакет ұзындығы',
 			'fileInfo.filePresent' => 'Файл бар',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Сервер оқи алады',
 			'fileInfo.streamPath' => 'Ағын жолы',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Ағынды беру үшін оңтайландырылған',
 			'fileInfo.has64bitOffsets' => '64-биттік ығысулар',
 			'fileInfo.protocol' => 'Протокол',
@@ -3379,10 +3373,8 @@ extension on TranslationsKk {
 			'connections.sectionTitle' => 'Қосылымдар',
 			'connections.addConnection' => 'Қосылым қосу',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} үшін сеанс мерзімі өтті',
-			'connections.sessionExpiredMany' => ({required Object count}) => '${count} сервер үшін сеанс мерзімі өтті',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} бұл тіркелгіге кіруден бас тартты',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} сервер бұл тіркелгіге кіруден бас тартты',
-			'connections.signInAgain' => 'Қайтадан кіру',
 			'accountPreferences.sectionTitle' => 'Тіркелгі баптаулары',
 			'accountPreferences.unavailable' => 'Бұл тіркелгіге қол жеткізу мүмкін емес',
 			'accountPreferences.autoSelectAudio' => 'Аудионы тілі бойынша таңдау',
@@ -3495,9 +3487,9 @@ extension on TranslationsKk {
 			'logs.clearLogs' => 'Журналдарды тазалау',
 			'logs.copyLogs' => 'Журналдарды көшіру',
 			'logs.uploadLogs' => 'Журналдарды жүктеу',
-			'startup.failedTitle' => 'Plezy іске қосылмады',
+			'startup.failedTitle' => 'TBD іске қосылмады',
 			'startup.failedBody' => 'Іске қосу кезінде қате орын алды. Төмендегі мәліметтер ненің сәтсіз аяқталғанын көрсетеді.',
-			'startup.failedBodyRepairable' => 'Plezy сақталған баптаулар файлы зақымдалған және Plezy іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.',
+			'startup.failedBodyRepairable' => 'TBD сақталған баптаулар файлы зақымдалған және TBD іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.',
 			'startup.phaseLabel' => 'Қадам',
 			'startup.showDetails' => 'Мәліметтерді көрсету',
 			'startup.hideDetails' => 'Мәліметтерді жасыру',
@@ -3506,16 +3498,16 @@ extension on TranslationsKk {
 			'startup.uploadDetails' => 'Мәліметтерді жүктеп жіберу',
 			'startup.repairStorage' => 'Сақтауды қалпына келтіру',
 			'startup.repairTitle' => 'Сақталған деректер қалпына келтірілсін бе?',
-			'startup.repairBodyCommon' => 'Plezy баптаулар файлы зақымдалған және оқылмайды. Қалпына келтіру барлық баптауды әдепкі мәнге қайтарады.',
+			'startup.repairBodyCommon' => 'TBD баптаулар файлы зақымдалған және оқылмайды. Қалпына келтіру барлық баптауды әдепкі мәнге қайтарады.',
 			'startup.repairBodyOneCredential' => 'Бір сақталған кіру деректері зақымдалған және оқылмайды. Қалпына келтіру тек соны өшіреді; қалған баптауларыңызға тиіспейді.',
 			'startup.repairBodySignInsKept' => 'Серверлеріңіз бен профильдеріңіз кірген күйінде қалады.',
 			'startup.repairBodySignInsLost' => 'Сақталған кіру деректерін қорғайтын кілт осы файлдан қалпына келтірілмейді, сондықтан әрбір сервер мен профильге қайта кіруге тура келеді. Медиа серверіңіздегі ештеңеге әсер етілмейді.',
-			'startup.repairBodySessionsUncertain' => 'Tracker-лар (MAL, AniList, Simkl, Trakt) және Seerr бөлек сақталады және сақталуы да, сақталмауы да мүмкін. Plezy не сақталғанын нақты айтады.',
+			'startup.repairBodySessionsUncertain' => 'Tracker-лар (MAL, AniList, Simkl, Trakt) және Seerr бөлек сақталады және сақталуы да, сақталмауы да мүмкін. TBD не сақталғанын нақты айтады.',
 			'startup.repairConfirm' => 'Қалпына келтіру',
 			'startup.repairSucceeded' => 'Сақтау қалпына келтірілді',
 			'startup.repairNeedsRestart' => 'Сақтау қалпына келтірілді — қайта іске қосу қажет',
-			'startup.restartRequiredBody' => 'Деректеріңіз қалпына келтірілді, бірақ Plezy оларды пайдаланар алдында жаңадан іске қосылуы керек. Plezy жабыңыз да, қайта ашыңыз.',
-			'startup.quitPlezy' => 'Plezy бағдарламасынан шығу',
+			'startup.restartRequiredBody' => 'Деректеріңіз қалпына келтірілді, бірақ TBD оларды пайдаланар алдында жаңадан іске қосылуы керек. TBD жабыңыз да, қайта ашыңыз.',
+			'startup.quitPlezy' => 'TBD бағдарламасынан шығу',
 			'startup.repairFailed' => 'Қалпына келтіру сәтсіз аяқталды',
 			'startup.repairKeptSignIns' => 'Серверлеріңіз бен профильдеріңіз әлі кірген күйде.',
 			'startup.repairLostSignIns' => 'Сақталған кіру деректерін қорғайтын кілт қалпына келтірілмеді. Әрбір сервер мен профильге қайта кіруге тура келеді.',
@@ -3524,7 +3516,7 @@ extension on TranslationsKk {
 			'startup.backupWarning' => 'Онда сіздің кіру деректеріңіз бар. Оны жүктеп жібермеңіз немесе бөліспеңіз.',
 			'startup.deleteBackup' => 'Көшірмені өшіру',
 			'startup.backupDeleted' => 'Көшірме өшірілді.',
-			'startup.previousFailureTitle' => 'Plezy соңғы рет іске қосыла алмады',
+			'startup.previousFailureTitle' => 'TBD соңғы рет іске қосыла алмады',
 			'licenses.relatedPackages' => 'Байланысты пакеттер',
 			'licenses.license' => 'Лицензия',
 			'licenses.licenseNumber' => ({required Object number}) => 'Лицензия ${number}',
@@ -3605,12 +3597,12 @@ extension on TranslationsKk {
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} пікір', other: '${n} пікір', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} дауыс',
 			'explore.stats.watching' => ({required Object n}) => '${n} қарап жатыр',
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} аяқтады',
 			'explore.stats.onHold' => ({required Object n}) => '${n} кейінге қалдырды',
 			'explore.stats.dropped' => ({required Object n}) => '${n} тастады',
 			'explore.season.winter' => 'Қыс',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.spring' => 'Көктем',
 			'explore.season.summer' => 'Жаз',
 			'explore.season.fall' => 'Күз',
@@ -3923,14 +3915,14 @@ extension on TranslationsKk {
 			'downloads.backgroundWarning.bannerAction' => 'Толығырақ',
 			'downloads.backgroundWarning.sheetTitle' => 'Фондық жүктеулер бұғатталған',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Фондық жүктеулер шектелуі мүмкін',
-			'downloads.backgroundWarning.sheetIntro' => 'Android Plezy-дің фонда сенімді жүктеуіне кедергі келтіруде.',
-			'downloads.backgroundWarning.sheetIntroDegraded' => 'Құрылғыңыз Plezy-дің фонда қашан жүктей алатынын шектеп отыр.',
-			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy-дің фондық жұмысы шектелген. Батарея немесе фондық пайдалануды "Шектеусіз" етіп қойыңыз.',
-			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android Plezy-ді шектеулі күту режиміне ауыстырды. Батарея пайдалануын "Шектеусіз" етіп қойыңыз.',
+			'downloads.backgroundWarning.sheetIntro' => 'Android TBD-дің фонда сенімді жүктеуіне кедергі келтіруде.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Құрылғыңыз TBD-дің фонда қашан жүктей алатынын шектеп отыр.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'TBD-дің фондық жұмысы шектелген. Батарея немесе фондық пайдалануды "Шектеусіз" етіп қойыңыз.',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android TBD-ді шектеулі күту режиміне ауыстырды. Батарея пайдалануын "Шектеусіз" етіп қойыңыз.',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Жүктеу хабарландырулары өшірілген, сондықтан жүктеу барысы мен басқару элементтері қолжетімсіз болуы мүмкін.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Хабарландырулар өшірілген. Android 13 және одан жаңа нұсқаларда ұзақ фондық жүктеулер үшін олар қажет.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'Трафикті үнемдеу қосулы, бұл мобильді деректер арқылы фондық жүктеулерді бұғаттайды. Wi-Fi арқылы жүктеулер жұмыс істеуі тиіс.',
-			'downloads.backgroundWarning.reasonOemUnknown' => 'Plezy фонда тұрғанда жүктеулер бірнеше рет тоқтады. Plezy-дің батарея немесе фондық пайдалану баптауларын тексеріңіз.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'TBD фонда тұрғанда жүктеулер бірнеше рет тоқтады. TBD-дің батарея немесе фондық пайдалану баптауларын тексеріңіз.',
 			'downloads.backgroundWarning.openSettings' => 'Баптауларды ашу',
 			'downloads.backgroundWarning.stillNotWorking' => 'Құрылғыға арналған көмек',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Құрылғыңызға арналған қадамдарды қараңыз немесе мәселе жалғасса Баптаулар › Журналдарды көру бөлімінен журнал жіберіңіз.',
@@ -3997,7 +3989,7 @@ extension on TranslationsKk {
 			'companionRemote.pairing.connecting' => 'Қосылуда...',
 			'companionRemote.pairing.searchingForDevices' => 'Құрылғылар ізделуде...',
 			'companionRemote.pairing.noDevicesFound' => 'Желіде құрылғылар табылмады',
-			'companionRemote.pairing.noDevicesHint' => 'ПК-де Plezy-ді ашып, бір Wi-Fi-ға қосылыңыз',
+			'companionRemote.pairing.noDevicesHint' => 'ПК-де TBD-ді ашып, бір Wi-Fi-ға қосылыңыз',
 			'companionRemote.pairing.availableDevices' => 'Қолжетімді құрылғылар',
 			'companionRemote.pairing.manualConnection' => 'Қолмен қосылу',
 			'companionRemote.pairing.validationHostRequired' => 'Хост мекенжайын енгізіңіз',
@@ -4119,12 +4111,12 @@ extension on TranslationsKk {
 			'externalPlayer.customPlayers' => 'Арнайы ойнатқыштар',
 			'externalPlayer.systemDefault' => 'Жүйелік әдепкі',
 			'externalPlayer.addCustomPlayer' => 'Арнайы ойнатқыш қосу',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Ойнатқыш атауы',
 			'externalPlayer.playerNameHint' => 'Менің ойнатқышым',
 			'externalPlayer.playerCommand' => 'Пәрмен',
 			'externalPlayer.playerPackage' => 'Пакет атауы',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerUrlScheme' => 'URL схемасы',
 			'externalPlayer.off' => 'Өшірулі',
 			'externalPlayer.launchFailed' => 'Сыртқы ойнатқышты іске қосу мүмкін болмады',
@@ -4164,11 +4156,11 @@ extension on TranslationsKk {
 			'trakt.connected' => 'Қосылды',
 			'trakt.connectedAs' => ({required Object username}) => '@${username} ретінде қосылды',
 			'trakt.disconnectConfirm' => 'Trakt ажыратылсын ба?',
-			'trakt.disconnectConfirmBody' => 'Plezy Trakt-қа деректер жіберуді тоқтатады.',
+			'trakt.disconnectConfirmBody' => 'TBD Trakt-қа деректер жіберуді тоқтатады.',
 			'trakt.scrobble' => 'Нақты уақытта бақылау',
 			'trakt.scrobbleDescription' => 'Ойнату кезінде Trakt-қа деректер жіберу.',
 			'trakt.watchedSync' => 'Көру мәртебесін синхрондау',
-			'trakt.watchedSyncDescription' => 'Plezy-де белгіленгенде Trakt-та да белгіленеді.',
+			'trakt.watchedSyncDescription' => 'TBD-де белгіленгенде Trakt-та да белгіленеді.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerr қосу',
 			'seerr.serverUrl' => 'Сервер URL-і',
@@ -4179,7 +4171,7 @@ extension on TranslationsKk {
 			'seerr.noSignInMethods' => 'Бұл Seerr қолдау көрсетілетін кіру әдісін ұсынбайды.',
 			'seerr.instance' => 'Инстанция',
 			'seerr.disconnectConfirm' => 'Seerr ажыратылсын ба?',
-			'seerr.disconnectConfirmBody' => 'Plezy бұл Seerr серверін ұмытады. Кез келген уақытта қайта қосыла аласыз.',
+			'seerr.disconnectConfirmBody' => 'TBD бұл Seerr серверін ұмытады. Кез келген уақытта қайта қосыла аласыз.',
 			'seerr.request' => 'Сұрау салу',
 			'seerr.request4k' => '4K сұрау салу',
 			'seerr.seasons' => 'Маусымдар',
@@ -4204,7 +4196,7 @@ extension on TranslationsKk {
 			'seerr.statusBlocklisted' => 'Бұғаттау тізімінде',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url} мекенжайына қосылу мүмкін болмады: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} мекенжайында Seerr данасы жоқ (HTTP ${status})',
-			'seerr.behindAuthProxy' => 'Seerr орнына аутентификация жасайтын кері прокси (SSO немесе HTTP auth) жауап берді. Plezy оның арқылы кіре алмайды: осы қолданба үшін Seerr-дің /api/v1 жолы проксиді айналып өтуіне рұқсат етіңіз немесе Seerr-ге тікелей жететін мекенжайды пайдаланыңыз.',
+			'seerr.behindAuthProxy' => 'Seerr орнына аутентификация жасайтын кері прокси (SSO немесе HTTP auth) жауап берді. TBD оның арқылы кіре алмайды: осы қолданба үшін Seerr-дің /api/v1 жолы проксиді айналып өтуіне рұқсат етіңіз немесе Seerr-ге тікелей жететін мекенжайды пайдаланыңыз.',
 			'seerr.invalidUrl' => 'Сервер мекенжайын енгізіңіз, мысалы: https://seerr.example.com',
 			'seerr.notInitialized' => 'Бұл Seerr данасының бастапқы баптауы аяқталмаған',
 			'seerr.noStoredCredentials' => 'Қайта кіру үшін сақталған тіркелгі деректері жоқ',
@@ -4223,14 +4215,14 @@ extension on TranslationsKk {
 			'services.scrobble' => 'Барысты автоматты бақылау',
 			'services.scrobbleDescription' => 'Эпизодты немесе фильмді көріп болғанда тізіміңізді жаңарту.',
 			'services.disconnectConfirm' => ({required Object service}) => '${service} ажыратылсын ба?',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy ${service} жаңартуды тоқтатады. Кез келген уақытта қайта қосыла аласыз.',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'TBD ${service} жаңартуды тоқтатады. Кез келген уақытта қайта қосыла аласыз.',
 			'services.connectFailed' => ({required Object service}) => '${service} қосылу мүмкін болмады. Қайтадан байқап көріңіз.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
-			'services.deviceCode.title' => ({required Object service}) => 'Plezy-ді ${service} қызметінде белсендіру',
+			'services.deviceCode.title' => ({required Object service}) => 'TBD-ді ${service} қызметінде белсендіру',
 			'services.deviceCode.instructions' => 'QR кодын сканерлеңіз немесе төмендегі мекенжайға өтіп, мына кодты енгізіңіз:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Белсендіру үшін ${service} ашу',
 			'services.deviceCode.copyCode' => 'Белсендіру кодын көшіру',

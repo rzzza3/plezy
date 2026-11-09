@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/theme/mono_tokens.dart';
 
 /// `monoTheme` builds a full `ColorScheme`, an applied+copyWith'd Typography
 /// `TextTheme`, ~14 sub-theme objects, and then clones the whole `ThemeData`
@@ -31,8 +34,46 @@ void main() {
     expect(dark.scaffoldBackgroundColor, isNot(const Color(0xFF000000)));
   });
 
+  test('the app theme is the pure-black OLED palette', () {
+    expect(identical(appTheme, monoTheme(dark: true, oled: true)), isTrue);
+    expect(appTheme.brightness, Brightness.dark);
+    expect(appTheme.scaffoldBackgroundColor, const Color(0xFF000000));
+  });
+
+  test('slate is its own dark palette, distinct from OLED and the neutral dark', () {
+    final slate = appThemeFor(AppTheme.slate);
+
+    expect(identical(slate, appThemeFor(AppTheme.slate)), isTrue);
+    expect(identical(slate, monoTheme(dark: true)), isFalse);
+    expect(identical(slate, appTheme), isFalse);
+    expect(slate.brightness, Brightness.dark);
+    expect(slate.scaffoldBackgroundColor, const Color(0xFF151A21));
+    expect(slate.colorScheme.surface, const Color(0xFF1D232C));
+    // dark:false cannot produce a light slate theme either.
+    expect(identical(monoTheme(dark: false, slate: true), slate), isTrue);
+  });
+
+  test('slate text clears WCAG AA on both its background and its cards', () {
+    final slate = appThemeFor(AppTheme.slate);
+    final t = slate.extension<MonoTokens>()!;
+    double contrast(Color fg, Color bg) {
+      final a = Color.alphaBlend(fg, bg).computeLuminance();
+      final b = bg.computeLuminance();
+      return (math.max(a, b) + 0.05) / (math.min(a, b) + 0.05);
+    }
+
+    for (final bg in [t.bg, t.surface]) {
+      expect(contrast(t.text, bg), greaterThanOrEqualTo(7));
+      expect(contrast(t.textMuted, bg), greaterThanOrEqualTo(4.5));
+    }
+  });
+
+  test('oled wins when both oled and slate are asked for', () {
+    expect(identical(monoTheme(dark: true, oled: true, slate: true), appTheme), isTrue);
+  });
+
   test('oled normalizes dark, so it cannot produce a light OLED theme', () {
-    // ThemeProvider.darkThemeFor only ever asks for oled alongside dark, but the
+    // appTheme only ever asks for oled alongside dark, but the
     // signature allows dark:false — collapsing it keeps the cache at three
     // palette states instead of four, and a light OLED theme is meaningless.
     expect(identical(monoTheme(dark: false, oled: true), monoTheme(dark: true, oled: true)), isTrue);

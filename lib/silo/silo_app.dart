@@ -6,7 +6,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../services/base_shared_preferences_service.dart';
+import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/device_channel.dart';
 import '../utils/platform_detector.dart';
 import 'silo_contract_gate.dart';
 import 'silo_headers.dart';
@@ -41,6 +43,21 @@ class SiloApp {
       Directory('${(await getTemporaryDirectory()).path}/silo_subtitles');
 
   static Future<SiloDeviceFacts> playbackFacts() => _facts ??= _loadFacts();
+
+  /// The decoders and the active display, read again for every start since
+  /// the display's HDR output follows its current mode. Null off Android or
+  /// when the probe fails, which falls back to the declared capabilities.
+  static Future<SiloVideoProbe?> videoProbe() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final raw = await deviceChannel.invokeMethod<Object?>('getSiloPlaybackCapabilities');
+      final settings = await SettingsService.getInstance();
+      return SiloVideoProbe.fromChannel(raw, dolbyVisionAllowed: !settings.read(SettingsService.disableDolbyVision));
+    } catch (error) {
+      appLogger.w('Silo playback: video capability probe failed', error: error);
+      return null;
+    }
+  }
 
   /// One loopback proxy for every Silo stream this process plays.
   static Future<SiloMediaProxy> mediaProxy() => _proxy ??= SiloMediaProxy.start();
@@ -133,7 +150,7 @@ class SiloApp {
       isTv: PlatformDetector.isTV(),
       manufacturer: manufacturer,
       model: model,
-      clientName: 'Plezy',
+      clientName: 'TBD',
       version: version,
     );
   }

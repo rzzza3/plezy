@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>5 · Favourites mosaic — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .glow { position: absolute; inset: 0; background: radial-gradient(900px 520px at 30% 30%, rgba(90,96,110,0.18), rgba(14,15,18,0) 70%); }
+  .top { position: absolute; left: var(--pad-x); right: 520px; top: 44px; display: flex; align-items: center; gap: 22px; z-index: 5; }
+  .top .sp { flex: 1; }
+
+  .sec { position: absolute; left: var(--pad-x); right: 0; }
+  .sec .head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 24px; }
+  .sec .head .count { font-size: 22px; color: var(--muted); }
+  .shows { top: 150px; }
+  .movies { top: 784px; }
+
+  .mosaic { display: grid; grid-template-columns: 880px 384px 384px; grid-template-rows: 236px 236px; gap: 20px; }
+  .tile { position: relative; border-radius: 18px; overflow: hidden; background: var(--surface-2); }
+  .tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(10,11,13,0.9) 0%, rgba(10,11,13,0.25) 45%, rgba(10,11,13,0) 70%); }
+  .tile .cap { position: absolute; left: 24px; right: 24px; bottom: 20px; z-index: 2; }
+  .tile .cap .t { font-size: 26px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile .cap .s { font-size: 19px; color: rgba(237,237,237,0.78); margin-top: 4px; }
+  .tile.big { grid-row: span 2; }
+  .tile.big .cap { left: 40px; bottom: 36px; }
+  .tile.big .cap .t { font-size: 58px; font-weight: 700; letter-spacing: -1px; }
+  .tile.big .cap .s { font-size: 23px; margin-top: 8px; }
+  .tile.big .actions { margin-top: 24px; }
+  .tile.big .btn-primary { height: 64px; font-size: 24px; padding: 0 34px 0 28px; }
+  .tile.big .btn-circle { width: 64px; height: 64px; font-size: 26px; }
+  .tile.focus { outline: 4px solid #fff; outline-offset: 4px; }
+  .heart { position: absolute; top: 16px; right: 16px; z-index: 2; width: 40px; height: 40px; border-radius: 50%; background: rgba(14,15,18,0.7); display: grid; place-items: center; font-size: 22px; }
+
+  .row { display: flex; gap: 18px; }
+  .poster .art { width: 170px; height: 255px; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="glow"></div>
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+
+  <div class="top">
+    <div class="tabs">
+      <span class="tab"><i data-i="bookmark"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab on"><i data-i="heartf"></i>Favourites <span class="n">11</span></span>
+    </div>
+    <span class="sp"></span>
+    <span class="chip ghost"><i data-i="shuffle"></i>Shuffle play</span>
+  </div>
+
+  <section class="sec shows">
+    <div class="head"><h2 class="h-section">Shows</h2><span class="count">5</span></div>
+    <div class="mosaic">
+      <div class="tile big focus">
+        <img src="assets/b-throne.jpg" alt="" style="object-position:30% 40%">
+        <span class="heart"><i data-i="heartf"></i></span>
+        <div class="cap">
+          <div class="t">Game of Thrones</div>
+          <div class="s">8 seasons · Watched through S4 · Favourite since 2024</div>
+          <div class="actions">
+            <span class="btn-primary"><i data-i="resume"></i>S5 E1</span>
+            <span class="btn-circle"><i data-i="shuffle"></i></span>
+            <span class="btn-circle"><i data-i="more"></i></span>
+          </div>
+        </div>
+      </div>
+      <div class="tile"><img src="assets/w-topgear.jpg" alt=""><span class="heart"><i data-i="heartf"></i></span><div class="cap"><div class="t">Top Gear</div><div class="s">33 series</div></div></div>
+      <div class="tile"><img src="assets/w-mortimer.jpg" alt=""><span class="heart"><i data-i="heartf"></i></span><div class="cap"><div class="t">Gone Fishing</div><div class="s">8 series · 2 unwatched</div></div></div>
+      <div class="tile"><img src="assets/w-traitors.jpg" alt=""><span class="heart"><i data-i="heartf"></i></span><div class="cap"><div class="t">The Traitors</div><div class="s">S5 E6 · New this week</div></div></div>
+      <div class="tile"><img src="assets/w-crystal.jpg" alt=""><span class="heart"><i data-i="heartf"></i></span><div class="cap"><div class="t">Crystal Lake</div><div class="s">1 season · New episode</div></div></div>
+    </div>
+  </section>
+
+  <section class="sec movies">
+    <div class="head"><h2 class="h-section">Movies</h2><span class="count">6</span></div>
+    <div class="row">
+      <div class="card poster"><div class="art"><img src="assets/s-mononoke.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/s-ponyo.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/s-tunnel.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/s-supergirl.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/p-degaulle.jpg" alt=""></div></div>
+      <div class="card poster"><div class="art"><img src="assets/s-hei.jpg" alt=""></div></div>
+    </div>
+  </section>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

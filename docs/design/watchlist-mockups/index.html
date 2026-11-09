@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plezy · Watchlist and Favourites mockups</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { background: var(--bg); padding: 72px 6vw 120px; }
+  h1 { font-size: 44px; font-weight: 700; letter-spacing: -0.6px; margin: 0 0 12px; }
+  .lede { font-size: 19px; line-height: 1.6; color: var(--muted); max-width: 68ch; margin: 0 0 64px; }
+  .m { display: grid; grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr); gap: 40px; align-items: start; margin-bottom: 80px; }
+  .m a.shot { display: block; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,0.45); outline-offset: 6px; }
+  .m a.shot:focus-visible, .m a.shot:hover { outline: 3px solid var(--text); }
+  .m img { display: block; width: 100%; height: auto; }
+  h2 { font-size: 28px; font-weight: 500; margin: 6px 0 6px; }
+  .from { font-size: 16px; color: var(--muted); margin: 0 0 18px; }
+  p, li { font-size: 17px; line-height: 1.6; color: rgba(237,237,237,0.82); }
+  ul { padding-left: 20px; margin: 10px 0 0; }
+  a { color: var(--text); text-underline-offset: 4px; }
+  @media (max-width: 1000px) { .m { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <h1>Watchlist and Favourites</h1>
+  <p class="lede">Twelve takes on one new destination in the side rail (bookmark, under Downloads). Silo keeps Watchlist and Favourites as two lists, so every take shares one switch at the top, styled like the library's Recommended / Browse pills. All twelve use the app's own palette, type, focus ring and button set, at TV size, 1920×1080. Click any frame to open the HTML.</p>
+
+  <section class="m">
+    <a class="shot" href="1-shelves.html"><img src="renders/1-shelves.png" alt="Shelves mockup"></a>
+    <div>
+      <h2>1 · Shelves</h2>
+      <p class="from">After Plex Watchlist and Plezy Home</p>
+      <p>Looks the most like Home. The focused title fills the hero, and the list is split into shelves: <em>Started</em>, then <em>Movies</em>, then <em>Shows</em>.</p>
+      <ul><li>Needs no new components</li><li>Slower to scan once the list gets past about 30 titles</li></ul>
+    </div>
+  </section>
+
+  <section class="m">
+    <a class="shot" href="2-poster-wall.html"><img src="renders/2-poster-wall.png" alt="Poster wall mockup"></a>
+    <div>
+      <h2>2 · Poster wall</h2>
+      <p class="from">After Netflix My List</p>
+      <p>A dense grid of posters with type filters, a sort control and a running total. A strip at the bottom names the focused title and shows the remote keys.</p>
+      <ul><li>Best for long lists</li><li>Badges flag new episodes and progress</li><li>Hold OK opens Remove / Move to Favourites</li></ul>
+    </div>
+  </section>
+
+  <section class="m">
+    <a class="shot" href="3-list-preview.html"><img src="renders/3-list-preview.png" alt="List and preview mockup"></a>
+    <div>
+      <h2>3 · List and preview</h2>
+      <p class="from">After HBO Max My Stuff</p>
+      <p>A vertical list on the left and a large preview on the right. You can play, unlist, favourite or mark watched without opening the detail page.</p>
+      <ul><li>Up and down on the remote is all it takes</li><li>Shows the most about the focused title</li><li>Fewer titles fit on screen</li></ul>
+    </div>
+  </section>
+
+  <section class="m">
+    <a class="shot" href="4-queue.html"><img src="renders/4-queue.png" alt="Up next queue mockup"></a>
+    <div>
+      <h2>4 · Up next queue</h2>
+      <p class="from">After Plex Up Next and the HBO queue</p>
+      <p>The Watchlist becomes an ordered queue. The first title gets the big slot, and the rest are numbered because their order matters. This frame shows reorder mode: The Meg is picked up, and left/right moves it.</p>
+      <ul><li>Reuses the app's D-pad reorder behaviour</li><li>Needs Silo to store an order</li></ul>
+    </div>
+  </section>
+
+  <section class="m">
+    <a class="shot" href="5-favourites-mosaic.html"><img src="renders/5-favourites-mosaic.png" alt="Favourites mosaic mockup"></a>
+    <div>
+      <h2>5 · Favourites mosaic</h2>
+      <p class="from">After HBO Max collection pages</p>
+      <p>The Favourites tab shown as a collection rather than a to-do list. Big landscape tiles with the title on the art, a Shuffle play shortcut, and a Movies row underneath.</p>
+      <ul><li>Can pair with any of 1–4 for the Watchlist tab</li></ul>
+    </div>
+  </section>
+  <section class="m">
+    <a class="shot" href="6-ambient-rows.html"><img src="renders/6-ambient-rows.png" alt="Ambient rows mockup"></a>
+    <div>
+      <h2>6 · Ambient rows</h2>
+      <p class="from">After the Apple TV app</p>
+      <p>Two calm rows of large landscape tiles: <em>Up Next</em> and <em>Not started</em>. The focused tile lifts with a soft shadow and sheen instead of a ring, and its art, heavily blurred, tints the whole screen.</p>
+      <ul><li>Status words (Resume, New episode) sit in the subtitle, not in badges</li><li>Different focus style from the rest of the app</li></ul>
+    </div>
+  </section>
+
+  <section class="m">
+    <a class="shot" href="7-status-board.html"><img src="renders/7-status-board.png" alt="Status board mockup"></a>
+    <div>
+      <h2>7 · Status board</h2>
+      <p class="from">After the Crunchyroll watchlist</p>
+      <p>Three columns sorted by where you are: <em>In progress</em>, <em>New episodes</em>, <em>Not started</em>. Each card carries its own next action, so OK always does the obvious thing (Resume, Play S1 E2, Play).</p>
+      <ul><li>Left and right jump between columns</li><li>Works best when most items are shows</li></ul>
+    </div>
+  </section>
+
+  <section class="m">
+    <a class="shot" href="8-one-at-a-time.html"><img src="renders/8-one-at-a-time.png" alt="One at a time mockup"></a>
+    <div>
+      <h2>8 · One at a time</h2>
+      <p class="from">After MUBI</p>
+      <p>One title fills the screen, with director, country and language up front, and a filmstrip of the rest along the bottom. Left and right step through the list, "4 of 18" style.</p>
+      <ul><li>Most cinematic, slowest to browse</li><li>Needs good backdrops for every title</li></ul>
+    </div>
+  </section>
+  <section class="m">
+    <a class="shot" href="9-playlist.html"><img src="renders/9-playlist.png" alt="Playlist mockup"></a>
+    <div>
+      <h2>9 · Playlist</h2>
+      <p class="from">After YouTube Watch Later</p>
+      <p>The Watchlist as one playable thing: a cover panel with the total running time, <em>Play all</em> and <em>Shuffle</em>, next to a numbered list with drag handles and running times.</p>
+      <ul><li>Turns the list into a queue for a long evening</li><li>Order is meaningful, so it needs Silo to store it</li></ul>
+    </div>
+  </section>
+
+  <section class="m">
+    <a class="shot" href="10-edit-mode.html"><img src="renders/10-edit-mode.png" alt="Edit mode mockup"></a>
+    <div>
+      <h2>10 · Edit mode</h2>
+      <p class="from">After Prime Video and Hulu</p>
+      <p>A select mode for tidying up. Unselected titles dim, selected ones get a tick, and a floating bar acts on all of them at once: Remove, Move to Favourites, Mark as watched.</p>
+      <ul><li><em>Select watched</em> clears finished titles in one go</li><li>A state that pairs with any of the other layouts</li></ul>
+    </div>
+  </section>
+
+  <section class="m">
+    <a class="shot" href="11-week-ahead.html"><img src="renders/11-week-ahead.png" alt="Week ahead mockup"></a>
+    <div>
+      <h2>11 · Week ahead</h2>
+      <p class="from">After Stremio and Trakt calendars</p>
+      <p>A week view of new episodes for shows on your Watchlist, built on the same Silo calendar the Library tab already uses. Aired episodes are marked Ready; upcoming ones are dimmed with their air time. The rest of the list sits underneath.</p>
+      <ul><li>Answers “is there anything new?” at a glance</li><li>Weeks with little airing look sparse</li></ul>
+    </div>
+  </section>
+
+  <section class="m">
+    <a class="shot" href="12-favourites-hub.html"><img src="renders/12-favourites-hub.png" alt="Favourites hub mockup"></a>
+    <div>
+      <h2>12 · Favourites hub</h2>
+      <p class="from">After Disney+</p>
+      <p>The Favourites tab as a small home page: a rotating hero, category tiles fanned with their own posters (Movies, TV Shows, Animation, Has new episodes), then the most recent favourites.</p>
+      <ul><li>Category tiles are quick shortcuts on a remote</li><li>Hero lines like “Watched twice” need play counts from Silo</li></ul>
+    </div>
+  </section>
+</body>
+</html>

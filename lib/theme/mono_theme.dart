@@ -1,25 +1,54 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'app_theme.dart';
 import 'gapped_track_shape.dart';
 import 'mono_tokens.dart';
 
-final Map<({bool dark, bool oled, TargetPlatform platform}), ThemeData> _monoThemeCache = {};
+export 'app_theme.dart';
 
-ThemeData monoTheme({required bool dark, bool oled = false}) {
+final Map<({bool dark, bool oled, bool slate, TargetPlatform platform}), ThemeData> _monoThemeCache = {};
+
+/// The theme the app runs for [theme].
+ThemeData appThemeFor(AppTheme theme) => switch (theme) {
+  AppTheme.oled => monoTheme(dark: true, oled: true),
+  AppTheme.slate => monoTheme(dark: true, slate: true),
+};
+
+/// The OLED theme, for frames drawn before the persisted choice is readable.
+ThemeData get appTheme => appThemeFor(AppTheme.oled);
+
+ThemeData monoTheme({required bool dark, bool oled = false, bool slate = false}) {
   // ThemeData derives several defaults from defaultTargetPlatform.
-  final key = (dark: dark || oled, oled: oled, platform: defaultTargetPlatform);
+  final key = (dark: dark || oled || slate, oled: oled, slate: slate && !oled, platform: defaultTargetPlatform);
   final cached = _monoThemeCache[key];
   if (cached != null) return cached;
 
-  final theme = _buildMonoTheme(dark: key.dark, oled: key.oled, platform: key.platform);
+  final theme = _buildMonoTheme(dark: key.dark, oled: key.oled, slate: key.slate, platform: key.platform);
   _monoThemeCache[key] = theme;
   return theme;
 }
 
-ThemeData _buildMonoTheme({required bool dark, required bool oled, required TargetPlatform platform}) {
+ThemeData _buildMonoTheme({
+  required bool dark,
+  required bool oled,
+  required bool slate,
+  required TargetPlatform platform,
+}) {
   // neutral greys tuned for crisp contrast
   final ({Color bg, Color surface, Color outline, Color text, Color textMuted}) c;
-  if (oled) {
+  if (slate) {
+    // Blue-grey stone (OKLCH hue ~255, chroma under 0.02): lifted off black
+    // for LCD panels and lit rooms, cool enough to read as slate rather than
+    // the neutral dark. Text keeps a trace of the same hue so it sits in the
+    // palette instead of glowing on it.
+    c = (
+      bg: const Color(0xFF151A21),
+      surface: const Color(0xFF1D232C),
+      outline: const Color(0x1FE3E8EE),
+      text: const Color(0xFFE3E8EE),
+      textMuted: const Color(0x99E3E8EE),
+    );
+  } else if (oled) {
     c = (
       bg: const Color(0xFF000000), // Pure black for OLED
       surface: const Color(0xFF0A0A0A), // Very dark gray
@@ -45,7 +74,7 @@ ThemeData _buildMonoTheme({required bool dark, required bool oled, required Targ
     );
   }
 
-  final isDark = dark || oled;
+  final isDark = dark || oled || slate;
   final clickableCursor = WidgetStateProperty.resolveWith<MouseCursor>(
     (states) => states.contains(WidgetState.disabled) ? MouseCursor.defer : SystemMouseCursors.click,
   );

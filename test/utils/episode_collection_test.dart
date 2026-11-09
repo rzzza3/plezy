@@ -177,6 +177,18 @@ void main() {
     expect(preferredSeasonIndex([special, season1, season2]), 2);
   });
 
+  test('latestSeasonIndex picks the highest-numbered season wherever it sits', () {
+    final special = _season('specials', index: 0);
+    final season1 = _season('season-1', index: 1);
+    final season3 = _season('season-3', index: 3);
+    final season2 = _season('season-2', index: 2);
+
+    expect(latestSeasonIndex([special, season1, season3, season2]), 2);
+    expect(latestSeasonIndex([special]), 0);
+    expect(latestSeasonIndex([_episode('episode-1')]), isNull);
+    expect(latestSeasonIndex(const []), isNull);
+  });
+
   test('preferredSeasonIndex keeps the default season for a fully-unwatched show', () {
     final special = _season('specials', index: 0, leafCount: 2, viewedLeafCount: 0);
     final season1 = _season('season-1', index: 1, leafCount: 5, viewedLeafCount: 0);

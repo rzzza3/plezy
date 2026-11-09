@@ -523,6 +523,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   static const _kProfile = 'profile';
   static const _kHome = 'home';
+  static const _kLibrary = 'library';
+  static const _kWatchlist = 'watchlist';
   static const _kExplore = 'explore';
   static const _kNowPlaying = 'nowPlaying';
   static const _kLibraries = 'libraries';
@@ -691,6 +693,10 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     switch (widget.selectedTab) {
       case NavigationTabId.discover:
         return _kHome;
+      case NavigationTabId.library:
+        return _kLibrary;
+      case NavigationTabId.watchlist:
+        return _kWatchlist;
       case NavigationTabId.explore:
         return _kExplore;
       case NavigationTabId.libraries:
@@ -746,6 +752,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     return {
       if (hasProfile) _kProfile,
       _kHome,
+      _kLibrary,
+      _kWatchlist,
       if (hasNowPlaying) _kNowPlaying,
       _kLibraries,
       if (hasExplore) _kExplore,
@@ -832,6 +840,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           if (hasProfile) _kProfile,
           _kSearch,
           _kHome,
+          _kLibrary,
+          _kWatchlist,
           if (hasNowPlaying) _kNowPlaying,
           if (hasExplore) _kExplore,
         ],
@@ -850,6 +860,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
       if (!widget.isOfflineMode) ...[
         _kHome,
+        _kLibrary,
+        _kWatchlist,
         if (hasNowPlaying) _kNowPlaying,
         _kLibraries,
         // Library rows render inside ExcludeFocus(excluding: !_librariesExpanded
@@ -1130,6 +1142,26 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                         isCollapsed: isCollapsed,
                                       ),
                                       const SizedBox(height: _itemGap),
+                                      _buildNavItem(
+                                        icon: Symbols.subscriptions_rounded,
+                                        selectedIcon: Symbols.subscriptions_rounded,
+                                        label: Translations.of(context).navigation.library,
+                                        isSelected: widget.selectedTab == NavigationTabId.library,
+                                        onTap: () => widget.onDestinationSelected(NavigationTabId.library),
+                                        focusNode: _focusTracker.get(_kLibrary),
+                                        isCollapsed: isCollapsed,
+                                      ),
+                                      const SizedBox(height: _itemGap),
+                                      _buildNavItem(
+                                        icon: Symbols.bookmark_rounded,
+                                        selectedIcon: Symbols.bookmark_rounded,
+                                        label: Translations.of(context).navigation.watchlist,
+                                        isSelected: widget.selectedTab == NavigationTabId.watchlist,
+                                        onTap: () => widget.onDestinationSelected(NavigationTabId.watchlist),
+                                        focusNode: _focusTracker.get(_kWatchlist),
+                                        isCollapsed: isCollapsed,
+                                      ),
+                                      const SizedBox(height: _itemGap),
                                       // Now Playing — only while a music session is live.
                                       if (nowPlayingTrack != null && musicService != null) ...[
                                         _buildNowPlayingItem(nowPlayingTrack, musicService, isCollapsed: isCollapsed),
@@ -1344,6 +1376,18 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                 strings.common.search,
                               ),
                               destination(NavigationTabId.discover, _kHome, Symbols.home_rounded, strings.common.home),
+                              destination(
+                                NavigationTabId.library,
+                                _kLibrary,
+                                Symbols.subscriptions_rounded,
+                                strings.navigation.library,
+                              ),
+                              destination(
+                                NavigationTabId.watchlist,
+                                _kWatchlist,
+                                Symbols.bookmark_rounded,
+                                strings.navigation.watchlist,
+                              ),
                               if (nowPlayingTrack != null && musicService != null)
                                 _TvSidebarItem(
                                   label: strings.music.nowPlaying,
@@ -1418,7 +1462,9 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       child: Stack(
         children: [
           Positioned.fill(
-            child: IgnorePointer(child: CustomPaint(painter: _TvSidebarScrimPainter(_tvExpand))),
+            child: IgnorePointer(
+              child: CustomPaint(painter: _TvSidebarScrimPainter(_tvExpand, Theme.of(context).scaffoldBackgroundColor)),
+            ),
           ),
           Positioned(top: 0, bottom: 0, left: 0, child: rail),
         ],
@@ -2105,7 +2151,11 @@ class _TvSidebarDivider extends StatelessWidget {
 class _TvSidebarScrimPainter extends CustomPainter {
   final Animation<double> expand;
 
-  _TvSidebarScrimPainter(this.expand) : super(repaint: expand);
+  /// The page background, so the scrim melts into the page instead of
+  /// laying a black band over a non-black palette.
+  final Color base;
+
+  _TvSidebarScrimPainter(this.expand, this.base) : super(repaint: expand);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2122,10 +2172,10 @@ class _TvSidebarScrimPainter extends CustomPainter {
     final paint = Paint()
       ..shader = LinearGradient(
         colors: [
-          Colors.black.withValues(alpha: atStart),
-          Colors.black.withValues(alpha: atEdge),
-          Colors.black.withValues(alpha: atEdge * 0.72),
-          Colors.black.withValues(alpha: 0),
+          base.withValues(alpha: atStart),
+          base.withValues(alpha: atEdge),
+          base.withValues(alpha: atEdge * 0.72),
+          base.withValues(alpha: 0),
         ],
         stops: [0, edge / tail, shoulder / tail, 1],
       ).createShader(rect);
@@ -2133,5 +2183,5 @@ class _TvSidebarScrimPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TvSidebarScrimPainter oldDelegate) => oldDelegate.expand != expand;
+  bool shouldRepaint(_TvSidebarScrimPainter oldDelegate) => oldDelegate.expand != expand || oldDelegate.base != base;
 }

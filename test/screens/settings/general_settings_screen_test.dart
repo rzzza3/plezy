@@ -69,6 +69,30 @@ void main() {
     await disposeHarness(tester, harness);
   });
 
+  testWidgets('a fresh install starts on Library and can pick it back', (tester) async {
+    final harness = await pumpGeneralScreen(tester);
+    final settings = SettingsService.instance;
+    final libraryLabel = allNavigationTabs.firstWhere((tab) => tab.id == NavigationTabId.library).getLabel();
+
+    expect(settings.read(SettingsService.startupSection), NavigationTabId.library);
+    expect(find.text(libraryLabel), findsOneWidget, reason: 'the tile subtitle names the default');
+
+    await tester.tap(find.text(t.settings.startupSection));
+    await tester.pumpAndSettle();
+    final homeLabel = allNavigationTabs.firstWhere((tab) => tab.id == NavigationTabId.discover).getLabel();
+    await tester.tap(find.text(homeLabel).last);
+    await tester.pumpAndSettle();
+    expect(settings.read(SettingsService.startupSection), NavigationTabId.discover);
+
+    await tester.tap(find.text(t.settings.startupSection));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(libraryLabel).last);
+    await tester.pumpAndSettle();
+    expect(settings.prefs.getString(SettingsService.startupSection.key), 'library');
+
+    await disposeHarness(tester, harness);
+  });
+
   testWidgets('changes the persisted startup section', (tester) async {
     final harness = await pumpGeneralScreen(tester);
 

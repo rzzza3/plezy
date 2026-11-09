@@ -14,6 +14,7 @@ import '../../utils/external_ids.dart';
 import '../../utils/trailer_urls.dart';
 import '../seerr/seerr_client.dart';
 import '../seerr/seerr_constants.dart';
+import '../tmdb/tmdb_images.dart';
 import 'catalog_source.dart';
 
 /// [CatalogSource] backed by a Seerr instance's TMDB-based discover API.
@@ -508,34 +509,6 @@ class SeerrCatalogSource implements CatalogSource {
     final trimmed = value?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
-
-  static Map<int, String>? tmdbPosterVariants(String? path) {
-    if (path == null || path.isEmpty) return null;
-    return {
-      92: tmdbImageUrl(path, 'w92')!,
-      154: tmdbImageUrl(path, 'w154')!,
-      185: tmdbImageUrl(path, 'w185')!,
-      342: tmdbImageUrl(path, 'w342')!,
-      500: tmdbImageUrl(path, 'w500')!,
-      600: tmdbImageUrl(path, 'w600_and_h900_bestv2')!,
-      780: tmdbImageUrl(path, 'w780')!,
-    };
-  }
-
-  static Map<int, String>? tmdbBackdropVariants(String? path) {
-    if (path == null || path.isEmpty) return null;
-    return {
-      300: tmdbImageUrl(path, 'w300')!,
-      780: tmdbImageUrl(path, 'w780')!,
-      1280: tmdbImageUrl(path, 'w1280')!,
-      1920: tmdbImageUrl(path, 'w1920_and_h800_multi_faces')!,
-    };
-  }
-
-  /// Seerr serves TMDB relative paths (`/abc.jpg`); images come straight off
-  /// the TMDB CDN at the same sizes the Seerr web UI uses.
-  static String? tmdbImageUrl(String? path, String size) =>
-      path == null || path.isEmpty ? null : 'https://image.tmdb.org/t/p/$size$path';
 
   @override
   void dispose() {

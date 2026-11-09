@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library Builds Itself</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #stage .home .rail, #stage .home .greet, #stage .home .region, #stage .home .status { transition: opacity 600ms var(--ease), filter 600ms var(--ease); }
+  #stage.dim .home .rail, #stage.dim .home .greet, #stage.dim .home .region, #stage.dim .home .status { opacity: 0.22; filter: saturate(0.3); }
+  #stage.dim .home .lit { opacity: 1 !important; filter: none !important; }
+  .home .greet .skel { display: inline-block; width: 760px; height: 54px; border-radius: 12px; }
+  .wskel { flex: none; width: 420px; } .wskel .skel { height: 236px; } .wskel .l1 { height: 24px; width: 70%; margin-top: 14px; border-radius: 6px; }
+
+  .panel { position: absolute; top: 56px; right: 56px; bottom: 56px; width: 700px; z-index: 30; border-radius: 30px; background: rgba(21,23,28,0.97); border: 1.5px solid var(--outline);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.4); padding: 54px 56px; display: flex; flex-direction: column; transition: transform 700ms var(--ease), opacity 500ms var(--ease); }
+  .panel.away { transform: translateX(780px); opacity: 0; }
+  .segs { display: flex; gap: 8px; margin-bottom: 46px; }
+  .segs i { flex: 1; height: 6px; border-radius: 3px; background: rgba(237,237,237,0.16); transition: background var(--normal); }
+  .segs i.on { background: var(--text); }
+  .pstep { display: none; flex-direction: column; flex: 1; animation: pop 520ms var(--ease) both; }
+  .pstep.on { display: flex; }
+  .pstep .h1 { font-size: 46px; }
+  .pstep .lede { font-size: 24px; margin-top: 14px; }
+  .pstep .foot { margin-top: auto; display: flex; gap: 16px; align-items: center; }
+  .pstep .foot .small { margin-left: auto; }
+  .field { height: 88px; font-size: 30px; }
+
+  .codebox { display: flex; gap: 34px; align-items: center; margin-top: 44px; }
+  .codebox .code { font-size: 64px; font-weight: 700; letter-spacing: 5px; font-variant-numeric: tabular-nums; margin-top: 12px; }
+  .profiles { display: flex; gap: 40px; margin-top: 56px; }
+  .prof { display: flex; flex-direction: column; align-items: center; gap: 16px; font-size: 26px; font-weight: 500; color: var(--muted); }
+  .prof .av { width: 150px; height: 150px; border-radius: 50%; display: grid; place-items: center; font-size: 62px; font-weight: 500; color: var(--text); outline: 5px solid transparent; outline-offset: 6px; transition: all var(--normal) var(--ease); }
+  .prof.f { color: var(--text); } .prof.f .av { outline-color: #fff; transform: scale(1.06); }
+
+  .rows { display: flex; flex-direction: column; gap: 4px; margin-top: 34px; }
+  .row { display: flex; align-items: center; gap: 22px; height: 84px; padding: 0 24px 0 18px; background: var(--surface-2); border-radius: 6px; transition: transform var(--normal) var(--ease), background var(--fast); }
+  .row:first-child { border-radius: 18px 18px 6px 6px; } .row:last-child { border-radius: 6px 6px 18px 18px; }
+  .row .nm { font-size: 25px; font-weight: 500; flex: 1; } .row .ct { font-size: 19px; color: var(--muted); margin-right: 8px; }
+  .row.f { background: #33363e; outline: 3px solid #fff; outline-offset: 3px; position: relative; z-index: 2; }
+  .switch { transform: scale(0.85); }
+
+  .ngrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; }
+  .ngrid .ntile { width: auto; height: 106px; } .ngrid .ntile .wm { font-size: 25px; } .ngrid .ntile .cnt { font-size: 15px; left: 14px; bottom: 8px; }
+  .ngrid .ntile .tick { width: 32px; height: 32px; font-size: 19px; top: 9px; right: 9px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+  .chip { height: 56px; font-size: 22px; padding: 0 22px; }
+  .gtile.pop, .ntile.pop { animation: pop 560ms var(--ease) both; }
+  .leave { animation: leave 380ms var(--ease) forwards; }
+  @keyframes leave { to { opacity: 0; transform: scale(0.85); width: 0; margin-right: -26px; } }
+</style></head>
+<body><div class="screen">
+  <div id="stage" class="dim"></div>
+  <aside class="panel" id="panel">
+    <div class="segs" id="segs"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+    <div class="pstep on" id="s1">
+      <h2 class="h1">This will be your Library.<br>Let's fill it.</h2>
+      <p class="lede">First, the address of your Silo server.</p>
+      <div style="margin-top:44px"><div class="label">Server address</div>
+        <div class="field" id="addr"><span class="lead"><svg class="i"><use href="#i-server"/></svg></span><span class="val"></span><span class="ph">silo.example.com</span></div>
+        <div class="status-line" id="addr-st" style="margin-top:18px;font-size:23px"></div></div>
+      <div class="foot"><div class="btn" id="b1">Connect</div></div>
+    </div>
+
+    <div class="pstep" id="s2">
+      <h2 class="h1">Sign in to Ashgrove</h2>
+      <p class="lede">On your phone or computer, go to <b style="color:var(--text)">silo.ashgrove.net/link</b> and enter this code.</p>
+      <div class="codebox"><div class="qrslot"></div><div><div class="small">Code</div><div class="code">K7QM‑24RX</div><div class="small" style="margin-top:14px">Or scan it with your phone</div></div></div>
+      <div class="status-line" id="code-st" style="margin-top:40px;font-size:23px"><span class="spin"></span><span>Waiting for approval…</span></div>
+      <div class="foot"><div class="btn ghost" id="b2"><svg class="i"><use href="#i-key"/></svg>Use a password</div></div>
+    </div>
+
+    <div class="pstep" id="s3">
+      <h2 class="h1">Who's watching?</h2>
+      <p class="lede">The Library behind this is set up per profile.</p>
+      <div class="profiles" id="profiles"></div>
+    </div>
+
+    <div class="pstep" id="s4">
+      <h2 class="h1">Your sidebar</h2>
+      <p class="lede">Turn off libraries you won't open often. They stay a press away.</p>
+      <div class="rows" id="libs"></div>
+      <div class="foot"><div class="btn" id="b4">Next</div></div>
+    </div>
+
+    <div class="pstep" id="s5">
+      <h2 class="h1">Your Networks row</h2>
+      <p class="lede">We started you with four. Swap any of them; the row updates as you go.</p>
+      <div class="ngrid" id="ngrid"></div>
+      <div class="foot"><div class="btn" id="b5">Next</div><span class="small">US and UK channels in Settings</span></div>
+    </div>
+
+    <div class="pstep" id="s6">
+      <h2 class="h1">Your Genres row</h2>
+      <p class="lede">Rows only show titles your server has.</p>
+      <div class="chips" id="chips"></div>
+      <div class="foot"><div class="btn" id="b6">Done</div></div>
+    </div>
+  </aside>
+</div>
+<script src="shared.js"></script>
+<script>
+const nets = [...DEFAULT_NETWORKS], gens = [...DEFAULT_GENRES];
+const allN = Object.values(NETWORKS).flat();
+const H = (s) => $('#stage ' + s);
+let cwHTML;
+function seg(n) { $$('#segs i').forEach((e, i) => e.classList.toggle('on', i < n)); }
+function step(n) { $$('.pstep').forEach((p) => p.classList.toggle('on', p.id === 's' + n)); seg(n); }
+function lit(...regions) { $$('#stage .lit').forEach((e) => e.classList.remove('lit')); regions.forEach((r) => H(r)?.classList.add('lit')); }
+
+window.BUILD = () => {
+  $('#stage').innerHTML = homeHTML({ libs: [], networks: [], genres: [] });
+  const cw = H('[data-region="cw"] .track'); cwHTML = cw.innerHTML;
+  cw.innerHTML = '<div class="wskel"><div class="skel"></div><div class="skel l1"></div></div>'.repeat(4);
+  H('.greet').innerHTML = '<span class="skel"></span>';
+  H('.rail .avatar').style.opacity = 0;
+  H('.net-track').innerHTML = '<div class="ntile skel" style="border:0"></div>'.repeat(4);
+  H('.gen-track').innerHTML = '<div class="gtile skel"></div>'.repeat(6);
+  $('.qrslot').innerHTML = qr(200);
+  $('#profiles').innerHTML = PROFILES.map((p) => `<div class="prof" id="pr-${p.id}"><div class="av" style="background:${p.tint}">${p.name[0]}</div>${p.name}</div>`).join('');
+  $('#libs').innerHTML = LIBS.map((l) => `<div class="row on" id="lb-${l.id}"><span class="nm">${l.name}</span><span class="ct">${l.count}</span><div class="switch"></div></div>`).join('');
+  $('#ngrid').innerHTML = NETWORKS.Streaming.slice(0, 9).map(([n, c]) => ntile(n, c, nets.includes(n))).join('');
+  $('#chips').innerHTML = GENRES.slice(0, 16).map((g) => `<span class="chip${gens.includes(g) ? ' on' : ''}" data-g="${g}"><span class="ck">${ic('check')}</span>${g}</span>`).join('');
+  seg(1);
+};
+const netTile = (n) => { const d = document.createElement('div'); d.innerHTML = ntile(n, allN.find((x) => x[0] === n)[1]); const t = d.firstChild; t.classList.add('pop'); return t; };
+const genTile = (g) => { const d = document.createElement('div'); d.innerHTML = `<div class="gtile pop" data-gt="${g}"><img src="${A(GENRE_ART[g] || 's-paradise')}"><span>${g}</span></div>`; return d.firstChild; };
+async function fillNets() { const tr = H('.net-track'); tr.innerHTML = ''; for (const n of nets) { tr.append(netTile(n)); await wait(140); } }
+async function fillGens() { const tr = H('.gen-track'); tr.innerHTML = ''; for (const g of gens) { tr.append(genTile(g)); await wait(110); } }
+function toggleNet(el) {
+  const n = el.dataset.net, tr = H('.net-track');
+  el.classList.toggle('on');
+  if (nets.includes(n)) { nets.splice(nets.indexOf(n), 1); const t = tr.querySelector(`[data-net="${n}"]`); t.classList.add('leave'); setTimeout(() => t.remove(), 380); }
+  else { nets.push(n); tr.append(netTile(n)); }
+}
+function toggleGen(el) {
+  const g = el.dataset.g, tr = H('.gen-track');
+  el.classList.toggle('on');
+  if (gens.includes(g)) { gens.splice(gens.indexOf(g), 1); const t = tr.querySelector(`[data-gt="${g}"]`); t.classList.add('leave'); setTimeout(() => t.remove(), 380); }
+  else { gens.push(g); tr.append(genTile(g)); }
+}
+const tile = (i) => $$('#ngrid .ntile')[i];
+const chip = (g) => $(`[data-g="${g}"]`);
+
+window.SCRIPT = async () => {
+  await wait(900);
+  focus('#addr'); await wait(300);
+  await press('#addr', null, 250);
+  await typeInto('#addr', SERVER.host, 65);
+  await move('down', '#b1', 380);
+  await press('#b1', () => { $('#addr-st').innerHTML = '<span class="spin"></span><span>Checking the server…</span>'; }, 1200);
+  $('#addr-st').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Found Ashgrove</span>`;
+  await wait(700);
+
+  step(2); focus('#b2');
+  await wait(2400);
+  $('#code-st').innerHTML = '<span class="spin"></span><span>Code opened. Approve it on your other device.</span>';
+  await wait(1700);
+  $('#code-st').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Signed in as sam</span>`;
+  await wait(800);
+
+  step(3); focus('#pr-sam'); lit('.greet', '[data-region="cw"]');
+  await wait(1000);
+  await press('#pr-sam', null, 200);
+  H('.rail .avatar').style.opacity = 1;
+  H('.greet').innerHTML = '<span class="pop" style="display:inline-block">Settling in for the evening, Sam?</span>';
+  const cw = H('[data-region="cw"] .track'); cw.innerHTML = cwHTML; $$('.wcard', cw).forEach((c, i) => { c.classList.add('pop'); c.style.animationDelay = i * 90 + 'ms'; });
+  await wait(1900);
+
+  step(4); lit('.rail'); focus('#lb-movies');
+  for (const l of LIBS) { H(`[data-lib="${l.id}"]`).classList.remove('gone'); await wait(110); }
+  await wait(500);
+  for (const id of ['shows', 'anime', 'kids']) await move('down', '#lb-' + id, 260);
+  await press(null, () => { $('#lb-kids').classList.toggle('on'); H('[data-lib="kids"]').classList.add('gone'); }, 550);
+  await move('down', '#lb-sports', 300);
+  await press(null, () => { $('#lb-sports').classList.toggle('on'); H('[data-lib="sports"]').classList.add('gone'); }, 700);
+  await move('down', '#lb-world', 260);
+  await move('down', '#b4', 360);
+  await press('#b4', null, 200);
+
+  step(5); lit('[data-region="networks"]'); focus(tile(0));
+  await fillNets();
+  await wait(500);
+  await move('right', tile(1), 280); await move('right', tile(2), 280);
+  await move('down', tile(5), 300);
+  await press(null, toggleNet, 600);
+  await move('left', tile(4), 300);
+  await move('left', tile(3), 300);
+  await press(null, toggleNet, 550);
+  await move('down', tile(6), 300);
+  await move('right', tile(7), 300);
+  await move('right', tile(8), 300);
+  await press(null, toggleNet, 700);
+  await move('down', '#b5', 360);
+  await press('#b5', null, 200);
+
+  step(6); lit('[data-region="genres"]'); focus(chip('Action'));
+  await fillGens();
+  await wait(400);
+  for (const g of ['Adventure', 'Animation', 'Comedy']) await move('right', chip(g), 220);
+  await move('right', chip('Crime'), 280);
+  await press(null, toggleGen, 450);
+  await move('down', chip('Fantasy'), 300);
+  await move('right', chip('History'), 260);
+  await move('right', chip('Horror'), 280);
+  await press(null, toggleGen, 650);
+  await move('down', '#b6', 360);
+  await press('#b6', null, 200);
+
+  $('#panel').classList.add('away');
+  $('#stage').classList.remove('dim');
+  await wait(500);
+  focus(H('.wcard'));
+  await wait(3000);
+};
+</script>
+</body></html>

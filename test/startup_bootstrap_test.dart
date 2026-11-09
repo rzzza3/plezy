@@ -14,10 +14,8 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/main.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/models/download_models.dart';
-import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/prefs_recovery.dart';
-import 'package:plezy/services/settings_service.dart' as settings;
 import 'package:plezy/services/startup_diagnostics.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/dialogs.dart';
@@ -108,8 +106,6 @@ void main() {
     child: ColoredBox(color: launchScreen, child: child),
   );
 
-  ThemeData bootstrapTheme(WidgetTester tester) => Theme.of(tester.element(find.byKey(startupBootstrapProgressKey)));
-
   testWidgets('the loading frame leaves the platform launch screen visible', (tester) async {
     final completion = Completer<int>();
 
@@ -118,8 +114,7 @@ void main() {
         StartupBootstrap<int>(
           initialize: () => completion.future,
           buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-          lightTheme: monoTheme(dark: false),
-          darkTheme: monoTheme(dark: true),
+          theme: monoTheme(dark: false),
           transparentWhileLoading: true,
         ),
       ),
@@ -140,8 +135,7 @@ void main() {
         StartupBootstrap<int>(
           initialize: () => completion.future,
           buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-          lightTheme: monoTheme(dark: false),
-          darkTheme: monoTheme(dark: true),
+          theme: monoTheme(dark: false),
         ),
       ),
     );
@@ -158,8 +152,7 @@ void main() {
         StartupBootstrap<int>(
           initialize: () async => throw StateError('database unavailable'),
           buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-          lightTheme: monoTheme(dark: false),
-          darkTheme: monoTheme(dark: true),
+          theme: monoTheme(dark: false),
           transparentWhileLoading: true,
         ),
       ),
@@ -168,60 +161,6 @@ void main() {
 
     expect(find.byKey(startupBootstrapFailureKey), findsOneWidget);
     expect(await windowPixel(tester), monoTheme(dark: false).scaffoldBackgroundColor.toARGB32());
-  });
-
-  testWidgets('adopts the persisted theme instead of platform brightness', (tester) async {
-    // What a Fire TV or Shield reports: no system dark-mode toggle, so
-    // ThemeMode.system resolves light while the app's own TV default is OLED.
-    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
-    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
-
-    final resolved = Completer<StartupThemeResolution>();
-    final completion = Completer<int>();
-
-    await tester.pumpWidget(
-      StartupBootstrap<int>(
-        initialize: () => completion.future,
-        buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-        lightTheme: monoTheme(dark: false),
-        darkTheme: monoTheme(dark: true),
-        resolveTheme: () => resolved.future,
-      ),
-    );
-
-    expect(bootstrapTheme(tester).scaffoldBackgroundColor, monoTheme(dark: false).scaffoldBackgroundColor);
-
-    resolved.complete((
-      themeMode: ThemeProvider.materialThemeModeFor(settings.ThemeMode.oled),
-      darkTheme: ThemeProvider.darkThemeFor(settings.ThemeMode.oled),
-    ));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-
-    expect(bootstrapTheme(tester).brightness, Brightness.dark);
-    expect(bootstrapTheme(tester).scaffoldBackgroundColor, const Color(0xFF000000));
-
-    completion.complete(1);
-    await tester.pump();
-  });
-
-  testWidgets('a theme preference that cannot be read does not block the gate', (tester) async {
-    final completion = Completer<int>();
-
-    await tester.pumpWidget(
-      StartupBootstrap<int>(
-        initialize: () => completion.future,
-        buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-        resolveTheme: () async => throw const FormatException('unreadable'),
-      ),
-    );
-    await tester.pump();
-
-    expect(find.byKey(startupBootstrapProgressKey), findsOneWidget);
-
-    completion.complete(3);
-    await tester.pump();
-    expect(find.text('ready 3'), findsOneWidget);
   });
 
   testWidgets('replaces bootstrap UI with the initialized app on success', (tester) async {

@@ -1,9 +1,9 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "TBD"
   },
   "auth": {
-    "localDataRecoveryRequired": "Plezy no pudo recuperar de forma segura los datos locales de inicio de sesión ni la reproducción pendiente. Vuelve a iniciar sesión."
+    "localDataRecoveryRequired": "TBD no pudo recuperar de forma segura los datos locales de inicio de sesión ni la reproducción pendiente. Vuelve a iniciar sesión."
   },
   "common": {
     "cancel": "Cancelar",
@@ -100,7 +100,7 @@
   },
   "settings": {
     "title": "Configuración",
-    "supportDeveloper": "Apoya Plezy",
+    "supportDeveloper": "Apoya TBD",
     "supportDeveloperDescription": "Dona vía Liberapay para financiar el desarrollo",
     "language": "Idioma",
     "theme": "Tema",
@@ -122,6 +122,7 @@
     "lightTheme": "Claro",
     "darkTheme": "Oscuro",
     "oledTheme": "OLED",
+    "slateTheme": "Pizarra",
     "libraryDensity": "Densidad de la biblioteca",
     "displayScale": "Escala de visualización",
     "compact": "Compacto",
@@ -239,7 +240,7 @@
     "importSettingsDescription": "Restaurar preferencias desde un archivo",
     "importSettingsConfirm": "Esto reemplazará tu configuración actual. ¿Continuar?",
     "importSettingsSuccess": "Configuración importada",
-    "importSettingsInvalidFile": "Este archivo no es una exportación válida de Plezy",
+    "importSettingsInvalidFile": "Este archivo no es una exportación válida de TBD",
     "importSettingsNoUser": "Inicia sesión antes de importar la configuración",
     "shortcutsReset": "Atajos restablecidos a los valores predeterminados",
     "resetShortcutsConfirm": "",
@@ -303,8 +304,6 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Presencia de Discord",
     "discordRichPresenceDescription": "Mostrar lo que estás viendo en Discord",
-    "services": "Servicios",
-    "servicesDescription": "Conecta Trakt, MyAnimeList, Seerr y más",
     "manageLibrariesDescription": "Reordena y oculta bibliotecas",
     "companionRemoteServer": "Servidor de control remoto",
     "companionRemoteServerDescription": "Permitir que dispositivos móviles en tu red controlen esta aplicación",
@@ -368,7 +367,7 @@
     "forceTvMode": "Forzar modo TV",
     "forceTvModeDescription": "Forzar diseño TV. Para dispositivos que no lo detectan. Requiere reinicio.",
     "startInFullscreen": "Iniciar en pantalla completa",
-    "startInFullscreenDescription": "Abrir Plezy en modo pantalla completa al iniciar",
+    "startInFullscreenDescription": "Abrir TBD en modo pantalla completa al iniciar",
     "exitFullscreenOnPlayerClose": "Salir de pantalla completa al cerrar el reproductor",
     "exitFullscreenOnPlayerCloseDescription": "Salir automáticamente del modo de pantalla completa al cerrar el reproductor de video",
     "autoHidePerformanceOverlay": "Ocultar superposición de rendimiento automáticamente",
@@ -414,7 +413,7 @@
     "playerScopeGlobal": "En todas partes",
     "playerScopeLibrary": "Por biblioteca",
     "playerScopeTitle": "Por serie o película",
-    "exportDialogTitle": "Exportar ajustes de Plezy"
+    "exportDialogTitle": "Exportar ajustes de TBD"
   },
   "search": {
     "hint": "Buscar películas, series, música...",
@@ -857,10 +856,8 @@
     "sectionTitle": "Conexiones",
     "addConnection": "Añadir conexión",
     "sessionExpiredOne": "Sesión caducada para ${name}",
-    "sessionExpiredMany": "Sesión caducada para ${count} servidores",
     "accessDeniedOne": "${name} denegó el acceso a esta cuenta",
-    "accessDeniedMany": "${count} servidores denegaron el acceso a esta cuenta",
-    "signInAgain": "Iniciar sesión de nuevo"
+    "accessDeniedMany": "${count} servidores denegaron el acceso a esta cuenta"
   },
   "accountPreferences": {
     "sectionTitle": "Preferencias de cuenta",
@@ -1035,9 +1032,9 @@
     "uploadLogs": "Subir registros"
   },
   "startup": {
-    "failedTitle": "Plezy no pudo iniciarse",
+    "failedTitle": "TBD no pudo iniciarse",
     "failedBody": "Algo salió mal durante el inicio. Los detalles de abajo indican qué ha fallado.",
-    "failedBodyRepairable": "El archivo de ajustes guardados de Plezy está dañado y debe reconstruirse antes de que Plezy pueda iniciarse. Reintentar no servirá: elige Reparar almacenamiento.",
+    "failedBodyRepairable": "El archivo de ajustes guardados de TBD está dañado y debe reconstruirse antes de que TBD pueda iniciarse. Reintentar no servirá: elige Reparar almacenamiento.",
     "phaseLabel": "Paso",
     "showDetails": "Mostrar detalles",
     "hideDetails": "Ocultar detalles",
@@ -1046,16 +1043,16 @@
     "uploadDetails": "Subir detalles",
     "repairStorage": "Reparar almacenamiento",
     "repairTitle": "¿Reparar los datos guardados?",
-    "repairBodyCommon": "El archivo de ajustes de Plezy está dañado y no puede leerse. La reparación restablece todos los ajustes a sus valores predeterminados.",
+    "repairBodyCommon": "El archivo de ajustes de TBD está dañado y no puede leerse. La reparación restablece todos los ajustes a sus valores predeterminados.",
     "repairBodyOneCredential": "Un inicio de sesión guardado está dañado y no puede leerse. La reparación elimina solo ese; el resto de tus ajustes se mantienen intactos.",
     "repairBodySignInsKept": "Tus servidores y perfiles deberían permanecer con la sesión iniciada.",
     "repairBodySignInsLost": "La clave que protege tus inicios de sesión guardados no se puede recuperar de este archivo, por lo que tendrás que iniciar sesión de nuevo en cada servidor y perfil. Nada en tu servidor de medios se ve afectado.",
-    "repairBodySessionsUncertain": "Los rastreadores (MAL, AniList, Simkl, Trakt) y Seerr se guardan por separado y pueden sobrevivir o no. Plezy te dirá exactamente qué ha conservado.",
+    "repairBodySessionsUncertain": "Los rastreadores (MAL, AniList, Simkl, Trakt) y Seerr se guardan por separado y pueden sobrevivir o no. TBD te dirá exactamente qué ha conservado.",
     "repairConfirm": "Reparar",
     "repairSucceeded": "Almacenamiento reparado",
     "repairNeedsRestart": "Almacenamiento reparado: es necesario reiniciar",
-    "restartRequiredBody": "Tus datos se repararon, pero Plezy debe iniciarse de nuevo antes de poder usarlos. Cierra Plezy y ábrelo otra vez.",
-    "quitPlezy": "Salir de Plezy",
+    "restartRequiredBody": "Tus datos se repararon, pero TBD debe iniciarse de nuevo antes de poder usarlos. Cierra TBD y ábrelo otra vez.",
+    "quitPlezy": "Salir de TBD",
     "repairFailed": "Error en la reparación",
     "repairKeptSignIns": "Tus servidores y perfiles siguen con la sesión iniciada.",
     "repairLostSignIns": "La clave que protege tus inicios de sesión guardados no se pudo recuperar. Tendrás que iniciar sesión de nuevo en cada servidor y perfil.",
@@ -1064,7 +1061,7 @@
     "backupWarning": "Contiene tus credenciales de inicio de sesión. No la subas ni la compartas.",
     "deleteBackup": "Eliminar copia",
     "backupDeleted": "Copia eliminada.",
-    "previousFailureTitle": "Plezy no se inició la última vez"
+    "previousFailureTitle": "TBD no se inició la última vez"
   },
   "licenses": {
     "relatedPackages": "Paquetes relacionados",
@@ -1528,14 +1525,14 @@
       "bannerAction": "Detalles",
       "sheetTitle": "Las descargas en segundo plano están bloqueadas",
       "sheetTitleDegraded": "Las descargas en segundo plano pueden estar limitadas",
-      "sheetIntro": "Android impide que Plezy descargue de forma fiable en segundo plano.",
-      "sheetIntroDegraded": "Tu dispositivo limita cuándo puede descargar Plezy en segundo plano.",
-      "reasonBackgroundRestricted": "El uso en segundo plano de Plezy está restringido. Configura el uso de batería o en segundo plano como \"Sin restricciones\".",
-      "reasonStandbyRestricted": "Android ha puesto a Plezy en un estado de espera restringido. Configura el uso de batería como \"Sin restricciones\".",
+      "sheetIntro": "Android impide que TBD descargue de forma fiable en segundo plano.",
+      "sheetIntroDegraded": "Tu dispositivo limita cuándo puede descargar TBD en segundo plano.",
+      "reasonBackgroundRestricted": "El uso en segundo plano de TBD está restringido. Configura el uso de batería o en segundo plano como \"Sin restricciones\".",
+      "reasonStandbyRestricted": "Android ha puesto a TBD en un estado de espera restringido. Configura el uso de batería como \"Sin restricciones\".",
       "reasonDownloadChannelBlocked": "Las notificaciones de descargas están desactivadas, por lo que el progreso y los controles podrían no estar disponibles.",
       "reasonNotificationsDisabled": "Las notificaciones están desactivadas. En Android 13 o versiones posteriores, son necesarias para las descargas largas en segundo plano.",
       "reasonDataSaver": "El Ahorro de datos está activado y bloquea las descargas en segundo plano con datos móviles. Las descargas deberían seguir funcionando con Wi-Fi.",
-      "reasonOemUnknown": "Las descargas se detuvieron repetidamente mientras Plezy estaba en segundo plano. Revisa la configuración de batería o de uso en segundo plano de Plezy.",
+      "reasonOemUnknown": "Las descargas se detuvieron repetidamente mientras TBD estaba en segundo plano. Revisa la configuración de batería o de uso en segundo plano de TBD.",
       "openSettings": "Abrir configuración",
       "stillNotWorking": "Ayuda específica para tu dispositivo",
       "stillNotWorkingDescription": "Consulta los pasos para tu dispositivo o envía un registro desde Configuración › Ver registros si el problema continúa.",
@@ -1613,13 +1610,13 @@
       "connecting": "Conectando...",
       "searchingForDevices": "Buscando dispositivos...",
       "noDevicesFound": "No se encontraron dispositivos en tu red",
-      "noDevicesHint": "Abre Plezy en tu equipo y usa la misma red WiFi",
+      "noDevicesHint": "Abre TBD en tu equipo y usa la misma red WiFi",
       "availableDevices": "Dispositivos disponibles",
       "manualConnection": "Conexión manual",
       "validationHostRequired": "Introduce la dirección del host",
       "validationHostFormat": "El formato debe ser IP:puerto (p. ej., 192.168.1.100:48632)",
       "connectionTimedOut": "Tiempo de conexión agotado. Usa la misma red en ambos dispositivos.",
-      "sessionNotFound": "Dispositivo no encontrado. Asegúrate de que Plezy esté en ejecución en el host.",
+      "sessionNotFound": "Dispositivo no encontrado. Asegúrate de que TBD esté en ejecución en el host.",
       "failedToConnect": "Error al conectar: ${error}"
     },
     "remote": {
@@ -1804,11 +1801,11 @@
     "connected": "Conectado",
     "connectedAs": "Conectado como @${username}",
     "disconnectConfirm": "¿Desconectar cuenta de Trakt?",
-    "disconnectConfirmBody": "Plezy dejará de enviar eventos a Trakt. Puedes reconectar cuando quieras.",
+    "disconnectConfirmBody": "TBD dejará de enviar eventos a Trakt. Puedes reconectar cuando quieras.",
     "scrobble": "Scrobbling en tiempo real",
     "scrobbleDescription": "Enviar eventos de reproducción, pausa y parada a Trakt durante la reproducción.",
     "watchedSync": "Sincronizar el estado de visualización",
-    "watchedSyncDescription": "Cuando marques contenido como visto en Plezy, también se marcará como visto en Trakt."
+    "watchedSyncDescription": "Cuando marques contenido como visto en TBD, también se marcará como visto en Trakt."
   },
   "seerr": {
     "title": "Seerr",
@@ -1818,10 +1815,10 @@
     "checkServer": "Continuar",
     "signInWithLocal": "Usar una cuenta local",
     "email": "Correo electrónico",
-    "noSignInMethods": "Esta instancia de Seerr no ofrece ningún método de inicio de sesión compatible con Plezy.",
+    "noSignInMethods": "Esta instancia de Seerr no ofrece ningún método de inicio de sesión compatible con TBD.",
     "instance": "Instancia",
     "disconnectConfirm": "¿Desconectar Seerr?",
-    "disconnectConfirmBody": "Plezy olvidará esta instancia de Seerr. Reconecta cuando quieras.",
+    "disconnectConfirmBody": "TBD olvidará esta instancia de Seerr. Reconecta cuando quieras.",
     "request": "Solicitar",
     "request4k": "Solicitar en 4K",
     "seasons": "Temporadas",
@@ -1846,7 +1843,7 @@
     "statusBlocklisted": "En la lista de bloqueo",
     "couldNotReach": "No se pudo conectar con ${url}: ${error}",
     "noInstanceAtUrl": "No hay ninguna instancia de Seerr en ${url} (HTTP ${status})",
-    "behindAuthProxy": "Un proxy inverso con autenticación (SSO o autenticación HTTP) respondió en lugar de Seerr. Plezy no puede iniciar sesión a través de él: permite que la ruta /api/v1 de Seerr omita el proxy para esta aplicación, o usa una dirección que llegue a Seerr directamente.",
+    "behindAuthProxy": "Un proxy inverso con autenticación (SSO o autenticación HTTP) respondió en lugar de Seerr. TBD no puede iniciar sesión a través de él: permite que la ruta /api/v1 de Seerr omita el proxy para esta aplicación, o usa una dirección que llegue a Seerr directamente.",
     "invalidUrl": "Introduce una dirección de servidor como https://seerr.example.com",
     "notInitialized": "Esta instancia de Seerr no ha completado la configuración inicial",
     "noStoredCredentials": "No hay credenciales guardadas disponibles para volver a iniciar sesión",
@@ -1867,7 +1864,7 @@
     "scrobble": "Registrar progreso automáticamente",
     "scrobbleDescription": "Actualiza tu lista cuando termines un episodio o película.",
     "disconnectConfirm": "¿Desconectar ${service}?",
-    "disconnectConfirmBody": "Plezy dejará de actualizar ${service}. Reconecta cuando quieras.",
+    "disconnectConfirmBody": "TBD dejará de actualizar ${service}. Reconecta cuando quieras.",
     "connectFailed": "No se pudo conectar a ${service}. Inténtalo de nuevo.",
     "names": {
       "mal": "MyAnimeList",
@@ -1881,7 +1878,7 @@
       "subtitle": ""
     },
     "deviceCode": {
-      "title": "Activar Plezy en ${service}",
+      "title": "Activar TBD en ${service}",
       "instructions": "Escanea el código QR o visita la dirección que aparece a continuación e introduce este código:",
       "openToActivate": "Abrir ${service} para activar",
       "copyCode": "Copiar código de activación",

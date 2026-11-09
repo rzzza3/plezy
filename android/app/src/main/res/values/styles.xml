@@ -25,6 +25,10 @@
         <item name="android:windowBackground">@color/splash_oled</item>
         <item name="android:colorControlHighlight">@android:color/transparent</item>
     </style>
+    <style name="SplashTheme.Slate" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/splash_slate</item>
+        <item name="android:colorControlHighlight">@android:color/transparent</item>
+    </style>
     <style name="SplashTheme.Light" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">@color/splash_light</item>
         <item name="android:colorControlHighlight">@android:color/transparent</item>

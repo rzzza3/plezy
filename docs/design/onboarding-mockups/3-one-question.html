@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Question at a Time</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .bd { position: absolute; inset: -40px; }
+  .bd img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.1); transition: opacity 900ms var(--ease), transform 9s linear; }
+  .bd img.on { opacity: 1; transform: scale(1); }
+  .bd img.blur { filter: blur(46px) saturate(1.2) brightness(0.8); }
+  .veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,15,18,0.97) 0%, rgba(14,15,18,0.9) 38%, rgba(14,15,18,0.45) 72%, rgba(14,15,18,0.25) 100%), linear-gradient(0deg, rgba(14,15,18,0.92) 0%, rgba(14,15,18,0) 45%); }
+  .prog { position: absolute; top: 74px; left: 150px; display: flex; align-items: center; gap: 10px; z-index: 5; }
+  .prog i { width: 54px; height: 6px; border-radius: 3px; background: rgba(237,237,237,0.2); transition: background var(--normal), width var(--normal) var(--ease); }
+  .prog i.on { background: var(--text); }
+  .prog i.now { width: 96px; background: var(--text); }
+  .prog span { margin-left: 18px; font-size: 22px; color: var(--muted); font-weight: 500; }
+  .q { position: absolute; left: 150px; top: 200px; right: 150px; }
+  .q .h1 { font-size: 92px; letter-spacing: -2px; line-height: 1.02; max-width: 15ch; }
+  .q .lede { margin-top: 26px; font-size: 30px; max-width: 46ch; }
+  .scene { transform: translateY(40px); }
+
+  .bigfield { margin-top: 70px; width: 1100px; font-size: 76px; font-weight: 500; letter-spacing: -0.5px; padding-bottom: 18px; border-bottom: 3px solid rgba(237,237,237,0.3); position: relative; height: 112px; transition: border-color var(--fast); }
+  .bigfield .ph { color: rgba(237,237,237,0.42); }
+  .bigfield .val:not(:empty) + .ph { display: none; }
+  .bigfield.f { border-color: var(--text); }
+  .bigfield.f .val::after { content: ""; display: inline-block; width: 4px; height: 70px; background: var(--text); vertical-align: -8px; margin-left: 4px; animation: caret 1s steps(1) infinite; }
+  .row-actions { display: flex; gap: 18px; align-items: center; margin-top: 50px; }
+  .status-line { font-size: 28px; }
+
+  .code { font-size: 168px; font-weight: 700; letter-spacing: 12px; line-height: 1; margin-top: 60px; font-variant-numeric: tabular-nums; }
+  .qrpos { position: absolute; right: 150px; top: 330px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+
+  .profiles { display: flex; gap: 80px; margin-top: 90px; }
+  .prof { display: flex; flex-direction: column; align-items: center; gap: 22px; font-size: 32px; font-weight: 500; color: var(--muted); }
+  .prof .av { width: 230px; height: 230px; border-radius: 50%; display: grid; place-items: center; font-size: 96px; font-weight: 500; color: var(--text); outline: 6px solid transparent; outline-offset: 8px; transition: all var(--normal) var(--ease); }
+  .prof.f { color: var(--text); } .prof.f .av { outline-color: #fff; transform: scale(1.06); }
+
+  .covers { display: flex; gap: 34px; margin-top: 64px; }
+  .cover { flex: none; width: 240px; transition: transform var(--normal) var(--ease), opacity var(--normal), filter var(--normal); }
+  .cover .art { position: relative; width: 240px; height: 300px; border-radius: 18px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3px; background: var(--bg); }
+  .cover .art img { width: 100%; height: 100%; object-fit: cover; }
+  .cover .art img:first-child { grid-row: span 2; }
+  .cover .nm { font-size: 27px; font-weight: 500; margin-top: 16px; } .cover .ct { font-size: 20px; color: var(--muted); margin-top: 4px; }
+  .cover .pinb { position: absolute; top: 12px; right: 12px; width: 46px; height: 46px; border-radius: 50%; background: var(--text); color: var(--bg); display: grid; place-items: center; font-size: 24px; transition: transform var(--normal) var(--ease), opacity var(--normal); }
+  .cover.off { opacity: 0.5; filter: grayscale(1); } .cover.off .pinb { transform: scale(0); opacity: 0; }
+  .cover.f { transform: translateY(-10px); } .cover.f .art { outline: 5px solid #fff; outline-offset: 6px; }
+
+  .carousel { margin-top: 70px; margin-left: -150px; padding-left: 150px; overflow: visible; }
+  .ctrack { display: flex; gap: 28px; transition: transform 520ms var(--ease); }
+  .big-n { flex: none; width: 340px; height: 200px; border-radius: 20px; background: rgba(29,31,37,0.85); border: 2px solid var(--outline); display: flex; flex-direction: column; justify-content: center; padding: 0 30px; transition: all var(--normal) var(--ease); }
+  .big-n .wm { font-size: 44px; font-weight: 700; letter-spacing: -0.6px; }
+  .big-n .ct { font-size: 20px; color: var(--muted); margin-top: 6px; }
+  .big-n.on { background: var(--text); color: var(--bg); border-color: var(--text); } .big-n.on .ct { color: rgba(14,15,18,0.65); }
+  .big-n.f { outline: 5px solid #fff; outline-offset: 7px; transform: scale(1.06); }
+
+  .words { margin-top: 64px; max-width: 1500px; font-size: 62px; line-height: 1.32; font-weight: 700; letter-spacing: -1px; }
+  .w { color: rgba(237,237,237,0.42); transition: color var(--normal), background var(--fast); border-radius: 14px; padding: 0 10px; margin-right: 14px; display: inline-block; }
+  .w.on { color: var(--text); }
+  .w.f { background: var(--text); color: var(--bg); }
+  .homewrap { position: absolute; inset: 0; transform: scale(1.08); transition: transform 1100ms var(--ease); }
+  #s7.on .homewrap { transform: none; }
+</style></head>
+<body><div class="screen">
+  <div class="bd" id="bd"><img src="assets/b-throne.jpg" alt=""><img src="assets/b-throne.jpg" alt=""></div>
+  <div class="veil"></div>
+  <div class="prog" id="prog"><i></i><i></i><i></i><i></i><i></i><i></i><span id="progl">Server</span></div>
+
+  <section class="scene on" id="s1"><div class="q">
+    <h1 class="h1">Where's your Silo server?</h1>
+    <p class="lede">The address you open it with in a browser.</p>
+    <div class="bigfield" id="addr"><span class="val"></span><span class="ph">silo.example.com</span></div>
+    <div class="row-actions"><div class="btn" id="b1">Connect</div><div class="status-line" id="addr-st"></div></div>
+  </div></section>
+
+  <section class="scene" id="s2"><div class="q">
+    <h1 class="h1">Sign in on your phone.</h1>
+    <p class="lede">Go to <b style="color:var(--text)">silo.ashgrove.net/link</b> and enter</p>
+    <div class="code">K7QM‑24RX</div>
+    <div class="row-actions"><div class="btn ghost" id="b2"><svg class="i"><use href="#i-key"/></svg>Use a password instead</div><div class="status-line" id="code-st"><span class="spin"></span><span>Waiting for approval…</span></div></div>
+  </div><div class="qrpos" id="qrpos"><div class="small">Or scan it</div></div></section>
+
+  <section class="scene" id="s3"><div class="q">
+    <h1 class="h1">Who's watching?</h1>
+    <div class="profiles" id="profiles"></div>
+  </div></section>
+
+  <section class="scene" id="s4"><div class="q">
+    <h1 class="h1">Pin your libraries.</h1>
+    <p class="lede">Pinned ones sit in the sidebar. The rest stay a press away.</p>
+    <div class="covers" id="covers"></div>
+    <div class="row-actions"><div class="btn" id="b4">Next</div></div>
+  </div></section>
+
+  <section class="scene" id="s5"><div class="q">
+    <h1 class="h1">Which networks?</h1>
+    <p class="lede">Each becomes a tile on your Library, opening everything you have from it.</p>
+    <div class="carousel"><div class="ctrack" id="ctrack"></div></div>
+    <div class="row-actions"><div class="btn" id="b5">Next</div></div>
+  </div></section>
+
+  <section class="scene" id="s6"><div class="q">
+    <h1 class="h1">And what are you into?</h1>
+    <div class="words" id="words"></div>
+    <div class="row-actions"><div class="btn" id="b6">Show me my Library</div></div>
+  </div></section>
+
+  <section class="scene" id="s7"><div class="homewrap" id="homewrap"></div></section>
+</div>
+<script src="shared.js"></script>
+<script>
+const labels = ['Server', 'Sign in', 'Profile', 'Libraries', 'Networks', 'Genres'];
+const pinned = new Set(LIBS.map((l) => l.id)), nets = new Set(DEFAULT_NETWORKS), gens = new Set(DEFAULT_GENRES);
+const NET_ART = { Netflix: 'w-traitors', 'Prime Video': 'w-topgear', HBO: 'w-got', 'Paramount+': 'w-crystal', 'Disney+': 'w-ponyo', 'Apple TV': 'w-mortimer', Hulu: 'w-dusk', Peacock: 'w-tg0', Crunchyroll: 's-hxh' };
+const GEN_ART = { ...GENRE_ART, Adventure: 's-mononoke', Kids: 's-duck', Mystery: 's-cemetery', War: 's-dastaar', History: 's-dastaar', Music: 's-dance', Reality: 's-aew', Western: 's-paradise' };
+let bdIdx = 0, bdSrc = '';
+function bg(src, blur = false) {
+  if (src === bdSrc) return; bdSrc = src;
+  const imgs = $$('#bd img'); const nx = imgs[bdIdx ^ 1], cur = imgs[bdIdx];
+  nx.src = A(src); nx.classList.toggle('blur', blur);
+  nx.classList.remove('on'); void nx.offsetWidth; nx.classList.add('on'); cur.classList.remove('on'); bdIdx ^= 1;
+}
+function prog(n) { $$('#prog i').forEach((e, i) => { e.classList.toggle('on', i < n - 1); e.classList.toggle('now', i === n - 1); }); $('#progl').textContent = labels[n - 1] ?? ''; }
+window.BUILD = () => {
+  $('#qrpos').insertAdjacentHTML('afterbegin', qr(330));
+  $('#profiles').innerHTML = PROFILES.map((p) => `<div class="prof" id="pr-${p.id}"><div class="av" style="background:${p.tint}">${p.name[0]}</div>${p.name}</div>`).join('');
+  $('#covers').innerHTML = LIBS.map((l) => `<div class="cover" id="cv-${l.id}"><div class="art">${l.posters.map((p) => `<img src="${A(p)}">`).join('')}<span class="pinb">${ic('pin')}</span></div><div class="nm">${l.name}</div><div class="ct">${l.count}</div></div>`).join('');
+  $('#ctrack').innerHTML = NETWORKS.Streaming.slice(0, 9).map(([n, c]) => `<div class="big-n${nets.has(n) ? ' on' : ''}" data-net="${n}"><span class="wm">${n}</span><span class="ct">${c} titles in your library</span></div>`).join('');
+  $('#words').innerHTML = GENRES.slice(0, 16).map((g) => `<span class="w${gens.has(g) ? ' on' : ''}" data-g="${g}">${g}</span>`).join('');
+  prog(1);
+};
+const net = (i) => $$('.big-n')[i];
+const word = (g) => $(`[data-g="${g}"]`);
+async function goNet(i, dir = 'right') { await move(dir, net(i), 0); $('#ctrack').style.transform = `translateX(${-Math.max(0, i - 2) * 368}px)`; bg(NET_ART[net(i).dataset.net] || 'w-dusk'); await wait(560); }
+async function goWord(g, dir = 'right', d = 380) { await move(dir, word(g), 0); bg(GEN_ART[g] || 's-paradise', true); await wait(d); }
+
+window.SCRIPT = async () => {
+  bg('b-throne'); await wait(1000);
+  focus('#addr'); await wait(400);
+  await press('#addr', null, 200);
+  await typeInto('#addr', SERVER.host, 70);
+  await move('down', '#b1', 400);
+  await press('#b1', () => { $('#addr-st').innerHTML = '<span class="spin"></span><span>Checking…</span>'; }, 1100);
+  $('#addr-st').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Found Ashgrove</span>`;
+  await wait(800);
+
+  show('s2'); prog(2); bg('b-holiday'); focus('#b2');
+  await wait(2600);
+  $('#code-st').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Signed in as sam</span>`;
+  await wait(1100);
+
+  show('s3'); prog(3); bg('b-ponyo-hill'); focus('#pr-sam');
+  await wait(1100);
+  await press('#pr-sam', null, 300);
+
+  show('s4'); prog(4);
+  const cv = (id) => { const l = LIBS.find((x) => x.id === id); bg(l.posters[0], true); return '#cv-' + id; };
+  focus(cv('movies')); await wait(1200);
+  for (const id of ['shows', 'anime', 'kids']) await move('right', cv(id), 420);
+  await press(null, (el) => el.classList.add('off'), 450);
+  await move('right', cv('sports'), 420);
+  await press(null, (el) => el.classList.add('off'), 600);
+  await move('right', cv('world'), 500);
+  await move('down', '#b4', 400);
+  await press('#b4', null, 200);
+
+  show('s5'); prog(5);
+  focus(net(0)); bg(NET_ART.Netflix); await wait(1200);
+  await goNet(1); await goNet(2); await goNet(3);
+  await press(null, (el) => el.classList.remove('on'), 400);
+  await goNet(4);
+  await press(null, (el) => el.classList.add('on'), 400);
+  await goNet(5); await goNet(6); await goNet(7); await goNet(8);
+  await press(null, (el) => el.classList.add('on'), 600);
+  await move('down', '#b5', 400);
+  await press('#b5', null, 200);
+
+  show('s6'); prog(6);
+  await goWord('Action', 'down', 900);
+  for (const g of ['Adventure', 'Animation', 'Comedy']) await goWord(g, 'right', 260);
+  await goWord('Crime');
+  await press(null, (el) => el.classList.add('on'), 350);
+  await goWord('Documentary');
+  await goWord('Drama', 'right', 260); await goWord('Family', 'right', 260);
+  await goWord('Fantasy');
+  await press(null, (el) => el.classList.add('on'), 350);
+  await goWord('History', 'right', 260);
+  await goWord('Horror');
+  await press(null, (el) => el.classList.remove('on'), 600);
+  await move('down', '#b6', 450);
+  await press('#b6', null, 200);
+
+  $$('#prog i').forEach((e) => { e.classList.add('on'); e.classList.remove('now'); });
+  $('#homewrap').innerHTML = homeHTML({ libs: LIBS.filter((l) => !$('#cv-' + l.id).classList.contains('off')).map((l) => l.id),
+    networks: $$('.big-n.on').map((e) => e.dataset.net), genres: $$('.w.on').map((e) => e.dataset.g) });
+  $('#prog').style.opacity = 0;
+  show('s7'); focus($('#homewrap .wcard'));
+  await wait(3400);
+};
+</script>
+</body></html>

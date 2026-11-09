@@ -144,6 +144,7 @@ class TvBrowseRailLayout {
     GridSpacing gridSpacing = GridSpacing.tight,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
+    double extraItemGap = 0,
     bool hasLeading = false,
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
@@ -151,7 +152,8 @@ class TvBrowseRailLayout {
     // Full-card rails keep their own scale-derived gutter, like full-bleed
     // grids; every other rail follows the user's grid-spacing setting, scaled
     // with the rest of the rail metrics (#2226).
-    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : gridSpacing.gridGap * scale;
+    final itemGap =
+        (fullCardLayout ? fullCardItemGapForScale(scale) : gridSpacing.gridGap * scale) + extraItemGap * scale;
     final isPersonHub = TvBrowseRailLayout.isPersonHub(hub);
     final emptyEpisodeThumbnailHub =
         hub.items.isEmpty && hub.type == 'episode' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
@@ -353,16 +355,36 @@ class TvBrowseRail extends StatefulWidget {
 
   /// Invoked when the user activates a hub's trailing retry tile.
   final void Function(MediaHub hub)? onRetryHub;
+
+  /// Overrides the View All screen a hub's trailing tile opens.
+  final void Function(MediaHub hub)? onViewAll;
   final void Function(MediaHub hub, int index)? onActiveHubChanged;
   final VoidCallback? onNavigateUp;
+
+  /// DOWN on the last hub, for a rail with content below it. Null keeps
+  /// DOWN inside the rail.
+  final VoidCallback? onNavigateDown;
   final VoidCallback? onNavigateToSidebar;
+
+  /// LEFT on a hub's first slot (-1) or RIGHT on its last slot (1). Return
+  /// true when handled — e.g. by moving into the neighbouring season with
+  /// [TvBrowseRailState.enterHubAtEdge]; false falls back to the default.
+  final bool Function(MediaHub hub, int direction)? onHorizontalEdge;
   final VoidCallback? onBack;
   final FutureOr<bool> Function(MediaHub hub, MediaItem item)? onActivateItem;
   final double tallPosterScale;
   final double widePosterScale;
+
+  /// Added to the gap between cards (before the TV scale), on top of the
+  /// user's grid spacing.
+  final double extraItemGap;
   final String? initialHubId;
   final String? initialItemId;
   final bool autofocus;
+
+  /// False drops the title row above each hub, for a rail whose section
+  /// already names it.
+  final bool showHubHeaders;
   final EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub;
   final double Function(MediaHub hub)? widePosterScaleForHub;
 
@@ -375,6 +397,24 @@ class TvBrowseRail extends StatefulWidget {
   /// from [MainScreenFocusScope] (offset aspect) inside the bleed widget
   /// itself, so sidebar flips never rebuild the rail — only the bleed layer.
   final double? backgroundBleedLeft;
+
+  /// Height to give the hub list instead of one hub plus the next one's peek,
+  /// so several hubs show stacked at once. The list then ends at its last hub
+  /// rather than letting that hub scroll to the top.
+  final double? viewportHeight;
+
+  /// Space above the first hub inside the scrolling list. The first hub sits
+  /// below it; every later hub scrolls it away and lands at the list's top, so
+  /// a header over the rail can scroll off without leaving a gap.
+  final double leadingInset;
+
+  /// False keeps the rail at full brightness while focus is elsewhere on the
+  /// page, for a row that should stay readable from the hero above it.
+  final bool dimWhenUnfocused;
+
+  /// Cards lead their subtitle with the time left on part-watched items
+  /// ([MediaCard.showTimeLeft]).
+  final bool showTimeLeft;
 
   const TvBrowseRail({
     super.key,
@@ -391,20 +431,29 @@ class TvBrowseRail extends StatefulWidget {
     this.trailingForHub,
     this.leadingItemForHub,
     this.onRetryHub,
+    this.onViewAll,
     this.onActiveHubChanged,
     this.onNavigateUp,
+    this.onNavigateDown,
     this.onNavigateToSidebar,
+    this.onHorizontalEdge,
     this.onBack,
     this.onActivateItem,
     this.tallPosterScale = 1.0,
     this.widePosterScale = 1.0,
+    this.extraItemGap = 0,
     this.initialHubId,
     this.initialItemId,
     this.autofocus = false,
+    this.showHubHeaders = true,
     this.episodePosterModeForHub,
     this.widePosterScaleForHub,
     this.showTitleImpliedForHub,
     this.backgroundBleedLeft,
+    this.viewportHeight,
+    this.leadingInset = 0,
+    this.dimWhenUnfocused = true,
+    this.showTimeLeft = false,
   });
 
   @override
@@ -454,6 +503,17 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   /// yet (the clamp in [_moveHub]); when items arrive, focus advances to the
   /// first item so entering a not-yet-fetched hub still lands on item 1.
   String? _pendingLeadingAutoAdvanceHubKey;
+
+  /// Set by [enterHubAtEdge]: the hub (by `hub.id`) to land on at its first or
+  /// last item once it is in [TvBrowseRail.hubs] with items.
+  ({String hubId, bool atEnd})? _pendingEdgeEntry;
+
+  /// On the next hub update that brings [hubId] into the rail with items,
+  /// focus its last item ([atEnd]) or its first, skipping the leading slot.
+  /// Call before the owner rebuilds the rail with the new hub.
+  void enterHubAtEdge(String hubId, {required bool atEnd}) {
+    _pendingEdgeEntry = (hubId: hubId, atEnd: atEnd);
+  }
 
   MediaHub? get _activeHub => widget.hubs.isEmpty ? null : widget.hubs[_hubIndex.clamp(0, widget.hubs.length - 1)];
 
@@ -548,6 +608,23 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       }
     }
     _itemIndex = _itemIndex.clamp(0, _totalItemCount(hub) == 0 ? 0 : _totalItemCount(hub) - 1);
+    var enteredAtEdge = false;
+    final edgeEntry = _pendingEdgeEntry;
+    if (edgeEntry != null && hub.id == edgeEntry.hubId) {
+      final leading = _leadingCountFor(hub);
+      if (hub.items.isNotEmpty) {
+        _itemIndex = edgeEntry.atEnd ? leading + hub.items.length - 1 : leading;
+        _pendingEdgeEntry = null;
+        _pendingLeadingAutoAdvanceHubKey = null;
+        _hasUserChangedItem = true;
+        _rememberFocus(hub);
+        enteredAtEdge = true;
+      } else {
+        // Still loading: wait on the leading slot rather than on the old
+        // position's clamp (the trailing spinner).
+        _itemIndex = 0;
+      }
+    }
     var autoAdvancedFromLeading = false;
     if (_pendingLeadingAutoAdvanceHubKey == _hubKey(hub) && hub.items.isNotEmpty) {
       if (_isLeadingSlot(hub, _itemIndex)) {
@@ -571,7 +648,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _rememberTrailingStates();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (selectedInitialItem || followedFocusedItem || autoAdvancedFromLeading) _scrollToItem(animate: false);
+      if (selectedInitialItem || followedFocusedItem || autoAdvancedFromLeading || enteredAtEdge) {
+        _scrollToItem(animate: false);
+      }
       if (shouldJumpAlignActiveHub) {
         _scrollActiveHubToTop(animate: false);
       } else if (shouldAnimateAlignActiveHub) {
@@ -770,7 +849,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     if (key.isLeftKey) {
       if (_itemIndex > 0) {
         _moveItem(-1);
-      } else {
+      } else if (widget.onHorizontalEdge?.call(hub, -1) != true) {
         widget.onNavigateToSidebar?.call();
       }
       return KeyEventResult.handled;
@@ -779,6 +858,8 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     if (key.isRightKey) {
       if (_itemIndex < _totalItemCount(hub) - 1) {
         _moveItem(1);
+      } else {
+        widget.onHorizontalEdge?.call(hub, 1);
       }
       return KeyEventResult.handled;
     }
@@ -793,7 +874,11 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     }
 
     if (key.isDownKey) {
-      _moveHub(1);
+      if (_hubIndex >= widget.hubs.length - 1 && widget.onNavigateDown != null) {
+        widget.onNavigateDown!();
+      } else {
+        _moveHub(1);
+      }
       return KeyEventResult.handled;
     }
 
@@ -881,6 +966,11 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (_alignActiveHubToTop(animate: animate)) return;
+      // ensureVisible would scroll the first hub past the leading inset.
+      if (_hubIndex == 0 && widget.leadingInset > 0) {
+        if (_verticalController.hasClients) _verticalController.jumpTo(0);
+        return;
+      }
 
       final key = _hubSectionKeys[_hubIndex];
       final context = key?.currentContext;
@@ -1119,6 +1209,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   }
 
   void _navigateToHubDetail(MediaHub hub) {
+    if (widget.onViewAll case final onViewAll?) return onViewAll(hub);
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1179,17 +1270,22 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                 gridSpacing: gridSpacing,
                 tallPosterScale: widget.tallPosterScale,
                 widePosterScale: wideScales[i],
+                extraItemGap: widget.extraItemGap,
                 hasLeading: _hasLeadingFor(widget.hubs[i]),
               ),
           ];
           final sectionHeights = [
             for (final metrics in metricsByHub)
-              TvBrowseRailLayout.hubSectionHeightFor(scale: scale, activeRailHeight: metrics.height),
+              widget.showHubHeaders
+                  ? TvBrowseRailLayout.hubSectionHeightFor(scale: scale, activeRailHeight: metrics.height)
+                  : metrics.height,
           ];
+          // The first hub rests at 0 under the leading inset; later hubs align
+          // past it.
           final offsets = <double>[];
-          var nextOffset = 0.0;
+          var nextOffset = widget.leadingInset;
           for (final height in sectionHeights) {
-            offsets.add(nextOffset);
+            offsets.add(offsets.isEmpty ? 0 : nextOffset);
             nextOffset += height;
           }
           _sectionOffsets = offsets;
@@ -1198,12 +1294,17 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
           for (final height in sectionHeights) {
             if (height > viewportSectionHeight) viewportSectionHeight = height;
           }
-          final viewportHeight = TvBrowseRailLayout.viewportHeightFor(
-            hubCount: widget.hubs.length,
-            scale: scale,
-            sectionHeight: viewportSectionHeight,
-          );
-          final bottomPadding = (viewportHeight - sectionHeights.last).clamp(0.0, double.infinity).toDouble();
+          final fixedViewportHeight = widget.viewportHeight;
+          final viewportHeight =
+              fixedViewportHeight ??
+              TvBrowseRailLayout.viewportHeightFor(
+                hubCount: widget.hubs.length,
+                scale: scale,
+                sectionHeight: viewportSectionHeight,
+              );
+          final bottomPadding = fixedViewportHeight != null
+              ? 0.0
+              : (viewportHeight - sectionHeights.last).clamp(0.0, double.infinity).toDouble();
           _sectionMaxScrollExtent = (nextOffset + bottomPadding - viewportHeight)
               .clamp(0.0, double.infinity)
               .toDouble();
@@ -1278,22 +1379,23 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                     // saveLayer alive every frame (see AnimatedDimScrim).
                     // Bled under the side nav like the background gradient,
                     // so its edge doesn't seam against the nav.
-                    _RailBleedPositioned(
-                      width: width,
-                      targetBleedLeft: widget.backgroundBleedLeft,
-                      child: ListenableSelector<bool>(
-                        listenable: _focusModel,
-                        selector: () => _focusModel.railHasFocus,
-                        builder: (context, railHasFocus, _) => AnimatedDimScrim(
-                          dimmed: !railHasFocus,
-                          color: theme.scaffoldBackgroundColor,
-                          alpha: _unfocusedRailDimAlpha,
-                          // The band's top edge cuts across the spotlight
-                          // artwork; ramp the dim in instead.
-                          fadeTop: 36 * scale,
+                    if (widget.dimWhenUnfocused)
+                      _RailBleedPositioned(
+                        width: width,
+                        targetBleedLeft: widget.backgroundBleedLeft,
+                        child: ListenableSelector<bool>(
+                          listenable: _focusModel,
+                          selector: () => _focusModel.railHasFocus,
+                          builder: (context, railHasFocus, _) => AnimatedDimScrim(
+                            dimmed: !railHasFocus,
+                            color: theme.scaffoldBackgroundColor,
+                            alpha: _unfocusedRailDimAlpha,
+                            // The band's top edge cuts across the spotlight
+                            // artwork; ramp the dim in instead.
+                            fadeTop: 36 * scale,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -1324,7 +1426,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       addAutomaticKeepAlives: false,
       addSemanticIndexes: false,
       clipBehavior: Clip.none,
-      padding: .only(bottom: bottomPadding),
+      padding: .only(top: widget.leadingInset, bottom: bottomPadding),
       itemExtentBuilder: (index, _) => sectionHeights[index],
       itemCount: widget.hubs.length,
       itemBuilder: (context, hubIndex) {
@@ -1346,12 +1448,13 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
             child: Column(
               crossAxisAlignment: .stretch,
               children: [
-                ListenableSelector<bool>(
-                  listenable: _focusModel,
-                  selector: isActiveHub,
-                  builder: (context, isActive, _) =>
-                      _buildHubHeader(context, hub: hub, isActive: isActive, scale: scale),
-                ),
+                if (widget.showHubHeaders)
+                  ListenableSelector<bool>(
+                    listenable: _focusModel,
+                    selector: isActiveHub,
+                    builder: (context, isActive, _) =>
+                        _buildHubHeader(context, hub: hub, isActive: isActive, scale: scale),
+                  ),
                 _buildHubRail(
                   hub: hub,
                   hubIndex: hubIndex,
@@ -1733,6 +1836,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
             mixedHubContext: metrics.isMixedHub,
             episodePosterModeOverride: episodePosterMode,
             showTitleImplied: widget.showTitleImpliedForHub?.call(hub) ?? false,
+            showTimeLeft: widget.showTimeLeft,
           );
   }
 

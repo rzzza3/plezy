@@ -341,7 +341,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         : watchlistStates.contains(false)
         ? false
         : null;
-    final watchlistAction = _watchlistCandidates.isEmpty
+    final siloMembership = _siloMembership;
+    final watchlistAction = siloMembership != null || _watchlistCandidates.isEmpty
         ? null
         : FocusableAction(
             debugLabel: 'detail_watchlist',
@@ -359,6 +360,39 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
               ),
             ),
           );
+
+    // Silo's own lists. These replace the catalog-source toggle above, which
+    // stays reachable through the ⋮ menu.
+    FocusableAction? siloListAction(SiloPersonalList list) {
+      if (siloMembership == null) return null;
+      final isFavorites = list == SiloPersonalList.favorites;
+      final listed = isFavorites ? siloMembership.favorite : siloMembership.watchlisted;
+      void toggle() => unawaited(_toggleSiloList(metadata, list));
+      return FocusableAction(
+        debugLabel: isFavorites ? 'detail_silo_favorite' : 'detail_silo_watchlist',
+        onPressed: toggle,
+        builder: (context, state) => iconActionButton(
+          state,
+          onPressed: toggle,
+          icon: AppIcon(
+            isFavorites
+                ? Symbols.favorite_rounded
+                : (listed ? Symbols.bookmark_added_rounded : Symbols.bookmark_add_rounded),
+            fill: isFavorites ? (listed ? 1 : 0) : 1,
+          ),
+          foregroundColor: isFavorites && listed && !state.showFocus ? Colors.redAccent : null,
+          tooltip: switch ((isFavorites, listed)) {
+            (true, true) => t.watchlistPage.removeFromFavorites,
+            (true, false) => t.watchlistPage.addToFavorites,
+            (false, true) => t.watchlistPage.removeFromWatchlist,
+            (false, false) => t.watchlistPage.addToWatchlist,
+          },
+        ),
+      );
+    }
+
+    final siloWatchlistAction = siloListAction(SiloPersonalList.watchlist);
+    final siloFavoriteAction = siloListAction(SiloPersonalList.favorites);
 
     void showMoreActions() => _contextMenuKey.currentState?.showContextMenu(context);
 
@@ -383,6 +417,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       ?downloadAction,
       watchedAction,
       ?watchlistAction,
+      ?siloWatchlistAction,
+      ?siloFavoriteAction,
       ?moreActionsAction,
     ];
 
@@ -428,12 +464,21 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     }
 
     Widget actionBar(List<FocusableAction> actions) {
-      return FocusableActionBar(
+      final bar = FocusableActionBar(
         actions: actions,
         spacing: gap,
         onFocusChange: isTv ? _setTvDetailActionRowFocus : null,
         onNavigateUp: _focusAboveActionRow,
         onNavigateDown: _focusBelowActionRow,
+        revealFocusedAction: isTv,
+      );
+      if (!isTv) return bar;
+      // TV keeps every action labelled, so a long row (a show with trailer,
+      // shuffle and download) scrolls under focus instead of overflowing.
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        child: bar,
       );
     }
 
@@ -520,6 +565,44 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       if (mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
     } finally {
       _watchlistMutationInFlight = false;
+    }
+  }
+
+  /// Optimistic: the button flips at once and flips back if Silo refuses.
+  Future<void> _toggleSiloList(MediaItem metadata, SiloPersonalList list) async {
+    final membership = _siloMembership;
+    final client = getServerBoundMediaClient(context);
+    if (!_canUseDetail || membership == null || client is! SiloClient || _siloMembershipMutationInFlight) return;
+    final isFavorites = list == SiloPersonalList.favorites;
+    final add = !(isFavorites ? membership.favorite : membership.watchlisted);
+    void apply(bool value) => setStateIfMounted(() {
+      _siloMembership = isFavorites
+          ? (favorite: value, watchlisted: _siloMembership?.watchlisted ?? membership.watchlisted)
+          : (favorite: _siloMembership?.favorite ?? membership.favorite, watchlisted: value);
+      if (isFavorites) _fullMetadata = _metadata.copyWith(isFavorite: value);
+    });
+
+    _siloMembershipMutationInFlight = true;
+    apply(add);
+    try {
+      if (isFavorites) {
+        await client.setFavorite(metadata, add);
+      } else {
+        await client.setWatchlisted(metadata, add);
+      }
+      if (!mounted) return;
+      showSuccessSnackBar(context, switch ((isFavorites, add)) {
+        (true, true) => t.watchlistPage.addedToFavorites,
+        (true, false) => t.watchlistPage.removedFromFavorites,
+        (false, true) => t.watchlistPage.addedToWatchlist,
+        (false, false) => t.watchlistPage.removedFromWatchlist,
+      });
+    } on Exception catch (error) {
+      appLogger.w('Silo: list update failed (${error.runtimeType})');
+      apply(!add);
+      if (mounted) showErrorSnackBar(context, t.watchlistPage.updateFailed);
+    } finally {
+      _siloMembershipMutationInFlight = false;
     }
   }
 

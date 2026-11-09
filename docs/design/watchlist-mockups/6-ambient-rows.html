@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>6 · Ambient rows — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* The focused title's art, blurred, tints the whole screen (Apple TV). */
+  .ambient { position: absolute; inset: -80px; background: url(assets/w-meg.jpg) center / cover; filter: blur(70px) saturate(1.3); transform: scale(1.15); opacity: 0.75; }
+  .ambient-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,15,18,0.35) 0%, rgba(14,15,18,0.55) 45%, rgba(14,15,18,0.92) 100%); }
+  .top { position: absolute; left: var(--pad-x); top: 44px; z-index: 5; }
+  .tab:not(.on) { color: rgba(237,237,237,0.78); }
+
+  .row-wrap { position: absolute; left: var(--pad-x); right: 0; z-index: 5; }
+  .row-wrap .h-section { margin-bottom: 44px; }
+  .row { display: flex; gap: 34px; align-items: flex-start; }
+
+  .tile .art { border-radius: 16px; }
+  .big .art { width: 540px; height: 304px; }
+  .mid .art { width: 386px; height: 217px; }
+  .tile .t { font-size: 25px; margin-top: 16px; }
+  .tile .s { font-size: 20px; }
+  .mid .t { font-size: 22px; margin-top: 12px; }
+  .mid .s { font-size: 18px; }
+  .state { color: var(--text); font-weight: 500; }
+
+  /* Focus: lift, soft drop shadow and a specular sheen instead of a ring. */
+  .tile.lifted { transform: scale(1.06); transform-origin: left center; z-index: 3; }
+  .tile.lifted .art { box-shadow: 0 34px 60px rgba(0,0,0,0.55), 0 10px 20px rgba(0,0,0,0.35); }
+  .tile.lifted .t { color: #fff; }
+  .tile.lifted .art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(118deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 32%, rgba(255,255,255,0) 52%); pointer-events: none; }
+
+  .r1 { top: 140px; }
+  .r1 .row { gap: 48px; }
+  .r2 { top: 668px; }
+  .tray { position: absolute; left: var(--pad-x); bottom: 0; right: 0; height: 64px; z-index: 5; display: flex; align-items: center; gap: 22px; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="ambient"></div><div class="ambient-shade"></div>
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+
+  <div class="top">
+    <div class="tabs">
+      <span class="tab on"><i data-i="bookmarkf"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab"><i data-i="heart"></i>Favourites <span class="n">11</span></span>
+    </div>
+  </div>
+
+  <section class="row-wrap r1">
+    <h2 class="h-section">Up Next</h2>
+    <div class="row">
+      <div class="card tile big lifted"><div class="art"><img src="assets/w-meg.jpg" alt=""><div class="progress"><i style="width:36%"></i></div></div><div class="t">The Meg</div><div class="s"><span class="state">Resume</span> · 1h 12min left</div></div>
+      <div class="card tile big"><div class="art"><img src="assets/w-crystal.jpg" alt=""></div><div class="t">Crystal Lake</div><div class="s"><span class="state">New episode</span> · S1 E2</div></div>
+      <div class="card tile big"><div class="art"><img src="assets/w-got.jpg" alt=""><div class="progress"><i style="width:48%"></i></div></div><div class="t">Game of Thrones</div><div class="s"><span class="state">Resume</span> · S5 E1 · 26min left</div></div>
+    </div>
+  </section>
+
+  <section class="row-wrap r2">
+    <h2 class="h-section">Not started</h2>
+    <div class="row">
+      <div class="card tile mid"><div class="art"><img src="assets/w-holiday.jpg" alt=""></div><div class="t">Holiday Touchdown</div><div class="s">Movie · 1h 24min</div></div>
+      <div class="card tile mid"><div class="art"><img src="assets/w-ponyo.jpg" alt=""></div><div class="t">Ponyo</div><div class="s">Movie · 1h 41min</div></div>
+      <div class="card tile mid"><div class="art"><img src="assets/w-traitors.jpg" alt=""></div><div class="t">The Traitors</div><div class="s">TV · 5 seasons</div></div>
+      <div class="card tile mid"><div class="art"><img src="assets/w-mortimer.jpg" alt=""></div><div class="t">Gone Fishing</div><div class="s">TV · 8 series</div></div>
+      <div class="card tile mid"><div class="art"><img src="assets/w-dusk.jpg" alt=""></div><div class="t">From Dusk Till Dawn 3</div><div class="s">Movie · 1h 33min</div></div>
+    </div>
+  </section>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

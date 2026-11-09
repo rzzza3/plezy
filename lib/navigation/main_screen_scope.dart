@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/side_navigation_rail.dart';
+import 'navigation_tabs.dart';
 
 /// Dependency aspects for [MainScreenFocusScope].
 ///
@@ -28,6 +29,7 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
   final double? viewportWidth;
   final void Function(String libraryGlobalKey)? selectLibrary;
   final VoidCallback? openSettings;
+  final ValueChanged<NavigationTabId>? selectTab;
 
   const MainScreenFocusScope({
     super.key,
@@ -39,6 +41,7 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
     this.viewportWidth,
     this.selectLibrary,
     this.openSettings,
+    this.selectTab,
     required super.child,
   });
 
@@ -54,6 +57,10 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
   /// Focuses the sidebar without registering an inherited dependency.
   static void focusSidebarOf(BuildContext context) {
     of(context, listen: false)?.focusSidebar();
+  }
+
+  static void selectTabOf(BuildContext context, NavigationTabId tab) {
+    of(context, listen: false)?.selectTab?.call(tab);
   }
 
   static MainScreenFocusScope? _dependOn(BuildContext context, MainScreenScopeAspect aspect) {

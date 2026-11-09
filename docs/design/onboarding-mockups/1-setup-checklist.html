@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Setup Checklist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .side { position: absolute; inset: 0 auto 0 0; width: 600px; background: var(--surface); padding: 92px 56px 56px 64px; display: flex; flex-direction: column; }
+  .side .h1 { font-size: 52px; }
+  .side .small { margin-top: 16px; line-height: 1.45; max-width: 30ch; }
+  .steps { margin-top: 64px; display: flex; flex-direction: column; gap: 6px; }
+  .step { display: flex; align-items: center; gap: 22px; height: 96px; padding: 0 26px; border-radius: 48px; color: var(--faint); transition: background var(--normal) var(--ease), color var(--normal); }
+  .step .dot { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(237,237,237,0.28); display: grid; place-items: center; font-size: 24px; flex: none; transition: all var(--normal) var(--ease); }
+  .step .dot .i { opacity: 0; stroke-width: 2.8; }
+  .step .nm { font-size: 28px; font-weight: 500; }
+  .step .sub { font-size: 20px; color: var(--muted); margin-top: 4px; max-height: 0; overflow: hidden; transition: max-height var(--normal) var(--ease); white-space: nowrap; }
+  .step.now { background: var(--raise); color: var(--text); }
+  .step.now .dot { border-color: var(--text); }
+  .step.done { color: var(--text); }
+  .step.done .dot { background: var(--text); border-color: var(--text); color: var(--bg); }
+  .step.done .dot .i { opacity: 1; }
+  .step.done .sub { max-height: 30px; }
+  .side .hints { margin-top: auto; }
+
+  .main { position: absolute; left: 600px; right: 0; top: 0; bottom: 0; }
+  .pane { position: absolute; inset: 0; padding: 150px 120px 0 120px; opacity: 0; visibility: hidden; transform: translateX(30px); transition: opacity 380ms var(--ease), transform 480ms var(--ease), visibility 0s 380ms; }
+  .pane.on { opacity: 1; visibility: visible; transform: none; transition: opacity 380ms var(--ease), transform 480ms var(--ease), visibility 0s; }
+  .pane .lede { margin-top: 18px; }
+  .actions { display: flex; gap: 18px; margin-top: 44px; align-items: center; }
+
+  /* sign-in */
+  .code-wrap { display: flex; align-items: center; gap: 64px; margin-top: 70px; }
+  .code-wrap .big { font-size: 40px; font-weight: 700; margin: 14px 0 26px; }
+  .code { font-size: 96px; font-weight: 700; letter-spacing: 8px; font-variant-numeric: tabular-nums; line-height: 1; }
+  .vr { width: 2px; align-self: stretch; background: var(--outline); }
+  .qrb { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+
+  /* profiles */
+  .profiles { display: flex; gap: 70px; margin-top: 90px; }
+  .prof { display: flex; flex-direction: column; align-items: center; gap: 22px; font-size: 30px; font-weight: 500; color: var(--muted); transition: color var(--fast); }
+  .prof .av { width: 210px; height: 210px; border-radius: 50%; display: grid; place-items: center; font-size: 86px; font-weight: 500; color: var(--text); position: relative; transition: transform var(--normal) var(--ease), outline-color var(--fast); outline: 5px solid transparent; outline-offset: 7px; }
+  .prof .lk { position: absolute; right: 6px; bottom: 6px; width: 54px; height: 54px; border-radius: 50%; background: var(--bg); display: grid; place-items: center; font-size: 26px; }
+  .prof.f { color: var(--text); }
+  .prof.f .av { outline-color: #fff; transform: scale(1.06); }
+
+  /* libraries */
+  .libs { margin-top: 44px; display: flex; flex-direction: column; gap: 4px; width: 920px; }
+  .row { display: flex; align-items: center; gap: 28px; height: 104px; padding: 0 30px 0 22px; background: var(--surface-2); border-radius: 6px; transition: transform var(--normal) var(--ease), background var(--fast); }
+  .row:first-child { border-radius: 20px 20px 6px 6px; } .row:last-child { border-radius: 6px 6px 20px 20px; }
+  .row .nm { font-size: 28px; font-weight: 500; } .row .ct { font-size: 20px; color: var(--muted); margin-top: 4px; }
+  .row .grow { flex: 1; }
+  .row.f { background: #33363e; outline: 3px solid #fff; outline-offset: 3px; transform: scale(1.015); z-index: 2; position: relative; }
+  .preview { position: absolute; right: 120px; top: 360px; width: 132px; padding: 26px 0; border-radius: 66px; background: var(--surface); border: 1.5px solid var(--outline); display: flex; flex-direction: column; align-items: center; }
+  .preview .item { width: 76px; height: 60px; border-radius: 30px; display: grid; place-items: center; font-size: 28px; transition: all 420ms var(--ease); overflow: hidden; }
+  .preview .item.gone { height: 0; opacity: 0; transform: scale(0.4); }
+  .preview .sep { width: 50px; height: 2px; background: var(--outline); margin: 8px 0 14px; }
+  .preview-cap { position: absolute; right: 92px; top: 316px; width: 190px; text-align: center; font-size: 20px; color: var(--muted); }
+
+  /* networks */
+  .ntabs { display: flex; gap: 8px; margin-top: 44px; align-items: center; }
+  .ntab { height: 58px; padding: 0 28px; border-radius: 29px; display: inline-flex; align-items: center; font-size: 23px; font-weight: 500; color: var(--muted); border: 1.5px solid transparent; transition: all var(--fast); }
+  .ntab.sel { color: var(--text); border-color: rgba(237,237,237,0.4); }
+  .ntab.f { background: var(--text); color: var(--bg); }
+  .ntabs .picked { margin-left: auto; font-size: 24px; color: var(--muted); padding-right: 60px; }
+  .ngrid { display: grid; grid-template-columns: repeat(4, 250px); gap: 22px; margin-top: 34px; }
+  .ngrid .ntile { width: 250px; height: 140px; } .ngrid .ntile .wm { font-size: 30px; }
+
+  /* genres */
+  .chips { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 48px; max-width: 1060px; }
+</style></head>
+<body><div class="screen">
+  <section class="scene on" id="wiz">
+    <aside class="side">
+      <h1 class="h1">Set up</h1>
+      <p class="small">About two minutes. You can change any of it later in Settings.</p>
+      <div class="steps">
+        <div class="step now" id="st-server"><span class="dot"><svg class="i"><use href="#i-check"/></svg></span><div><div class="nm">Server</div><div class="sub">silo.ashgrove.net</div></div></div>
+        <div class="step" id="st-signin"><span class="dot"><svg class="i"><use href="#i-check"/></svg></span><div><div class="nm">Sign in</div><div class="sub">Signed in as sam</div></div></div>
+        <div class="step" id="st-profile"><span class="dot"><svg class="i"><use href="#i-check"/></svg></span><div><div class="nm">Profile</div><div class="sub">Sam</div></div></div>
+        <div class="step" id="st-libs"><span class="dot"><svg class="i"><use href="#i-check"/></svg></span><div><div class="nm">Sidebar libraries</div><div class="sub">4 of 6 pinned</div></div></div>
+        <div class="step" id="st-nets"><span class="dot"><svg class="i"><use href="#i-check"/></svg></span><div><div class="nm">Networks</div><div class="sub">Netflix, HBO and 3 more</div></div></div>
+        <div class="step" id="st-genres"><span class="dot"><svg class="i"><use href="#i-check"/></svg></span><div><div class="nm">Genres</div><div class="sub">7 genres</div></div></div>
+      </div>
+      <div class="hints"><span><span class="key"><svg class="i"><use href="#i-back"/></svg></span>Previous step</span><span><span class="key">OK</span>Select</span></div>
+    </aside>
+
+    <div class="main">
+      <div class="pane on" id="p-server">
+        <h2 class="h1">Connect to your Silo server</h2>
+        <p class="lede">Enter the address you open Silo with in a browser.</p>
+        <div style="margin-top:56px;width:880px">
+          <div class="label">Server address</div>
+          <div class="field" id="addr"><span class="lead"><svg class="i"><use href="#i-server"/></svg></span><span class="val"></span><span class="ph">silo.example.com</span></div>
+          <div class="status-line" id="addr-status" style="margin-top:22px"></div>
+        </div>
+        <div class="actions"><div class="btn" id="b-cont1">Continue</div></div>
+      </div>
+
+      <div class="pane" id="p-signin">
+        <h2 class="h1">Sign in to Ashgrove</h2>
+        <div class="code-wrap">
+          <div>
+            <div class="lede">On your phone or computer, go to</div>
+            <div class="big">silo.ashgrove.net/link</div>
+            <div class="lede">and enter this code</div>
+            <div class="code" style="margin-top:22px">K7QM‑24RX</div>
+          </div>
+          <div class="vr"></div>
+          <div class="qrb" id="qrb"><div class="small">Or scan this code with your phone</div></div>
+        </div>
+        <div class="status-line" id="code-status" style="margin-top:56px"><span class="spin"></span><span>Waiting for approval…</span></div>
+        <div class="actions"><div class="btn ghost" id="b-pw"><svg class="i"><use href="#i-key"/></svg>Sign in with your password</div></div>
+      </div>
+
+      <div class="pane" id="p-profile">
+        <h2 class="h1">Who's watching?</h2>
+        <p class="lede">Each profile keeps its own Library setup and watch history.</p>
+        <div class="profiles" id="profiles"></div>
+      </div>
+
+      <div class="pane" id="p-libs">
+        <h2 class="h1">Which libraries go in your sidebar?</h2>
+        <p class="lede">Pinned ones sit in the sidebar. The rest fold into a list at its end.</p>
+        <div class="libs" id="libs"></div>
+        <div class="preview-cap">Your sidebar</div>
+        <div class="preview" id="preview"></div>
+        <div class="actions" style="margin-top:34px"><div class="btn" id="b-cont3">Continue</div><div class="btn ghost" id="b-skip3">Keep all pinned</div></div>
+      </div>
+
+      <div class="pane" id="p-nets">
+        <h2 class="h1">Pick networks for your Library</h2>
+        <p class="lede">They make up the Networks row. Each one opens everything you have from it.</p>
+        <div class="ntabs" id="ntabs"><span class="picked num" id="npicked">4 picked</span></div>
+        <div class="ngrid" id="ngrid"></div>
+        <div class="actions" style="margin-top:36px"><div class="btn" id="b-cont4">Continue</div></div>
+      </div>
+
+      <div class="pane" id="p-genres">
+        <h2 class="h1">And the genres</h2>
+        <p class="lede">The Genres row shows them in this order. Picks come from your library only.</p>
+        <div class="chips" id="chips"></div>
+        <div class="actions" style="margin-top:48px"><div class="btn" id="b-cont5">Finish</div></div>
+      </div>
+    </div>
+  </section>
+  <section class="scene" id="home"></section>
+</div>
+<script src="shared.js"></script>
+<script>
+const nets = new Set(DEFAULT_NETWORKS), gens = new Set(DEFAULT_GENRES), pinned = new Set(LIBS.map(l => l.id));
+let tab = 'Streaming';
+function pane(id) { $$('.pane').forEach(p => p.classList.toggle('on', p.id === id)); }
+function step(id) {
+  const order = ['server', 'signin', 'profile', 'libs', 'nets', 'genres'];
+  const i = id === 'done' ? order.length : order.indexOf(id);
+  order.forEach((s, j) => { const el = $('#st-' + s); el.classList.toggle('done', j < i); el.classList.toggle('now', j === i); });
+}
+function drawGrid() {
+  $('#ngrid').innerHTML = NETWORKS[tab].slice(0, 8).map(([n, c]) => ntile(n, c, nets.has(n))).join('');
+  $$('.ntab').forEach(t => t.classList.toggle('sel', t.dataset.tab === tab));
+  $('#npicked').textContent = nets.size + ' picked';
+}
+window.BUILD = () => {
+  $('#qrb').insertAdjacentHTML('afterbegin', qr(270));
+  $('#profiles').innerHTML = PROFILES.map(p => `<div class="prof" id="pr-${p.id}"><div class="av" style="background:${p.tint}">${p.name[0]}${p.pin ? `<span class="lk">${ic('lock')}</span>` : ''}</div>${p.name}</div>`).join('');
+  $('#libs').innerHTML = LIBS.map(l => `<div class="row on" id="lb-${l.id}">${fan(l, 40)}<div class="grow"><div class="nm">${l.name}</div><div class="ct">${l.count}</div></div><div class="switch"></div></div>`).join('');
+  $('#preview').innerHTML = `<div class="item">${ic('search')}</div><div class="item">${ic('home')}</div><div class="sep"></div>` + LIBS.map(l => `<div class="item" data-pv="${l.id}">${ic(l.icon)}</div>`).join('');
+  $('#ntabs').insertAdjacentHTML('afterbegin', Object.keys(NETWORKS).map(k => `<span class="ntab" data-tab="${k}" id="tab-${k.split(' ')[0]}">${k}</span>`).join(''));
+  $('#chips').innerHTML = GENRES.map(g => `<span class="chip${gens.has(g) ? ' on' : ''}" data-g="${g}"><span class="ck">${ic('check')}</span>${g}</span>`).join('');
+  drawGrid();
+};
+const toggleLib = (id) => { pinned.has(id) ? pinned.delete(id) : pinned.add(id); $('#lb-' + id).classList.toggle('on'); $(`[data-pv="${id}"]`).classList.toggle('gone'); $('#st-libs .sub').textContent = `${pinned.size} of 6 pinned`; };
+const toggleNet = (el) => { const n = el.dataset.net; nets.has(n) ? nets.delete(n) : nets.add(n); el.classList.toggle('on'); $('#npicked').textContent = nets.size + ' picked'; };
+const toggleGen = (el) => { const g = el.dataset.g; gens.has(g) ? gens.delete(g) : gens.add(g); el.classList.toggle('on'); };
+const tileAt = (i) => $$('#ngrid .ntile')[i];
+
+window.SCRIPT = async () => {
+  await wait(700);
+  await move('down', '#addr', 500);
+  await press('#addr', null, 300);
+  await typeInto('#addr', SERVER.host, 70);
+  await wait(300);
+  await move('down', '#b-cont1', 400);
+  await press('#b-cont1', () => { $('#addr-status').innerHTML = '<span class="spin"></span><span>Checking the server…</span>'; }, 1300);
+  $('#addr-status').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Found <b>Ashgrove</b> · secure connection</span>`;
+  await wait(1000);
+
+  step('signin'); pane('p-signin'); focus('#b-pw');
+  await wait(2600);
+  $('#code-status').innerHTML = '<span class="spin"></span><span>Code opened. Approve it on your other device.</span>';
+  await wait(2000);
+  $('#code-status').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Signed in as sam</span>`;
+  await wait(1000);
+
+  step('profile'); pane('p-profile'); focus('#pr-sam');
+  await wait(900);
+  await move('right', '#pr-jo', 420);
+  await move('left', '#pr-sam', 420);
+  await press('#pr-sam', null, 500);
+
+  step('libs'); pane('p-libs'); focus('#lb-movies');
+  await wait(1100);
+  for (const id of ['shows', 'anime', 'kids']) await move('down', '#lb-' + id, 300);
+  await press(null, () => toggleLib('kids'), 500);
+  await move('down', '#lb-sports', 340);
+  await press(null, () => toggleLib('sports'), 700);
+  await move('down', '#lb-world', 300);
+  await move('down', '#b-cont3', 400);
+  await press('#b-cont3', null, 300);
+
+  step('nets'); pane('p-nets'); focus(tileAt(0));
+  await wait(1200);
+  for (const i of [1, 2, 3]) await move('right', tileAt(i), 300);
+  await press(null, toggleNet, 450);
+  await move('down', tileAt(7), 380);
+  await move('left', tileAt(6), 380);
+  await press(null, toggleNet, 450);
+  await move('up', tileAt(2), 300);
+  await move('up', '#tab-UK', 380);
+  await press('#tab-UK', () => { tab = 'UK channels'; drawGrid(); }, 500);
+  await move('down', tileAt(0), 380);
+  await press(null, toggleNet, 450);
+  await move('right', tileAt(1), 300);
+  await press(null, toggleNet, 600);
+  $('#st-nets .sub').textContent = 'Netflix, HBO and 3 more';
+  await move('down', '#b-cont4', 400);
+  await press('#b-cont4', null, 300);
+
+  step('genres'); pane('p-genres');
+  const chip = (g) => $(`[data-g="${g}"]`);
+  focus(chip('Action'));
+  await wait(1000);
+  await move('right', chip('Adventure'), 260); await move('right', chip('Animation'), 260); await move('right', chip('Comedy'), 260);
+  await move('right', chip('Crime'), 300);
+  await press(null, toggleGen, 380);
+  await move('right', chip('Documentary'), 300);
+  await press(null, toggleGen, 380);
+  for (const g of ['Drama', 'Family', 'Fantasy', 'History']) await move('right', chip(g), 200);
+  await move('right', chip('Horror'), 320);
+  await press(null, toggleGen, 500);
+  $('#st-genres .sub').textContent = `${gens.size} genres`;
+  await move('down', '#b-cont5', 420);
+  await press('#b-cont5', null, 300);
+  step('done'); $('#st-genres').classList.add('done'); $('#st-genres').classList.remove('now');
+  await wait(600);
+
+  $('#home').innerHTML = homeHTML({ libs: [...pinned], networks: [...nets], genres: GENRES.filter(g => gens.has(g)) });
+  show('home');
+  focus($('#home .wcard'));
+  await wait(3200);
+};
+</script>
+</body></html>

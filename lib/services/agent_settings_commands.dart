@@ -373,7 +373,7 @@ class AgentSettingsCommands {
     final reason = unsupportedReason(pref.key, context);
     var choices = pref.jsonChoices;
     if (pref == SettingsService.startupSection) {
-      choices = [NavigationTabId.discover.name, NavigationTabId.libraries.name, NavigationTabId.search.name];
+      choices = [for (final tab in startupSectionTabs) tab.name];
     }
     if (pref == SettingsService.subtitleRenderResolution && (Platform.isIOS || Platform.isAndroid)) {
       choices =

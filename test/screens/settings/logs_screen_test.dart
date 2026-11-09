@@ -440,7 +440,7 @@ void main() {
       await tester.pump();
 
       expect(clipboardText, isNotNull);
-      expect(clipboardText, startsWith('Plezy'));
+      expect(clipboardText, startsWith('TBD'));
       expect(clipboardText, matches(RegExp(r'---\n\[')));
       expect(clipboardText, matches(RegExp(r'newer-row\n\[')));
       expect(clipboardText, endsWith('older-row'));
@@ -463,7 +463,7 @@ void main() {
 
       await pumpLogs(tester);
       await pumpSelectionRegistration(tester);
-      final header = find.textContaining('Plezy', findRichText: true);
+      final header = find.textContaining('TBD', findRichText: true);
       final newerRow = find.textContaining('newer-row', findRichText: true);
       final gesture = await tester.startGesture(
         tester.getTopLeft(header) + const Offset(1, 6),

@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview and Confirm</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* One card that grows as each answer lands */
+  .card1 { position: absolute; left: 50%; top: 50%; width: 980px; transform: translate(-50%, -50%); background: var(--surface); border: 1.5px solid var(--outline); border-radius: 32px; padding: 64px 72px; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+  .card1 .h1 { font-size: 54px; }
+  .card1 .lede { font-size: 26px; margin-top: 12px; }
+  .grow { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 620ms var(--ease), opacity 500ms var(--ease); opacity: 0; }
+  .grow > div { overflow: hidden; }
+  .grow.open { grid-template-rows: 1fr; opacity: 1; }
+  .seg { display: inline-flex; padding: 6px; border-radius: 38px; background: var(--surface-2); gap: 4px; margin: 40px 0 30px; }
+  .seg span { height: 60px; padding: 0 32px; border-radius: 30px; display: inline-flex; align-items: center; gap: 10px; font-size: 23px; font-weight: 500; color: var(--muted); transition: all var(--fast); }
+  .seg span.sel { background: var(--raise); color: var(--text); }
+  .seg span.f { background: var(--text); color: var(--bg); }
+  .seg .i { font-size: 24px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .field { height: 88px; font-size: 30px; }
+  .found { display: flex; align-items: center; gap: 18px; margin-top: 22px; padding: 18px 22px; border-radius: 18px; background: var(--surface-2); font-size: 24px; }
+  .found .i { font-size: 30px; }
+  .found .small { margin-left: auto; font-size: 20px; }
+  .card1 .actions { display: flex; gap: 16px; margin-top: 34px; align-items: center; }
+  .whoes { display: flex; gap: 22px; margin-top: 30px; }
+  .who { display: flex; align-items: center; gap: 16px; height: 84px; padding: 0 32px 0 12px; border-radius: 42px; background: var(--surface-2); font-size: 26px; font-weight: 500; transition: all var(--fast); }
+  .who .av { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; }
+  .who.f { background: var(--text); color: var(--bg); transform: scale(1.05); }
+
+  /* Review with live preview */
+  .left { position: absolute; left: 110px; top: 110px; width: 600px; bottom: 80px; display: flex; flex-direction: column; }
+  .left .h1 { font-size: 54px; }
+  .left .lede { font-size: 25px; margin-top: 16px; }
+  .group { margin-top: 48px; display: flex; flex-direction: column; gap: 4px; }
+  .grow-row { display: flex; align-items: center; gap: 20px; padding: 26px 28px; background: var(--surface); border-radius: 6px; transition: background var(--fast), transform var(--normal) var(--ease); }
+  .grow-row:first-child { border-radius: 22px 22px 6px 6px; } .grow-row:last-child { border-radius: 6px 6px 22px 22px; }
+  .grow-row .k { font-size: 26px; font-weight: 500; }
+  .grow-row .v { font-size: 21px; color: var(--muted); margin-top: 6px; line-height: 1.35; }
+  .grow-row .why { font-size: 18px; color: var(--muted); margin-top: 8px; display: flex; gap: 8px; align-items: center; }
+  .grow-row > div { flex: 1; }
+  .grow-row .chev { font-size: 30px; color: var(--muted); }
+  .grow-row.f { background: var(--text); color: var(--bg); transform: scale(1.02); }
+  .grow-row.f .v, .grow-row.f .why, .grow-row.f .chev { color: rgba(14,15,18,0.7); }
+  .left .actions { margin-top: auto; display: flex; gap: 16px; }
+
+  .editor { position: absolute; left: 110px; top: 110px; width: 600px; display: none; }
+  .editor.on { display: block; animation: pop 480ms var(--ease) both; }
+  .editor .chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
+  .editor .chip { height: 60px; font-size: 23px; }
+  .editor .chip small { font-size: 17px; opacity: 0.7; font-variant-numeric: tabular-nums; }
+
+  .pvwrap { position: absolute; left: 790px; top: 230px; width: 1920px; height: 1080px; transform: scale(0.5625); transform-origin: top left; border-radius: 36px; overflow: hidden; outline: 3px solid rgba(237,237,237,0.18); box-shadow: 0 40px 120px rgba(0,0,0,0.7);
+    transition: transform 1000ms var(--ease), left 1000ms var(--ease), top 1000ms var(--ease), border-radius 1000ms var(--ease), outline-color 600ms; }
+  .pvwrap.full { left: 0; top: 0; transform: none; border-radius: 0; outline-color: transparent; }
+  .pvcap { position: absolute; left: 790px; top: 178px; font-size: 22px; color: var(--muted); display: flex; gap: 10px; align-items: center; transition: opacity 400ms; }
+  .pvwrap .home .rail, .pvwrap .home .greet, .pvwrap .home .region { transition: opacity 500ms var(--ease); }
+  .pvwrap.focusing .home .rail, .pvwrap.focusing .home .greet, .pvwrap.focusing .home .region { opacity: 0.25; }
+  .pvwrap.focusing .home .lit { opacity: 1; }
+  .ntile.pop, .gtile.pop { animation: pop 560ms var(--ease) both; }
+</style></head>
+<body><div class="screen">
+  <section class="scene on" id="s1"><div class="card1">
+    <h1 class="h1">Connect to Silo</h1>
+    <p class="lede">Sign in once. We'll set up the rest from what your server has.</p>
+    <div style="margin-top:40px"><div class="field" id="addr"><span class="lead"><svg class="i"><use href="#i-server"/></svg></span><span class="val"></span><span class="ph">silo.example.com</span></div></div>
+    <div class="grow" id="g-found"><div><div class="found"><svg class="i okc"><use href="#i-check"/></svg><span>Ashgrove</span><span class="small">Silo · HTTPS</span></div></div></div>
+    <div class="grow" id="g-sign"><div>
+      <div class="seg"><span class="sel" id="t-code"><svg class="i"><use href="#i-phone"/></svg>Code</span><span id="t-pw"><svg class="i"><use href="#i-key"/></svg>Password</span></div>
+      <div class="pair"><div class="field" id="user"><span class="val"></span><span class="ph">Username</span></div><div class="field" id="pw"><span class="val"></span><span class="ph">Password</span></div></div>
+    </div></div>
+    <div class="grow" id="g-who"><div><div class="whoes" id="whoes"></div></div></div>
+    <div class="actions"><div class="btn" id="b1">Connect</div><div class="status-line" id="st"></div></div>
+  </div></section>
+
+  <section class="scene" id="s2">
+    <div class="left" id="left">
+      <h2 class="h1">Here's your Library, Sam</h2>
+      <p class="lede">Picked from what Ashgrove has most of. Change anything, or start watching.</p>
+      <div class="group">
+        <div class="grow-row" id="r-libs" data-region=".rail"><div><div class="k">Sidebar</div><div class="v">Movies, TV Shows, Anime, Fight Night, World Cinema</div><div class="why">Kids is left out: it has its own profile</div></div><svg class="i chev"><use href="#i-right"/></svg></div>
+        <div class="grow-row" id="r-nets" data-region='[data-region="networks"]'><div><div class="k">Networks</div><div class="v" id="v-nets"></div><div class="why">Most titles on your server</div></div><svg class="i chev"><use href="#i-right"/></svg></div>
+        <div class="grow-row" id="r-gens" data-region='[data-region="genres"]'><div><div class="k">Genres</div><div class="v">Drama, Comedy, Action, Animation, Thriller, Crime</div><div class="why">Your biggest genres</div></div><svg class="i chev"><use href="#i-right"/></svg></div>
+      </div>
+      <div class="actions"><div class="btn" id="b2"><svg class="i"><use href="#i-check"/></svg>Looks good</div></div>
+    </div>
+    <div class="editor" id="ed">
+      <h2 class="h1">Networks</h2>
+      <p class="lede">Turn networks on or off. The preview updates as you go.</p>
+      <div class="chips" id="ed-chips"></div>
+      <div style="margin-top:44px"><div class="btn" id="ed-done">Done</div></div>
+    </div>
+    <div class="pvcap" id="pvcap"><svg class="i"><use href="#i-tv"/></svg>Preview</div>
+    <div class="pvwrap" id="pv"></div>
+  </section>
+</div>
+<script src="shared.js"></script>
+<script>
+const nets = ['Netflix', 'HBO', 'Prime Video', 'Disney+'];
+const gens = ['Drama', 'Comedy', 'Action', 'Animation', 'Thriller', 'Crime'];
+const libs = ['movies', 'shows', 'anime', 'sports', 'world'];
+const allN = Object.values(NETWORKS).flat();
+const PV = (s) => $('#pv ' + s);
+window.BUILD = () => {
+  $('#whoes').innerHTML = PROFILES.map((p) => `<div class="who" id="w-${p.id}"><span class="av" style="background:${p.tint}">${p.name[0]}</span>${p.name}</div>`).join('');
+  $('#pv').innerHTML = homeHTML({ libs, networks: nets, genres: gens });
+  $('#v-nets').textContent = nets.join(', ');
+  $('#ed-chips').innerHTML = NETWORKS.Streaming.map(([n, c]) => `<span class="chip${nets.includes(n) ? ' on' : ''}" data-n="${n}"><span class="ck">${ic('check')}</span>${n} <small>${c}</small></span>`).join('');
+};
+function light(row) {
+  $$('#pv .lit').forEach((e) => e.classList.remove('lit'));
+  if (!row) { $('#pv').classList.remove('focusing'); return; }
+  $('#pv').classList.add('focusing'); PV(row.dataset.region).classList.add('lit');
+}
+function toggleNet(el) {
+  const n = el.dataset.n, tr = PV('.net-track');
+  el.classList.toggle('on');
+  if (nets.includes(n)) { nets.splice(nets.indexOf(n), 1); tr.querySelector(`[data-net="${n}"]`).remove(); }
+  else { nets.push(n); const d = document.createElement('div'); d.innerHTML = ntile(n, allN.find((x) => x[0] === n)[1]); d.firstChild.classList.add('pop'); tr.append(d.firstChild); }
+  $('#v-nets').textContent = nets.join(', ');
+}
+const chip = (n) => $(`#ed-chips [data-n="${n}"]`);
+
+window.SCRIPT = async () => {
+  await wait(800);
+  focus('#addr'); await wait(300);
+  await press('#addr', null, 200);
+  await typeInto('#addr', SERVER.host, 65);
+  await move('down', '#b1', 380);
+  await press('#b1', () => { $('#st').innerHTML = '<span class="spin"></span><span>Checking…</span>'; }, 1000);
+  $('#st').innerHTML = ''; $('#g-found').classList.add('open');
+  await wait(500);
+  $('#g-sign').classList.add('open'); $('#b1').innerHTML = 'Sign in';
+  focus('#t-code'); await wait(900);
+  await move('right', '#t-pw', 380);
+  await press('#t-pw', () => { $('#t-pw').classList.add('sel'); $('#t-code').classList.remove('sel'); }, 300);
+  await move('down', '#user', 300);
+  await press('#user', null, 150);
+  await typeInto('#user', 'sam', 90);
+  await move('right', '#pw', 300);
+  await press('#pw', null, 150);
+  await typeInto('#pw', '•••••••••••', 60);
+  await move('down', '#b1', 380);
+  await press('#b1', () => { $('#st').innerHTML = '<span class="spin"></span><span>Signing in…</span>'; }, 1000);
+  $('#st').innerHTML = ''; $('#g-sign').classList.remove('open'); $('#g-found').classList.remove('open');
+  $('#b1').style.display = 'none';
+  $('#g-who').classList.add('open');
+  $('.card1 .h1').textContent = "Who's watching?";
+  $('.card1 .lede').textContent = 'Signed in as sam on Ashgrove.';
+  focus('#w-sam'); await wait(1300);
+  await press('#w-sam', null, 300);
+
+  show('s2'); focus('#b2'); await wait(2400);
+  await move('up', '#r-gens', 0); light($('#r-gens')); await wait(700);
+  await move('up', '#r-nets', 0); light($('#r-nets')); await wait(900);
+  await press('#r-nets', () => { $('#left').style.display = 'none'; $('#ed').classList.add('on'); }, 500);
+  focus(chip('Netflix')); await wait(700);
+  await move('right', chip('Prime Video'), 400);
+  await press(null, toggleNet, 600);
+  for (const n of ['HBO', 'Paramount+', 'Disney+', 'Apple TV', 'Hulu', 'Peacock']) await move('right', chip(n), 200);
+  await move('right', chip('Crunchyroll'), 420);
+  await press(null, toggleNet, 800);
+  await move('down', '#ed-done', 400);
+  await press('#ed-done', () => { $('#ed').classList.remove('on'); $('#left').style.display = ''; }, 200);
+  focus('#r-nets'); await wait(900);
+  await move('down', '#r-gens', 0); light(null); await wait(300);
+  await move('down', '#b2', 600);
+  await press('#b2', null, 200);
+  $('#left').style.opacity = 0; $('#pvcap').style.opacity = 0;
+  $('#pv').classList.add('full');
+  await wait(1100);
+  focus(PV('.wcard'));
+  await wait(3000);
+};
+</script>
+</body></html>

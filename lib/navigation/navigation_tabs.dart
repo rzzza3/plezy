@@ -6,7 +6,7 @@ import '../i18n/strings.g.dart';
 import '../utils/platform_detector.dart';
 
 /// Navigation tab identifiers
-enum NavigationTabId { discover, explore, libraries, search, downloads, settings }
+enum NavigationTabId { discover, library, watchlist, explore, libraries, search, downloads, settings }
 
 /// Represents a navigation tab with its configuration
 class NavigationTab {
@@ -73,15 +73,37 @@ class NavigationTab {
 
 // Label getters (must be top-level for const constructor)
 String _getHomeLabel() => t.common.home;
+String _getLibraryLabel() => t.navigation.library;
+String _getWatchlistLabel() => t.navigation.watchlist;
 String _getExploreLabel() => t.navigation.explore;
 String _getLibrariesLabel() => t.navigation.libraries;
 String _getSearchLabel() => t.common.search;
 String _getDownloadsLabel() => t.navigation.downloads;
 String _getSettingsLabel() => t.common.settings;
 
+/// The tabs the Startup Section setting offers, in navigation order.
+const startupSectionTabs = [
+  NavigationTabId.discover,
+  NavigationTabId.library,
+  NavigationTabId.libraries,
+  NavigationTabId.search,
+];
+
 /// All navigation tabs in display order
 const allNavigationTabs = [
   NavigationTab(id: NavigationTabId.discover, onlineOnly: true, icon: Symbols.home_rounded, getLabel: _getHomeLabel),
+  NavigationTab(
+    id: NavigationTabId.library,
+    onlineOnly: true,
+    icon: Symbols.subscriptions_rounded,
+    getLabel: _getLibraryLabel,
+  ),
+  NavigationTab(
+    id: NavigationTabId.watchlist,
+    onlineOnly: true,
+    icon: Symbols.bookmark_rounded,
+    getLabel: _getWatchlistLabel,
+  ),
   NavigationTab(
     id: NavigationTabId.libraries,
     onlineOnly: true,

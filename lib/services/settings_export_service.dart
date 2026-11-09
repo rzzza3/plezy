@@ -434,7 +434,7 @@ class SettingsExportService {
     final y = padNumber(now.year, 4);
     final m = padNumber(now.month, 2);
     final d = padNumber(now.day, 2);
-    return 'plezy-settings-$y$m$d.$fileExtension';
+    return 'tbd-settings-$y$m$d.$fileExtension';
   }
 
   /// Serializes the current user's settings and writes them to a location of

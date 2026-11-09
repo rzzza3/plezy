@@ -35,11 +35,12 @@ import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
+import 'tmdb/tmdb_genres.dart';
+import 'tmdb/tmdb_networks.dart';
 import 'trackers/tracker_constants.dart';
 import '../profiles/profile.dart';
+import '../theme/app_theme.dart';
 import '../watch_together/services/watch_together_relay_endpoint.dart';
-
-enum ThemeMode { system, light, dark, oled }
 
 /// Library density is now an int 1–5 (1 = most compact, 5 = most comfortable).
 /// Default is 3.
@@ -690,6 +691,23 @@ class SettingsService extends BaseSharedPreferencesService {
   /// refusing a codec the user's other devices decode fine. Stores the
   /// unchecked codecs so a codec added to the list later starts accepted.
   static const refusedVideoCodecs = StringListPref('refused_video_codecs');
+
+  /// TMDB network ids the Library tab's Networks row shows, as strings, in
+  /// the row's order (set on the Edit Library page).
+  static const libraryNetworks = StringListPref('library_networks', defaultValue: TmdbNetworks.defaultIds);
+
+  /// Genres the Library tab's Genres row shows, by [LibraryGenre.id], in the
+  /// row's order (set on the Edit Library page).
+  static const libraryGenres = StringListPref('library_genres', defaultValue: TmdbGenres.defaultIds);
+
+  /// The Library tab's rails below its hero, by `LibraryRow` name, in the
+  /// order the tab shows them (set on the Edit Library page). Empty is the
+  /// default order; a row missing from the list goes at the end.
+  static const libraryRowOrder = StringListPref('library_row_order');
+
+  /// The Library tab's rails the user hid, by `LibraryRow` name. A hidden row
+  /// keeps its place in [libraryRowOrder].
+  static const libraryRowsHidden = StringListPref('library_rows_hidden');
   static const musicQualityPreset = EnumPref<AudioQualityPreset>(
     'music_quality_preset',
     values: AudioQualityPreset.values,
@@ -761,7 +779,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const startupSection = EnumPref<NavigationTabId>(
     'startup_section',
     values: NavigationTabId.values,
-    defaultValue: NavigationTabId.discover,
+    defaultValue: NavigationTabId.library,
   );
 
   /// Whether the Explore tab (tracker catalog rows) is shown
@@ -871,12 +889,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
-  static ThemeMode _tvAwareThemeModeDefault() => PlatformDetector.isTV() ? ThemeMode.oled : ThemeMode.system;
-  static const themeMode = EnumPref<ThemeMode>(
-    'theme_mode',
-    values: ThemeMode.values,
-    defaultValueProvider: _tvAwareThemeModeDefault,
-  );
+  static const appTheme = EnumPref<AppTheme>('app_theme', values: AppTheme.values, defaultValue: AppTheme.oled);
   static const videoPlayerNavigationEnabled = BoolPref(
     'video_player_navigation_enabled',
     defaultValueProvider: PlatformDetector.isTV,
@@ -1424,7 +1437,7 @@ class SettingsService extends BaseSharedPreferencesService {
     boxFitScope,
     syncOffsetScope,
     scopedPlayerPrefValues,
-    themeMode,
+    appTheme,
     videoPlayerNavigationEnabled,
     playbackBufferTier,
     libraryDensity,
@@ -1491,6 +1504,10 @@ class SettingsService extends BaseSharedPreferencesService {
     companionRemoteLastHostAddress,
     rememberedBrightnessLevel,
     refusedVideoCodecs,
+    libraryNetworks,
+    libraryGenres,
+    libraryRowOrder,
+    libraryRowsHidden,
   ];
 
   /// Settings that "Reset All Settings" actually resets.
@@ -1565,8 +1582,7 @@ class SettingsService extends BaseSharedPreferencesService {
         throw const FormatException('Expected a six-digit hex color');
       }
     }
-    if (pref == startupSection &&
-        ![NavigationTabId.discover, NavigationTabId.libraries, NavigationTabId.search].contains(value)) {
+    if (pref == startupSection && !startupSectionTabs.contains(value)) {
       throw const FormatException('Unsupported startup section');
     }
     if (pref is StringListPref) {

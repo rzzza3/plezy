@@ -430,16 +430,19 @@ Map<String, Object?> _delivery({
   required bool enabled,
   String? failureReason,
   required List<String> containers,
+  required List<String> videoCodecs,
   required Map<String, Object?> subtitles,
   required List<String> features,
+  Map<String, Object?>? hdrDetails,
 }) => {
   'enabled': enabled,
   'supported_on_device': enabled,
   'failure_reason': ?failureReason,
   'containers': containers,
-  'video_codecs': _mpvVideoCodecs,
+  'video_codecs': videoCodecs,
   'audio_decode_codecs': _mpvAudioCodecs,
   'audio_passthrough_codecs': const <String>[],
+  'hdr_details': ?hdrDetails,
   'subtitles': subtitles,
   'features': features,
   'transformations': const <Object>[],
@@ -447,20 +450,189 @@ Map<String, Object?> _delivery({
   'validated_claims': const <String>[],
 };
 
-/// What mpv can do, at `declared` evidence because libmpv exposes no decoder
-/// inventory (`S/model/playback/PlaybackProtocolV3.kt:48-56`). `original_http`
-/// and `hls` are on, and `progressive` is off as on Android (port note 1,
-/// `A/player/PlaybackCapabilityDetector.kt:513-638`).
-Map<String, Object?> siloMpvCodecCapabilities() => {
-  'video_evidence': 'declared',
-  'audio_evidence': 'declared',
-  'codecs_video': _mpvVideoCodecs,
-  'codecs_video_hardware': const <String>[],
-  'codecs_audio': _mpvAudioCodecs,
-  'containers': _mpvOriginalContainers,
-  'hdr': false,
-  'video_decode': const <Object>[],
+/// What an Android device's hardware decoders and active display report
+/// (`SiloVideoCapabilities.kt`), in the wire shapes of silo-android's
+/// `VideoDecodeCapability`, `HdrCapabilities` and `PlaybackOutputDisplay`
+/// (`S/model/playback/PlaybackModels.kt:100-195`).
+class SiloVideoProbe {
+  /// One `video_decode` row per hardware decoder and codec.
+  final List<SiloJson> hardwareDecode;
+  final SiloJson decoderHdr;
+
+  /// `exact`, or `unknown` when the display could not answer.
+  final String displayEvidence;
+  final SiloJson displayHdr;
+  final String? displayId;
+
+  const SiloVideoProbe({
+    required this.hardwareDecode,
+    required this.decoderHdr,
+    required this.displayEvidence,
+    required this.displayHdr,
+    this.displayId,
+  });
+
+  /// The `getSiloPlaybackCapabilities` channel reply. With Dolby Vision off,
+  /// only profile 5 stays: it has no base layer to fall back to, and the
+  /// player still sends it to the DV decoder or reshapes it
+  /// (`GpuVoPolicy.dvRouting`).
+  static SiloVideoProbe? fromChannel(Object? raw, {bool dolbyVisionAllowed = true}) {
+    final json = _jsonValue(raw);
+    if (json is! Map<String, Object?>) return null;
+    final decode = json['videoDecode'];
+    final display = _object(json, 'display') ?? const {};
+    var hdr = _object(json, 'decoderHdr') ?? const {};
+    if (!dolbyVisionAllowed) {
+      final kept = _intList(hdr, 'dolby_vision_profiles').where((p) => p == 5).toList();
+      hdr = {
+        ...hdr,
+        'dolby_vision_profiles': kept,
+        'dolby_vision_profile_levels': [
+          for (final level in _objects(hdr['dolby_vision_profile_levels']))
+            if (kept.contains(level['profile'])) level,
+        ],
+      };
+    }
+    return SiloVideoProbe(
+      hardwareDecode: _objects(decode),
+      decoderHdr: hdr,
+      displayEvidence: _str(display, 'hdr_evidence') ?? 'unknown',
+      displayHdr: _object(display, 'hdr_types') ?? const {},
+      displayId: _str(display, 'display_id'),
+    );
+  }
+
+  /// HDR the device can put on screen as HDR: decoder and display both,
+  /// with the decoder's Dolby Vision bounds for the profiles left
+  /// (`DisplayHdrProbe.intersect`). An unknown display adds nothing.
+  SiloJson get nativeHdr {
+    final display = displayEvidence == 'exact' ? displayHdr : const <String, Object?>{};
+    bool both(String key) => decoderHdr[key] == true && display[key] == true;
+    final panelDv = _intList(display, 'dolby_vision_profiles');
+    final dv = [
+      for (final p in _intList(decoderHdr, 'dolby_vision_profiles'))
+        if (panelDv.contains(p)) p,
+    ];
+    return {
+      'hdr10': both('hdr10'),
+      'hdr10_plus': both('hdr10_plus'),
+      'hlg': both('hlg'),
+      'dolby_vision_profiles': dv,
+      'dolby_vision_profile_levels': [
+        for (final level in _objects(decoderHdr['dolby_vision_profile_levels']))
+          if (dv.contains(level['profile'])) level,
+      ],
+    };
+  }
+
+  bool get hasNativeHdr {
+    final hdr = nativeHdr;
+    return hdr['hdr10'] == true ||
+        hdr['hdr10_plus'] == true ||
+        hdr['hlg'] == true ||
+        (hdr['dolby_vision_profiles']! as List).isNotEmpty;
+  }
+
+  /// The hardware rows, plus an FFmpeg row for each mpv codec no hardware
+  /// decoder serves. HEVC and AV1 get none: software decode of either drops
+  /// frames on phone and TV hardware, so without a decoder the server must
+  /// transcode (`VideoDecodeCapabilities`). The software rows are held to
+  /// 1080p, what mpv decodes in real time on that class of device.
+  List<SiloJson> get videoDecode {
+    final hardware = {for (final row in hardwareDecode) row['codec']};
+    return [
+      ...hardwareDecode,
+      for (final codec in _mpvVideoCodecs)
+        if (!hardware.contains(codec) && codec != 'hevc' && codec != 'av1')
+          {
+            'codec': codec,
+            'decoder_name': 'ffmpeg',
+            'profiles': const <String>[],
+            'levels': const <int>[],
+            'bit_depths': codec == 'h264' || codec == 'vp9' ? const [8, 10] : const [8],
+            'max_width': 1920,
+            'max_height': 1080,
+            'max_frame_rate': 60.0,
+            'hardware': false,
+          },
+    ];
+  }
+
+  List<String> get videoCodecs => _codecs(videoDecode);
+
+  List<String> get hardwareCodecs => _codecs(hardwareDecode);
+
+  static List<String> _codecs(List<SiloJson> rows) =>
+      {for (final row in rows) row['codec']}.whereType<String>().toList();
+
+  /// The resolution label for the tallest decoder, in the buckets the server
+  /// ranks (`MediaCodecCapabilitiesProbe.resolutionBucket`).
+  String get maxResolution {
+    var height = 0;
+    for (final row in videoDecode) {
+      final h = row['max_height'];
+      if (h is int && h > height) height = h;
+    }
+    return height >= 4320
+        ? '4320p'
+        : height >= 2160
+        ? '2160p'
+        : height >= 1440
+        ? '1440p'
+        : height >= 1080
+        ? '1080p'
+        : height >= 720
+        ? '720p'
+        : 'sd';
+  }
+}
+
+/// Channel maps arrive as `Map<Object?, Object?>` all the way down.
+Object? _jsonValue(Object? value) => switch (value) {
+  Map() => {for (final e in value.entries) '${e.key}': _jsonValue(e.value)},
+  List() => [for (final v in value) _jsonValue(v)],
+  _ => value,
 };
+
+List<SiloJson> _objects(Object? value) =>
+    value is List ? [for (final v in value) ?(v is Map<String, Object?> ? v : null)] : const [];
+
+List<int> _intList(SiloJson json, String key) {
+  final value = json[key];
+  return value is List ? [for (final v in value) ?(v is int ? v : null)] : const [];
+}
+
+/// What mpv can do. With a [probe] (Android) the video side is the
+/// MediaCodec inventory at `exact` evidence, as Silo's Android client sends
+/// it (`A/player/PlaybackCapabilityDetector.kt:336-396`); the server then
+/// direct-plays a 4K HDR original the device and display can show. Without
+/// one it is `declared`, because libmpv exposes no decoder inventory
+/// (`S/model/playback/PlaybackProtocolV3.kt:48-56`). `original_http` and
+/// `hls` are on, and `progressive` is off as on Android (port note 1,
+/// `A/player/PlaybackCapabilityDetector.kt:513-638`).
+Map<String, Object?> siloMpvCodecCapabilities([SiloVideoProbe? probe]) => probe == null
+    ? {
+        'video_evidence': 'declared',
+        'audio_evidence': 'declared',
+        'codecs_video': _mpvVideoCodecs,
+        'codecs_video_hardware': const <String>[],
+        'codecs_audio': _mpvAudioCodecs,
+        'containers': _mpvOriginalContainers,
+        'hdr': false,
+        'video_decode': const <Object>[],
+      }
+    : {
+        'video_evidence': 'exact',
+        'audio_evidence': 'declared',
+        'codecs_video': probe.videoCodecs,
+        'codecs_video_hardware': probe.hardwareCodecs,
+        'codecs_audio': _mpvAudioCodecs,
+        'containers': _mpvOriginalContainers,
+        'max_resolution': probe.maxResolution,
+        'hdr': probe.hasNativeHdr,
+        'hdr_details': probe.nativeHdr,
+        'video_decode': probe.videoDecode,
+      };
 
 typedef SiloDeviceFacts = ({
   String formFactor,
@@ -471,40 +643,59 @@ typedef SiloDeviceFacts = ({
   String? model,
 });
 
-Map<String, Object?> siloMpvPlaybackContext(SiloDeviceFacts device) => {
-  'protocol_version': siloPlaybackProtocol,
-  'form_factor': device.formFactor,
-  'app_version': device.appVersion,
-  'device': {
-    'platform': ?device.platform,
-    'os_version': ?device.osVersion,
-    'manufacturer': ?device.manufacturer,
-    'model': ?device.model,
-    'platform_details': const <String, String>{},
-  },
-  'output': {'current_sink': 'local_output'},
-  'deliveries': {
-    'original_http': _delivery(
-      enabled: true,
-      containers: _mpvOriginalContainers,
-      subtitles: _subtitleCapabilities(assStyling: true, fonts: true),
-      features: const ['track_switching', 'audio_delay', 'subtitle_delay', 'libass_subtitles'],
-    ),
-    'progressive': _delivery(
-      enabled: false,
-      failureReason: 'disabled_pending_seekable_transport',
-      containers: const ['mp4', 'm4v', 'webm', 'mkv', 'matroska'],
-      subtitles: _subtitleCapabilities(assStyling: false, fonts: false),
-      features: const ['progressive', 'track_switching'],
-    ),
-    'hls': _delivery(
-      enabled: true,
-      containers: const ['m3u8', 'hls'],
-      subtitles: _subtitleCapabilities(assStyling: true, fonts: false),
-      features: const ['hls', 'track_switching', 'libass_subtitles'],
-    ),
-  },
-};
+Map<String, Object?> siloMpvPlaybackContext(SiloDeviceFacts device, [SiloVideoProbe? probe]) {
+  final videoCodecs = probe?.videoCodecs ?? _mpvVideoCodecs;
+  final hdr = probe?.nativeHdr;
+  return {
+    'protocol_version': siloPlaybackProtocol,
+    'form_factor': device.formFactor,
+    'app_version': device.appVersion,
+    'device': {
+      'platform': ?device.platform,
+      'os_version': ?device.osVersion,
+      'manufacturer': ?device.manufacturer,
+      'model': ?device.model,
+      'platform_details': const <String, String>{},
+    },
+    'output': {
+      'current_sink': 'local_output',
+      'hdr_details': ?hdr,
+      if (probe != null)
+        'display': {
+          'hdr_evidence': probe.displayEvidence,
+          'hdr_types': probe.displayHdr,
+          'display_id': ?probe.displayId,
+        },
+    },
+    'deliveries': {
+      'original_http': _delivery(
+        enabled: true,
+        containers: _mpvOriginalContainers,
+        videoCodecs: videoCodecs,
+        hdrDetails: hdr,
+        subtitles: _subtitleCapabilities(assStyling: true, fonts: true),
+        features: const ['track_switching', 'audio_delay', 'subtitle_delay', 'libass_subtitles'],
+      ),
+      'progressive': _delivery(
+        enabled: false,
+        failureReason: 'disabled_pending_seekable_transport',
+        containers: const ['mp4', 'm4v', 'webm', 'mkv', 'matroska'],
+        videoCodecs: videoCodecs,
+        hdrDetails: hdr,
+        subtitles: _subtitleCapabilities(assStyling: false, fonts: false),
+        features: const ['progressive', 'track_switching'],
+      ),
+      'hls': _delivery(
+        enabled: true,
+        containers: const ['m3u8', 'hls'],
+        videoCodecs: videoCodecs,
+        hdrDetails: hdr,
+        subtitles: _subtitleCapabilities(assStyling: true, fonts: false),
+        features: const ['hls', 'track_switching', 'libass_subtitles'],
+      ),
+    },
+  };
+}
 
 String siloTrackId(int fileId, String kind, int index) => 'file:$fileId:$kind:$index';
 
@@ -886,7 +1077,7 @@ SiloDecision parseSiloDecision(Object? body) {
   if (plan.stream.headerRefresh == 'refresh_endpoint') {
     return const SiloTerminal(
       'unsupported_header_refresh',
-      'This playback plan requires a header refresh mode Plezy cannot execute.',
+      'This playback plan requires a header refresh mode TBD cannot execute.',
     );
   }
   if (plan.runtimeCorrections.isNotEmpty) {

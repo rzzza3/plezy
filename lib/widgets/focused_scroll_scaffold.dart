@@ -4,6 +4,19 @@ import '../focus/key_event_utils.dart';
 import 'desktop_app_bar.dart';
 import 'system_bottom_inset.dart';
 
+/// Hosts a settings page inline, inside the settings screen's category pane,
+/// rather than as its own route. [FocusedScrollScaffold]s below render only
+/// their scroll view: the host owns the title, back handling and initial
+/// focus.
+class EmbeddedSettingsPage extends InheritedWidget {
+  const EmbeddedSettingsPage({super.key, required super.child});
+
+  static bool isEmbedded(BuildContext context) => context.getInheritedWidgetOfExactType<EmbeddedSettingsPage>() != null;
+
+  @override
+  bool updateShouldNotify(EmbeddedSettingsPage oldWidget) => false;
+}
+
 /// A scaffold widget that wraps Focus + Scaffold + CustomScrollView
 /// with consistent keyboard navigation handling and app bar styling.
 ///
@@ -87,6 +100,10 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    if (EmbeddedSettingsPage.isEmbedded(context)) {
+      return CustomScrollView(primary: false, slivers: [...widget.slivers, const SliverSystemBottomInset()]);
+    }
+
     if (!_focusRequested && InputModeTracker.isKeyboardMode(context)) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _requestInitialFocus());
     }

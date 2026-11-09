@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "TBD"
   },
   "auth": {
     "localDataRecoveryRequired": "ローカルのサインイン情報と保留中の再生データを安全に復元できませんでした。もう一度サインインしてください。"
@@ -100,7 +100,7 @@
   },
   "settings": {
     "title": "設定",
-    "supportDeveloper": "Plezyを支援",
+    "supportDeveloper": "TBDを支援",
     "supportDeveloperDescription": "Liberapayで寄付して開発を支援",
     "language": "言語",
     "theme": "テーマ",
@@ -122,6 +122,7 @@
     "lightTheme": "ライト",
     "darkTheme": "ダーク",
     "oledTheme": "OLED",
+    "slateTheme": "スレート",
     "libraryDensity": "ライブラリの密度",
     "displayScale": "表示スケール",
     "compact": "コンパクト",
@@ -239,7 +240,7 @@
     "importSettingsDescription": "ファイルから設定を復元",
     "importSettingsConfirm": "現在の設定を置き換えます。続行しますか？",
     "importSettingsSuccess": "設定をインポートしました",
-    "importSettingsInvalidFile": "このファイルは有効なPlezyの設定エクスポートではありません",
+    "importSettingsInvalidFile": "このファイルは有効なTBDの設定エクスポートではありません",
     "importSettingsNoUser": "設定をインポートする前にサインインしてください",
     "shortcutsReset": "ショートカットをデフォルトにリセットしました",
     "resetShortcutsConfirm": "",
@@ -303,8 +304,6 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Discordで視聴中の内容を表示",
-    "services": "サービス",
-    "servicesDescription": "Trakt、MyAnimeList、Seerrなどを接続",
     "manageLibrariesDescription": "ライブラリを並べ替えたり非表示にしたりできます",
     "companionRemoteServer": "コンパニオンリモートサーバー",
     "companionRemoteServerDescription": "ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする",
@@ -368,7 +367,7 @@
     "forceTvMode": "TVモードを強制",
     "forceTvModeDescription": "TVレイアウトを強制します。自動検出しないデバイス向けです。再起動が必要です。",
     "startInFullscreen": "全画面表示で起動",
-    "startInFullscreenDescription": "起動時にPlezyを全画面モードで開きます",
+    "startInFullscreenDescription": "起動時にTBDを全画面モードで開きます",
     "exitFullscreenOnPlayerClose": "プレイヤーを閉じたときに全画面を終了",
     "exitFullscreenOnPlayerCloseDescription": "ビデオプレイヤーを閉じたときに自動的に全画面モードを終了します",
     "autoHidePerformanceOverlay": "パフォーマンスオーバーレイを自動非表示",
@@ -414,7 +413,7 @@
     "playerScopeGlobal": "すべて",
     "playerScopeLibrary": "ライブラリごと",
     "playerScopeTitle": "作品ごと",
-    "exportDialogTitle": "Plezyの設定をエクスポート"
+    "exportDialogTitle": "TBDの設定をエクスポート"
   },
   "search": {
     "hint": "映画、番組、音楽を検索…",
@@ -856,10 +855,8 @@
     "sectionTitle": "接続",
     "addConnection": "接続を追加",
     "sessionExpiredOne": "${name} のセッションの有効期限が切れました",
-    "sessionExpiredMany": "${count} 台のサーバーのセッションの有効期限が切れました",
     "accessDeniedOne": "${name} がこのアカウントへのアクセスを拒否しました",
-    "accessDeniedMany": "${count} 台のサーバーがこのアカウントへのアクセスを拒否しました",
-    "signInAgain": "再度サインイン"
+    "accessDeniedMany": "${count} 台のサーバーがこのアカウントへのアクセスを拒否しました"
   },
   "accountPreferences": {
     "sectionTitle": "アカウント設定",
@@ -1033,9 +1030,9 @@
     "uploadLogs": "ログをアップロード"
   },
   "startup": {
-    "failedTitle": "Plezyを起動できませんでした",
+    "failedTitle": "TBDを起動できませんでした",
     "failedBody": "起動中に問題が発生しました。以下の詳細に失敗の原因が示されています。",
-    "failedBodyRepairable": "Plezyの保存済み設定ファイルが破損しているため、Plezyを起動する前に再構築する必要があります。再試行しても解決しません —「ストレージを修復」を選択してください。",
+    "failedBodyRepairable": "TBDの保存済み設定ファイルが破損しているため、TBDを起動する前に再構築する必要があります。再試行しても解決しません —「ストレージを修復」を選択してください。",
     "phaseLabel": "ステップ",
     "showDetails": "詳細を表示",
     "hideDetails": "詳細を非表示",
@@ -1044,16 +1041,16 @@
     "uploadDetails": "詳細をアップロード",
     "repairStorage": "ストレージを修復",
     "repairTitle": "保存データを修復しますか？",
-    "repairBodyCommon": "Plezyの設定ファイルが破損しており読み取れません。修復するとすべての設定がデフォルトにリセットされます。",
+    "repairBodyCommon": "TBDの設定ファイルが破損しており読み取れません。修復するとすべての設定がデフォルトにリセットされます。",
     "repairBodyOneCredential": "保存済みのサインインの1つが破損しており読み取れません。修復するとその1つだけが削除され、他の設定には影響しません。",
     "repairBodySignInsKept": "サーバーとプロフィールはサインインしたままになります。",
     "repairBodySignInsLost": "保存済みのサインインを保護するキーをこのファイルから復元できないため、すべてのサーバーとプロフィールに再度サインインする必要があります。メディアサーバー上のデータには影響ありません。",
-    "repairBodySessionsUncertain": "トラッカー（MAL、AniList、Simkl、Trakt）とSeerrは別途保存されており、保持されるかどうかは不明です。Plezyは保持した内容を正確にお知らせします。",
+    "repairBodySessionsUncertain": "トラッカー（MAL、AniList、Simkl、Trakt）とSeerrは別途保存されており、保持されるかどうかは不明です。TBDは保持した内容を正確にお知らせします。",
     "repairConfirm": "修復",
     "repairSucceeded": "ストレージを修復しました",
     "repairNeedsRestart": "ストレージを修復しました — 再起動が必要です",
-    "restartRequiredBody": "データは修復されましたが、Plezyはそれを使用する前に再起動する必要があります。Plezyを閉じて再度開いてください。",
-    "quitPlezy": "Plezyを終了",
+    "restartRequiredBody": "データは修復されましたが、TBDはそれを使用する前に再起動する必要があります。TBDを閉じて再度開いてください。",
+    "quitPlezy": "TBDを終了",
     "repairFailed": "修復に失敗しました",
     "repairKeptSignIns": "サーバーとプロフィールはサインインしたままです。",
     "repairLostSignIns": "保存済みのサインインを保護するキーを復元できませんでした。すべてのサーバーとプロフィールに再度サインインする必要があります。",
@@ -1062,7 +1059,7 @@
     "backupWarning": "このコピーにはサインイン資格情報が含まれています。アップロードや共有はしないでください。",
     "deleteBackup": "コピーを削除",
     "backupDeleted": "コピーを削除しました。",
-    "previousFailureTitle": "前回、Plezyは起動に失敗しました"
+    "previousFailureTitle": "前回、TBDは起動に失敗しました"
   },
   "licenses": {
     "relatedPackages": "関連パッケージ",
@@ -1520,14 +1517,14 @@
       "bannerAction": "詳細",
       "sheetTitle": "バックグラウンドダウンロードはブロックされています",
       "sheetTitleDegraded": "バックグラウンドダウンロードが制限される場合があります",
-      "sheetIntro": "Androidにより、Plezyはバックグラウンドで安定してダウンロードできません。",
-      "sheetIntroDegraded": "端末により、Plezyがバックグラウンドでダウンロードできるタイミングが制限されています。",
-      "reasonBackgroundRestricted": "Plezyのバックグラウンド使用が制限されています。バッテリー使用量またはバックグラウンド使用を「制限なし」に設定してください。",
-      "reasonStandbyRestricted": "Androidにより、Plezyが制限付きのスタンバイ状態に設定されています。バッテリー使用量を「制限なし」に設定してください。",
+      "sheetIntro": "Androidにより、TBDはバックグラウンドで安定してダウンロードできません。",
+      "sheetIntroDegraded": "端末により、TBDがバックグラウンドでダウンロードできるタイミングが制限されています。",
+      "reasonBackgroundRestricted": "TBDのバックグラウンド使用が制限されています。バッテリー使用量またはバックグラウンド使用を「制限なし」に設定してください。",
+      "reasonStandbyRestricted": "Androidにより、TBDが制限付きのスタンバイ状態に設定されています。バッテリー使用量を「制限なし」に設定してください。",
       "reasonDownloadChannelBlocked": "ダウンロード通知がオフのため、進行状況や操作ボタンを利用できない場合があります。",
       "reasonNotificationsDisabled": "通知がオフです。Android 13以降では、長時間のバックグラウンドダウンロードに通知が必要です。",
       "reasonDataSaver": "データセーバーがオンのため、モバイルデータ通信ではバックグラウンドダウンロードがブロックされます。Wi-Fiでは引き続きダウンロードできるはずです。",
-      "reasonOemUnknown": "Plezyがバックグラウンドで動作中に、ダウンロードが繰り返し停止しました。Plezyのバッテリー使用量またはバックグラウンド使用の設定を確認してください。",
+      "reasonOemUnknown": "TBDがバックグラウンドで動作中に、ダウンロードが繰り返し停止しました。TBDのバッテリー使用量またはバックグラウンド使用の設定を確認してください。",
       "openSettings": "設定を開く",
       "stillNotWorking": "端末別のヘルプ",
       "stillNotWorkingDescription": "お使いの端末向けの手順を確認してください。問題が続く場合は、設定 › ログを表示 からログを送信してください。",
@@ -1605,13 +1602,13 @@
       "connecting": "接続中…",
       "searchingForDevices": "デバイスを検索中…",
       "noDevicesFound": "ネットワーク上にデバイスが見つかりません",
-      "noDevicesHint": "デスクトップでPlezyを開き、同じWi-Fiネットワークに接続してください",
+      "noDevicesHint": "デスクトップでTBDを開き、同じWi-Fiネットワークに接続してください",
       "availableDevices": "利用可能なデバイス",
       "manualConnection": "手動接続",
       "validationHostRequired": "ホストアドレスを入力してください",
       "validationHostFormat": "形式はIP:ポートである必要があります（例: 192.168.1.100:48632）",
       "connectionTimedOut": "接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。",
-      "sessionNotFound": "デバイスが見つかりません。ホストでPlezyが実行中か確認してください。",
+      "sessionNotFound": "デバイスが見つかりません。ホストでTBDが実行中か確認してください。",
       "failedToConnect": "接続に失敗しました: ${error}"
     },
     "remote": {
@@ -1796,11 +1793,11 @@
     "connected": "接続済み",
     "connectedAs": "@${username}として接続済み",
     "disconnectConfirm": "Traktアカウントとの接続を解除しますか？",
-    "disconnectConfirmBody": "PlezyはTraktへのイベント送信を停止します。いつでも再接続できます。",
+    "disconnectConfirmBody": "TBDはTraktへのイベント送信を停止します。いつでも再接続できます。",
     "scrobble": "リアルタイムのスクロブル",
     "scrobbleDescription": "再生中に再生・一時停止・停止の各イベントをTraktに送信します。",
     "watchedSync": "視聴済みステータスを同期",
-    "watchedSyncDescription": "Plezyで項目を視聴済みにすると、Traktでも視聴済みになります。"
+    "watchedSyncDescription": "TBDで項目を視聴済みにすると、Traktでも視聴済みになります。"
   },
   "seerr": {
     "title": "Seerr",
@@ -1810,10 +1807,10 @@
     "checkServer": "続ける",
     "signInWithLocal": "ローカルアカウントを使う",
     "email": "メールアドレス",
-    "noSignInMethods": "この Seerr インスタンスには Plezy が対応しているサインイン方法がありません。",
+    "noSignInMethods": "この Seerr インスタンスには TBD が対応しているサインイン方法がありません。",
     "instance": "インスタンス",
     "disconnectConfirm": "Seerr の接続を解除しますか？",
-    "disconnectConfirmBody": "Plezy はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。",
+    "disconnectConfirmBody": "TBD はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。",
     "request": "リクエスト",
     "request4k": "4K でリクエスト",
     "seasons": "シーズン",
@@ -1838,7 +1835,7 @@
     "statusBlocklisted": "ブロックリスト登録済み",
     "couldNotReach": "${url}に接続できませんでした: ${error}",
     "noInstanceAtUrl": "${url}にSeerrインスタンスがありません（HTTP ${status}）",
-    "behindAuthProxy": "Seerrではなく、認証が必要なリバースプロキシ（SSOまたはHTTP認証）が応答しました。Plezyはこれを通じてサインインできません。このアプリではSeerrの/api/v1パスをプロキシから除外するか、Seerrに直接到達するアドレスを使用してください。",
+    "behindAuthProxy": "Seerrではなく、認証が必要なリバースプロキシ（SSOまたはHTTP認証）が応答しました。TBDはこれを通じてサインインできません。このアプリではSeerrの/api/v1パスをプロキシから除外するか、Seerrに直接到達するアドレスを使用してください。",
     "invalidUrl": "https://seerr.example.comのようなサーバーアドレスを入力してください",
     "notInitialized": "このSeerrインスタンスでは初回セットアップが完了していません",
     "noStoredCredentials": "再サインインに使用できる保存済みの認証情報がありません",
@@ -1859,7 +1856,7 @@
     "scrobble": "進捗を自動で記録",
     "scrobbleDescription": "エピソードや映画を見終えたときにリストを更新します。",
     "disconnectConfirm": "${service} の接続を解除しますか？",
-    "disconnectConfirmBody": "Plezyは${service}の更新を停止します。いつでも再接続できます。",
+    "disconnectConfirmBody": "TBDは${service}の更新を停止します。いつでも再接続できます。",
     "connectFailed": "${service} に接続できませんでした。もう一度お試しください。",
     "names": {
       "mal": "MyAnimeList",
@@ -1873,7 +1870,7 @@
       "subtitle": ""
     },
     "deviceCode": {
-      "title": "${service} で Plezy を有効化",
+      "title": "${service} で TBD を有効化",
       "instructions": "QRコードをスキャンするか、以下のアドレスにアクセスしてこのコードを入力してください:",
       "openToActivate": "${service} を開いて有効化",
       "copyCode": "アクティベーションコードをコピー",

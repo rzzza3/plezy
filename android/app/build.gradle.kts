@@ -239,13 +239,19 @@ android {
   // by FEATURE_AUTOMOTIVE and the manifest declares `uses-library android.car required=false`.
   useLibrary("android.car")
 
+  buildFeatures {
+    buildConfig = true
+  }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
 
   defaultConfig {
-    applicationId = "com.edde746.plezy"
+    // Override with -Pplezy.applicationId=<id> (or in gradle.properties) to install a build
+    // alongside the stock app; provider authorities derive from it.
+    applicationId = (findProperty("plezy.applicationId") as String?) ?: "com.edde746.plezy"
     minSdk = 25 // Fire OS 6.x (API 25); :libmpv shares the same floor
     targetSdk = flutter.targetSdkVersion
     versionCode = flutter.versionCode

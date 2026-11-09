@@ -102,6 +102,16 @@ class SiloCatalogQuery {
 /// the TV browses libraries at that size.
 const int siloPageSize = 100;
 
+/// A profile's saved list, read as a catalog `source`
+/// (`research/silo-catalog.md`, endpoint #10).
+enum SiloPersonalList {
+  watchlist('watchlist'),
+  favorites('favorites');
+
+  final String source;
+  const SiloPersonalList(this.source);
+}
+
 /// The cursor chain broke: a server `invalid_cursor`, or `has_more` with a
 /// missing or already seen `next_cursor`. The query has to start over.
 class SiloInvalidCursorException implements Exception {
@@ -268,6 +278,13 @@ class SiloCatalog {
     ),
   );
 
+  /// `GET /api/v2/calendar` for `start..end` (ISO dates, at most 31 days)
+  /// (`S/network/apiv2/CalendarApi.kt:22-34`).
+  Future<List<SiloCalendarItem>> calendar({required String start, required String end, String filter = 'all'}) async =>
+      SiloCalendarItem.listFromJson(
+        await _read(SiloRequest.get('/api/v2/calendar', query: {'start': start, 'end': end, 'filter': filter})),
+      );
+
   Future<SiloItemDetail> itemDetail(String id) async =>
       SiloItemDetail.fromJson(await _read(SiloRequest.get('/api/v2/catalog/items/${Uri.encodeComponent(id)}')));
 
@@ -325,6 +342,22 @@ class SiloCatalog {
     return cards;
   }
 
+  /// `GET /recommendations/section/{kind}`: one recommendation row in full,
+  /// at most [limit] (server maximum 60) cards; empty when the profile has no
+  /// such row yet.
+  Future<List<SiloCard>> recommendationSection(String kind, {int limit = 60}) async {
+    final json = siloObject(
+      await _read(
+        SiloRequest.get(
+          '/api/v2/recommendations/section/${Uri.encodeComponent(kind)}',
+          query: {'limit': '${limit.clamp(1, 60)}'},
+        ),
+      ),
+      'section',
+    );
+    return [for (final item in siloObjectList(json['items'], 'items')) SiloCard.fromJson(item)];
+  }
+
   /// `POST`/`DELETE /watched/{id}`, single attempt, 204
   /// (`S/repository/port/PersonalWrite.kt:17-21`).
   Future<void> setWatched(String id, bool watched) =>
@@ -336,6 +369,21 @@ class SiloCatalog {
     assert(stars == null || (stars >= 1 && stars <= 5));
     final path = '/api/v2/ratings/${Uri.encodeComponent(id)}';
     return stars == null ? _write('DELETE', path) : _write('PUT', path, body: {'rating': stars});
+  }
+
+  /// `GET /favorites/{id}` or `GET /watchlist/{id}`. A 404 means the item is
+  /// not on the list, and a 200 must name the item asked for
+  /// (`S/network/apiv2/MembershipV2Api.kt:12-16,24,30-39`).
+  Future<bool> isOnList(SiloPersonalList list, String id) async {
+    final path = '/api/v2/${list.source}/${Uri.encodeComponent(id)}';
+    try {
+      final json = siloObject(await _read(SiloRequest.get(path)), 'membership');
+      if (json['item_id'] != id) throw const SiloDecodeException('item_id');
+      return true;
+    } on MediaServerHttpException catch (error) {
+      if (error.statusCode == 404) return false;
+      rethrow;
+    }
   }
 
   /// `PUT`/`DELETE /favorites/{id}` (`S/network/apiv2/MembershipV2Api.kt:41-54`).

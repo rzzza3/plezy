@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poster Wall 3D</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="fx.css">
+<style>
+  /* The wall: blank cards that flip to your posters once the server answers. The camera moves every step. */
+  .w3 { position: absolute; inset: 0; perspective: 1700px; perspective-origin: 60% 40%; overflow: hidden; }
+  .plane { position: absolute; left: 820px; top: -300px; display: grid; grid-template-columns: repeat(8, 190px); gap: 24px; transform-style: preserve-3d;
+    transform: rotateX(18deg) rotateY(-26deg) rotateZ(5deg); transition: transform 1700ms var(--ease), opacity 900ms var(--ease), filter 900ms; }
+  .driftbox { position: absolute; inset: 0; transform-style: preserve-3d; animation: drift 14s ease-in-out infinite alternate; }
+  @keyframes drift { to { transform: translate3d(-80px, -120px, 0); } }
+  .plane.c2 { transform: rotateX(8deg) rotateY(28deg) rotateZ(-5deg) translateZ(-700px) translateX(-500px); filter: brightness(0.55); }
+  .plane.c3 { transform: rotateX(62deg) rotateZ(-14deg) translateZ(-260px) translateX(-500px) translateY(300px); filter: brightness(0.6); }
+  .plane.c4 { transform: rotateX(-6deg) rotateY(-46deg) translateZ(-300px) translateX(-200px); filter: brightness(0.45); }
+  .plane.c5 { transform: rotateX(74deg) translateZ(-500px) translateX(-760px) translateY(420px); filter: brightness(0.55); }
+  .plane.c6 { transform: rotateX(20deg) rotateY(34deg) rotateZ(-6deg) translateZ(-500px) translateX(-600px); filter: brightness(0.42); }
+  .plane.gone { transform: rotateX(0) rotateY(0) translateZ(1200px) translateX(-500px); opacity: 0; }
+  .t3 { position: relative; width: 190px; height: 285px; transform-style: preserve-3d; transition: transform 1100ms var(--spring, cubic-bezier(0.34,1.56,0.64,1)); }
+  .t3 .fr, .t3 .bk { position: absolute; inset: 0; border-radius: 12px; backface-visibility: hidden; }
+  .t3 .fr { border: 2px solid rgba(237,237,237,0.22); background: rgba(29,31,37,0.75); }
+  .t3 .bk { transform: rotateY(180deg); overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,0.5); }
+  .t3 .bk img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .t3.dev { transform: rotateY(180deg); }
+  .veil { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(14,15,18,0.98) 0%, rgba(14,15,18,0.9) 34%, rgba(14,15,18,0.35) 62%, rgba(14,15,18,0.05) 100%); transition: opacity 900ms; }
+
+  .scene { transform: none; transition: opacity 500ms var(--ease), visibility 0s 500ms; }
+  .scene.on { transition: opacity 500ms var(--ease), visibility 0s; }
+  .lay { position: absolute; left: 150px; top: 190px; width: 1000px; }
+  .lay .h1 { font-size: 84px; letter-spacing: -1.8px; line-height: 1.04; }
+  .lay .lede { margin-top: 22px; }
+  .row-a { display: flex; gap: 18px; align-items: center; margin-top: 40px; }
+  .titles { margin-top: 30px; display: flex; align-items: baseline; gap: 18px; opacity: 0; }
+  .titles b { font-size: 96px; font-weight: 700; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+  .titles span { font-size: 30px; color: var(--muted); }
+
+  .codecard { position: absolute; left: 150px; top: 170px; width: 1260px; padding: 64px 70px; border-radius: 34px; background: rgba(21,23,28,0.92); border: 1.5px solid var(--outline); overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6); display: flex; gap: 70px; align-items: center; }
+  .codecard .h1 { font-size: 60px; }
+  .codecard .code { font-size: 112px; font-weight: 700; letter-spacing: 6px; white-space: nowrap; margin: 34px 0 30px; height: 132px; font-variant-numeric: tabular-nums; }
+  .codecard .qrhold { flex: none; }
+
+  .profiles { display: flex; gap: 80px; margin-top: 90px; }
+  .prof { display: flex; flex-direction: column; align-items: center; gap: 22px; font-size: 32px; font-weight: 500; color: var(--muted); }
+  .prof .av { width: 220px; height: 220px; border-radius: 50%; display: grid; place-items: center; font-size: 92px; font-weight: 500; color: var(--text); outline: 6px solid transparent; outline-offset: 8px; transition: outline-color var(--fast), transform var(--normal) var(--ease); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+  .prof.f { color: var(--text); } .prof.f .av { outline-color: #fff; transform: scale(1.07); }
+  .me { position: absolute; left: 56px; top: 48px; display: flex; align-items: center; gap: 16px; font-size: 24px; font-weight: 500; z-index: 40; opacity: 0; }
+  .me .av { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; background: #4a4d57; }
+
+  .decks { display: flex; gap: 46px; margin-top: 90px; perspective: 1400px; }
+  .deck { flex: none; width: 200px; transition: transform 700ms var(--ease), opacity 600ms; transform-style: preserve-3d; }
+  .deck .stack { position: relative; height: 300px; transform-style: preserve-3d; }
+  .deck .stack img { position: absolute; left: 0; top: 0; width: 200px; height: 300px; object-fit: cover; border-radius: 14px; box-shadow: 0 16px 36px rgba(0,0,0,0.55); transition: transform 800ms cubic-bezier(0.34,1.56,0.64,1); }
+  .deck .stack img:nth-child(1) { transform: translate3d(8px, -8px, -20px); }
+  .deck .stack img:nth-child(2) { transform: translate3d(4px, -4px, -10px); }
+  .deck.f .stack img:nth-child(1) { transform: translate3d(-74px, 10px, -10px) rotateZ(-13deg); }
+  .deck.f .stack img:nth-child(2) { transform: translate3d(74px, 10px, -5px) rotateZ(13deg); }
+  .deck.f .stack img:nth-child(3) { transform: translate3d(0, -14px, 30px) scale(1.06); outline: 4px solid #fff; outline-offset: 5px; }
+  .deck .nm { font-size: 27px; font-weight: 500; margin-top: 26px; text-align: center; } .deck .ct { font-size: 20px; color: var(--muted); text-align: center; margin-top: 4px; }
+  .deck .pinb { position: absolute; right: -10px; top: -16px; width: 50px; height: 50px; border-radius: 50%; background: var(--text); color: var(--bg); display: grid; place-items: center; font-size: 26px; transform: translateZ(60px); transition: transform 500ms cubic-bezier(0.34,1.56,0.64,1), opacity 300ms; }
+  .deck.off { opacity: 0.38; } .deck.off .stack { transform: rotateX(64deg) translateY(50px); transition: transform 700ms var(--ease); }
+  .deck .stack { transition: transform 700ms var(--ease); }
+  .deck.off .pinb { transform: translateZ(60px) scale(0); opacity: 0; }
+
+  .ringwrap { position: absolute; left: 0; right: 0; top: 400px; height: 330px; perspective: 1500px; }
+  .ring { position: absolute; left: 50%; top: 40px; width: 380px; height: 220px; margin-left: -190px; transform-style: preserve-3d; transition: transform 800ms cubic-bezier(0.34,1.3,0.64,1); }
+  .rt { position: absolute; inset: 0; border-radius: 22px; backface-visibility: hidden; background: rgba(29,31,37,0.94); border: 2px solid var(--outline); display: flex; flex-direction: column; justify-content: center; padding: 0 30px; transition: background var(--normal), color var(--normal), outline-color var(--fast); outline: 5px solid transparent; outline-offset: 7px; }
+  .rt .wm { font-size: 42px; font-weight: 700; letter-spacing: -0.6px; } .rt .ct { font-size: 19px; color: var(--muted); margin-top: 4px; }
+  .rt.on { background: var(--text); color: var(--bg); } .rt.on .ct { color: rgba(14,15,18,0.65); }
+  .rt.f { outline-color: #fff; }
+  .s5 .lay, .s6 .lay { top: 150px; }
+
+  .ggrid { display: grid; grid-template-columns: repeat(6, 240px); gap: 22px; margin-top: 64px; }
+  .gt { position: relative; height: 150px; border-radius: 18px; overflow: hidden; background: var(--surface-2); transition: transform 500ms cubic-bezier(0.34,1.56,0.64,1); }
+  .gt img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) brightness(0.45); transform: scale(1); transition: filter 600ms, transform 1600ms var(--ease); }
+  .gt span { position: absolute; left: 16px; bottom: 14px; z-index: 2; font-size: 25px; font-weight: 700; padding: 6px 14px; border-radius: 20px; transition: background var(--normal), color var(--normal); }
+  .gt.on img { filter: none; transform: scale(1.16); }
+  .gt.on span { background: var(--text); color: var(--bg); }
+  .gt.f { outline: 4px solid #fff; outline-offset: 5px; transform: scale(1.06); z-index: 2; }
+
+  .finale { perspective: 1400px; }
+  .finale .home .region, .finale .home .greet { opacity: 0; }
+  .finale .home .rail { transform: translateX(-140px); }
+</style></head>
+<body><div class="screen">
+  <div class="w3"><div class="driftbox"><div class="plane" id="plane"></div></div></div>
+  <div class="veil" id="veil"></div>
+  <div class="me" id="me"><span class="av">S</span>Sam</div>
+
+  <section class="scene on" id="s1"><div class="lay">
+    <h1 class="h1" id="h1a">Your whole library, on this screen.</h1>
+    <p class="lede" id="l1">Start with the address of your Silo server.</p>
+    <div style="margin-top:50px;width:820px"><div class="field" id="addr"><span class="lead"><svg class="i"><use href="#i-server"/></svg></span><span class="val"></span><span class="ph">silo.example.com</span></div></div>
+    <div class="row-a"><div class="btn" id="b1">Connect</div><div class="status-line" id="st1"></div></div>
+    <div class="titles" id="titles"><b id="tcount">0</b><span>titles on Ashgrove</span></div>
+  </div></section>
+
+  <section class="scene" id="s2"><div class="codecard" id="codecard">
+    <div style="flex:1">
+      <h2 class="h1">Sign in to Ashgrove</h2>
+      <p class="lede" style="margin-top:14px">On your phone, go to <b style="color:var(--text)">silo.ashgrove.net/link</b> and enter</p>
+      <div class="code" id="code"></div>
+      <div class="status-line" id="st2"><span class="spin"></span><span>Waiting for approval…</span></div>
+    </div>
+    <div class="qrhold" id="qrhold"></div>
+  </div></section>
+
+  <section class="scene" id="s3"><div class="lay">
+    <h1 class="h1" id="h3">Who's watching?</h1>
+    <div class="profiles" id="profiles"></div>
+  </div></section>
+
+  <section class="scene" id="s4"><div class="lay" style="top:150px;width:1700px">
+    <h1 class="h1" id="h4">Pin your libraries.</h1>
+    <p class="lede">Pinned ones sit in the sidebar. The rest stay a press away.</p>
+    <div class="decks" id="decks"></div>
+    <div class="row-a" style="margin-top:60px"><div class="btn" id="b4">Next</div></div>
+  </div></section>
+
+  <section class="scene s5" id="s5"><div class="lay">
+    <h1 class="h1" id="h5">Which networks?</h1>
+    <p class="lede">Each one becomes a tile on your Library.</p>
+  </div>
+  <div class="ringwrap"><div class="ring" id="ring"></div></div>
+  <div style="position:absolute;left:150px;top:900px"><div class="btn" id="b5">Next</div></div></section>
+
+  <section class="scene s6" id="s6"><div class="lay" style="width:1600px">
+    <h1 class="h1" id="h6">And your genres.</h1>
+    <p class="lede">Only titles your server has show up in them.</p>
+    <div class="ggrid" id="ggrid"></div>
+    <div class="row-a" style="margin-top:56px"><div class="btn" id="b6">Show me my Library</div></div>
+  </div></section>
+
+  <section class="scene finale" id="s7"></section>
+</div>
+<script src="shared.js"></script>
+<script src="fx.js"></script>
+<script>
+const POSTERS = ['s-avatar','s-hxh','s-talladega','s-paradise','s-obsession','s-ponyo','s-dastaar','s-mononoke','s-hitlist','s-supergirl','s-michael','s-whittaker',
+  's-hauntedween','s-mrmrs','s-bombay','s-tunnel','s-fnaf','s-hei','s-bullet','s-mothers','s-hayride','s-duck','s-cemetery','s-hawa','s-adinaasam','s-aew',
+  's-allen','s-babygirl','s-buckley','s-dance','s-dearyou','s-essex','s-farasha','s-holiday','s-macamilco','s-monsters','s-notebook','s-runitback','s-sacrifice','s-silva'];
+const COLS = 8, ROWS = 7;
+const nets = new Set(DEFAULT_NETWORKS), gens = new Set(DEFAULT_GENRES);
+const RING = NETWORKS.Streaming;
+const GT = ['Action','Adventure','Animation','Comedy','Crime','Documentary','Drama','Fantasy','Horror','Romance','Science Fiction','Thriller'];
+const GT_ART = { ...GENRE_ART, Adventure: 's-mononoke', Fantasy: 's-hei', Romance: 's-mrmrs' };
+let ringIdx = 0;
+function cam(c) { $('#plane').className = 'plane ' + c; }
+window.BUILD = () => {
+  document.documentElement.style.setProperty('--spring', SPRING);
+  let h = '';
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const p = POSTERS[(r * COLS + c * 3) % POSTERS.length];
+    h += `<div class="t3" style="transition-delay:${(c + r) * 75}ms"><div class="fr"></div><div class="bk"><img src="${A(p)}"></div></div>`;
+  }
+  $('#plane').innerHTML = h;
+  $('#qrhold').innerHTML = qr(300);
+  $('#profiles').innerHTML = PROFILES.map((p) => `<div class="prof" id="pr-${p.id}"><div class="av" style="background:${p.tint}">${p.name[0]}</div>${p.name}</div>`).join('');
+  $('#decks').innerHTML = LIBS.map((l) => `<div class="deck" id="dk-${l.id}"><div class="stack">${l.posters.map((p) => `<img src="${A(p)}">`).join('')}<span class="pinb">${ic('pin')}</span></div><div class="nm">${l.name}</div><div class="ct">${l.count}</div></div>`).join('');
+  $('#ring').innerHTML = RING.map(([n, c], i) => `<div class="rt${nets.has(n) ? ' on' : ''}" data-net="${n}" style="transform:rotateY(${i * 36}deg) translateZ(700px)"><span class="wm">${n}</span><span class="ct">${c} in your library</span></div>`).join('');
+  $('#ring').style.transform = 'translateZ(-700px) rotateY(0deg)';
+  $('#ggrid').innerHTML = GT.map((g) => `<div class="gt${gens.has(g) ? ' on' : ''}" data-g="${g}"><img src="${A(GT_ART[g] || 's-paradise')}"><span>${g}</span></div>`).join('');
+  $$('.lay .h1').forEach(splitWords);
+};
+const rt = (i) => $$('.rt')[i];
+async function ringTo(i, dir) { ringIdx = i; await move(dir, rt(i), 0); $('#ring').style.transform = `translateZ(-700px) rotateY(${-i * 36}deg)`; await wait(520); }
+
+window.SCRIPT = async () => {
+  $$('.t3').forEach((t, i) => t.animate([{ transform: 'translateZ(-900px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 1400, delay: i * 14, easing: OUT, fill: 'backwards' }));
+  inWords('#h1a', 300);
+  await wait(1700);
+  focus('#addr'); await wait(300);
+  await press('#addr', null, 200);
+  await typeInto('#addr', SERVER.host, 60);
+  await move('down', '#b1', 380);
+  await press('#b1', () => { $('#st1').innerHTML = '<span class="spin"></span><span>Checking…</span>'; }, 1000);
+  $('#st1').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Found Ashgrove</span>`;
+  $$('.t3').forEach((t) => t.classList.add('dev'));
+  $('#titles').animate([{ opacity: 0, transform: 'translateY(30px)' }, { opacity: 1, transform: 'none' }], { duration: 700, easing: OUT, fill: 'forwards' });
+  await countUp('#tcount', 2872, 2200);
+  await wait(900);
+
+  outWords('#h1a'); await wait(300);
+  show('s2'); cam('c2');
+  $('#codecard').animate([{ transform: 'translateY(80px) scale(0.92)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900, easing: OUT });
+  $('#qrhold').animate([{ transform: 'scale(0.3) rotate(-12deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900, delay: 300, easing: BOUNCE, fill: 'backwards' });
+  await wait(250);
+  splitFlap('#code', 'K7QM-24RX', 80);
+  await wait(3200);
+  $('#st2').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Signed in as sam</span>`;
+  shine('#codecard');
+  await wait(1300);
+
+  show('s3'); cam('c3');
+  inWords('#h3');
+  $$('#profiles .prof').forEach((p, i) => p.animate([{ transform: 'translateY(160px) scale(0.6)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900, delay: 250 + i * 120, easing: BOUNCE, fill: 'backwards' }));
+  await wait(600);
+  focus('#pr-sam'); await wait(900);
+  await move('right', '#pr-jo', 380);
+  await move('left', '#pr-sam', 380);
+  await press('#pr-sam', null, 100);
+  ['#pr-jo', '#pr-kids'].forEach((s, i) => $(s).animate([{ transform: 'none', opacity: 1 }, { transform: 'translateY(240px) rotate(12deg)', opacity: 0 }], { duration: 600, delay: i * 80, easing: IN, fill: 'forwards' }));
+  outWords('#h3');
+  await wait(300);
+  fly('#pr-sam .av', '#me .av', { html: '<span class="av" style="background:#4a4d57;border-radius:50%;display:grid;place-items:center;font-size:26px;font-weight:500">S</span>', dur: 900, arc: -160 });
+  $('#pr-sam').animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' });
+  await wait(880);
+  $('#me').style.opacity = 1; pulse('#me .av', 1.25);
+  await wait(400);
+
+  show('s4'); cam('c4'); inWords('#h4');
+  $$('.deck').forEach((d, i) => d.animate([{ transform: 'translateY(120px) rotateX(50deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900, delay: 200 + i * 90, easing: OUT, fill: 'backwards' }));
+  await wait(900);
+  focus('#dk-movies'); await wait(900);
+  for (const id of ['shows', 'anime', 'kids']) await move('right', '#dk-' + id, 480);
+  await press(null, (el) => el.classList.add('off'), 600);
+  await move('right', '#dk-sports', 480);
+  await press(null, (el) => el.classList.add('off'), 700);
+  await move('right', '#dk-world', 600);
+  await move('down', '#b4', 420);
+  await press('#b4', null, 200);
+
+  show('s5'); cam('c5'); inWords('#h5');
+  $('#ring').animate([{ transform: 'translateZ(-700px) rotateY(200deg)', opacity: 0 }, { transform: 'translateZ(-700px) rotateY(0deg)', opacity: 1 }], { duration: 1600, easing: OUT });
+  await wait(1500);
+  focus(rt(0)); await wait(600);
+  await ringTo(1, 'right'); await ringTo(2, 'right'); await ringTo(3, 'right');
+  await press(null, (el) => { el.classList.remove('on'); }, 400);
+  await ringTo(4, 'right');
+  await press(null, (el) => { el.classList.add('on'); ripple(el); }, 450);
+  await ringTo(5, 'right'); await ringTo(6, 'right'); await ringTo(7, 'right'); await ringTo(8, 'right');
+  await press(null, (el) => { el.classList.add('on'); ripple(el); }, 600);
+  await move('down', '#b5', 420);
+  await press('#b5', null, 200);
+
+  show('s6'); cam('c6'); inWords('#h6');
+  $$('.gt').forEach((g, i) => g.animate([{ transform: 'scale(0.4) rotate(-8deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 800, delay: 200 + (i % 6) * 60 + Math.floor(i / 6) * 140, easing: BOUNCE, fill: 'backwards' }));
+  const g = (n) => $(`[data-g="${n}"]`);
+  await wait(1200);
+  focus(g('Action')); await wait(700);
+  for (const n of ['Adventure', 'Animation', 'Comedy']) await move('right', g(n), 260);
+  await move('right', g('Crime'), 340);
+  await press(null, (el) => { el.classList.add('on'); ripple(el); }, 450);
+  await move('down', g('Horror'), 400);
+  await press(null, (el) => el.classList.remove('on'), 450);
+  await move('right', g('Romance'), 260);
+  await move('right', g('Science Fiction'), 260);
+  await move('right', g('Thriller'), 340);
+  await press(null, (el) => { el.classList.add('on'); ripple(el); }, 650);
+  await move('down', '#b6', 420);
+  await press('#b6', null, 100);
+
+  outWords('#h6');
+  cam('gone'); $('#veil').style.opacity = 0; $('#me').style.opacity = 0;
+  await wait(500);
+  $('#s7').innerHTML = homeHTML({ libs: LIBS.filter((l) => !$('#dk-' + l.id).classList.contains('off')).map((l) => l.id),
+    networks: $$('.rt.on').map((e) => e.dataset.net), genres: $$('.gt.on').map((e) => e.dataset.g) });
+  show('s7');
+  const H = (s) => $('#s7 ' + s);
+  H('.rail').animate([{ transform: 'translateX(-140px)' }, { transform: 'none' }], { duration: 900, easing: OUT, fill: 'forwards' });
+  [H('.greet'), ...$$('#s7 .region')].forEach((r, i) => r.animate(
+    [{ transform: 'perspective(1400px) translateZ(-500px) rotateX(28deg) translateY(120px)', opacity: 0 }, { transform: 'perspective(1400px)', opacity: 1 }],
+    { duration: 1200, delay: 150 + i * 140, easing: OUT, fill: 'forwards' }));
+  await wait(1500);
+  focus(H('.wcard'));
+  await wait(3000);
+};
+</script>
+</body></html>

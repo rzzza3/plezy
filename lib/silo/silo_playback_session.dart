@@ -48,6 +48,9 @@ typedef SiloPlaybackRequest = ({
   String contentId,
   String profileId,
   SiloDeviceFacts device,
+
+  /// The device's decoders and display, on Android; null elsewhere.
+  SiloVideoProbe? video,
   int? fileId,
 
   /// Start [fileId] as that file: the user picked it.
@@ -175,8 +178,8 @@ class SiloPlaybackSession {
         picked ?? selectSiloVersion(detail.versions, lastFileId: detail.lastFileId, preferredQuality: request.quality);
 
     final attemptId = newSiloAttemptId();
-    final capabilities = siloMpvCodecCapabilities();
-    final context = siloMpvPlaybackContext(request.device);
+    final capabilities = siloMpvCodecCapabilities(request.video);
+    final context = siloMpvPlaybackContext(request.device, request.video);
     final body = siloStartBody(
       fileId: version.fileId,
       profileId: request.profileId,
@@ -279,7 +282,7 @@ class SiloPlaybackSession {
     await abandoned.stop();
     throw switch (decision) {
       SiloTerminal(:final reason, :final message) => SiloPlaybackFailure(reason, message),
-      SiloReplanRequired(:final reason) => SiloPlaybackFailure(reason, 'This Silo plan needs a feature Plezy lacks.'),
+      SiloReplanRequired(:final reason) => SiloPlaybackFailure(reason, 'This Silo plan needs a feature TBD lacks.'),
       _ => const SiloPlaybackFailure('incompatible', 'This Silo server speaks a different playback contract.'),
     };
   }

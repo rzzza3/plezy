@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>4 · Up next queue — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .top { position: absolute; left: var(--pad-x); top: 44px; z-index: 5; display: flex; align-items: center; gap: 24px; }
+
+  .lead { position: absolute; left: var(--pad-x); top: 140px; width: 960px; height: 540px; border-radius: 24px; overflow: hidden; }
+  .lead img { width: 100%; height: 100%; object-fit: cover; object-position: center center; }
+  
+  .lead .progress { height: 6px; }
+
+  .side { position: absolute; left: 1180px; right: 90px; top: 150px; }
+  .side .ep { font-size: 22px; font-weight: 500; color: var(--muted); letter-spacing: 0.3px; }
+  .side h2 { font-size: 42px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; margin: 10px 0 18px; }
+  .side .actions { margin-top: 30px; }
+  .side .synopsis { font-size: 24px; }
+  .side .facts { margin-top: 34px; display: grid; grid-template-columns: auto 1fr; gap: 12px 26px; font-size: 21px; }
+  .side .facts dt { color: var(--muted); }
+  .side .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+  .q { position: absolute; left: var(--pad-x); right: 0; top: 724px; }
+  .q .head { display: flex; align-items: center; gap: 18px; margin-bottom: 30px; padding-right: 90px; }
+  .q .head .sp { flex: 1; }
+  .q .head .count { font-size: 22px; color: var(--muted); }
+  .row { display: flex; gap: 20px; align-items: flex-start; }
+  .wide .art { width: 340px; height: 191px; }
+  .wide .t { font-size: 22px; }
+  .wide .s { font-size: 18px; }
+  .pos { position: absolute; left: 12px; top: 12px; min-width: 40px; height: 40px; padding: 0 10px; border-radius: 20px; background: rgba(14,15,18,0.82); display: grid; place-items: center; font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Reorder state: the picked-up card lifts and shows its move affordances */
+  .lift { transform: translateY(-22px); }
+  .lift .art { outline: 4px solid #fff; outline-offset: 4px; box-shadow: 0 26px 44px rgba(0,0,0,0.55), 0 6px 14px rgba(0,0,0,0.4); }
+  .lift .pos { background: #fff; color: var(--bg); }
+  .lift .arrow { position: absolute; top: 72px; width: 46px; height: 46px; border-radius: 50%; background: #fff; color: var(--bg); display: grid; place-items: center; font-size: 30px; z-index: 3; box-shadow: 0 6px 16px rgba(0,0,0,0.45); }
+  .lift .arrow.l { left: -34px; } .lift .arrow.r { right: -34px; }
+  .gap-slot { width: 0; }
+
+  .foot { position: absolute; left: var(--pad-x); right: 90px; bottom: 30px; display: flex; align-items: center; }
+  .mode { font-size: 21px; font-weight: 500; display: inline-flex; align-items: center; gap: 12px; height: 44px; padding: 0 20px; border-radius: 22px; background: var(--text); color: var(--bg); margin-right: 22px; }
+  .mode .i { font-size: 22px; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+
+  <div class="top">
+    <div class="tabs">
+      <span class="tab on"><i data-i="bookmarkf"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab"><i data-i="heart"></i>Favourites <span class="n">11</span></span>
+    </div>
+  </div>
+
+  <section class="lead">
+    <img src="assets/b-holiday-title.jpg" alt="">
+    <div class="progress"><i style="width:38%"></i></div>
+  </section>
+
+  <aside class="side">
+    <div class="ep">Up next · Movie · 2026</div>
+    <h2>Holiday Touchdown: A Bears Love Story</h2>
+    <p class="synopsis">When freelance reporter Avery Clark goes home to Chicago for Christmas, she lands a feel-good story about a Bears superfan and the family behind her.</p>
+    <div class="actions">
+      <span class="btn-primary"><i data-i="resume"></i>Resume · 52min left</span>
+      <span class="btn-circle"><i data-i="bookmarkf"></i></span>
+      <span class="btn-circle"><i data-i="more"></i></span>
+    </div>
+    <dl class="facts">
+      <dt>Runtime</dt><dd>1h 24min · TV-G</dd>
+      <dt>Queue</dt><dd>14 titles · about 27h</dd>
+    </dl>
+  </aside>
+
+  <section class="q">
+    <div class="head"><h2 class="h-section">Queue</h2><span class="count">Moving “The Meg”</span><span class="sp"></span>
+      <span class="mode"><i data-i="updown"></i>Reorder</span>
+      <div class="hints">
+        <span><span class="key"><i data-i="left"></i></span><span class="key"><i data-i="right"></i></span>Move</span>
+        <span><span class="key">OK</span>Drop here</span>
+        <span><span class="key">Back</span>Cancel</span>
+      </div></div>
+    <div class="row">
+      <div class="card wide"><div class="art"><img src="assets/w-topgear.jpg" alt=""><span class="pos">2</span></div><div class="t">Top Gear</div><div class="s">S13 E1 · Episode 1</div></div>
+      <div class="card wide lift"><span class="arrow l"><i data-i="left"></i></span><div class="art"><img src="assets/w-meg.jpg" alt=""><span class="pos">3</span></div><span class="arrow r"><i data-i="right"></i></span><div class="t">The Meg</div><div class="s">Movie · 1h 53min</div></div>
+      <div class="card wide"><div class="art"><img src="assets/w-crystal.jpg" alt=""><span class="pos">4</span><span class="badge light" style="left:auto;right:12px">New episode</span></div><div class="t">Crystal Lake</div><div class="s">S1 E2 · Camp Crystal</div></div>
+      <div class="card wide"><div class="art"><img src="assets/w-mortimer.jpg" alt=""><span class="pos">5</span></div><div class="t">Mortimer &amp; Whitehouse: Gone Fishing</div><div class="s">S8 E3 · Rochdale Canal</div></div>
+      <div class="card wide"><div class="art"><img src="assets/w-dusk.jpg" alt=""><span class="pos">6</span></div><div class="t">From Dusk Till Dawn 3</div><div class="s">Movie · 1h 33min</div></div>
+    </div>
+  </section>
+
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

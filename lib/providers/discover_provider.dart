@@ -274,6 +274,18 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   List<MediaHub> get hubs => _hubs;
   bool get hasMoreContinueWatching => _hasMoreContinueWatching;
 
+  /// The synthesized Continue Watching row both Home and Library render ahead
+  /// of any backend hubs. [title] is passed in so the provider stays i18n-free.
+  MediaHub continueWatchingHub(String title) => MediaHub(
+    id: 'continue_watching',
+    title: title,
+    type: 'mixed',
+    identifier: '_continue_watching_',
+    size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
+    more: _hasMoreContinueWatching,
+    items: _onDeck,
+  );
+
   /// Raw load failure (unlocalized); the screen wraps it for display.
   String? get errorMessage => _errorMessage;
 

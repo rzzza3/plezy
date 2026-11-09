@@ -1,9 +1,9 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "TBD"
   },
   "auth": {
-    "localDataRecoveryRequired": "Plezy kunne ikke gendanne lokale loginoplysninger og ventende afspilningsdata på en sikker måde. Log ind igen."
+    "localDataRecoveryRequired": "TBD kunne ikke gendanne lokale loginoplysninger og ventende afspilningsdata på en sikker måde. Log ind igen."
   },
   "common": {
     "cancel": "Annuller",
@@ -100,7 +100,7 @@
   },
   "settings": {
     "title": "Indstillinger",
-    "supportDeveloper": "Støt Plezy",
+    "supportDeveloper": "Støt TBD",
     "supportDeveloperDescription": "Doner via Liberapay for at finansiere udviklingen",
     "language": "Sprog",
     "theme": "Tema",
@@ -122,6 +122,7 @@
     "lightTheme": "Lys",
     "darkTheme": "Mørk",
     "oledTheme": "OLED",
+    "slateTheme": "Skifer",
     "libraryDensity": "Bibliotekstæthed",
     "displayScale": "Skalering",
     "compact": "Kompakt",
@@ -239,7 +240,7 @@
     "importSettingsDescription": "Gendan præferencer fra en fil",
     "importSettingsConfirm": "Dette vil erstatte dine nuværende indstillinger. Fortsæt?",
     "importSettingsSuccess": "Indstillinger importeret",
-    "importSettingsInvalidFile": "Denne fil er ikke en gyldig eksport af Plezy-indstillinger",
+    "importSettingsInvalidFile": "Denne fil er ikke en gyldig eksport af TBD-indstillinger",
     "importSettingsNoUser": "Log ind før import af indstillinger",
     "shortcutsReset": "Genveje nulstillet til standard",
     "resetShortcutsConfirm": "",
@@ -303,8 +304,6 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Vis på Discord, hvad du ser",
-    "services": "Tjenester",
-    "servicesDescription": "Forbind Trakt, MyAnimeList, Seerr og mere",
     "manageLibrariesDescription": "Omarranger og skjul biblioteker",
     "companionRemoteServer": "Fjernbetjeningsserver",
     "companionRemoteServerDescription": "Tillad mobilenheder på dit netværk at styre denne app",
@@ -368,7 +367,7 @@
     "forceTvMode": "Gennemtving TV-tilstand",
     "forceTvModeDescription": "Tving TV-layout. Til enheder, der ikke registreres automatisk. Kræver genstart.",
     "startInFullscreen": "Start i fuldskærm",
-    "startInFullscreenDescription": "Åbn Plezy i fuldskærmstilstand ved opstart",
+    "startInFullscreenDescription": "Åbn TBD i fuldskærmstilstand ved opstart",
     "exitFullscreenOnPlayerClose": "Forlad fuldskærm ved lukning af afspiller",
     "exitFullscreenOnPlayerCloseDescription": "Afslut automatisk fuldskærm, når videoafspilleren lukkes",
     "autoHidePerformanceOverlay": "Skjul ydelsesoverlay automatisk",
@@ -414,7 +413,7 @@
     "playerScopeGlobal": "Overalt",
     "playerScopeLibrary": "Pr. bibliotek",
     "playerScopeTitle": "Pr. serie eller film",
-    "exportDialogTitle": "Eksportér Plezy-indstillinger"
+    "exportDialogTitle": "Eksportér TBD-indstillinger"
   },
   "search": {
     "hint": "Søg film, serier, musik...",
@@ -857,10 +856,8 @@
     "sectionTitle": "Forbindelser",
     "addConnection": "Tilføj forbindelse",
     "sessionExpiredOne": "Sessionen er udløbet for ${name}",
-    "sessionExpiredMany": "Sessionerne er udløbet for ${count} servere",
     "accessDeniedOne": "${name} nægtede adgang for denne konto",
-    "accessDeniedMany": "${count} servere nægtede adgang for denne konto",
-    "signInAgain": "Log ind igen"
+    "accessDeniedMany": "${count} servere nægtede adgang for denne konto"
   },
   "accountPreferences": {
     "sectionTitle": "Kontopræferencer",
@@ -1035,9 +1032,9 @@
     "uploadLogs": "Upload logfiler"
   },
   "startup": {
-    "failedTitle": "Plezy kunne ikke starte",
+    "failedTitle": "TBD kunne ikke starte",
     "failedBody": "Der gik noget galt under opstart. Oplysningerne nedenfor viser, hvad der gik galt.",
-    "failedBodyRepairable": "Plezy's gemte indstillingsfil er beskadiget og skal genopbygges, før Plezy kan starte. Det hjælper ikke at prøve igen — vælg Reparer lager.",
+    "failedBodyRepairable": "TBD's gemte indstillingsfil er beskadiget og skal genopbygges, før TBD kan starte. Det hjælper ikke at prøve igen — vælg Reparer lager.",
     "phaseLabel": "Trin",
     "showDetails": "Vis detaljer",
     "hideDetails": "Skjul detaljer",
@@ -1046,16 +1043,16 @@
     "uploadDetails": "Upload detaljer",
     "repairStorage": "Reparer lager",
     "repairTitle": "Reparer gemte data?",
-    "repairBodyCommon": "Plezy's indstillingsfil er beskadiget og kan ikke læses. Reparation nulstiller alle indstillinger til deres standardværdier.",
+    "repairBodyCommon": "TBD's indstillingsfil er beskadiget og kan ikke læses. Reparation nulstiller alle indstillinger til deres standardværdier.",
     "repairBodyOneCredential": "Én gemt loginoplysning er beskadiget og kan ikke læses. Reparation fjerner kun den; dine andre indstillinger forbliver urørt.",
     "repairBodySignInsKept": "Dine servere og profiler bør forblive logget ind.",
     "repairBodySignInsLost": "Nøglen, der beskytter dine gemte loginoplysninger, kan ikke gendannes fra denne fil, så du skal logge ind på alle servere og profiler igen. Intet på din medieserver er påvirket.",
-    "repairBodySessionsUncertain": "Trackere (MAL, AniList, Simkl, Trakt) og Seerr gemmes separat, og det er uvist, om de overlever. Plezy fortæller dig præcis, hvad det beholdt.",
+    "repairBodySessionsUncertain": "Trackere (MAL, AniList, Simkl, Trakt) og Seerr gemmes separat, og det er uvist, om de overlever. TBD fortæller dig præcis, hvad det beholdt.",
     "repairConfirm": "Reparer",
     "repairSucceeded": "Lager repareret",
     "repairNeedsRestart": "Lager repareret — genstart påkrævet",
-    "restartRequiredBody": "Dine data er blevet repareret, men Plezy skal starte på ny, før det kan bruge dem. Luk Plezy, og åbn det igen.",
-    "quitPlezy": "Afslut Plezy",
+    "restartRequiredBody": "Dine data er blevet repareret, men TBD skal starte på ny, før det kan bruge dem. Luk TBD, og åbn det igen.",
+    "quitPlezy": "Afslut TBD",
     "repairFailed": "Reparation mislykkedes",
     "repairKeptSignIns": "Dine servere og profiler er stadig logget ind.",
     "repairLostSignIns": "Nøglen, der beskytter dine gemte loginoplysninger, kunne ikke gendannes. Du skal logge ind på alle servere og profiler igen.",
@@ -1064,7 +1061,7 @@
     "backupWarning": "Den indeholder dine loginoplysninger. Upload eller del den ikke.",
     "deleteBackup": "Slet kopi",
     "backupDeleted": "Kopi slettet.",
-    "previousFailureTitle": "Plezy kunne ikke starte sidste gang"
+    "previousFailureTitle": "TBD kunne ikke starte sidste gang"
   },
   "licenses": {
     "relatedPackages": "Relaterede pakker",
@@ -1528,14 +1525,14 @@
       "bannerAction": "Detaljer",
       "sheetTitle": "Downloads i baggrunden er blokeret",
       "sheetTitleDegraded": "Downloads i baggrunden kan være begrænsede",
-      "sheetIntro": "Android forhindrer Plezy i at downloade stabilt i baggrunden.",
-      "sheetIntroDegraded": "Din enhed begrænser, hvornår Plezy kan downloade i baggrunden.",
-      "reasonBackgroundRestricted": "Plezys baggrundsaktivitet er begrænset. Indstil batteriforbruget eller baggrundsaktiviteten til \"Ubegrænset\".",
-      "reasonStandbyRestricted": "Android har sat Plezy i begrænset standbytilstand. Indstil batteriforbruget til \"Ubegrænset\".",
+      "sheetIntro": "Android forhindrer TBD i at downloade stabilt i baggrunden.",
+      "sheetIntroDegraded": "Din enhed begrænser, hvornår TBD kan downloade i baggrunden.",
+      "reasonBackgroundRestricted": "TBDs baggrundsaktivitet er begrænset. Indstil batteriforbruget eller baggrundsaktiviteten til \"Ubegrænset\".",
+      "reasonStandbyRestricted": "Android har sat TBD i begrænset standbytilstand. Indstil batteriforbruget til \"Ubegrænset\".",
       "reasonDownloadChannelBlocked": "Notifikationer om downloads er slået fra, så status og betjeningsknapper muligvis ikke er tilgængelige.",
       "reasonNotificationsDisabled": "Notifikationer er slået fra. På Android 13 eller nyere er de nødvendige ved lange downloads i baggrunden.",
       "reasonDataSaver": "Datasparefunktionen er slået til, hvilket blokerer downloads i baggrunden via mobildata. Downloads bør stadig køre på Wi-Fi.",
-      "reasonOemUnknown": "Downloads stoppede gentagne gange, mens Plezy var i baggrunden. Tjek Plezys indstillinger for batteriforbrug eller baggrundsaktivitet.",
+      "reasonOemUnknown": "Downloads stoppede gentagne gange, mens TBD var i baggrunden. Tjek TBDs indstillinger for batteriforbrug eller baggrundsaktivitet.",
       "openSettings": "Åbn indstillinger",
       "stillNotWorking": "Enhedsspecifik hjælp",
       "stillNotWorkingDescription": "Se vejledningen til din enhed, eller send en logfil fra Indstillinger › Vis logfiler, hvis problemet fortsætter.",
@@ -1613,13 +1610,13 @@
       "connecting": "Opretter forbindelse...",
       "searchingForDevices": "Søger efter enheder...",
       "noDevicesFound": "Ingen enheder fundet på dit netværk",
-      "noDevicesHint": "Åbn Plezy på din computer, og brug det samme Wi-Fi-netværk",
+      "noDevicesHint": "Åbn TBD på din computer, og brug det samme Wi-Fi-netværk",
       "availableDevices": "Tilgængelige enheder",
       "manualConnection": "Manuel forbindelse",
       "validationHostRequired": "Angiv en værtsadresse",
       "validationHostFormat": "Format skal være IP:port (f.eks. 192.168.1.100:48632)",
       "connectionTimedOut": "Forbindelsen fik timeout. Brug samme netværk på begge enheder.",
-      "sessionNotFound": "Enhed ikke fundet. Sørg for, at Plezy kører på værten.",
+      "sessionNotFound": "Enhed ikke fundet. Sørg for, at TBD kører på værten.",
       "failedToConnect": "Kunne ikke oprette forbindelse: ${error}"
     },
     "remote": {
@@ -1804,11 +1801,11 @@
     "connected": "Forbundet",
     "connectedAs": "Forbundet som @${username}",
     "disconnectConfirm": "Frakobl Trakt-konto?",
-    "disconnectConfirmBody": "Plezy stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.",
+    "disconnectConfirmBody": "TBD stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.",
     "scrobble": "Realtids-scrobbling",
     "scrobbleDescription": "Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.",
     "watchedSync": "Synkroniser set-status",
-    "watchedSyncDescription": "Når du markerer elementer som set i Plezy, markeres de også på Trakt."
+    "watchedSyncDescription": "Når du markerer elementer som set i TBD, markeres de også på Trakt."
   },
   "seerr": {
     "title": "Seerr",
@@ -1818,10 +1815,10 @@
     "checkServer": "Fortsæt",
     "signInWithLocal": "Brug en lokal konto",
     "email": "E-mail",
-    "noSignInMethods": "Denne Seerr-instans tilbyder ingen loginmetode, som Plezy understøtter.",
+    "noSignInMethods": "Denne Seerr-instans tilbyder ingen loginmetode, som TBD understøtter.",
     "instance": "Instans",
     "disconnectConfirm": "Afbryd forbindelsen til Seerr?",
-    "disconnectConfirmBody": "Plezy glemmer denne Seerr-instans. Du kan altid oprette forbindelse igen.",
+    "disconnectConfirmBody": "TBD glemmer denne Seerr-instans. Du kan altid oprette forbindelse igen.",
     "request": "Anmod",
     "request4k": "Anmod i 4K",
     "seasons": "Sæsoner",
@@ -1846,7 +1843,7 @@
     "statusBlocklisted": "På blokeringslisten",
     "couldNotReach": "Kunne ikke nå ${url}: ${error}",
     "noInstanceAtUrl": "Ingen Seerr-instans på ${url} (HTTP ${status})",
-    "behindAuthProxy": "En godkendende reverse proxy (SSO eller HTTP-auth) svarede i stedet for Seerr. Plezy kan ikke logge ind gennem den: Lad Seerrs /api/v1-sti omgå proxyen for denne app, eller brug en adresse, der når Seerr direkte.",
+    "behindAuthProxy": "En godkendende reverse proxy (SSO eller HTTP-auth) svarede i stedet for Seerr. TBD kan ikke logge ind gennem den: Lad Seerrs /api/v1-sti omgå proxyen for denne app, eller brug en adresse, der når Seerr direkte.",
     "invalidUrl": "Indtast en serveradresse som https://seerr.example.com",
     "notInitialized": "Denne Seerr-instans har ikke fuldført førstegangsopsætningen",
     "noStoredCredentials": "Ingen gemte loginoplysninger er tilgængelige til at logge ind igen",
@@ -1867,7 +1864,7 @@
     "scrobble": "Registrer fremgang automatisk",
     "scrobbleDescription": "Opdater din liste, når du er færdig med et afsnit eller en film.",
     "disconnectConfirm": "Afbryd forbindelsen til ${service}?",
-    "disconnectConfirmBody": "Plezy stopper med at opdatere ${service}. Du kan altid oprette forbindelse igen.",
+    "disconnectConfirmBody": "TBD stopper med at opdatere ${service}. Du kan altid oprette forbindelse igen.",
     "connectFailed": "Kunne ikke forbinde til ${service}. Prøv igen.",
     "names": {
       "mal": "MyAnimeList",
@@ -1881,7 +1878,7 @@
       "subtitle": ""
     },
     "deviceCode": {
-      "title": "Aktiver Plezy på ${service}",
+      "title": "Aktiver TBD på ${service}",
       "instructions": "Scan QR-koden, eller gå til adressen nedenfor, og indtast denne kode:",
       "openToActivate": "Åbn ${service} for at aktivere",
       "copyCode": "Kopiér aktiveringskode",

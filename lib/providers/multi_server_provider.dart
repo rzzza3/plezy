@@ -154,8 +154,8 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   bool get hasConnectedServers => onlineServerCount > 0;
 
   /// Visibility-filtered server ids whose latest probe rejected the token
-  /// (HTTP 401 — expired or revoked). UI uses this to show a "Sign in again"
-  /// banner distinct from generic "Server offline".
+  /// (HTTP 401 — expired or revoked). `ExpiredSessionSignOut` signs these
+  /// servers out.
   List<String> get authErrorServerIds => _visibleOf(_serverManager.authErrorServerIds);
 
   bool get hasAuthErrorServers => authErrorServerIds.isNotEmpty;

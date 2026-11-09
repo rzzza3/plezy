@@ -244,6 +244,16 @@ MediaItem? previousEpisodeSkippingSameFile(List<MediaItem> ordered, int currentI
   return null;
 }
 
+/// The position of the highest-numbered season, or null when there is none.
+int? latestSeasonIndex(List<MediaItem> seasons) {
+  int? latest;
+  for (final (i, season) in seasons.indexed) {
+    if (season.kind != MediaKind.season) continue;
+    if (latest == null || (season.index ?? 0) > (seasons[latest].index ?? 0)) latest = i;
+  }
+  return latest;
+}
+
 /// Find the season index matching an explicit navigation target or on-deck
 /// episode. With neither, fall back to the first season that still has
 /// unwatched episodes (so a partially-watched show removed from Continue

@@ -21,6 +21,7 @@ import '../services/tvos_system_navigation_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
+import '../widgets/expired_session_sign_out.dart';
 import '../widgets/app_icon.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -70,6 +71,8 @@ import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
 import 'explore_screen.dart';
+import 'library_home_screen.dart';
+import 'watchlist_screen.dart';
 import 'libraries/library_quick_picker_sheet.dart';
 import 'libraries/libraries_screen.dart';
 import 'search_screen.dart';
@@ -1193,6 +1196,7 @@ class _MainScreenState extends State<MainScreen>
   Widget _buildTickerAwareStack() {
     return Column(
       children: [
+        const ExpiredSessionSignOut(),
         const AuthErrorBanner(),
         Expanded(
           child: IndexedStack(
@@ -1216,6 +1220,8 @@ class _MainScreenState extends State<MainScreen>
 
     return switch (tab) {
       NavigationTabId.discover => DiscoverScreen(key: _screenKeys[tab]),
+      NavigationTabId.library => LibraryHomeScreen(key: _screenKeys[tab]),
+      NavigationTabId.watchlist => WatchlistScreen(key: _screenKeys[tab]),
       NavigationTabId.explore => ExploreScreen(key: _screenKeys[tab]),
       NavigationTabId.libraries => LibrariesScreen(
         key: _screenKeys[tab],
@@ -2089,6 +2095,7 @@ class _MainScreenState extends State<MainScreen>
                     viewportWidth: viewportWidth,
                     selectLibrary: _selectLibrary,
                     openSettings: _openSettings,
+                    selectTab: _selectTab,
                     child: SideNavigationScope(
                       child: Stack(
                         clipBehavior: Clip.hardEdge,

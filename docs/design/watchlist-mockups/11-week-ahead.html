@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>11 · Week ahead — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .top { position: absolute; left: var(--pad-x); right: 62px; top: 44px; display: flex; align-items: center; z-index: 5; }
+  .head { position: absolute; left: var(--pad-x); right: 72px; top: 146px; display: flex; align-items: center; gap: 18px; }
+  .head h2 { font-size: 34px; font-weight: 500; margin: 0; }
+  .head .range { font-size: 22px; color: var(--muted); }
+  .head .sp { flex: 1; }
+  .head .nav { width: 52px; height: 52px; border-radius: 50%; border: 2px solid rgba(237,237,237,0.4); display: grid; place-items: center; font-size: 26px; }
+  .head .chip { margin-right: 6px; }
+
+  .week { position: absolute; left: var(--pad-x); right: 62px; top: 232px; height: 470px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+  .day { border-radius: var(--r-lg); background: var(--surface); padding: 18px 14px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .day.past { background: rgba(21,23,28,0.6); }
+  .day.today { background: var(--surface-2); box-shadow: inset 0 0 0 2px rgba(237,237,237,0.55); }
+  .dn { display: flex; align-items: baseline; gap: 10px; padding: 0 4px 6px; }
+  .dn .w { font-size: 20px; font-weight: 500; color: var(--muted); }
+  .dn .d { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .today .dn .w { color: var(--text); }
+  .dn .tag { margin-left: auto; font-size: 15px; font-weight: 700; letter-spacing: 0.6px; padding: 4px 10px; border-radius: 12px; background: var(--text); color: var(--bg); }
+  .none { font-size: 18px; color: var(--muted); padding: 0 4px; }
+
+  .ep .th { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+  .ep .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ep .show { font-size: 19px; font-weight: 500; margin-top: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ep .code { font-size: 16px; color: var(--muted); margin-top: 3px; }
+  .ep .when { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 15px; font-weight: 500; padding: 4px 10px; border-radius: 12px; background: rgba(237,237,237,0.1); }
+  .ep .when.ready { background: var(--text); color: var(--bg); }
+  .ep.later .th img { filter: grayscale(0.6) brightness(0.55); }
+  .ep.focus .th { outline: 4px solid #fff; outline-offset: 4px; }
+  .also { position: absolute; left: var(--pad-x); right: 0; top: 752px; }
+  .also .h-section { font-size: 30px; margin-bottom: 20px; }
+  .also .row { display: flex; gap: 18px; }
+  .also .wide .art { width: 300px; height: 169px; }
+  .also .wide .t { font-size: 21px; margin-top: 10px; }
+  .also .wide .s { font-size: 17px; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+  <div class="top">
+    <div class="tabs">
+      <span class="tab on"><i data-i="bookmarkf"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab"><i data-i="heart"></i>Favourites <span class="n">11</span></span>
+    </div>
+  </div>
+
+  <div class="head">
+    <h2>Shows on your Watchlist this week</h2>
+    <span class="range">Oct 30 – Nov 5</span>
+    <span class="sp"></span>
+    <span class="chip"><i data-i="grid"></i>All titles</span>
+    <span class="nav"><i data-i="left"></i></span><span class="nav"><i data-i="right"></i></span>
+  </div>
+
+  <div class="week">
+    <div class="day past"><div class="dn"><span class="w">Fri</span><span class="d">30</span></div>
+      <div class="ep"><div class="th"><img src="assets/w-traitors.jpg" alt=""></div><div class="show">The Traitors</div><div class="code">S5 E6 · A Murder of Necessity</div><span class="when ready"><i data-i="play"></i>Ready</span></div>
+    </div>
+    <div class="day past"><div class="dn"><span class="w">Sat</span><span class="d">31</span></div>
+      <div class="ep focus"><div class="th"><img src="assets/w-crystal.jpg" alt=""></div><div class="show">Crystal Lake</div><div class="code">S1 E2</div><span class="when ready"><i data-i="play"></i>Ready</span></div>
+    </div>
+    <div class="day today"><div class="dn"><span class="w">Sun</span><span class="d">1</span><span class="tag">TODAY</span></div>
+      <div class="ep later"><div class="th"><img src="assets/w-mortimer.jpg" alt=""></div><div class="show">Gone Fishing</div><div class="code">S8 E4</div><span class="when">Tonight · 9:00 PM</span></div>
+    </div>
+    <div class="day"><div class="dn"><span class="w">Mon</span><span class="d">2</span></div><div class="none">Nothing airing</div></div>
+    <div class="day"><div class="dn"><span class="w">Tue</span><span class="d">3</span></div><div class="none">Nothing airing</div></div>
+    <div class="day"><div class="dn"><span class="w">Wed</span><span class="d">4</span></div><div class="none">Nothing airing</div></div>
+    <div class="day"><div class="dn"><span class="w">Thu</span><span class="d">5</span></div>
+      <div class="ep later"><div class="th"><img src="assets/w-traitors.jpg" alt=""></div><div class="show">The Traitors</div><div class="code">S5 E7</div><span class="when">Thu · 9:00 PM</span></div>
+    </div>
+  </div>
+
+  <section class="also">
+    <h2 class="h-section">Also on your Watchlist</h2>
+    <div class="row">
+      <div class="card wide"><div class="art"><img src="assets/w-holiday.jpg" alt=""><div class="progress"><i style="width:38%"></i></div></div><div class="t">Holiday Touchdown</div><div class="s">Movie · 52min left</div></div>
+      <div class="card wide"><div class="art"><img src="assets/w-ponyo.jpg" alt=""></div><div class="t">Ponyo</div><div class="s">Movie · 2008</div></div>
+      <div class="card wide"><div class="art"><img src="assets/w-got.jpg" alt=""><div class="progress"><i style="width:48%"></i></div></div><div class="t">Game of Thrones</div><div class="s">Ended · S5 E1 next</div></div>
+      <div class="card wide"><div class="art"><img src="assets/w-meg.jpg" alt=""><div class="progress"><i style="width:36%"></i></div></div><div class="t">The Meg</div><div class="s">Movie · 1h 12min left</div></div>
+      <div class="card wide"><div class="art"><img src="assets/w-dusk.jpg" alt=""></div><div class="t">From Dusk Till Dawn 3</div><div class="s">Movie · 2000</div></div>
+    </div>
+  </section>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

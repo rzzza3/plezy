@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>3 · List and preview — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .stage { position: absolute; top: 0; right: 0; width: 1260px; height: 1080px; }
+  .stage img { width: 100%; height: 100%; object-fit: cover; object-position: 55% 30%; }
+  .stage::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--bg) 0%, rgba(14,15,18,0.82) 26%, rgba(14,15,18,0.15) 60%, rgba(14,15,18,0) 100%),
+                linear-gradient(0deg, var(--bg) 0%, rgba(14,15,18,0.78) 30%, rgba(14,15,18,0) 60%); }
+
+  .col { position: absolute; left: 150px; top: 44px; bottom: 0; width: 660px; z-index: 5; }
+  .col .tabs { margin-left: 20px; }
+  .col .sub { margin: 30px 20px 14px; display: flex; align-items: center; gap: 12px; font-size: 21px; color: var(--muted); }
+  .col .sub b { color: var(--text); font-weight: 500; }
+  .col .sub .i { font-size: 22px; }
+
+  .list { display: flex; flex-direction: column; gap: 4px; height: 930px; overflow: hidden; -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent); mask-image: linear-gradient(180deg, #000 82%, transparent); }
+  .li { display: flex; gap: 22px; align-items: center; padding: 12px 20px; border-radius: var(--r-lg); }
+  .li .th { width: 176px; height: 99px; border-radius: 10px; overflow: hidden; flex: none; position: relative; background: var(--surface-2); }
+  .li .th img { width: 100%; height: 100%; object-fit: cover; }
+  .li .tt { font-size: 24px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .li .ss { font-size: 19px; color: var(--muted); margin-top: 5px; display: flex; gap: 10px; align-items: center; }
+  .li .ss .new { color: var(--text); font-weight: 500; display: inline-flex; gap: 6px; align-items: center; }
+  .li .ss .new .i { font-size: 12px; }
+  .li .body { min-width: 0; flex: 1; }
+  .li.on { background: var(--raise); box-shadow: inset 0 0 0 3px #fff; }
+  .li .progress { height: 5px; }
+
+  .pv { position: absolute; left: 900px; right: 90px; bottom: 96px; z-index: 5; }
+  .pv .kind { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+  .pv .hero-title { font-size: 120px; letter-spacing: -2px; }
+  .pv .meta { margin-top: 20px; }
+  .pv .synopsis { margin-top: 18px; max-width: 860px; font-size: 26px; }
+  .pv .actions { margin-top: 38px; }
+  .pv .note { margin-top: 26px; font-size: 20px; color: var(--muted); }
+  .tag { height: 38px; padding: 0 16px; border-radius: 10px; background: rgba(14,15,18,0.6); border: 1px solid var(--outline); display: inline-flex; align-items: center; font-size: 18px; font-weight: 500; letter-spacing: 0.3px; }
+</style>
+</head>
+<body>
+<div class="screen scrim">
+  <div class="stage"><img src="assets/b-ponyo.jpg" alt=""></div>
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+
+  <aside class="col">
+    <div class="tabs">
+      <span class="tab on"><i data-i="bookmarkf"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab"><i data-i="heart"></i>Favourites <span class="n">11</span></span>
+    </div>
+    <div class="sub"><i data-i="sort"></i>Sorted by <b>Recently added</b></div>
+
+    <div class="list">
+      <div class="li"><div class="th"><img src="assets/w-crystal.jpg" alt=""></div><div class="body"><div class="tt">Crystal Lake</div><div class="ss"><span class="new"><i data-i="newep"></i>New episode</span> · S1 E2</div></div></div>
+      <div class="li on"><div class="th"><img src="assets/w-ponyo.jpg" alt=""></div><div class="body"><div class="tt">Ponyo</div><div class="ss">Movie · 2008 · 1h 41min</div></div></div>
+      <div class="li"><div class="th"><img src="assets/w-got.jpg" alt=""><div class="progress"><i style="width:48%"></i></div></div><div class="body"><div class="tt">Game of Thrones</div><div class="ss">S5 E1 · 26min left</div></div></div>
+      <div class="li"><div class="th"><img src="assets/w-mortimer.jpg" alt=""></div><div class="body"><div class="tt">Mortimer &amp; Whitehouse: Gone Fishing</div><div class="ss">TV · 8 series</div></div></div>
+      <div class="li"><div class="th"><img src="assets/w-meg.jpg" alt=""><div class="progress"><i style="width:36%"></i></div></div><div class="body"><div class="tt">The Meg</div><div class="ss">Movie · 1h 12min left</div></div></div>
+      <div class="li"><div class="th"><img src="assets/w-dusk.jpg" alt=""></div><div class="body"><div class="tt">From Dusk Till Dawn 3</div><div class="ss">Movie · 2000</div></div></div>
+      <div class="li"><div class="th"><img src="assets/w-topgear.jpg" alt=""></div><div class="body"><div class="tt">Top Gear</div><div class="ss">TV · 33 series</div></div></div>
+    </div>
+  </aside>
+
+  <section class="pv">
+    <div class="kind"><span class="tag">Movie</span><span class="tag">1080p</span><span class="tag">Japanese · English</span></div>
+    <h1 class="hero-title">Ponyo</h1>
+    <div class="meta">2008 <span class="dot"></span> G <span class="dot"></span> 1h 41min <span class="dot"></span> TMDB 77%</div>
+    <p class="synopsis">A goldfish princess slips away from the sea, is found by five-year-old Sōsuke, and decides she wants to become human.</p>
+    <div class="actions">
+      <span class="btn-primary"><i data-i="play"></i>Play</span>
+      <span class="btn-circle solid" title="Remove from Watchlist"><i data-i="bookmarkf"></i></span>
+      <span class="btn-circle" title="Add to Favourites"><i data-i="heart"></i></span>
+      <span class="btn-circle" title="Mark as watched"><i data-i="check"></i></span>
+      <span class="btn-circle"><i data-i="more"></i></span>
+    </div>
+    <div class="note">On your Watchlist since Oct 26</div>
+  </section>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

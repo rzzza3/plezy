@@ -97,7 +97,7 @@ class _Translations$app$uz extends Translations$app$en {
 	final TranslationsUz _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'TBD';
 }
 
 // Path: auth
@@ -107,7 +107,7 @@ class _Translations$auth$uz extends Translations$auth$en {
 	final TranslationsUz _root; // ignore: unused_field
 
 	// Translations
-	@override String get localDataRecoveryRequired => 'Plezy mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.';
+	@override String get localDataRecoveryRequired => 'TBD mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.';
 }
 
 // Path: common
@@ -207,7 +207,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 
 	// Translations
 	@override String get title => 'Sozlamalar';
-	@override String get supportDeveloper => 'Plezy-ni qoʻllab-quvvatlash';
+	@override String get supportDeveloper => 'TBD-ni qoʻllab-quvvatlash';
 	@override String get supportDeveloperDescription => 'Dasturchini Liberapay orqali qoʻllab-quvvatlang';
 	@override String get language => 'Til';
 	@override String get theme => 'Mavzu';
@@ -346,7 +346,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get importSettingsDescription => 'Parametrlarni fayldan tiklang';
 	@override String get importSettingsConfirm => 'Bu joriy sozlamalaringiz ustidan yoziladi. Davom etasizmi?';
 	@override String get importSettingsSuccess => 'Sozlamalar import qilindi';
-	@override String get importSettingsInvalidFile => 'Ushbu fayl toʻgʻri Plezy sozlamalar fayli emas';
+	@override String get importSettingsInvalidFile => 'Ushbu fayl toʻgʻri TBD sozlamalar fayli emas';
 	@override String get importSettingsNoUser => 'Sozlamalarni import qilishdan oldin tizimga kiring';
 	@override String get shortcutsReset => 'Tugmalar birlashmasi standart holatga qaytarildi';
 	@override String get about => 'Dastur haqida';
@@ -409,8 +409,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String maxVolumePercent({required Object percent}) => '%${percent}';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discord-da nima tomosha qilayotganingizni koʻrsatish';
-	@override String get services => 'Xizmatlar';
-	@override String get servicesDescription => 'Trakt, MyAnimeList, Seerr va boshqalarni ulang';
 	@override String get manageLibrariesDescription => 'Kutubxonalarni tartiblash va yashirish';
 	@override String get companionRemoteServer => 'Yordamchi pult serveri';
 	@override String get companionRemoteServerDescription => 'Tarmoqdagi mobil qurilmalarga ushbu ilovani boshqarishga ruxsat berish';
@@ -466,7 +464,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get forceTvMode => 'TV rejimini majburlash';
 	@override String get forceTvModeDescription => 'TV interfeysini majburiy yoqish. Avtomatik aniqlanmaydigan qurilmalar uchun. Qayta ishga tushirish talab qilinadi.';
 	@override String get startInFullscreen => 'Toʻliq ekranda boshlash';
-	@override String get startInFullscreenDescription => 'Plezy-ni ochganda toʻliq ekran rejimida ochish';
+	@override String get startInFullscreenDescription => 'TBD-ni ochganda toʻliq ekran rejimida ochish';
 	@override String get exitFullscreenOnPlayerClose => 'Pleyer yopilganda toʻliq ekrandan chiqish';
 	@override String get exitFullscreenOnPlayerCloseDescription => 'Video pleyerni yopganda avtomatik ravishda toʻliq ekrandan chiqish';
 	@override String get autoHidePerformanceOverlay => 'Unumdorlik panelini avto-yashirish';
@@ -512,7 +510,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get playerScopeGlobal => 'Hamma joyda';
 	@override String get playerScopeLibrary => 'Kutubxona boʻyicha';
 	@override String get playerScopeTitle => 'Serial yoki film boʻyicha';
-	@override String get exportDialogTitle => 'Plezy sozlamalarini eksport qilish';
+	@override String get exportDialogTitle => 'TBD sozlamalarini eksport qilish';
 }
 
 // Path: search
@@ -1017,10 +1015,8 @@ class _Translations$connections$uz extends Translations$connections$en {
 	@override String get sectionTitle => 'Ulanishlar';
 	@override String get addConnection => 'Ulanish qoʻshish';
 	@override String sessionExpiredOne({required Object name}) => '${name} uchun seans vaqti tugadi';
-	@override String sessionExpiredMany({required Object count}) => '${count} server uchun seans vaqti tugadi';
 	@override String accessDeniedOne({required Object name}) => '${name} ushbu hisobga kirishni rad etdi';
 	@override String accessDeniedMany({required Object count}) => '${count} ta server ushbu hisobga kirishni rad etdi';
-	@override String get signInAgain => 'Qaytadan kirish';
 }
 
 // Path: accountPreferences
@@ -1175,9 +1171,9 @@ class _Translations$startup$uz extends Translations$startup$en {
 	final TranslationsUz _root; // ignore: unused_field
 
 	// Translations
-	@override String get failedTitle => 'Plezy ishga tusha olmadi';
+	@override String get failedTitle => 'TBD ishga tusha olmadi';
 	@override String get failedBody => 'Ishga tushirish paytida nimadir xato ketdi. Quyidagi tafsilotlar aynan nima muvaffaqiyatsiz boʻlganini koʻrsatadi.';
-	@override String get failedBodyRepairable => 'Plezyning saqlangan sozlamalar fayli shikastlangan va Plezy ishga tushishidan oldin uni qayta tiklash kerak. Qayta urinish yordam bermaydi — Saqlashni tiklashni tanlang.';
+	@override String get failedBodyRepairable => 'TBDning saqlangan sozlamalar fayli shikastlangan va TBD ishga tushishidan oldin uni qayta tiklash kerak. Qayta urinish yordam bermaydi — Saqlashni tiklashni tanlang.';
 	@override String get phaseLabel => 'Qadam';
 	@override String get showDetails => 'Tafsilotlarni koʻrsatish';
 	@override String get hideDetails => 'Tafsilotlarni yashirish';
@@ -1186,16 +1182,16 @@ class _Translations$startup$uz extends Translations$startup$en {
 	@override String get uploadDetails => 'Tafsilotlarni yuklash';
 	@override String get repairStorage => 'Saqlashni tiklash';
 	@override String get repairTitle => 'Saqlangan maʼlumotlar tikilsinmi?';
-	@override String get repairBodyCommon => 'Plezyning sozlamalar fayli shikastlangan va uni oʻqib boʻlmaydi. Tiklash barcha sozlamalarni standart holatiga qaytaradi.';
+	@override String get repairBodyCommon => 'TBDning sozlamalar fayli shikastlangan va uni oʻqib boʻlmaydi. Tiklash barcha sozlamalarni standart holatiga qaytaradi.';
 	@override String get repairBodyOneCredential => 'Bitta saqlangan kirish maʼlumoti shikastlangan va uni oʻqib boʻlmaydi. Tiklash faqat uni olib tashlaydi; boshqa sozlamalaringizga tegilmaydi.';
 	@override String get repairBodySignInsKept => 'Serverlaringiz va profillaringiz tizimga kirgan holda qoladi.';
 	@override String get repairBodySignInsLost => 'Saqlangan kirish maʼlumotlaringizni himoya qiluvchi kalitni ushbu fayldan tiklab boʻlmaydi, shuning uchun har bir server va profilga qaytadan kirishingiz kerak boʻladi. Media serveringizdagi hech narsaga taʼsir qilmaydi.';
-	@override String get repairBodySessionsUncertain => 'Trekerlar (MAL, AniList, Simkl, Trakt) va Seerr alohida saqlanadi va ular saqlanib qolishi ham, yoʻqolishi ham mumkin. Plezy aynan nimani saqlaganini sizga xabar qiladi.';
+	@override String get repairBodySessionsUncertain => 'Trekerlar (MAL, AniList, Simkl, Trakt) va Seerr alohida saqlanadi va ular saqlanib qolishi ham, yoʻqolishi ham mumkin. TBD aynan nimani saqlaganini sizga xabar qiladi.';
 	@override String get repairConfirm => 'Tiklash';
 	@override String get repairSucceeded => 'Saqlash tiklandi';
 	@override String get repairNeedsRestart => 'Saqlash tiklandi — qayta ishga tushirish kerak';
-	@override String get restartRequiredBody => 'Maʼlumotlaringiz tiklandi, lekin Plezy ulardan foydalanishi uchun yangidan ishga tushishi kerak. Plezy-ni yoping va qayta oching.';
-	@override String get quitPlezy => 'Plezy-dan chiqish';
+	@override String get restartRequiredBody => 'Maʼlumotlaringiz tiklandi, lekin TBD ulardan foydalanishi uchun yangidan ishga tushishi kerak. TBD-ni yoping va qayta oching.';
+	@override String get quitPlezy => 'TBD-dan chiqish';
 	@override String get repairFailed => 'Tiklash amalga oshmadi';
 	@override String get repairKeptSignIns => 'Serverlaringiz va profillaringiz hali ham tizimga kirgan.';
 	@override String get repairLostSignIns => 'Saqlangan kirish maʼlumotlaringizni himoya qiluvchi kalitni tiklab boʻlmadi. Har bir server va profilga qaytadan kirishingiz kerak boʻladi.';
@@ -1204,7 +1200,7 @@ class _Translations$startup$uz extends Translations$startup$en {
 	@override String get backupWarning => 'Unda kirish hisob maʼlumotlaringiz bor. Uni yuklamang yoki baham koʻrmang.';
 	@override String get deleteBackup => 'Nusxani oʻchirish';
 	@override String get backupDeleted => 'Nusxa oʻchirildi.';
-	@override String get previousFailureTitle => 'Plezy oxirgi marta ishga tushmadi';
+	@override String get previousFailureTitle => 'TBD oxirgi marta ishga tushmadi';
 }
 
 // Path: licenses
@@ -1819,11 +1815,11 @@ class _Translations$trakt$uz extends Translations$trakt$en {
 	@override String get connected => 'Ulandi';
 	@override String connectedAs({required Object username}) => '@${username} sifatida ulandi';
 	@override String get disconnectConfirm => 'Trakt uzilsinmi?';
-	@override String get disconnectConfirmBody => 'Plezy Trakt-ga maʼlumot yuborishni toʻxtatadi.';
+	@override String get disconnectConfirmBody => 'TBD Trakt-ga maʼlumot yuborishni toʻxtatadi.';
 	@override String get scrobble => 'Real vaqt rejimida kuzatish';
 	@override String get scrobbleDescription => 'Ijro paytida Trakt-ga maʼlumot yuborish.';
 	@override String get watchedSync => 'Koʻrish holatini sinxronlash';
-	@override String get watchedSyncDescription => 'Plezy-da belgilanganda Trakt-da ham belgilanadi.';
+	@override String get watchedSyncDescription => 'TBD-da belgilanganda Trakt-da ham belgilanadi.';
 }
 
 // Path: seerr
@@ -1843,7 +1839,7 @@ class _Translations$seerr$uz extends Translations$seerr$en {
 	@override String get noSignInMethods => 'Ushbu Seerr qoʻllab-quvvatlanadigan kirish usulini taklif qilmaydi.';
 	@override String get instance => 'Instansiya';
 	@override String get disconnectConfirm => 'Seerr uzilsinmi?';
-	@override String get disconnectConfirmBody => 'Plezy ushbu Seerr nusxasini unutadi. Istalgan vaqtda qayta ulanishingiz mumkin.';
+	@override String get disconnectConfirmBody => 'TBD ushbu Seerr nusxasini unutadi. Istalgan vaqtda qayta ulanishingiz mumkin.';
 	@override String get request => 'Soʻrov yuborish';
 	@override String get request4k => '4K soʻrov yuborish';
 	@override String get seasons => 'Mavsumlar';
@@ -1868,7 +1864,7 @@ class _Translations$seerr$uz extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'Bloklangan roʻyxatda';
 	@override String couldNotReach({required Object url, required Object error}) => '${url} manziliga ulanib boʻlmadi: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} manzilida Seerr nusxasi yoʻq (HTTP ${status})';
-	@override String get behindAuthProxy => 'Seerr oʻrniga autentifikatsiya qiluvchi teskari proksi (SSO yoki HTTP auth) javob berdi. Plezy uning orqali kira olmaydi: ushbu ilova uchun Seerrning /api/v1 yoʻli proksini aylanib oʻtishiga ruxsat bering yoki Seerrga toʻgʻridan-toʻgʻri yetadigan manzildan foydalaning.';
+	@override String get behindAuthProxy => 'Seerr oʻrniga autentifikatsiya qiluvchi teskari proksi (SSO yoki HTTP auth) javob berdi. TBD uning orqali kira olmaydi: ushbu ilova uchun Seerrning /api/v1 yoʻli proksini aylanib oʻtishiga ruxsat bering yoki Seerrga toʻgʻridan-toʻgʻri yetadigan manzildan foydalaning.';
 	@override String get invalidUrl => 'Server manzilini kiriting, masalan: https://seerr.example.com';
 	@override String get notInitialized => 'Bu Seerr nusxasining dastlabki sozlamasi yakunlanmagan';
 	@override String get noStoredCredentials => 'Qayta kirish uchun saqlangan kirish maʼlumotlari mavjud emas';
@@ -1896,7 +1892,7 @@ class _Translations$services$uz extends Translations$services$en {
 	@override String get scrobble => 'Jarayonni avtomatik kuzatish';
 	@override String get scrobbleDescription => 'Epizod yoki filmni tugatganingizda roʻyxatingizni yangilash.';
 	@override String disconnectConfirm({required Object service}) => '${service} uzilsinmi?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy ${service} yangilashni toʻxtatadi. Istalgan vaqtda qayta ulanishingiz mumkin.';
+	@override String disconnectConfirmBody({required Object service}) => 'TBD ${service} yangilashni toʻxtatadi. Istalgan vaqtda qayta ulanishingiz mumkin.';
 	@override String connectFailed({required Object service}) => '${service} ulana olmadi. Qaytadan urinib koʻring.';
 	@override late final _Translations$services$names$uz names = _Translations$services$names$uz._(_root);
 	@override late final _Translations$services$deviceCode$uz deviceCode = _Translations$services$deviceCode$uz._(_root);
@@ -2370,14 +2366,14 @@ class _Translations$downloads$backgroundWarning$uz extends Translations$download
 	@override String get bannerAction => 'Batafsil';
 	@override String get sheetTitle => 'Fondagi yuklamalar bloklangan';
 	@override String get sheetTitleDegraded => 'Fondagi yuklamalar cheklangan boʻlishi mumkin';
-	@override String get sheetIntro => 'Android Plezy-ning fonda ishonchli yuklab olishiga toʻsqinlik qilmoqda.';
-	@override String get sheetIntroDegraded => 'Qurilmangiz Plezy fonda qachon yuklay olishini cheklamoqda.';
-	@override String get reasonBackgroundRestricted => 'Plezy-ning fondagi faoliyati cheklangan. Batareya yoki fondagi foydalanishni "Cheklanmagan" qilib belgilang.';
-	@override String get reasonStandbyRestricted => 'Android Plezy-ni cheklangan kutish holatiga oʻtkazdi. Batareya foydalanishini "Cheklanmagan" qilib belgilang.';
+	@override String get sheetIntro => 'Android TBD-ning fonda ishonchli yuklab olishiga toʻsqinlik qilmoqda.';
+	@override String get sheetIntroDegraded => 'Qurilmangiz TBD fonda qachon yuklay olishini cheklamoqda.';
+	@override String get reasonBackgroundRestricted => 'TBD-ning fondagi faoliyati cheklangan. Batareya yoki fondagi foydalanishni "Cheklanmagan" qilib belgilang.';
+	@override String get reasonStandbyRestricted => 'Android TBD-ni cheklangan kutish holatiga oʻtkazdi. Batareya foydalanishini "Cheklanmagan" qilib belgilang.';
 	@override String get reasonDownloadChannelBlocked => 'Yuklash bildirishnomalari oʻchirilgan, shuning uchun jarayon koʻrsatkichi va boshqaruv elementlari mavjud boʻlmasligi mumkin.';
 	@override String get reasonNotificationsDisabled => 'Bildirishnomalar oʻchirilgan. Android 13 va undan yangi versiyalarda uzoq davom etadigan fondagi yuklamalar uchun ular talab qilinadi.';
 	@override String get reasonDataSaver => 'Trafik tejash yoqilgan, bu mobil internetda fondagi yuklamalarni bloklaydi. Wi-Fi orqali yuklamalar ishlashi kerak.';
-	@override String get reasonOemUnknown => 'Plezy fonda boʻlganida yuklamalar bir necha marta toʻxtadi. Plezy-ning batareya yoki fondagi foydalanish sozlamalarini tekshiring.';
+	@override String get reasonOemUnknown => 'TBD fonda boʻlganida yuklamalar bir necha marta toʻxtadi. TBD-ning batareya yoki fondagi foydalanish sozlamalarini tekshiring.';
 	@override String get openSettings => 'Sozlamalarni ochish';
 	@override String get stillNotWorking => 'Qurilmaga oid yordam';
 	@override String get stillNotWorkingDescription => 'Qurilmangiz uchun qadamlarni koʻring yoki muammo davom etsa Sozlamalar › Jurnallarni koʻrish boʻlimidan jurnal yuboring.';
@@ -2435,13 +2431,13 @@ class _Translations$companionRemote$pairing$uz extends Translations$companionRem
 	@override String get connecting => 'Ulanilmoqda...';
 	@override String get searchingForDevices => 'Qurilmalar qidirilmoqda...';
 	@override String get noDevicesFound => 'Tarmoqda qurilmalar topilmadi';
-	@override String get noDevicesHint => 'Kompyuterda Plezy-ni oching va bir xil Wi-Fi-ga ulaning';
+	@override String get noDevicesHint => 'Kompyuterda TBD-ni oching va bir xil Wi-Fi-ga ulaning';
 	@override String get availableDevices => 'Mavjud qurilmalar';
 	@override String get manualConnection => 'Qoʻlda ulanish';
 	@override String get validationHostRequired => 'Xost manzilini kiriting';
 	@override String get validationHostFormat => 'Format IP:port koʻrinishida boʻlishi kerak';
 	@override String get connectionTimedOut => 'Ulanish vaqti tugadi. Ikkala qurilmada ham bir xil tarmoqdan foydalaning.';
-	@override String get sessionNotFound => 'Qurilma topilmadi. Plezy xost qurilmada ishga tushirilganiga ishonch hosil qiling.';
+	@override String get sessionNotFound => 'Qurilma topilmadi. TBD xost qurilmada ishga tushirilganiga ishonch hosil qiling.';
 	@override String failedToConnect({required Object error}) => 'Ulanib boʻlmadi: ${error}';
 }
 
@@ -2519,7 +2515,7 @@ class _Translations$services$deviceCode$uz extends Translations$services$deviceC
 	final TranslationsUz _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => 'Plezy-ni ${service} xizmatida faollashtiring';
+	@override String title({required Object service}) => 'TBD-ni ${service} xizmatida faollashtiring';
 	@override String get instructions => 'QR-kodni skanerlang yoki quyidagi manzilga oʻtib, bu kodni kiriting:';
 	@override String openToActivate({required Object service}) => 'Faollashtirish uchun ${service} xizmatini oching';
 	@override String get copyCode => 'Faollashtirish kodini nusxalash';
@@ -2579,8 +2575,8 @@ class _Translations$services$libraryFilter$uz extends Translations$services$libr
 extension on TranslationsUz {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
-			'auth.localDataRecoveryRequired' => 'Plezy mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.',
+			'app.title' => 'TBD',
+			'auth.localDataRecoveryRequired' => 'TBD mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.',
 			'common.cancel' => 'Bekor qilish',
 			'common.save' => 'Saqlash',
 			'common.close' => 'Yopish',
@@ -2665,7 +2661,7 @@ extension on TranslationsUz {
 			'update.latestVersion' => 'Sizda eng soʻnggi versiya oʻrnatilgan',
 			'update.checkFailed' => 'Yangilanishlarni tekshirish imkoni boʻlmadi',
 			'settings.title' => 'Sozlamalar',
-			'settings.supportDeveloper' => 'Plezy-ni qoʻllab-quvvatlash',
+			'settings.supportDeveloper' => 'TBD-ni qoʻllab-quvvatlash',
 			'settings.supportDeveloperDescription' => 'Dasturchini Liberapay orqali qoʻllab-quvvatlang',
 			'settings.language' => 'Til',
 			'settings.theme' => 'Mavzu',
@@ -2804,7 +2800,7 @@ extension on TranslationsUz {
 			'settings.importSettingsDescription' => 'Parametrlarni fayldan tiklang',
 			'settings.importSettingsConfirm' => 'Bu joriy sozlamalaringiz ustidan yoziladi. Davom etasizmi?',
 			'settings.importSettingsSuccess' => 'Sozlamalar import qilindi',
-			'settings.importSettingsInvalidFile' => 'Ushbu fayl toʻgʻri Plezy sozlamalar fayli emas',
+			'settings.importSettingsInvalidFile' => 'Ushbu fayl toʻgʻri TBD sozlamalar fayli emas',
 			'settings.importSettingsNoUser' => 'Sozlamalarni import qilishdan oldin tizimga kiring',
 			'settings.shortcutsReset' => 'Tugmalar birlashmasi standart holatga qaytarildi',
 			'settings.about' => 'Dastur haqida',
@@ -2867,8 +2863,6 @@ extension on TranslationsUz {
 			'settings.maxVolumePercent' => ({required Object percent}) => '%${percent}',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Discord-da nima tomosha qilayotganingizni koʻrsatish',
-			'settings.services' => 'Xizmatlar',
-			'settings.servicesDescription' => 'Trakt, MyAnimeList, Seerr va boshqalarni ulang',
 			'settings.manageLibrariesDescription' => 'Kutubxonalarni tartiblash va yashirish',
 			'settings.companionRemoteServer' => 'Yordamchi pult serveri',
 			'settings.companionRemoteServerDescription' => 'Tarmoqdagi mobil qurilmalarga ushbu ilovani boshqarishga ruxsat berish',
@@ -2924,7 +2918,7 @@ extension on TranslationsUz {
 			'settings.forceTvMode' => 'TV rejimini majburlash',
 			'settings.forceTvModeDescription' => 'TV interfeysini majburiy yoqish. Avtomatik aniqlanmaydigan qurilmalar uchun. Qayta ishga tushirish talab qilinadi.',
 			'settings.startInFullscreen' => 'Toʻliq ekranda boshlash',
-			'settings.startInFullscreenDescription' => 'Plezy-ni ochganda toʻliq ekran rejimida ochish',
+			'settings.startInFullscreenDescription' => 'TBD-ni ochganda toʻliq ekran rejimida ochish',
 			'settings.exitFullscreenOnPlayerClose' => 'Pleyer yopilganda toʻliq ekrandan chiqish',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Video pleyerni yopganda avtomatik ravishda toʻliq ekrandan chiqish',
 			'settings.autoHidePerformanceOverlay' => 'Unumdorlik panelini avto-yashirish',
@@ -2970,7 +2964,7 @@ extension on TranslationsUz {
 			'settings.playerScopeGlobal' => 'Hamma joyda',
 			'settings.playerScopeLibrary' => 'Kutubxona boʻyicha',
 			'settings.playerScopeTitle' => 'Serial yoki film boʻyicha',
-			'settings.exportDialogTitle' => 'Plezy sozlamalarini eksport qilish',
+			'settings.exportDialogTitle' => 'TBD sozlamalarini eksport qilish',
 			'search.hint' => 'Filmlar, seriallar, musiqa qidirish...',
 			'search.tryDifferentTerm' => 'Boshqa qidiruv soʻzini kiriting',
 			'search.searchYourMedia' => 'Medialaringizdan qidiring',
@@ -3091,10 +3085,10 @@ extension on TranslationsUz {
 			'fileInfo.previewIndex' => 'Oldindan koʻrish indeksi',
 			'fileInfo.packetLength' => 'Paket uzunligi',
 			'fileInfo.filePresent' => 'Fayl mavjud',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.fileReadable' => 'Server tomonidan oʻqiladigan',
 			'fileInfo.streamPath' => 'Oqim yoʻli',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Oqimli uzatish uchun optimallashtirilgan',
 			'fileInfo.has64bitOffsets' => '64-bitli siljishlar',
 			'fileInfo.protocol' => 'Protokol',
@@ -3379,10 +3373,8 @@ extension on TranslationsUz {
 			'connections.sectionTitle' => 'Ulanishlar',
 			'connections.addConnection' => 'Ulanish qoʻshish',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} uchun seans vaqti tugadi',
-			'connections.sessionExpiredMany' => ({required Object count}) => '${count} server uchun seans vaqti tugadi',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} ushbu hisobga kirishni rad etdi',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} ta server ushbu hisobga kirishni rad etdi',
-			'connections.signInAgain' => 'Qaytadan kirish',
 			'accountPreferences.sectionTitle' => 'Hisob sozlamalari',
 			'accountPreferences.unavailable' => 'Bu hisobga ulanib boʻlmadi',
 			'accountPreferences.autoSelectAudio' => 'Audioni til boʻyicha tanlash',
@@ -3495,9 +3487,9 @@ extension on TranslationsUz {
 			'logs.clearLogs' => 'Jurnallarni tozalash',
 			'logs.copyLogs' => 'Jurnallarni nusxalash',
 			'logs.uploadLogs' => 'Jurnallarni yuklash',
-			'startup.failedTitle' => 'Plezy ishga tusha olmadi',
+			'startup.failedTitle' => 'TBD ishga tusha olmadi',
 			'startup.failedBody' => 'Ishga tushirish paytida nimadir xato ketdi. Quyidagi tafsilotlar aynan nima muvaffaqiyatsiz boʻlganini koʻrsatadi.',
-			'startup.failedBodyRepairable' => 'Plezyning saqlangan sozlamalar fayli shikastlangan va Plezy ishga tushishidan oldin uni qayta tiklash kerak. Qayta urinish yordam bermaydi — Saqlashni tiklashni tanlang.',
+			'startup.failedBodyRepairable' => 'TBDning saqlangan sozlamalar fayli shikastlangan va TBD ishga tushishidan oldin uni qayta tiklash kerak. Qayta urinish yordam bermaydi — Saqlashni tiklashni tanlang.',
 			'startup.phaseLabel' => 'Qadam',
 			'startup.showDetails' => 'Tafsilotlarni koʻrsatish',
 			'startup.hideDetails' => 'Tafsilotlarni yashirish',
@@ -3506,16 +3498,16 @@ extension on TranslationsUz {
 			'startup.uploadDetails' => 'Tafsilotlarni yuklash',
 			'startup.repairStorage' => 'Saqlashni tiklash',
 			'startup.repairTitle' => 'Saqlangan maʼlumotlar tikilsinmi?',
-			'startup.repairBodyCommon' => 'Plezyning sozlamalar fayli shikastlangan va uni oʻqib boʻlmaydi. Tiklash barcha sozlamalarni standart holatiga qaytaradi.',
+			'startup.repairBodyCommon' => 'TBDning sozlamalar fayli shikastlangan va uni oʻqib boʻlmaydi. Tiklash barcha sozlamalarni standart holatiga qaytaradi.',
 			'startup.repairBodyOneCredential' => 'Bitta saqlangan kirish maʼlumoti shikastlangan va uni oʻqib boʻlmaydi. Tiklash faqat uni olib tashlaydi; boshqa sozlamalaringizga tegilmaydi.',
 			'startup.repairBodySignInsKept' => 'Serverlaringiz va profillaringiz tizimga kirgan holda qoladi.',
 			'startup.repairBodySignInsLost' => 'Saqlangan kirish maʼlumotlaringizni himoya qiluvchi kalitni ushbu fayldan tiklab boʻlmaydi, shuning uchun har bir server va profilga qaytadan kirishingiz kerak boʻladi. Media serveringizdagi hech narsaga taʼsir qilmaydi.',
-			'startup.repairBodySessionsUncertain' => 'Trekerlar (MAL, AniList, Simkl, Trakt) va Seerr alohida saqlanadi va ular saqlanib qolishi ham, yoʻqolishi ham mumkin. Plezy aynan nimani saqlaganini sizga xabar qiladi.',
+			'startup.repairBodySessionsUncertain' => 'Trekerlar (MAL, AniList, Simkl, Trakt) va Seerr alohida saqlanadi va ular saqlanib qolishi ham, yoʻqolishi ham mumkin. TBD aynan nimani saqlaganini sizga xabar qiladi.',
 			'startup.repairConfirm' => 'Tiklash',
 			'startup.repairSucceeded' => 'Saqlash tiklandi',
 			'startup.repairNeedsRestart' => 'Saqlash tiklandi — qayta ishga tushirish kerak',
-			'startup.restartRequiredBody' => 'Maʼlumotlaringiz tiklandi, lekin Plezy ulardan foydalanishi uchun yangidan ishga tushishi kerak. Plezy-ni yoping va qayta oching.',
-			'startup.quitPlezy' => 'Plezy-dan chiqish',
+			'startup.restartRequiredBody' => 'Maʼlumotlaringiz tiklandi, lekin TBD ulardan foydalanishi uchun yangidan ishga tushishi kerak. TBD-ni yoping va qayta oching.',
+			'startup.quitPlezy' => 'TBD-dan chiqish',
 			'startup.repairFailed' => 'Tiklash amalga oshmadi',
 			'startup.repairKeptSignIns' => 'Serverlaringiz va profillaringiz hali ham tizimga kirgan.',
 			'startup.repairLostSignIns' => 'Saqlangan kirish maʼlumotlaringizni himoya qiluvchi kalitni tiklab boʻlmadi. Har bir server va profilga qaytadan kirishingiz kerak boʻladi.',
@@ -3524,7 +3516,7 @@ extension on TranslationsUz {
 			'startup.backupWarning' => 'Unda kirish hisob maʼlumotlaringiz bor. Uni yuklamang yoki baham koʻrmang.',
 			'startup.deleteBackup' => 'Nusxani oʻchirish',
 			'startup.backupDeleted' => 'Nusxa oʻchirildi.',
-			'startup.previousFailureTitle' => 'Plezy oxirgi marta ishga tushmadi',
+			'startup.previousFailureTitle' => 'TBD oxirgi marta ishga tushmadi',
 			'licenses.relatedPackages' => 'Bogʻliq paketlar',
 			'licenses.license' => 'Litsenziya',
 			'licenses.licenseNumber' => ({required Object number}) => 'Litsenziya ${number}',
@@ -3605,12 +3597,12 @@ extension on TranslationsUz {
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: '${n} ta izoh', other: '${n} ta izoh', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} ta ovoz',
 			'explore.stats.watching' => ({required Object n}) => '${n} kishi tomosha qilmoqda',
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} kishi yakunlagan',
 			'explore.stats.onHold' => ({required Object n}) => '${n} kishi toʻxtatib turibdi',
 			'explore.stats.dropped' => ({required Object n}) => '${n} kishi toʻxtatgan',
 			'explore.season.winter' => 'Qish',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.spring' => 'Bahor',
 			'explore.season.summer' => 'Yoz',
 			'explore.season.fall' => 'Kuz',
@@ -3923,14 +3915,14 @@ extension on TranslationsUz {
 			'downloads.backgroundWarning.bannerAction' => 'Batafsil',
 			'downloads.backgroundWarning.sheetTitle' => 'Fondagi yuklamalar bloklangan',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Fondagi yuklamalar cheklangan boʻlishi mumkin',
-			'downloads.backgroundWarning.sheetIntro' => 'Android Plezy-ning fonda ishonchli yuklab olishiga toʻsqinlik qilmoqda.',
-			'downloads.backgroundWarning.sheetIntroDegraded' => 'Qurilmangiz Plezy fonda qachon yuklay olishini cheklamoqda.',
-			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy-ning fondagi faoliyati cheklangan. Batareya yoki fondagi foydalanishni "Cheklanmagan" qilib belgilang.',
-			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android Plezy-ni cheklangan kutish holatiga oʻtkazdi. Batareya foydalanishini "Cheklanmagan" qilib belgilang.',
+			'downloads.backgroundWarning.sheetIntro' => 'Android TBD-ning fonda ishonchli yuklab olishiga toʻsqinlik qilmoqda.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Qurilmangiz TBD fonda qachon yuklay olishini cheklamoqda.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'TBD-ning fondagi faoliyati cheklangan. Batareya yoki fondagi foydalanishni "Cheklanmagan" qilib belgilang.',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android TBD-ni cheklangan kutish holatiga oʻtkazdi. Batareya foydalanishini "Cheklanmagan" qilib belgilang.',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Yuklash bildirishnomalari oʻchirilgan, shuning uchun jarayon koʻrsatkichi va boshqaruv elementlari mavjud boʻlmasligi mumkin.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Bildirishnomalar oʻchirilgan. Android 13 va undan yangi versiyalarda uzoq davom etadigan fondagi yuklamalar uchun ular talab qilinadi.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'Trafik tejash yoqilgan, bu mobil internetda fondagi yuklamalarni bloklaydi. Wi-Fi orqali yuklamalar ishlashi kerak.',
-			'downloads.backgroundWarning.reasonOemUnknown' => 'Plezy fonda boʻlganida yuklamalar bir necha marta toʻxtadi. Plezy-ning batareya yoki fondagi foydalanish sozlamalarini tekshiring.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'TBD fonda boʻlganida yuklamalar bir necha marta toʻxtadi. TBD-ning batareya yoki fondagi foydalanish sozlamalarini tekshiring.',
 			'downloads.backgroundWarning.openSettings' => 'Sozlamalarni ochish',
 			'downloads.backgroundWarning.stillNotWorking' => 'Qurilmaga oid yordam',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Qurilmangiz uchun qadamlarni koʻring yoki muammo davom etsa Sozlamalar › Jurnallarni koʻrish boʻlimidan jurnal yuboring.',
@@ -3997,13 +3989,13 @@ extension on TranslationsUz {
 			'companionRemote.pairing.connecting' => 'Ulanilmoqda...',
 			'companionRemote.pairing.searchingForDevices' => 'Qurilmalar qidirilmoqda...',
 			'companionRemote.pairing.noDevicesFound' => 'Tarmoqda qurilmalar topilmadi',
-			'companionRemote.pairing.noDevicesHint' => 'Kompyuterda Plezy-ni oching va bir xil Wi-Fi-ga ulaning',
+			'companionRemote.pairing.noDevicesHint' => 'Kompyuterda TBD-ni oching va bir xil Wi-Fi-ga ulaning',
 			'companionRemote.pairing.availableDevices' => 'Mavjud qurilmalar',
 			'companionRemote.pairing.manualConnection' => 'Qoʻlda ulanish',
 			'companionRemote.pairing.validationHostRequired' => 'Xost manzilini kiriting',
 			'companionRemote.pairing.validationHostFormat' => 'Format IP:port koʻrinishida boʻlishi kerak',
 			'companionRemote.pairing.connectionTimedOut' => 'Ulanish vaqti tugadi. Ikkala qurilmada ham bir xil tarmoqdan foydalaning.',
-			'companionRemote.pairing.sessionNotFound' => 'Qurilma topilmadi. Plezy xost qurilmada ishga tushirilganiga ishonch hosil qiling.',
+			'companionRemote.pairing.sessionNotFound' => 'Qurilma topilmadi. TBD xost qurilmada ishga tushirilganiga ishonch hosil qiling.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Ulanib boʻlmadi: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Pult seansidan uzilasizmi?',
 			'companionRemote.remote.reconnecting' => 'Qayta ulanilmoqda...',
@@ -4119,12 +4111,12 @@ extension on TranslationsUz {
 			'externalPlayer.customPlayers' => 'Maxsus pleyerlar',
 			'externalPlayer.systemDefault' => 'Tizim standarti',
 			'externalPlayer.addCustomPlayer' => 'Maxsus pleyer qoʻshish',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Pleyer nomi',
 			'externalPlayer.playerNameHint' => 'Mening pleyerim',
 			'externalPlayer.playerCommand' => 'Buyruq',
 			'externalPlayer.playerPackage' => 'Paket nomi',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerUrlScheme' => 'URL sxemasi',
 			'externalPlayer.off' => 'Oʻchirilgan',
 			'externalPlayer.launchFailed' => 'Tashqi pleyerni ishga tushirib boʻlmadi',
@@ -4164,11 +4156,11 @@ extension on TranslationsUz {
 			'trakt.connected' => 'Ulandi',
 			'trakt.connectedAs' => ({required Object username}) => '@${username} sifatida ulandi',
 			'trakt.disconnectConfirm' => 'Trakt uzilsinmi?',
-			'trakt.disconnectConfirmBody' => 'Plezy Trakt-ga maʼlumot yuborishni toʻxtatadi.',
+			'trakt.disconnectConfirmBody' => 'TBD Trakt-ga maʼlumot yuborishni toʻxtatadi.',
 			'trakt.scrobble' => 'Real vaqt rejimida kuzatish',
 			'trakt.scrobbleDescription' => 'Ijro paytida Trakt-ga maʼlumot yuborish.',
 			'trakt.watchedSync' => 'Koʻrish holatini sinxronlash',
-			'trakt.watchedSyncDescription' => 'Plezy-da belgilanganda Trakt-da ham belgilanadi.',
+			'trakt.watchedSyncDescription' => 'TBD-da belgilanganda Trakt-da ham belgilanadi.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerr ulash',
 			'seerr.serverUrl' => 'Server URL-i',
@@ -4179,7 +4171,7 @@ extension on TranslationsUz {
 			'seerr.noSignInMethods' => 'Ushbu Seerr qoʻllab-quvvatlanadigan kirish usulini taklif qilmaydi.',
 			'seerr.instance' => 'Instansiya',
 			'seerr.disconnectConfirm' => 'Seerr uzilsinmi?',
-			'seerr.disconnectConfirmBody' => 'Plezy ushbu Seerr nusxasini unutadi. Istalgan vaqtda qayta ulanishingiz mumkin.',
+			'seerr.disconnectConfirmBody' => 'TBD ushbu Seerr nusxasini unutadi. Istalgan vaqtda qayta ulanishingiz mumkin.',
 			'seerr.request' => 'Soʻrov yuborish',
 			'seerr.request4k' => '4K soʻrov yuborish',
 			'seerr.seasons' => 'Mavsumlar',
@@ -4204,7 +4196,7 @@ extension on TranslationsUz {
 			'seerr.statusBlocklisted' => 'Bloklangan roʻyxatda',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url} manziliga ulanib boʻlmadi: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} manzilida Seerr nusxasi yoʻq (HTTP ${status})',
-			'seerr.behindAuthProxy' => 'Seerr oʻrniga autentifikatsiya qiluvchi teskari proksi (SSO yoki HTTP auth) javob berdi. Plezy uning orqali kira olmaydi: ushbu ilova uchun Seerrning /api/v1 yoʻli proksini aylanib oʻtishiga ruxsat bering yoki Seerrga toʻgʻridan-toʻgʻri yetadigan manzildan foydalaning.',
+			'seerr.behindAuthProxy' => 'Seerr oʻrniga autentifikatsiya qiluvchi teskari proksi (SSO yoki HTTP auth) javob berdi. TBD uning orqali kira olmaydi: ushbu ilova uchun Seerrning /api/v1 yoʻli proksini aylanib oʻtishiga ruxsat bering yoki Seerrga toʻgʻridan-toʻgʻri yetadigan manzildan foydalaning.',
 			'seerr.invalidUrl' => 'Server manzilini kiriting, masalan: https://seerr.example.com',
 			'seerr.notInitialized' => 'Bu Seerr nusxasining dastlabki sozlamasi yakunlanmagan',
 			'seerr.noStoredCredentials' => 'Qayta kirish uchun saqlangan kirish maʼlumotlari mavjud emas',
@@ -4223,14 +4215,14 @@ extension on TranslationsUz {
 			'services.scrobble' => 'Jarayonni avtomatik kuzatish',
 			'services.scrobbleDescription' => 'Epizod yoki filmni tugatganingizda roʻyxatingizni yangilash.',
 			'services.disconnectConfirm' => ({required Object service}) => '${service} uzilsinmi?',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy ${service} yangilashni toʻxtatadi. Istalgan vaqtda qayta ulanishingiz mumkin.',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'TBD ${service} yangilashni toʻxtatadi. Istalgan vaqtda qayta ulanishingiz mumkin.',
 			'services.connectFailed' => ({required Object service}) => '${service} ulana olmadi. Qaytadan urinib koʻring.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
-			'services.deviceCode.title' => ({required Object service}) => 'Plezy-ni ${service} xizmatida faollashtiring',
+			'services.deviceCode.title' => ({required Object service}) => 'TBD-ni ${service} xizmatida faollashtiring',
 			'services.deviceCode.instructions' => 'QR-kodni skanerlang yoki quyidagi manzilga oʻtib, bu kodni kiriting:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Faollashtirish uchun ${service} xizmatini oching',
 			'services.deviceCode.copyCode' => 'Faollashtirish kodini nusxalash',

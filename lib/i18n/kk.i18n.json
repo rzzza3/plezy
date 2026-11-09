@@ -1,9 +1,9 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "TBD"
   },
   "auth": {
-    "localDataRecoveryRequired": "Plezy жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз."
+    "localDataRecoveryRequired": "TBD жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз."
   },
   "common": {
     "cancel": "Бас тарту",
@@ -100,7 +100,7 @@
   },
   "settings": {
     "title": "Баптаулар",
-    "supportDeveloper": "Plezy жобасын қолдау",
+    "supportDeveloper": "TBD жобасын қолдау",
     "supportDeveloperDescription": "Дамытуды қаржыландыру үшін Liberapay арқылы демеушілік жасаңыз",
     "language": "Тіл",
     "theme": "Тақырып",
@@ -239,7 +239,7 @@
     "importSettingsDescription": "Параметрлерді файлдан қалпына келтіріңіз",
     "importSettingsConfirm": "Бұл ағымдағы баптауларыңыздың үстінен жазады. Жалғастырасыз ба?",
     "importSettingsSuccess": "Баптаулар импортталды",
-    "importSettingsInvalidFile": "Бұл файл дұрыс Plezy баптаулар файлы емес",
+    "importSettingsInvalidFile": "Бұл файл дұрыс TBD баптаулар файлы емес",
     "importSettingsNoUser": "Баптауларды импорттау алдында жүйеге кіріңіз",
     "shortcutsReset": "Пернелер тіркесі әдепкі күйге қайтарылды",
     "resetShortcutsConfirm": "",
@@ -303,8 +303,6 @@
     "maxVolumePercent": "%${percent}",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Discord-та не көріп жатқаныңызды көрсету",
-    "services": "Қызметтер",
-    "servicesDescription": "Trakt, MyAnimeList, Seerr және т.б. қосыңыз",
     "manageLibrariesDescription": "Кітапханаларды қайта реттеу және жасыру",
     "companionRemoteServer": "Көмекші пульт сервері",
     "companionRemoteServerDescription": "Желідегі мобильді құрылғыларға осы қолданбаны басқаруға рұқсат беру",
@@ -368,7 +366,7 @@
     "forceTvMode": "TV режимін мәжбүрлеу",
     "forceTvModeDescription": "TV интерфейсін мәжбүрлеу. Автоматты түрде анықталмайтын құрылғылар үшін. Қайта іске қосу қажет.",
     "startInFullscreen": "Толық экранда бастау",
-    "startInFullscreenDescription": "Plezy-ді ашқанда толық экран режимінде ашу",
+    "startInFullscreenDescription": "TBD-ді ашқанда толық экран режимінде ашу",
     "exitFullscreenOnPlayerClose": "Ойнатқыш жабылғанда толық экраннан шығу",
     "exitFullscreenOnPlayerCloseDescription": "Видео ойнатқышты жапқанда автоматты түрде толық экраннан шығу",
     "autoHidePerformanceOverlay": "Өнімділік панелін авто-жасыру",
@@ -414,7 +412,7 @@
     "playerScopeGlobal": "Барлық жерде",
     "playerScopeLibrary": "Кітапхана бойынша",
     "playerScopeTitle": "Сериал немесе фильм бойынша",
-    "exportDialogTitle": "Plezy параметрлерін экспорттау"
+    "exportDialogTitle": "TBD параметрлерін экспорттау"
   },
   "search": {
     "hint": "Фильмдер, сериалдар, музыка іздеу...",
@@ -857,10 +855,8 @@
     "sectionTitle": "Қосылымдар",
     "addConnection": "Қосылым қосу",
     "sessionExpiredOne": "${name} үшін сеанс мерзімі өтті",
-    "sessionExpiredMany": "${count} сервер үшін сеанс мерзімі өтті",
     "accessDeniedOne": "${name} бұл тіркелгіге кіруден бас тартты",
-    "accessDeniedMany": "${count} сервер бұл тіркелгіге кіруден бас тартты",
-    "signInAgain": "Қайтадан кіру"
+    "accessDeniedMany": "${count} сервер бұл тіркелгіге кіруден бас тартты"
   },
   "accountPreferences": {
     "sectionTitle": "Тіркелгі баптаулары",
@@ -1035,9 +1031,9 @@
     "uploadLogs": "Журналдарды жүктеу"
   },
   "startup": {
-    "failedTitle": "Plezy іске қосылмады",
+    "failedTitle": "TBD іске қосылмады",
     "failedBody": "Іске қосу кезінде қате орын алды. Төмендегі мәліметтер ненің сәтсіз аяқталғанын көрсетеді.",
-    "failedBodyRepairable": "Plezy сақталған баптаулар файлы зақымдалған және Plezy іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.",
+    "failedBodyRepairable": "TBD сақталған баптаулар файлы зақымдалған және TBD іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.",
     "phaseLabel": "Қадам",
     "showDetails": "Мәліметтерді көрсету",
     "hideDetails": "Мәліметтерді жасыру",
@@ -1046,16 +1042,16 @@
     "uploadDetails": "Мәліметтерді жүктеп жіберу",
     "repairStorage": "Сақтауды қалпына келтіру",
     "repairTitle": "Сақталған деректер қалпына келтірілсін бе?",
-    "repairBodyCommon": "Plezy баптаулар файлы зақымдалған және оқылмайды. Қалпына келтіру барлық баптауды әдепкі мәнге қайтарады.",
+    "repairBodyCommon": "TBD баптаулар файлы зақымдалған және оқылмайды. Қалпына келтіру барлық баптауды әдепкі мәнге қайтарады.",
     "repairBodyOneCredential": "Бір сақталған кіру деректері зақымдалған және оқылмайды. Қалпына келтіру тек соны өшіреді; қалған баптауларыңызға тиіспейді.",
     "repairBodySignInsKept": "Серверлеріңіз бен профильдеріңіз кірген күйінде қалады.",
     "repairBodySignInsLost": "Сақталған кіру деректерін қорғайтын кілт осы файлдан қалпына келтірілмейді, сондықтан әрбір сервер мен профильге қайта кіруге тура келеді. Медиа серверіңіздегі ештеңеге әсер етілмейді.",
-    "repairBodySessionsUncertain": "Tracker-лар (MAL, AniList, Simkl, Trakt) және Seerr бөлек сақталады және сақталуы да, сақталмауы да мүмкін. Plezy не сақталғанын нақты айтады.",
+    "repairBodySessionsUncertain": "Tracker-лар (MAL, AniList, Simkl, Trakt) және Seerr бөлек сақталады және сақталуы да, сақталмауы да мүмкін. TBD не сақталғанын нақты айтады.",
     "repairConfirm": "Қалпына келтіру",
     "repairSucceeded": "Сақтау қалпына келтірілді",
     "repairNeedsRestart": "Сақтау қалпына келтірілді — қайта іске қосу қажет",
-    "restartRequiredBody": "Деректеріңіз қалпына келтірілді, бірақ Plezy оларды пайдаланар алдында жаңадан іске қосылуы керек. Plezy жабыңыз да, қайта ашыңыз.",
-    "quitPlezy": "Plezy бағдарламасынан шығу",
+    "restartRequiredBody": "Деректеріңіз қалпына келтірілді, бірақ TBD оларды пайдаланар алдында жаңадан іске қосылуы керек. TBD жабыңыз да, қайта ашыңыз.",
+    "quitPlezy": "TBD бағдарламасынан шығу",
     "repairFailed": "Қалпына келтіру сәтсіз аяқталды",
     "repairKeptSignIns": "Серверлеріңіз бен профильдеріңіз әлі кірген күйде.",
     "repairLostSignIns": "Сақталған кіру деректерін қорғайтын кілт қалпына келтірілмеді. Әрбір сервер мен профильге қайта кіруге тура келеді.",
@@ -1064,7 +1060,7 @@
     "backupWarning": "Онда сіздің кіру деректеріңіз бар. Оны жүктеп жібермеңіз немесе бөліспеңіз.",
     "deleteBackup": "Көшірмені өшіру",
     "backupDeleted": "Көшірме өшірілді.",
-    "previousFailureTitle": "Plezy соңғы рет іске қосыла алмады"
+    "previousFailureTitle": "TBD соңғы рет іске қосыла алмады"
   },
   "licenses": {
     "relatedPackages": "Байланысты пакеттер",
@@ -1528,14 +1524,14 @@
       "bannerAction": "Толығырақ",
       "sheetTitle": "Фондық жүктеулер бұғатталған",
       "sheetTitleDegraded": "Фондық жүктеулер шектелуі мүмкін",
-      "sheetIntro": "Android Plezy-дің фонда сенімді жүктеуіне кедергі келтіруде.",
-      "sheetIntroDegraded": "Құрылғыңыз Plezy-дің фонда қашан жүктей алатынын шектеп отыр.",
-      "reasonBackgroundRestricted": "Plezy-дің фондық жұмысы шектелген. Батарея немесе фондық пайдалануды \"Шектеусіз\" етіп қойыңыз.",
-      "reasonStandbyRestricted": "Android Plezy-ді шектеулі күту режиміне ауыстырды. Батарея пайдалануын \"Шектеусіз\" етіп қойыңыз.",
+      "sheetIntro": "Android TBD-дің фонда сенімді жүктеуіне кедергі келтіруде.",
+      "sheetIntroDegraded": "Құрылғыңыз TBD-дің фонда қашан жүктей алатынын шектеп отыр.",
+      "reasonBackgroundRestricted": "TBD-дің фондық жұмысы шектелген. Батарея немесе фондық пайдалануды \"Шектеусіз\" етіп қойыңыз.",
+      "reasonStandbyRestricted": "Android TBD-ді шектеулі күту режиміне ауыстырды. Батарея пайдалануын \"Шектеусіз\" етіп қойыңыз.",
       "reasonDownloadChannelBlocked": "Жүктеу хабарландырулары өшірілген, сондықтан жүктеу барысы мен басқару элементтері қолжетімсіз болуы мүмкін.",
       "reasonNotificationsDisabled": "Хабарландырулар өшірілген. Android 13 және одан жаңа нұсқаларда ұзақ фондық жүктеулер үшін олар қажет.",
       "reasonDataSaver": "Трафикті үнемдеу қосулы, бұл мобильді деректер арқылы фондық жүктеулерді бұғаттайды. Wi-Fi арқылы жүктеулер жұмыс істеуі тиіс.",
-      "reasonOemUnknown": "Plezy фонда тұрғанда жүктеулер бірнеше рет тоқтады. Plezy-дің батарея немесе фондық пайдалану баптауларын тексеріңіз.",
+      "reasonOemUnknown": "TBD фонда тұрғанда жүктеулер бірнеше рет тоқтады. TBD-дің батарея немесе фондық пайдалану баптауларын тексеріңіз.",
       "openSettings": "Баптауларды ашу",
       "stillNotWorking": "Құрылғыға арналған көмек",
       "stillNotWorkingDescription": "Құрылғыңызға арналған қадамдарды қараңыз немесе мәселе жалғасса Баптаулар › Журналдарды көру бөлімінен журнал жіберіңіз.",
@@ -1613,7 +1609,7 @@
       "connecting": "Қосылуда...",
       "searchingForDevices": "Құрылғылар ізделуде...",
       "noDevicesFound": "Желіде құрылғылар табылмады",
-      "noDevicesHint": "ПК-де Plezy-ді ашып, бір Wi-Fi-ға қосылыңыз",
+      "noDevicesHint": "ПК-де TBD-ді ашып, бір Wi-Fi-ға қосылыңыз",
       "availableDevices": "Қолжетімді құрылғылар",
       "manualConnection": "Қолмен қосылу",
       "validationHostRequired": "Хост мекенжайын енгізіңіз",
@@ -1804,11 +1800,11 @@
     "connected": "Қосылды",
     "connectedAs": "@${username} ретінде қосылды",
     "disconnectConfirm": "Trakt ажыратылсын ба?",
-    "disconnectConfirmBody": "Plezy Trakt-қа деректер жіберуді тоқтатады.",
+    "disconnectConfirmBody": "TBD Trakt-қа деректер жіберуді тоқтатады.",
     "scrobble": "Нақты уақытта бақылау",
     "scrobbleDescription": "Ойнату кезінде Trakt-қа деректер жіберу.",
     "watchedSync": "Көру мәртебесін синхрондау",
-    "watchedSyncDescription": "Plezy-де белгіленгенде Trakt-та да белгіленеді."
+    "watchedSyncDescription": "TBD-де белгіленгенде Trakt-та да белгіленеді."
   },
   "seerr": {
     "title": "Seerr",
@@ -1821,7 +1817,7 @@
     "noSignInMethods": "Бұл Seerr қолдау көрсетілетін кіру әдісін ұсынбайды.",
     "instance": "Инстанция",
     "disconnectConfirm": "Seerr ажыратылсын ба?",
-    "disconnectConfirmBody": "Plezy бұл Seerr серверін ұмытады. Кез келген уақытта қайта қосыла аласыз.",
+    "disconnectConfirmBody": "TBD бұл Seerr серверін ұмытады. Кез келген уақытта қайта қосыла аласыз.",
     "request": "Сұрау салу",
     "request4k": "4K сұрау салу",
     "seasons": "Маусымдар",
@@ -1846,7 +1842,7 @@
     "statusBlocklisted": "Бұғаттау тізімінде",
     "couldNotReach": "${url} мекенжайына қосылу мүмкін болмады: ${error}",
     "noInstanceAtUrl": "${url} мекенжайында Seerr данасы жоқ (HTTP ${status})",
-    "behindAuthProxy": "Seerr орнына аутентификация жасайтын кері прокси (SSO немесе HTTP auth) жауап берді. Plezy оның арқылы кіре алмайды: осы қолданба үшін Seerr-дің /api/v1 жолы проксиді айналып өтуіне рұқсат етіңіз немесе Seerr-ге тікелей жететін мекенжайды пайдаланыңыз.",
+    "behindAuthProxy": "Seerr орнына аутентификация жасайтын кері прокси (SSO немесе HTTP auth) жауап берді. TBD оның арқылы кіре алмайды: осы қолданба үшін Seerr-дің /api/v1 жолы проксиді айналып өтуіне рұқсат етіңіз немесе Seerr-ге тікелей жететін мекенжайды пайдаланыңыз.",
     "invalidUrl": "Сервер мекенжайын енгізіңіз, мысалы: https://seerr.example.com",
     "notInitialized": "Бұл Seerr данасының бастапқы баптауы аяқталмаған",
     "noStoredCredentials": "Қайта кіру үшін сақталған тіркелгі деректері жоқ",
@@ -1867,7 +1863,7 @@
     "scrobble": "Барысты автоматты бақылау",
     "scrobbleDescription": "Эпизодты немесе фильмді көріп болғанда тізіміңізді жаңарту.",
     "disconnectConfirm": "${service} ажыратылсын ба?",
-    "disconnectConfirmBody": "Plezy ${service} жаңартуды тоқтатады. Кез келген уақытта қайта қосыла аласыз.",
+    "disconnectConfirmBody": "TBD ${service} жаңартуды тоқтатады. Кез келген уақытта қайта қосыла аласыз.",
     "connectFailed": "${service} қосылу мүмкін болмады. Қайтадан байқап көріңіз.",
     "names": {
       "mal": "MyAnimeList",
@@ -1881,7 +1877,7 @@
       "subtitle": ""
     },
     "deviceCode": {
-      "title": "Plezy-ді ${service} қызметінде белсендіру",
+      "title": "TBD-ді ${service} қызметінде белсендіру",
       "instructions": "QR кодын сканерлеңіз немесе төмендегі мекенжайға өтіп, мына кодты енгізіңіз:",
       "openToActivate": "Белсендіру үшін ${service} ашу",
       "copyCode": "Белсендіру кодын көшіру",

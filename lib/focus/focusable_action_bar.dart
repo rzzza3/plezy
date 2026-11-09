@@ -77,6 +77,10 @@ class FocusableActionBar extends StatefulWidget {
 
   final double spacing;
 
+  /// Scroll a newly focused action into view, for a bar placed in a
+  /// horizontal scroll view because it can outgrow its row.
+  final bool revealFocusedAction;
+
   const FocusableActionBar({
     super.key,
     required this.actions,
@@ -87,6 +91,7 @@ class FocusableActionBar extends StatefulWidget {
     this.onBack,
     this.onFocusChange,
     this.spacing = 0,
+    this.revealFocusedAction = false,
   });
 
   @override
@@ -182,6 +187,12 @@ class FocusableActionBarState extends State<FocusableActionBar> {
       final hasFocus = binding.node.hasFocus;
       if (_focusStates[index] != hasFocus) {
         setState(() => _focusStates[index] = hasFocus);
+      }
+      if (hasFocus && widget.revealFocusedAction) {
+        binding.node.context?.findRenderObject()?.showOnScreen(
+          duration: FocusTheme.getAnimationDuration(context),
+          curve: Curves.easeOutCubic,
+        );
       }
     }
     _notifyRowFocusIfChanged();

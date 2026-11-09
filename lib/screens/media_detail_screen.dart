@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
@@ -55,6 +56,8 @@ import '../services/download_storage_service.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
 import '../services/settings_service.dart';
+import '../services/silo_client.dart';
+import '../silo/silo_catalog.dart' show SiloPersonalList;
 import '../services/watch_actions.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/layout_constants.dart';
@@ -132,7 +135,9 @@ bool _isCompactHero(double contentWidth) => contentWidth < ScreenBreakpoints.mob
 
 const double _tvDetailTallPosterScale = 0.72;
 const double _tvDetailEpisodeThumbnailScale = 0.72;
-const double _tvDetailActionRailGap = 4;
+// Season chip row above the TV episode rail, before text scaling.
+const double _tvDetailSeasonChipRowHeight = 52;
+const double _tvDetailSeasonChipRailGap = 4;
 const String _tvDetailSeasonsErrorHubId = 'detail_seasons_error';
 const String _tvDetailSeasonHubIdPrefix = 'detail_season_';
 const String _tvDetailExtrasHubId = 'detail_extras';
@@ -288,6 +293,10 @@ class MediaDetailScreen extends StatefulWidget {
   final String? initialSeasonId;
   final String? initialEpisodeId;
 
+  /// Opens a show on its highest-numbered season, e.g. for an episode that
+  /// has not aired yet.
+  final bool openLatestSeason;
+
   const MediaDetailScreen({
     super.key,
     required this.metadata,
@@ -295,6 +304,7 @@ class MediaDetailScreen extends StatefulWidget {
     this.initialSeasonIndex,
     this.initialSeasonId,
     this.initialEpisodeId,
+    this.openLatestSeason = false,
   });
 
   @override
@@ -307,6 +317,7 @@ PageRoute<bool> mediaDetailRoute({
   int? initialSeasonIndex,
   String? initialSeasonId,
   String? initialEpisodeId,
+  bool openLatestSeason = false,
 }) {
   final page = MediaDetailScreen(
     metadata: metadata,
@@ -314,6 +325,7 @@ PageRoute<bool> mediaDetailRoute({
     initialSeasonIndex: initialSeasonIndex,
     initialSeasonId: initialSeasonId,
     initialEpisodeId: initialEpisodeId,
+    openLatestSeason: openLatestSeason,
   );
   if (!PlatformDetector.isTV()) return MaterialPageRoute<bool>(builder: (_) => page);
 
@@ -381,12 +393,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _tvDetailRevealScheduled = false;
   bool _hasLoadedSeasons = false;
   bool _hasLoadedEpisodes = false;
-  double? _tvDetailPendingRailHeight;
-  double? _tvDetailStableRailHeight;
   // ValueNotifier (not setState) so d-pad scrubbing across episodes rebuilds
   // only the foreground info panel, never the whole screen with its rail
   // (same isolation pattern as DiscoverScreen._spotlightItem).
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
+  // Whether the TV rail is on the episode row; the season chips only label that row.
+  final ValueNotifier<bool> _tvDetailSeasonHubActive = ValueNotifier(true);
+  // Whether the TV detail shows the rails page instead of the hero above it.
+  final ValueNotifier<bool> _tvDetailShowsRails = ValueNotifier(false);
+  // How far the TV rails have scrolled down their hubs; the logo above them
+  // travels up with it.
+  final ValueNotifier<double> _tvDetailRailsScroll = ValueNotifier(0);
   bool _tvDetailActionRowHasFocus = false;
 
   // Full item snapshots are reusable across preference changes; resolved
@@ -419,6 +436,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   List<CatalogSource> _watchlistListenedSources = const [];
   final GlobalKey _watchlistButtonKey = GlobalKey();
   bool _watchlistMutationInFlight = false;
+
+  // Silo favorites and watchlist for a movie or show. The detail response
+  // carries neither, so both are read once the item loads; null until known
+  // (and if the read fails), which leaves the two buttons out of the row.
+  ({bool favorite, bool watchlisted})? _siloMembership;
+  bool _siloMembershipMutationInFlight = false;
 
   // Inline season tabs
   int _selectedSeasonIndex = 0;
@@ -462,6 +485,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // Sentinel at the end of the inline episode list; its viewport position drives
   // lazy paging (the list is shrink-wrapped, so it can't self-detect near-end).
   final GlobalKey _episodeTailKey = GlobalKey();
+  // Horizontal episode rail on show pages. One controller for every season:
+  // a season switch re-anchors it rather than swapping controllers.
+  final ScrollController _episodeRailScrollController = ScrollController();
+  // The season (or flattened list) and episode the rail was last anchored to.
+  String? _episodeRailAnchoredFor;
+  String? _episodeRailAnchoredEpisodeId;
+  static const double _episodeRailGap = 12;
 
   late final FocusNode _playButtonFocusNode;
   late final FocusNode _ratingChipFocusNode;
@@ -861,6 +891,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _episodeRailScrollController.addListener(_onEpisodeRailScroll);
     _lastEpisodeFocusNode.addListener(_onLastEpisodeFocusChanged);
     _extrasFocusNode = FocusNode(debugLabel: 'extras_row');
     _extrasFocusNode.addListener(_handleExtrasFocusChange);
@@ -953,6 +984,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   KeyEventResult _handleMediaDetailBackKey(FocusNode _, KeyEvent event) {
     if (_consumeBackAfterChildPop(event)) return KeyEventResult.handled;
+    if (_tvDetailShowsRails.value) return handleBackKeyAction(event, _focusTvDetailActionRow);
     return handleBackKeyNavigation(context, event, result: _watchStateChanged);
   }
 
@@ -966,6 +998,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   void _handleMediaDetailSystemBack() {
     if (BackKeyCoordinator.consumeIfHandled()) return;
+    // Android can deliver the remote's Back as a platform back before the
+    // focused rail sees its KeyUp. On the TV rails page that Back belongs to
+    // the hero; swallow the KeyUp still to come so it cannot pop the screen.
+    if (_tvDetailShowsRails.value) {
+      if (BackKeyPressTracker.isBackKeyDown) BackKeyUpSuppressor.suppressBackUntilKeyUp();
+      _focusTvDetailActionRow();
+      return;
+    }
     _popMediaDetailIfBackNotSuppressed();
   }
 
@@ -994,18 +1034,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return _hasLoadedExtras && _hasLoadedRelatedHubs;
   }
 
-  void _scheduleTvDetailReveal(double railHeight, {required bool focusPrimaryAction}) {
-    final pendingRailHeight = _tvDetailPendingRailHeight;
-    if (pendingRailHeight == null || railHeight > pendingRailHeight) {
-      _tvDetailPendingRailHeight = railHeight;
-    }
+  void _scheduleTvDetailReveal({required bool focusPrimaryAction}) {
     if (_tvDetailRevealed || _tvDetailRevealScheduled) return;
 
     _tvDetailRevealScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_canUseDetail) return;
       setState(() {
-        _tvDetailStableRailHeight = _tvDetailPendingRailHeight ?? railHeight;
         _tvDetailRevealScheduled = false;
         _tvDetailRevealed = true;
       });
@@ -1053,6 +1088,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _scrollController.dispose();
     _scrollOffset.dispose();
     _tvDetailFocusedEpisode.dispose();
+    _tvDetailSeasonHubActive.dispose();
+    _tvDetailShowsRails.dispose();
+    _tvDetailRailsScroll.dispose();
     _focusedEpisodeRatingsRevision.dispose();
     _playbackProbeTimer?.cancel();
     _playbackStatusRevision.dispose();
@@ -1071,6 +1109,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       node.dispose();
     }
     _seasonTabsScrollController.dispose();
+    _episodeRailScrollController.dispose();
     _firstEpisodeFocusNode.dispose();
     _lastEpisodeFocusNode.removeListener(_onLastEpisodeFocusChanged);
     _lastEpisodeFocusNode.dispose();
@@ -1698,6 +1737,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
       if (!_canUseDetail) return;
       final base = publish(metadata ?? _metadata, onDeckEpisode: result.onDeckEpisode, onDeckSettled: true);
+      if (client is SiloClient && (base.isMovie || base.isShow)) unawaited(_loadSiloMembership(client, base));
 
       if (base.isShow) {
         unawaited(_loadSeasons());
@@ -1728,6 +1768,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _showEpisodesDirectly = true;
         unawaited(_fetchAllEpisodes());
       }
+    }
+  }
+
+  Future<void> _loadSiloMembership(SiloClient client, MediaItem item) async {
+    try {
+      final membership = await client.fetchMembership(item);
+      if (!_canUseDetail || item.id != _metadata.id) return;
+      setState(() {
+        _siloMembership = membership;
+        _fullMetadata = _metadata.copyWith(isFavorite: membership.favorite);
+      });
+    } on Exception catch (error) {
+      appLogger.w('Silo: list membership read failed (${error.runtimeType})');
     }
   }
 
@@ -1901,6 +1954,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Find the season index matching the initial selection or on-deck episode,
   /// then fall back to the same season the Play button would use.
   int _findOnDeckSeasonIndex(List<MediaItem> seasons) {
+    if (widget.openLatestSeason) {
+      final latest = latestSeasonIndex(seasons);
+      if (latest != null) return latest;
+    }
     return preferredSeasonIndex(
       seasons,
       initialSeasonId: widget.initialSeasonId,
@@ -2311,6 +2368,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     if (widget.initialEpisodeId != null) {
       if (_episodesContainInitialTarget) {
+        _revealEpisodeInRail(widget.initialEpisodeId!);
         _applyInitialMobileFocus(_initialTargetEpisodeFocusNode(), _seasonsSectionKey);
         return;
       }
@@ -2335,10 +2393,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   void _applyInitialMobileFocus(FocusNode node, GlobalKey sectionKey) {
     _initialDetailFocusApplied = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_canUseDetail) return;
+    void apply() {
       node.requestFocus();
       _scrollSectionIntoView(sectionKey);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_canUseDetail) return;
+      // The rail builds lazily: a target card off-screen has no element until
+      // the rail's reveal jump lays it out on the next frame.
+      if (node.context == null && _usesEpisodeRail) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_canUseDetail) apply();
+        });
+        return;
+      }
+      apply();
     });
   }
 
@@ -2401,7 +2471,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final metadata = _metadata;
 
     if (PlatformDetector.isTV()) {
-      _tvDetailRailKey.currentState?.requestFocus();
+      if (_showsTvDetailSeasonChips) {
+        _focusSelectedSeasonTab();
+      } else {
+        _tvDetailRailKey.currentState?.requestFocus();
+      }
       return;
     }
 
@@ -2426,7 +2500,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     if (_episodes.isNotEmpty) {
-      _firstEpisodeFocusNode.requestFocus();
+      _focusFirstEpisode();
       _scrollSectionIntoView(_seasonsSectionKey);
       return;
     }
@@ -2465,6 +2539,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   void _focusSelectedSeasonTab() {
     if (_seasonTabFocusNodes.length > _selectedSeasonIndex) {
+      if (PlatformDetector.isTV()) _clearTvDetailFocusedEpisode();
       _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
     }
   }
@@ -2601,10 +2676,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         _tvDetailRailKey.currentState?.requestFocus();
                         return;
                       }
-                      _firstEpisodeFocusNode.requestFocus();
+                      _focusFirstEpisode();
                     },
+                    onNavigateUp: PlatformDetector.isTV() ? _focusTvDetailActionRow : null,
                     onLongPress: () => _showSeasonTabContextMenu(index),
                     onBack: () {
+                      // On TV the chips sit on the rails page; Back returns
+                      // to the hero above it first, as the rail does.
+                      if (PlatformDetector.isTV()) {
+                        _focusTvDetailActionRow();
+                        return;
+                      }
                       Navigator.of(context).maybePop();
                     },
                   ),
@@ -2711,7 +2793,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _focusSectionDirectlyAboveCast() {
-    if (_episodes.isNotEmpty) {
+    if (_episodes.isNotEmpty && _usesEpisodeRail) {
+      _focusFirstEpisode();
+    } else if (_episodes.isNotEmpty) {
       final useLastEpisode = _episodes.length > 1;
       if (useLastEpisode) _suppressNextLastEpisodeFocusLoad = true;
       final target = useLastEpisode ? _lastEpisodeFocusNode : _firstEpisodeFocusNode;
@@ -2863,6 +2947,177 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
       },
     );
+  }
+
+  /// Show pages list a season's episodes in a horizontal rail under the
+  /// season tabs; season pages keep the vertical list. TV has its own layout.
+  bool get _usesEpisodeRail => _metadata.isShow && !PlatformDetector.isTV();
+
+  double _episodeRailCardWidth() => PlatformDetector.isMobile(context) ? 240 : 300;
+
+  /// Which season (or the flattened list) the rail is showing.
+  String get _episodeRailIdentity {
+    if (_isFlattenEpisodeList) return 'all';
+    if (_selectedSeasonIndex < 0 || _selectedSeasonIndex >= _seasons.length) return '';
+    return _seasons[_selectedSeasonIndex].id;
+  }
+
+  /// Horizontal rail of the selected season's episodes: swipe or arrow left and
+  /// right through them. Pages load as the end of the rail nears the viewport.
+  Widget _buildEpisodesRail() {
+    final client = _getMediaClientForMetadata(context);
+    final hasPinnedLastEpisode = _hasPinnedLastEpisodeInList;
+    final cardWidth = _episodeRailCardWidth();
+    final showsSummary = !PlatformDetector.isMobile(context);
+    final hasTail = _episodeListHasMore || _episodeListLoadingMore || _episodeListPageError;
+
+    // A newly shown season starts at its next-up episode (or the episode this
+    // screen was opened for) instead of wherever the previous season was left.
+    // The next-up episode can resolve after the episodes; follow it when it does.
+    final identity = _episodeRailIdentity;
+    final anchorId = widget.initialEpisodeId ?? _onDeckEpisode?.id;
+    if (_episodeRailAnchoredFor != identity || _episodeRailAnchoredEpisodeId != anchorId) {
+      final seasonChanged = _episodeRailAnchoredFor != identity;
+      final anchorIndex = anchorId == null ? -1 : _episodes.indexWhere((episode) => episode.id == anchorId);
+      if (seasonChanged || anchorIndex >= 0) _jumpEpisodeRailToIndex(math.max(anchorIndex, 0));
+      _episodeRailAnchoredFor = identity;
+      _episodeRailAnchoredEpisodeId = anchorId;
+    }
+
+    return SizedBox(
+      // Vertical padding leaves room for the focus border.
+      height: EpisodeCard.railHeightFor(cardWidth, MediaQuery.textScalerOf(context), showsSummary: showsSummary) + 10,
+      child: HorizontalScrollWithArrows(
+        controller: _episodeRailScrollController,
+        builder: (scrollController) => ListView.builder(
+          addAutomaticKeepAlives: false,
+          addSemanticIndexes: false,
+          controller: scrollController,
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          // Fixed extent: exact scroll range, so anchoring can jump straight to an index.
+          itemExtent: cardWidth + _episodeRailGap,
+          itemCount: _episodes.length + (hasTail ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == _episodes.length) return _buildEpisodeRailTail(cardWidth);
+            final episode = _episodes[index];
+            String? localPosterPath;
+            if (widget.isOffline && episode.serverId != null) {
+              final artworkRef = context.read<DownloadProvider>().getArtworkPaths(episode.globalKey);
+              localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, ServerId(episode.serverId!));
+            }
+            return Padding(
+              padding: const EdgeInsets.only(right: _episodeRailGap),
+              child: EpisodeCard(
+                key: ValueKey(episode.globalKey),
+                episode: episode,
+                client: client,
+                isOffline: widget.isOffline,
+                layout: EpisodeCardLayout.rail,
+                railWidth: cardWidth,
+                railShowsSummary: showsSummary,
+                focusNode: _episodeListFocusNode(
+                  episode: episode,
+                  index: index,
+                  hasPinnedLastEpisode: hasPinnedLastEpisode,
+                ),
+                onNavigateUp: _focusAboveEpisodes,
+                localPosterPath: localPosterPath,
+                onTap: () async {
+                  await navigateToVideoPlayerWithRefresh(
+                    context,
+                    metadata: episode,
+                    isOffline: widget.isOffline,
+                    onRefresh: () => unawaited(_refreshItemInPlace(episode)),
+                    isLaunchCurrent: () => _canUseDetail,
+                  );
+                },
+                onRefresh: widget.isOffline ? null : _refreshItemInPlace,
+                onListRefresh: widget.isOffline ? null : _refreshCurrentEpisodes,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Rail counterpart of [_buildEpisodeListTail]: a spinner while the next page
+  /// loads, or a retry button when it failed.
+  Widget _buildEpisodeRailTail(double cardWidth) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: SizedBox(
+        height: cardWidth * 9 / 16,
+        child: Center(
+          child: _episodeListPageError
+              ? IconButton(
+                  icon: const AppIcon(Symbols.refresh_rounded),
+                  tooltip: t.common.retry,
+                  onPressed: () => unawaited(_loadMoreEpisodeList()),
+                )
+              : const CircularProgressIndicator(),
+        ),
+      ),
+    );
+  }
+
+  /// UP from an episode: the season tabs, then the overview, then the play button.
+  void _focusAboveEpisodes() {
+    if (!_showEpisodesDirectly && _seasons.isNotEmpty) {
+      _focusSelectedSeasonTab();
+    } else if (!PlatformDetector.isTV() && _metadata.summary?.isNotEmpty == true) {
+      _overviewFocusNode.requestFocus();
+      _scrollSectionIntoView(_overviewSectionKey);
+    } else {
+      _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+      _playButtonFocusNode.requestFocus();
+    }
+  }
+
+  /// Focus the first episode. The rail builds lazily, so when it is scrolled
+  /// past the first card, return it to the start before focusing.
+  void _focusFirstEpisode() {
+    final rail = _episodeRailScrollController;
+    if (_usesEpisodeRail && rail.hasClients && rail.offset > 0) {
+      rail.jumpTo(0);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_canUseDetail) _firstEpisodeFocusNode.requestFocus();
+      });
+      return;
+    }
+    _firstEpisodeFocusNode.requestFocus();
+  }
+
+  /// Scroll the rail so [episodeId]'s card is laid out and in view.
+  void _revealEpisodeInRail(String episodeId) {
+    if (!_usesEpisodeRail) return;
+    final index = _episodes.indexWhere((episode) => episode.id == episodeId);
+    if (index >= 0) _jumpEpisodeRailToIndex(index);
+  }
+
+  /// After this frame, put the card at [index] at the rail's leading edge
+  /// (clamped to the scroll range). Runs post-frame: the rail may not be
+  /// attached, or may not yet reflect a just-switched season, during build.
+  void _jumpEpisodeRailToIndex(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rail = _episodeRailScrollController;
+      if (!_canUseDetail || !rail.hasClients) return;
+      final position = rail.position;
+      final target = index * (_episodeRailCardWidth() + _episodeRailGap);
+      rail.jumpTo(target.clamp(position.minScrollExtent, position.maxScrollExtent));
+    });
+  }
+
+  /// Rail paging: load the next page once less than a viewport of episodes
+  /// remains to the right.
+  void _onEpisodeRailScroll() {
+    final rail = _episodeRailScrollController;
+    if (!_usesEpisodeRail || !rail.hasClients) return;
+    if (!_episodeListHasMore || _episodeListLoadingMore || _episodeListPageError) return;
+    final position = rail.position;
+    if (position.extentAfter < position.viewportDimension) unawaited(_loadMoreEpisodeList());
   }
 
   bool _shouldUseLastEpisodeFocusNode({
@@ -3485,7 +3740,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                       () => unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex)),
                                     )
                                   else if (_episodes.isNotEmpty)
-                                    _buildEpisodesList()
+                                    _buildEpisodesRail()
                                   else
                                     _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
                                 ],
@@ -3499,7 +3754,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 else if (_allEpisodesPageError && _episodes.isEmpty)
                                   _sectionError(t.messages.episodesLoadFailed, () => unawaited(_fetchAllEpisodes()))
                                 else if (_episodes.isNotEmpty)
-                                  _buildEpisodesList()
+                                  _usesEpisodeRail ? _buildEpisodesRail() : _buildEpisodesList()
                                 else
                                   _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
                                 SizedBox(height: isTv ? 24 : 12),
@@ -3641,6 +3896,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final detailScale = TvLayoutConstants.scaleForSize(size);
     final spotlightTop = (size.height * 0.08).clamp(56.0 * detailScale, 110.0 * detailScale).toDouble();
+    final heroBottom = (size.height * TvDetailTokens.heroBottomFraction)
+        .clamp(TvDetailTokens.minHeroBottom * detailScale, TvDetailTokens.maxHeroBottom * detailScale)
+        .toDouble();
     // The rails keep their own inset; shifting them puts their first card on
     // the hero's leading edge.
     final railLeft = math.max(
@@ -3648,24 +3906,41 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       TvDetailTokens.horizontalInset -
           TvBrowseRailLayout.horizontalInsetForScale(TvBrowseRailLayout.scaleForSize(size)),
     );
-    final rawRailHeight = _estimateTvDetailRailHeight(Size(size.width - railLeft, size.height), detailHubs);
     if (!_tvDetailRevealed && _isTvDetailReadyToReveal(metadata)) {
-      _scheduleTvDetailReveal(rawRailHeight, focusPrimaryAction: metadata.isMovie);
+      // Land on the hero unless the detail was opened for one episode.
+      _scheduleTvDetailReveal(focusPrimaryAction: widget.initialEpisodeId == null);
     }
-    final stableRailHeight = _tvDetailStableRailHeight;
-    final railHeight = stableRailHeight == null || rawRailHeight > stableRailHeight ? rawRailHeight : stableRailHeight;
-    final railTopPadding = 12 * detailScale;
-    final foregroundBottom = (railHeight - railTopPadding) + (_tvDetailActionRailGap * detailScale);
+    final railsLogoTop = TvDetailTokens.railsPageTop * detailScale;
+    final railsLogoHeight = TvDetailTokens.railsPageLogoHeight * detailScale;
+    final railsTop = railsLogoTop + railsLogoHeight + TvDetailTokens.railsPageLogoGap * detailScale;
+    final showsSeasonChips = _showsTvDetailSeasonChips;
+    final chipRowHeight = MediaQuery.textScalerOf(context).scale(_tvDetailSeasonChipRowHeight);
+    final railScale = TvBrowseRailLayout.scaleForSize(size);
+    // The rail spans the page from the logo's top; the logo and chips sit in
+    // its leading inset, so hubs past the first scroll up into their space.
+    final railTop = railsLogoTop;
+    final railLeadingInset =
+        railsTop - railTop + (showsSeasonChips ? chipRowHeight + _tvDetailSeasonChipRailGap * detailScale : 0);
+    // The rail's own vertical padding sits around this list viewport.
+    final railViewportHeight = math.max(
+      0.0,
+      size.height -
+          railTop -
+          TvBrowseRailLayout.railTopPaddingForScale(railScale) -
+          TvBrowseRailLayout.railBottomPaddingForScale(railScale),
+    );
     const foregroundLeft = TvDetailTokens.horizontalInset;
 
-    final revealContent = Stack(
+    // The hero fills the screen; the rails page sits under it and slides up
+    // when focus moves down into it.
+    final heroPage = Stack(
       fit: StackFit.expand,
       children: [
         Positioned(
           left: foregroundLeft,
-          width: math.min(TvDetailTokens.contentMaxWidth, size.width - foregroundLeft * 2),
+          right: foregroundLeft,
           top: spotlightTop,
-          bottom: foregroundBottom,
+          bottom: heroBottom,
           child: ListenableBuilder(
             listenable: _tvDetailForegroundListenable,
             builder: (context, _) => _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers),
@@ -3683,41 +3958,168 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             context: context,
           )!,
         ),
+      ],
+    );
+
+    final railsLogoWidth = math.min(
+      TvDetailTokens.railsPageLogoMaxWidth * detailScale,
+      size.width - 2 * foregroundLeft,
+    );
+    final railsPage = Stack(
+      fit: StackFit.expand,
+      children: [
+        // Under the logo and chips: its backdrop and unfocused dim span its
+        // leading inset, which they sit in.
         if (detailHubs.isNotEmpty)
           Positioned(
             left: railLeft,
             right: 0,
-            bottom: 0,
-            child: TvBrowseRail(
-              key: _tvDetailRailKey,
-              hubs: detailHubs,
-              focusMemory: _hubFocusMemory,
-              onFocusedHubItemChanged: _handleTvDetailFocusedRailItemChanged,
-              onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
-              onActiveHubChanged: _handleTvDetailHubChanged,
-              onActivateItem: _handleTvDetailRailItemActivated,
-              trailingForHub: _tvDetailTrailingState,
-              leadingItemForHub: _tvDetailLeadingItemForHub,
-              onRetryHub: _retryTvDetailHub,
-              onNavigateUp: _focusTvDetailActionRow,
-              onBack: _popMediaDetailIfBackNotSuppressed,
-              tallPosterScale: _tvDetailTallPosterScale,
-              widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
-              initialHubId: _tvDetailInitialHubId(metadata),
-              initialItemId: _tvDetailInitialItemId(metadata),
-              episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
-              showTitleImpliedForHub: _isTvDetailEpisodeHub,
+            top: railTop,
+            child: NotificationListener<ScrollUpdateNotification>(
+              onNotification: _onTvDetailRailsScroll,
+              child: TvBrowseRail(
+                key: _tvDetailRailKey,
+                hubs: detailHubs,
+                focusMemory: _hubFocusMemory,
+                viewportHeight: railViewportHeight,
+                leadingInset: railLeadingInset,
+                // Reach the screen edge: the rail's backdrop otherwise starts at
+                // its own leading edge, a seam across the washed artwork.
+                backgroundBleedLeft: railLeft,
+                onFocusedHubItemChanged: _handleTvDetailFocusedRailItemChanged,
+                onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
+                onActiveHubChanged: _handleTvDetailHubChanged,
+                onActivateItem: _handleTvDetailRailItemActivated,
+                trailingForHub: _tvDetailTrailingState,
+                leadingItemForHub: _tvDetailLeadingItemForHub,
+                onRetryHub: _retryTvDetailHub,
+                onHorizontalEdge: _handleTvDetailRailEdge,
+                onNavigateUp: _showsTvDetailSeasonChips ? _focusSelectedSeasonTab : _focusTvDetailActionRow,
+                onBack: _focusTvDetailActionRow,
+                tallPosterScale: _tvDetailTallPosterScale,
+                widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
+                initialHubId: _tvDetailInitialHubId(metadata, detailHubs),
+                initialItemId: _tvDetailInitialItemId(metadata),
+                episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
+                showTitleImpliedForHub: _isTvDetailEpisodeHub,
+              ),
+            ),
+          ),
+        // The show's logo, centred over the blurred artwork like Apple TV's
+        // detail page once it scrolls past the hero. It scrolls away with the
+        // rails as they move down their hubs.
+        Positioned(
+          left: foregroundLeft,
+          right: foregroundLeft,
+          top: railsLogoTop,
+          height: railsLogoHeight,
+          child: _followTvDetailRailsScroll(
+            ExcludeSemantics(
+              child: Center(
+                child: _buildDetailLogoOrTitle(
+                  context,
+                  metadata,
+                  width: railsLogoWidth,
+                  height: railsLogoHeight,
+                  availableWidth: size.width - 2 * foregroundLeft,
+                  alignment: Alignment.center,
+                  titleBuilder: (context, title) => FittingTitleText(
+                    title.toUpperCase(),
+                    alignment: Alignment.center,
+                    style: TvDetailTokens.ink(context, TvDetailTokens.title).copyWith(
+                      shadows: [
+                        Shadow(
+                          color: _detailTitleShadowColor(context),
+                          offset: TvDetailTokens.titleShadowOffset,
+                          blurRadius: TvDetailTokens.titleShadowBlur,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (showsSeasonChips)
+          Positioned(
+            left: foregroundLeft,
+            right: foregroundLeft,
+            top: railsTop,
+            height: chipRowHeight,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _tvDetailSeasonHubActive,
+              // Off the episode row the chips would label the wrong row; fade
+              // them but keep their space so the rails don't jump.
+              builder: (context, active, child) =>
+                  AnimatedOpacity(opacity: active ? 1 : 0, duration: const Duration(milliseconds: 150), child: child),
+              child: _followTvDetailRailsScroll(Align(alignment: Alignment.centerLeft, child: _buildSeasonTabs())),
             ),
           ),
       ],
     );
 
+    final heroLayer = Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onFocusChange: (hasFocus) {
+        if (hasFocus) _tvDetailShowsRails.value = false;
+      },
+      child: heroPage,
+    );
+    final railsLayer = Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onFocusChange: (hasFocus) {
+        if (hasFocus) _tvDetailShowsRails.value = true;
+      },
+      child: railsPage,
+    );
+    // One continuous scroll between the hero and the rails, like Apple TV's
+    // detail page: both pages travel together while the hero and its scrims
+    // fade out ahead of the rails, leaving the artwork blurred under them. It runs on every tier;
+    // the layers sit flat at either end, so it costs nothing at rest.
+    final revealContent = ValueListenableBuilder<bool>(
+      valueListenable: _tvDetailShowsRails,
+      builder: (context, showsRails, _) => TweenAnimationBuilder<double>(
+        tween: Tween(end: showsRails ? 1 : 0),
+        duration: TvDetailTokens.pageSlide,
+        curve: Curves.easeInOutCubic,
+        builder: (context, progress, _) {
+          final travel = size.height * progress;
+          final heroOpacity = 1 - TvDetailTokens.heroFade.transform(progress);
+          final railsOpacity = TvDetailTokens.railsFade.transform(progress);
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Opacity(opacity: heroOpacity, child: const _TvDetailHeroScrim()),
+              // Both pages stay mounted: focus moves between them by node,
+              // and a fully faded layer paints nothing.
+              Transform.translate(
+                offset: Offset(0, -travel),
+                child: Opacity(opacity: heroOpacity, child: heroLayer),
+              ),
+              Transform.translate(
+                offset: Offset(0, size.height - travel),
+                child: Opacity(opacity: railsOpacity, child: railsLayer),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
     final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
-    final content = OverlaySheetHost(
-      // blockSystemBack keeps the route from double-popping on Android keyboard/
-      // TV (the key handler owns dpad back); the host also closes an open sheet.
-      canPop: !blockSystemBack,
-      onSystemBack: _handleMediaDetailSystemBack,
+    final content = ValueListenableBuilder<bool>(
+      valueListenable: _tvDetailShowsRails,
+      builder: (context, showsRails, child) => OverlaySheetHost(
+        // blockSystemBack keeps the route from double-popping on Android
+        // keyboard/TV (the key handler owns dpad back); the host also closes an
+        // open sheet. On the rails page a platform back returns to the hero.
+        canPop: !blockSystemBack && !showsRails,
+        onSystemBack: _handleMediaDetailSystemBack,
+        child: child!,
+      ),
       child: Focus(
         onKeyEvent: handleBack,
         child: Scaffold(
@@ -3730,6 +4132,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     ? (path) => _offlineArtworkCandidatePath(context, path)
                     : null,
                 allowNetwork: !widget.isOffline,
+                blurred: _tvDetailShowsRails,
               ),
               _buildTvDetailRevealGate(revealContent, handleBack),
             ],
@@ -3740,6 +4143,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     return content;
   }
+
+  /// Tracks the rails' vertical list; their horizontal rows scroll too.
+  bool _onTvDetailRailsScroll(ScrollUpdateNotification notification) {
+    if (notification.metrics.axis == Axis.vertical) _tvDetailRailsScroll.value = notification.metrics.pixels;
+    return false;
+  }
+
+  /// Moves [child] up as the TV rails scroll down their hubs.
+  Widget _followTvDetailRailsScroll(Widget child) => ValueListenableBuilder<double>(
+    valueListenable: _tvDetailRailsScroll,
+    builder: (context, offset, child) => Transform.translate(offset: Offset(0, -offset), child: child),
+    child: child,
+  );
 
   Widget _buildTvDetailForeground(BuildContext context, MediaItem metadata, {required bool hideSpoilers}) {
     final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
@@ -3758,8 +4174,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final summaryLineHeight = TvDetailTokens.synopsis.fontSize! * TvDetailTokens.synopsis.height!;
         final hasDescription = description != null && description.isNotEmpty;
         final hasEpisodeTitle = episodeTitle != null && episodeTitle.isNotEmpty;
-        // Genres belong to the show, not the focused episode, and do not change
-        // while browsing; they live in the details sheet (#2217).
+        // The metadata line shows the genres only while no episode is
+        // focused; the details sheet always lists them (#2217).
         final genres = metadata.genres ?? const <String>[];
         final fixedHeight =
             gap +
@@ -3784,7 +4200,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         }
 
         final showLogo = logoHeight > 0;
-        final logoWidth = math.min(TvDetailTokens.logoMaxWidth, constraints.maxWidth);
+        // The text keeps to a column; the action row below may run wider.
+        final textWidth = math.min(TvDetailTokens.contentMaxWidth, constraints.maxWidth);
+        final logoWidth = math.min(TvDetailTokens.logoMaxWidth, textWidth);
 
         void openDetails() => _openTvDetailsSheet(context, metadata, hideSpoilers: hideSpoilers);
 
@@ -3797,126 +4215,130 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 mainAxisSize: .min,
                 crossAxisAlignment: .start,
                 children: [
-                  Semantics(
-                    key: const ValueKey('tv_detail_information_semantics'),
-                    identifier: 'tv_detail_information',
-                    container: true,
-                    button: true,
-                    label: _tvDetailInformationSemanticLabel(metadata, description: description, genres: genres),
-                    hint: t.mediaMenu.viewDetails,
-                    onTap: openDetails,
-                    child: ExcludeSemantics(
-                      // One announcement, one action: activating it opens the
-                      // full-information sheet. The action buttons below
-                      // remain separate accessible controls.
-                      child: Column(
-                        mainAxisSize: .min,
-                        crossAxisAlignment: .start,
-                        children: [
-                          if (showLogo)
-                            _buildDetailLogoOrTitle(
-                              context,
-                              metadata,
-                              width: logoWidth,
-                              height: logoHeight,
-                              availableWidth: constraints.maxWidth,
-                              alignment: Alignment.bottomLeft,
-                              titleBuilder: (context, title) => FittingTitleText(
-                                title.toUpperCase(),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: textWidth),
+                    child: Semantics(
+                      key: const ValueKey('tv_detail_information_semantics'),
+                      identifier: 'tv_detail_information',
+                      container: true,
+                      button: true,
+                      label: _tvDetailInformationSemanticLabel(metadata, description: description, genres: genres),
+                      hint: t.mediaMenu.viewDetails,
+                      onTap: openDetails,
+                      child: ExcludeSemantics(
+                        // One announcement, one action: activating it opens the
+                        // full-information sheet. The action buttons below
+                        // remain separate accessible controls.
+                        child: Column(
+                          mainAxisSize: .min,
+                          crossAxisAlignment: .start,
+                          children: [
+                            if (showLogo)
+                              _buildDetailLogoOrTitle(
+                                context,
+                                metadata,
+                                width: logoWidth,
+                                height: logoHeight,
+                                availableWidth: textWidth,
                                 alignment: Alignment.bottomLeft,
-                                style: TvDetailTokens.ink(context, TvDetailTokens.title).copyWith(
-                                  shadows: [
-                                    Shadow(
-                                      color: _detailTitleShadowColor(context),
-                                      offset: TvDetailTokens.titleShadowOffset,
-                                      blurRadius: TvDetailTokens.titleShadowBlur,
+                                titleBuilder: (context, title) => FittingTitleText(
+                                  title.toUpperCase(),
+                                  alignment: Alignment.bottomLeft,
+                                  style: TvDetailTokens.ink(context, TvDetailTokens.title).copyWith(
+                                    shadows: [
+                                      Shadow(
+                                        color: _detailTitleShadowColor(context),
+                                        offset: TvDetailTokens.titleShadowOffset,
+                                        blurRadius: TvDetailTokens.titleShadowBlur,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: gap),
+                            // The metadata line sheds badges and the summary
+                            // truncates by design; this block is the focusable
+                            // path to the sheet that shows all of it (#2042).
+                            // Background-only focus chrome: zero layout delta,
+                            // so the hero height budget above stays exact.
+                            FocusableWrapper(
+                              focusNode: _tvDetailInfoFocusNode,
+                              onSelect: openDetails,
+                              onNavigateUp: _backButtonFocusNode.requestFocus,
+                              onNavigateDown: _focusTvDetailActionRow,
+                              onBack: _popMediaDetailIfBackNotSuppressed,
+                              useBackgroundFocus: true,
+                              disableScale: true,
+                              autoScroll: false,
+                              borderRadius: 4,
+                              descendantsAreFocusable: false,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: openDetails,
+                                child: Column(
+                                  mainAxisSize: .min,
+                                  crossAxisAlignment: .start,
+                                  children: [
+                                    if (hasEpisodeTitle) ...[
+                                      SizedBox(
+                                        height: TvDetailTokens.episodeTitleHeight,
+                                        child: Align(
+                                          alignment: .centerLeft,
+                                          child: Text(
+                                            episodeTitle,
+                                            key: const ValueKey('tv_detail_episode_title'),
+                                            maxLines: 1,
+                                            overflow: .ellipsis,
+                                            style: TvDetailTokens.ink(
+                                              context,
+                                              TvDetailTokens.episodeTitle,
+                                              TvDetailTokens.episodeTitleAlpha,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: gap),
+                                    ],
+                                    SizedBox(
+                                      height: TvDetailTokens.metadataHeight,
+                                      child: Align(
+                                        alignment: .centerLeft,
+                                        child: _buildTvDetailMetadataLine(context, metadata),
+                                      ),
                                     ),
+                                    if (hasDescription && summaryMaxLines > 0) ...[
+                                      const SizedBox(height: gap),
+                                      // A cap, not a fixed height: a synopsis
+                                      // shorter than its line budget collapses
+                                      // instead of leaving blank lines above the
+                                      // readout.
+                                      ConstrainedBox(
+                                        constraints: BoxConstraints(maxHeight: summaryLineHeight * summaryMaxLines),
+                                        child: Text(
+                                          description,
+                                          maxLines: summaryMaxLines,
+                                          overflow: .ellipsis,
+                                          style: TvDetailTokens.ink(
+                                            context,
+                                            TvDetailTokens.synopsis,
+                                            TvDetailTokens.synopsisAlpha,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
                             ),
-                          const SizedBox(height: gap),
-                          // The metadata line sheds badges and the summary
-                          // truncates by design; this block is the focusable
-                          // path to the sheet that shows all of it (#2042).
-                          // Background-only focus chrome: zero layout delta,
-                          // so the hero height budget above stays exact.
-                          FocusableWrapper(
-                            focusNode: _tvDetailInfoFocusNode,
-                            onSelect: openDetails,
-                            onNavigateUp: _backButtonFocusNode.requestFocus,
-                            onNavigateDown: _focusTvDetailActionRow,
-                            onBack: _popMediaDetailIfBackNotSuppressed,
-                            useBackgroundFocus: true,
-                            disableScale: true,
-                            autoScroll: false,
-                            borderRadius: 4,
-                            descendantsAreFocusable: false,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: openDetails,
-                              child: Column(
-                                mainAxisSize: .min,
-                                crossAxisAlignment: .start,
-                                children: [
-                                  if (hasEpisodeTitle) ...[
-                                    SizedBox(
-                                      height: TvDetailTokens.episodeTitleHeight,
-                                      child: Align(
-                                        alignment: .centerLeft,
-                                        child: Text(
-                                          episodeTitle,
-                                          key: const ValueKey('tv_detail_episode_title'),
-                                          maxLines: 1,
-                                          overflow: .ellipsis,
-                                          style: TvDetailTokens.ink(
-                                            context,
-                                            TvDetailTokens.episodeTitle,
-                                            TvDetailTokens.episodeTitleAlpha,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: gap),
-                                  ],
-                                  SizedBox(
-                                    height: TvDetailTokens.metadataHeight,
-                                    child: Align(
-                                      alignment: .centerLeft,
-                                      child: _buildTvDetailMetadataLine(context, metadata),
-                                    ),
-                                  ),
-                                  if (hasDescription && summaryMaxLines > 0) ...[
-                                    const SizedBox(height: gap),
-                                    // A cap, not a fixed height: a synopsis
-                                    // shorter than its line budget collapses
-                                    // instead of leaving blank lines above the
-                                    // readout.
-                                    ConstrainedBox(
-                                      constraints: BoxConstraints(maxHeight: summaryLineHeight * summaryMaxLines),
-                                      child: Text(
-                                        description,
-                                        maxLines: summaryMaxLines,
-                                        overflow: .ellipsis,
-                                        style: TvDetailTokens.ink(
-                                          context,
-                                          TvDetailTokens.synopsis,
-                                          TvDetailTokens.synopsisAlpha,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   if (credit != null) ...[
                     const SizedBox(height: gap),
                     SizedBox(
+                      width: textWidth,
                       height: TvDetailTokens.creditHeight,
                       child: Text(
                         credit,
@@ -3928,10 +4350,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   ],
                   const SizedBox(height: gap),
                   SizedBox(
+                    width: textWidth,
                     height: TvDetailTokens.playbackSummaryHeight,
                     child: Align(
                       alignment: .centerLeft,
-                      child: _buildPlaybackTracksStatus(context, metadata, isTv: true, maxWidth: constraints.maxWidth),
+                      child: _buildPlaybackTracksStatus(context, metadata, isTv: true, maxWidth: textWidth),
                     ),
                   ),
                   const SizedBox(height: TvDetailTokens.actionGap),
@@ -3971,16 +4394,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// The ordered metadata fields the TV detail line renders and its announcement
-  /// reads: year first (the desktop hero's chip order) and every score in one
-  /// trailing slot. Drop priorities let the fitted line shed surplus rating
-  /// badges before the fields that identify the item (#1893). Stream quality
-  /// labels stay off the hero line: they describe the file, not the title,
-  /// and remain on the rail cards and in the details sheet (#2217).
+  /// reads: every score in one leading slot, then year, runtime, certification
+  /// and the show's genres. Drop priorities let the fitted line shed genres
+  /// from the end, then surplus rating badges, before the fields that identify
+  /// the item (#1893). Stream quality labels stay off the hero line: they
+  /// describe the file, not the title, and remain on the rail cards and in the
+  /// details sheet (#2217).
   List<MetadataLinePart> _tvDetailMetadataParts(MediaItem metadata) {
     final focusedEpisode = _tvDetailFocusedEpisode.value;
     final lineMetadata = focusedEpisode ?? metadata;
     final parts = <MetadataLinePart>[];
 
+    final ratings = focusedEpisode == null
+        ? mediaRatingsFor(metadata)
+        : mediaRatingsFor(_withProbedRatings(focusedEpisode), fallbackItem: metadata);
+    if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
     final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
     if (lineMetadata.isEpisode && episodeLabel != null) parts.add(MetadataLineText(episodeLabel, dropPriority: 0));
     if (lineMetadata.isEpisode && lineMetadata.originallyAvailableAt != null) {
@@ -3988,16 +4416,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     } else if (lineMetadata.year != null) {
       parts.add(MetadataLineText(lineMetadata.year.toString(), dropPriority: 0));
     }
-    if (lineMetadata.contentRating != null) {
-      parts.add(MetadataLineText(formatContentRating(lineMetadata.contentRating!), dropPriority: 2));
-    }
     if (lineMetadata.durationMs != null) {
       parts.add(MetadataLineText(formatDurationTextual(lineMetadata.durationMs!), dropPriority: 1));
     }
-    final ratings = focusedEpisode == null
-        ? mediaRatingsFor(metadata)
-        : mediaRatingsFor(_withProbedRatings(focusedEpisode), fallbackItem: metadata);
-    if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
+    if (lineMetadata.contentRating != null) {
+      parts.add(MetadataLineText(formatContentRating(lineMetadata.contentRating!), dropPriority: 2));
+    }
+    // Genres describe the show, not a focused episode.
+    if (focusedEpisode == null) {
+      for (final genre in metadata.genres ?? const <String>[]) {
+        parts.add(MetadataLineText(genre, dropPriority: 5));
+      }
+    }
 
     return parts;
   }
@@ -4030,6 +4460,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     for (final part in _tvDetailMetadataParts(metadata)) {
+      // Read once below, as one list, rather than as separate fields.
+      if (part is MetadataLineText && genres.contains(part.text)) continue;
       add(switch (part) {
         MetadataLineText(:final text) || MetadataLineIconText(:final text) => text,
         MetadataLineRatings(:final ratings) => ratingsSemanticLabel(ratings),
@@ -4158,54 +4590,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return null;
   }
 
-  double _estimateTvBrowseRailHeight(Size size, List<MediaHub> hubs) {
-    final svc = SettingsService.instance;
-    return TvBrowseRailLayout.estimateHeight(
-      size: size,
-      hubs: hubs,
-      density: svc.read(SettingsService.libraryDensity),
-      episodePosterMode: svc.read(SettingsService.episodePosterMode),
-      episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
-      widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
-      fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
-      gridSpacing: svc.read(SettingsService.gridSpacing),
-      tallPosterScale: _tvDetailTallPosterScale,
-    );
-  }
-
-  double _estimateTvDetailRailHeight(Size size, List<MediaHub> hubs) {
-    final hubRailHeight = _estimateTvBrowseRailHeight(size, hubs);
-    if (hubRailHeight > 0) return hubRailHeight;
-    return _estimateTvDetailEmptyRailReserveHeight(size);
-  }
-
-  double _estimateTvDetailEmptyRailReserveHeight(Size size) {
-    final svc = SettingsService.instance;
-    final scale = TvBrowseRailLayout.scaleForSize(size);
-    final availableWidth = size.width - TvBrowseRailLayout.horizontalInsetForScale(scale);
-    if (availableWidth <= 0) return 0;
-
-    final metrics = TvBrowseRailLayout.metricsForHub(
-      hub: MediaHub(
-        id: 'detail_empty_rail_reserve',
-        title: '',
-        type: 'movie',
-        items: [MediaItem(id: 'detail_empty_rail_reserve_item', backend: _metadata.backend, kind: MediaKind.movie)],
-      ),
-      availableWidth: availableWidth,
-      density: svc.read(SettingsService.libraryDensity),
-      episodePosterMode: svc.read(SettingsService.episodePosterMode),
-      fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
-      gridSpacing: svc.read(SettingsService.gridSpacing),
-      scale: scale,
-      tallPosterScale: _tvDetailTallPosterScale,
-      widePosterScale: 1.0,
-    );
-    final sectionHeight = TvBrowseRailLayout.hubSectionHeightFor(scale: scale, activeRailHeight: metrics.height);
-    return TvBrowseRailLayout.railTopPaddingForScale(scale) +
-        TvBrowseRailLayout.viewportHeightFor(hubCount: 1, scale: scale, sectionHeight: sectionHeight) +
-        TvBrowseRailLayout.railBottomPaddingForScale(scale);
-  }
+  /// TV show pages pick a season with chips above the episode rail.
+  bool get _showsTvDetailSeasonChips =>
+      _metadata.isShow && !_showEpisodesDirectly && !_seasonsLoadFailed && _seasons.isNotEmpty;
 
   bool _isTvDetailEpisodeHub(MediaHub hub) {
     return hub.id.startsWith(_tvDetailSeasonHubIdPrefix) || hub.id == 'detail_episodes';
@@ -4233,24 +4620,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         ),
       );
     } else if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty) {
-      // Emit a hub for every season so TV users can choose a season before its
-      // episodes are fetched. Extra pages load in-place when focus reaches the
-      // last loaded episode; the trailing slot is reserved for loading/retry.
-      for (var i = 0; i < _seasons.length; i++) {
-        final season = _seasons[i];
-        final state = _seasonEpisodePager.stateFor(season.id);
-        final episodes = i == _selectedSeasonIndex ? _episodes : state.items;
-        final total = state.totalCount > episodes.length ? state.totalCount : (season.leafCount ?? episodes.length);
-        hubs.add(
-          MediaHub(
-            id: '$_tvDetailSeasonHubIdPrefix$i',
-            title: season.title?.isNotEmpty == true ? season.title! : (season.displaySubtitle ?? season.displayTitle),
-            type: 'episode',
-            items: episodes,
-            size: total,
-          ),
-        );
-      }
+      // One row for the selected season; the season chips above the rail pick
+      // which. Extra pages load in-place when focus reaches the last loaded
+      // episode; the trailing slot is reserved for loading/retry.
+      final i = _selectedSeasonIndex.clamp(0, _seasons.length - 1);
+      final season = _seasons[i];
+      final state = _seasonEpisodePager.stateFor(season.id);
+      final episodes = _episodes;
+      final total = state.totalCount > episodes.length ? state.totalCount : (season.leafCount ?? episodes.length);
+      hubs.add(
+        MediaHub(
+          id: '$_tvDetailSeasonHubIdPrefix$i',
+          title: season.title?.isNotEmpty == true ? season.title! : (season.displaySubtitle ?? season.displayTitle),
+          type: 'episode',
+          items: episodes,
+          size: total,
+        ),
+      );
     } else if (_episodes.isNotEmpty) {
       final total = _allEpisodesTotal > _episodes.length ? _allEpisodesTotal : _episodes.length;
       hubs.add(
@@ -4275,12 +4661,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
       }
     }
-    final actors = _tvDetailActorItems(metadata);
-    if (actors.isNotEmpty) {
-      hubs.add(
-        MediaHub(id: _tvDetailActorsHubId, title: t.discover.cast, type: 'person', items: actors, size: actors.length),
-      );
-    }
     if (_extras != null && _extras!.isNotEmpty) {
       hubs.add(
         MediaHub(
@@ -4293,17 +4673,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       );
     }
     hubs.addAll(_relatedHubs.where((hub) => hub.items.isNotEmpty));
+    // Cast follows the related rows.
+    final actors = _tvDetailActorItems(metadata);
+    if (actors.isNotEmpty) {
+      hubs.add(
+        MediaHub(id: _tvDetailActorsHubId, title: t.discover.cast, type: 'person', items: actors, size: actors.length),
+      );
+    }
     return hubs;
   }
 
-  String? _tvDetailInitialHubId(MediaItem metadata) {
+  String? _tvDetailInitialHubId(MediaItem metadata, List<MediaHub> hubs) {
     if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty) {
       return '$_tvDetailSeasonHubIdPrefix$_selectedSeasonIndex';
     }
     if ((metadata.isShow && _showEpisodesDirectly) || metadata.isSeason) {
       return 'detail_episodes';
     }
-    return null;
+    // The rail mounts before extras and related rows load, when cast may be
+    // its only hub; without this it would stay on cast once they land above.
+    return hubs.isEmpty ? null : hubs.first.id;
   }
 
   String? _tvDetailInitialItemId(MediaItem metadata) {
@@ -4374,7 +4763,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _handleTvDetailFocusedRailItemChanged(MediaHub hub, MediaItem item) {
-    if (_tvDetailActionRowHasFocus) {
+    // A season picked on the chips reports the new row's first episode; the
+    // hero and Play keep the next-up episode until the rail itself has focus.
+    if (_tvDetailActionRowHasFocus || _seasonTabFocusNodes.any((node) => node.hasFocus)) {
       _clearTvDetailFocusedEpisode();
       return;
     }
@@ -4398,7 +4789,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
+  /// Scrolling past either end of a season's episodes carries on into the
+  /// neighbouring season: its last episode going left, its first going right.
+  bool _handleTvDetailRailEdge(MediaHub hub, int direction) {
+    if (!hub.id.startsWith(_tvDetailSeasonHubIdPrefix) || _showEpisodesDirectly) return false;
+    // The season's own remaining pages come first; its last slot is their spinner.
+    if (direction > 0 && (_selectedSeasonHasMore || _isLoadingMoreSeasonEpisodes)) return true;
+    final target = _selectedSeasonIndex + direction;
+    if (target < 0 || target >= _seasons.length) return false;
+    _tvDetailRailKey.currentState?.enterHubAtEdge('$_tvDetailSeasonHubIdPrefix$target', atEnd: direction < 0);
+    _selectSeason(target);
+    _scrollSeasonTabIntoView(target);
+    return true;
+  }
+
   void _handleTvDetailHubChanged(MediaHub hub, int index) {
+    _tvDetailSeasonHubActive.value = hub.id.startsWith(_tvDetailSeasonHubIdPrefix);
     if (!_isTvDetailEpisodeHub(hub)) {
       _clearTvDetailFocusedEpisode();
       return;

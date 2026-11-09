@@ -108,6 +108,10 @@ class SiloCard {
   final String? posterUrl;
   final String? backdropUrl;
   final String? logoUrl;
+
+  /// TMDB id, on catalog grid cards (`BrowseItem`) only; a JSON number or a
+  /// numeric string (`S/model/catalog/CatalogModels.kt:93-110`).
+  final int? tmdbId;
   final SiloUserState userState;
 
   const SiloCard({
@@ -136,6 +140,7 @@ class SiloCard {
     this.posterUrl,
     this.backdropUrl,
     this.logoUrl,
+    this.tmdbId,
     this.userState = const SiloUserState(),
   });
 
@@ -168,6 +173,14 @@ class SiloCard {
       posterUrl: _string(json, 'poster_url'),
       backdropUrl: _string(json, 'backdrop_url'),
       logoUrl: _string(json, 'logo_url'),
+      tmdbId: switch (json['tmdb_id']) {
+        final num id when id > 0 && id == id.roundToDouble() => id.toInt(),
+        final String id => switch (int.tryParse(id.trim())) {
+          final parsed? when parsed > 0 => parsed,
+          _ => null,
+        },
+        _ => null,
+      },
       userState: userState is Map<String, Object?> ? SiloUserState.fromJson(userState) : const SiloUserState(),
     );
   }
@@ -559,4 +572,79 @@ List<Map<String, Object?>> siloCompleteItems(Object? raw) {
     throw const SiloDecodeException('page');
   }
   return siloObjectList(json['items'], 'items');
+}
+
+/// One release of `GET /api/v2/calendar`
+/// (`S/model/calendar/CalendarModels.kt:39-62`).
+class SiloCalendarItem {
+  final String contentId;
+
+  /// `movie` or `episode`.
+  final String type;
+
+  /// The series title for an episode, the movie title otherwise.
+  final String title;
+  final String? episodeTitle;
+  final String? seriesId;
+  final int? seasonNumber;
+  final int? episodeNumber;
+
+  /// The air instant, when the server knows the air time.
+  final DateTime? airAt;
+
+  /// The air date in the timezone the request named, or the server's.
+  final String localAirDate;
+  final String? posterUrl;
+  final bool watched;
+
+  const SiloCalendarItem({
+    required this.contentId,
+    required this.type,
+    required this.title,
+    this.episodeTitle,
+    this.seriesId,
+    this.seasonNumber,
+    this.episodeNumber,
+    this.airAt,
+    required this.localAirDate,
+    this.posterUrl,
+    this.watched = false,
+  });
+
+  bool get isEpisode => type == 'episode';
+
+  factory SiloCalendarItem.fromJson(SiloJson json) {
+    final airAt = _string(json, 'air_at');
+    return SiloCalendarItem(
+      contentId: _required(json, 'content_id'),
+      type: _required(json, 'type'),
+      title: _required(json, 'title'),
+      episodeTitle: _string(json, 'episode_title'),
+      seriesId: _string(json, 'series_id'),
+      seasonNumber: _int(json, 'season_number'),
+      episodeNumber: _int(json, 'episode_number'),
+      airAt: airAt == null ? null : DateTime.tryParse(airAt),
+      localAirDate: _string(json, 'local_air_date') ?? _required(json, 'air_date'),
+      posterUrl: _string(json, 'poster_url'),
+      watched: _bool(json, 'watched'),
+    );
+  }
+
+  /// Every item of every day bucket. One undecodable item is skipped rather
+  /// than failing the whole calendar.
+  static List<SiloCalendarItem> listFromJson(Object? raw) {
+    final days = siloObjectList(siloObject(raw, 'calendar')['events'], 'events');
+    return [
+      for (final day in days)
+        for (final json in siloObjectList(day['items'], 'items')) ?_tryCalendarItem(json),
+    ];
+  }
+
+  static SiloCalendarItem? _tryCalendarItem(SiloJson json) {
+    try {
+      return SiloCalendarItem.fromJson(json);
+    } on SiloDecodeException {
+      return null;
+    }
+  }
 }

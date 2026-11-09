@@ -18,6 +18,7 @@ import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
+import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
@@ -102,7 +103,13 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    final titleText = tester.widget<Text>(find.text(title.toUpperCase()));
+    // The hero's title; the rails page under it repeats the title centred.
+    final titleText = tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('tv_detail_information_semantics')),
+        matching: find.text(title.toUpperCase()),
+      ),
+    );
     expect(titleText.style?.fontSize, isNotNull);
     expect(titleText.style!.fontSize!, lessThan(42));
   });
@@ -151,7 +158,7 @@ void main() {
     expect(tester.widget<Semantics>(information).properties.onTap, isNotNull);
 
     // Visual content and the separate action row remain present.
-    expect(find.text('SEMANTIC MOVIE'), findsOneWidget);
+    expect(find.descendant(of: information, matching: find.text('SEMANTIC MOVIE')), findsOneWidget);
     expect(find.text('One concise detail announcement.'), findsOneWidget);
     expect(find.byType(FocusableActionBar), findsOneWidget);
     semantics.dispose();
@@ -393,7 +400,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump();
 
-    // Year opens the line; the type label is gone.
+    // The type label is gone.
     expect(find.text('Movie'), findsNothing);
     expect(find.text('2017'), findsOneWidget);
     // Stream quality describes the file, not the title: off the hero line,
@@ -405,12 +412,12 @@ void main() {
       findsOneWidget,
     );
 
-    // Desktop chip order: year, certification, runtime.
+    // After the scores: year, runtime, certification.
     final fieldXs = [
-      for (final text in ['2017', 'PG-13', '1h 46min']) tester.getTopLeft(find.text(text)).dx,
+      for (final text in ['2017', '1h 46min', 'PG-13']) tester.getTopLeft(find.text(text)).dx,
     ];
     expect(fieldXs, orderedEquals([...fieldXs]..sort()));
-    expect(tester.getBottomRight(find.text('1h 46min')).dx, lessThanOrEqualTo(1280));
+    expect(tester.getBottomRight(find.text('PG-13')).dx, lessThanOrEqualTo(1280));
 
     // The test font's 1 em/char advance roughly doubles text width, so at this
     // viewport most of the ratings slot legitimately gives way — shed as the
@@ -518,12 +525,15 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Season 1'), findsOneWidget);
-    expect(find.text('Specials'), findsNothing);
+    // Specials stay available as a chip, but Season 1 is the selected one.
+    bool chipSelected(String label) =>
+        tester.widget<FocusableTabChip>(find.widgetWithText(FocusableTabChip, label)).isSelected;
+    expect(chipSelected('Season 1'), isTrue);
+    expect(chipSelected('Specials'), isFalse);
     expect(find.text('S1E1'), findsOneWidget);
   });
 
-  testWidgets('TV detail exposes each season as its episode hub leading options item', (tester) async {
+  testWidgets('TV detail exposes the selected season as its episode hub leading options item', (tester) async {
     await SettingsService.getInstance();
 
     final show = testMediaItem(
@@ -608,14 +618,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    // Every season hub surfaces its own season as the leading options item —
-    // the D-pad path to mark a whole season watched/unwatched (#2156).
+    // The one season hub (the chips pick which season) surfaces its season as
+    // the leading options item — the D-pad path to mark a whole season
+    // watched/unwatched (#2156).
     final rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
     expect(rail.leadingItemForHub, isNotNull);
     final seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
-    expect(seasonHubs, hasLength(2));
-    expect(rail.leadingItemForHub!(seasonHubs[0])?.id, season1.id);
-    expect(rail.leadingItemForHub!(seasonHubs[1])?.id, season2.id);
+    expect(seasonHubs, hasLength(1));
+    expect(rail.leadingItemForHub!(seasonHubs.single)?.id, season1.id);
 
     // Non-season hubs (flatten episodes, actors, extras, related) get none.
     const flattenHub = MediaHub(id: 'detail_episodes', title: 'Episodes', type: 'episode', items: <MediaItem>[]);
@@ -747,6 +757,155 @@ void main() {
     expect(summaryText.style?.color, theme.colorScheme.onSurface.withValues(alpha: 0.82));
   });
 
+  testWidgets('TV detail hero fills the screen and slides up to the rails below it', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const screenHeight = 540.0;
+
+    final show = MediaItem.silo(
+      id: 'show_1',
+      serverId: ServerId('server_1'),
+      kind: MediaKind.show,
+      title: 'The Show',
+      summary: 'A show whose hero takes the whole screen.',
+      roles: [for (var i = 0; i < 4; i++) MediaRole(id: 'r$i', tag: 'Actor $i')],
+    );
+    final season = MediaItem.silo(
+      id: 'season_1',
+      serverId: ServerId('server_1'),
+      kind: MediaKind.season,
+      title: 'Season 1',
+      index: 1,
+      parentId: show.id,
+    );
+    final episodes = [
+      for (var e = 1; e <= 3; e++)
+        MediaItem.silo(
+          id: 'episode_$e',
+          serverId: ServerId('server_1'),
+          kind: MediaKind.episode,
+          title: 'Episode $e',
+          index: e,
+          parentId: season.id,
+          parentIndex: 1,
+          grandparentId: show.id,
+        ),
+    ];
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [season],
+        season.id: episodes,
+      },
+    );
+    final provider = testMultiServer(clients: [client]).provider;
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: ChangeNotifierProvider<MultiServerProvider>.value(
+            value: provider,
+            child: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final play = find.byWidgetPredicate((widget) => widget is Focus && widget.focusNode?.debugLabel == 'play_button');
+    final rail = find.byType(TvBrowseRail);
+    // A show lands on the hero, with the rails entirely below the fold.
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'play_button');
+    expect(tester.getBottomLeft(play).dy, lessThan(screenHeight));
+    expect(tester.getTopLeft(rail).dy, greaterThanOrEqualTo(screenHeight));
+
+    // Down into the rail: the hero scrolls up and fades out as the rails page
+    // rises into its place, several rows at once.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    final heroOpacity = tester.widget<Opacity>(find.ancestor(of: play, matching: find.byType(Opacity)).first).opacity;
+    expect(heroOpacity, inExclusiveRange(0, 1), reason: 'the hero fades rather than snapping away');
+    expect(tester.getTopLeft(rail).dy, inExclusiveRange(0, screenHeight));
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+    expect(tester.getBottomLeft(play).dy, lessThanOrEqualTo(0));
+    expect(tester.getTopLeft(rail).dy, lessThan(screenHeight / 2));
+    expect(tester.getTopLeft(find.text('Cast')).dy, lessThan(screenHeight));
+
+    // Back from the rails returns to the hero instead of leaving the screen.
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(MediaDetailScreen), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'play_button');
+    expect(tester.getBottomLeft(play).dy, lessThan(screenHeight));
+    expect(tester.getTopLeft(rail).dy, greaterThanOrEqualTo(screenHeight));
+
+    // So does a platform back, which Android can deliver for the remote's
+    // Back before the rail sees the key.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(rail).dy, lessThan(screenHeight / 2));
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(MediaDetailScreen), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'play_button');
+    expect(tester.getTopLeft(rail).dy, greaterThanOrEqualTo(screenHeight));
+  });
+
+  testWidgets('TV detail rail starts on the first hub, not cast mounted before the related rows', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final movie = MediaItem.silo(
+      id: 'movie_1',
+      serverId: ServerId('server_1'),
+      kind: MediaKind.movie,
+      title: 'The Movie',
+      roles: [for (var i = 0; i < 4; i++) MediaRole(id: 'r$i', tag: 'Actor $i')],
+    );
+    final related = MediaItem.silo(
+      id: 'movie_2',
+      serverId: ServerId('server_1'),
+      kind: MediaKind.movie,
+      title: 'Other',
+    );
+    final client = _FakeMediaServerClient(
+      show: movie,
+      childrenByParent: const {},
+      relatedHubs: [
+        MediaHub(id: 'similar', title: 'More Like This', type: 'movie', items: [related], size: 1),
+      ],
+    );
+    final provider = testMultiServer(clients: [client]).provider;
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: ChangeNotifierProvider<MultiServerProvider>.value(
+            value: provider,
+            child: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Cast comes from the item itself, so it is the rail's only hub until
+    // the related rows load; the rail must then move to the row now on top.
+    final rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    expect(rail.hubs.map((hub) => hub.id), ['similar', 'detail_actors']);
+    expect(rail.initialHubId, 'similar');
+  });
+
   testWidgets('TV detail shows every season tab and prefetches adjacent first page', (tester) async {
     await SettingsService.getInstance();
 
@@ -832,11 +991,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    // Every season tab is derived from the season list, so both appear
+    // Every season chip is derived from the season list, so both appear
     // immediately. TV warms only the selected first page plus the adjacent first
     // page; it still does not walk the whole show or load page 2+.
-    expect(find.text('Season 1'), findsOneWidget);
-    expect(find.text('Season 2'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 1'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 2'), findsOneWidget);
     expect(client.childrenPageCalls.map((call) => call.parentId), containsAll([season1.id, season2.id]));
     expect(client.childrenPageCalls.every((call) => call.start == 0 && call.size == 200), isTrue);
   });
@@ -927,8 +1086,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Season 1'), findsOneWidget);
-    expect(find.text('Season 2'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 1'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 2'), findsOneWidget);
   });
 
   testWidgets('TV detail completes adjacent prefetch after focus moves to that season', (tester) async {
@@ -1018,10 +1177,14 @@ void main() {
     tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
     await tester.pump();
 
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pump();
+    // UP from the episode rail reaches the season chips; RIGHT picks Season 2.
+    for (final key in [LogicalKeyboardKey.arrowUp, LogicalKeyboardKey.arrowRight]) {
+      await tester.sendKeyDownEvent(key);
+      await tester.pump();
+      await tester.sendKeyUpEvent(key);
+      await tester.pump();
+    }
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_1');
     expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 2')), findsNothing);
 
     season2Completer.complete([episode2]);
@@ -1029,6 +1192,98 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 2')), findsOneWidget);
+  });
+
+  testWidgets('TV detail episode rail carries on into the neighbouring season at either end', (tester) async {
+    await SettingsService.getInstance();
+
+    final show = testMediaItem(
+      id: 'show_1',
+      kind: MediaKind.show,
+      title: 'The Show',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    MediaItem season(int index) => testMediaItem(
+      id: 'season_$index',
+      kind: MediaKind.season,
+      title: 'Season $index',
+      index: index,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    MediaItem episode(MediaItem season, int index) => testMediaItem(
+      id: 'episode_${season.index}_$index',
+      kind: MediaKind.episode,
+      title: 'Episode S${season.index}E$index',
+      index: index,
+      parentId: season.id,
+      parentIndex: season.index,
+      grandparentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final season1 = season(1);
+    final season2 = season(2);
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [season1, season2],
+        season1.id: [episode(season1, 1), episode(season1, 2)],
+        season2.id: [episode(season2, 1), episode(season2, 2)],
+      },
+    );
+    final provider = testMultiServer(clients: [client]).provider;
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: withProfileNavigationScope(
+              child: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            ),
+          ),
+        ),
+      ),
+    );
+    for (var i = 0; i < 3; i++) {
+      await tester.pump();
+    }
+    await tester.pump(const Duration(milliseconds: 200));
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+
+    Future<void> press(LogicalKeyboardKey key, [int times = 1]) async {
+      for (var i = 0; i < times; i++) {
+        await tester.sendKeyDownEvent(key);
+        await tester.pump();
+        await tester.sendKeyUpEvent(key);
+        await tester.pump();
+      }
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+
+    bool chipSelected(String label) =>
+        tester.widget<FocusableTabChip>(find.widgetWithText(FocusableTabChip, label)).isSelected;
+    // Play follows the focused episode, so its label names the rail's focus.
+    Finder playLabel(String label) => find.descendant(of: find.byType(FocusableActionBar), matching: find.text(label));
+
+    // S1E1 → S1E2, then past the end of Season 1 into the first episode of Season 2.
+    await press(LogicalKeyboardKey.arrowRight, 2);
+    expect(chipSelected('Season 2'), isTrue);
+    expect(playLabel('S2E1'), findsOneWidget);
+
+    // Back past the start of Season 2 (via its season card) to Season 1's last episode.
+    await press(LogicalKeyboardKey.arrowLeft, 2);
+    expect(chipSelected('Season 1'), isTrue);
+    expect(playLabel('S1E2'), findsOneWidget);
+
+    // The first season's start is the real end of the show: focus stays put.
+    await press(LogicalKeyboardKey.arrowLeft, 3);
+    expect(chipSelected('Season 1'), isTrue);
   });
 
   testWidgets('TV detail hero, rail cards, and Play all follow the focused episode', (tester) async {
@@ -1726,7 +1981,7 @@ void main() {
       await pumpPhoneDetail(tester, client, show, observer: observer);
 
       expect(find.text('S1E1'), findsOneWidget, reason: 'play button targets the on-deck episode');
-      expect(find.text('1. Episode S1E1'), findsOneWidget);
+      expect(find.text('Episode S1E1'), findsOneWidget);
       final childrenCallsBeforePlayback = client.childrenPageCalls.length;
       observer.pushedRouteNames.clear();
 
@@ -1748,7 +2003,7 @@ void main() {
           reason: 'playback return must not raise the full-screen loader',
         );
         expect(
-          find.text('1. Episode S1E1'),
+          find.text('Episode S1E1'),
           findsOneWidget,
           reason: 'loaded episode rows must survive the playback return',
         );
@@ -2208,7 +2463,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('1. Episode S2E1'), findsOneWidget);
+      expect(find.text('Episode S2E1'), findsOneWidget);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_1');
     });
 
@@ -2237,7 +2492,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('2. Episode S2E2'), findsOneWidget);
+      expect(find.text('Episode S2E2'), findsOneWidget);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'initial_episode');
     });
 
@@ -2268,7 +2523,7 @@ void main() {
 
       // The first row keeps _firstEpisodeFocusNode (so season-tab DOWN keeps
       // working) and the initial focus lands on that node instead.
-      expect(find.text('1. Episode S2E1'), findsOneWidget);
+      expect(find.text('Episode S2E1'), findsOneWidget);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'first_episode');
     });
 
@@ -2289,12 +2544,12 @@ void main() {
 
       // Seed a session patch for one episode (e.g. user toggled it earlier).
       await emit(tester, () => WatchStateNotifier().notifyWatched(item: episode1, isNowWatched: false));
-      expect(episodeRowWatched(tester, '1. Episode S1E1'), isFalse);
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isFalse);
 
       await emit(tester, () => WatchStateNotifier().notifyWatched(item: show, isNowWatched: true));
 
-      expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
-      expect(episodeRowWatched(tester, '2. Episode S1E2'), isTrue);
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
+      expect(episodeRowWatched(tester, 'Episode S1E2'), isTrue);
     });
 
     testWidgets('marking a season watched flips its episode rows', (tester) async {
@@ -2314,8 +2569,8 @@ void main() {
 
       await emit(tester, () => WatchStateNotifier().notifyWatched(item: season1, isNowWatched: true));
 
-      expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
-      expect(episodeRowWatched(tester, '2. Episode S1E2'), isTrue);
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
+      expect(episodeRowWatched(tester, 'Episode S1E2'), isTrue);
     });
 
     testWidgets('container mark clears progress, including after a season tab round-trip', (tester) async {
@@ -2339,11 +2594,11 @@ void main() {
         tester,
         () => WatchStateNotifier().notifyProgress(item: episode1, viewOffset: 600000, duration: 1800000),
       );
-      expect(episodeRowHasProgress(tester, '1. Episode S1E1'), isTrue);
+      expect(episodeRowHasProgress(tester, 'Episode S1E1'), isTrue);
 
       await emit(tester, () => WatchStateNotifier().notifyWatched(item: show, isNowWatched: true));
-      expect(episodeRowHasProgress(tester, '1. Episode S1E1'), isFalse);
-      expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
+      expect(episodeRowHasProgress(tester, 'Episode S1E1'), isFalse);
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
 
       // Round-trip through another season tab; the cached page restore must not
       // resurrect the dead progress offset.
@@ -2354,8 +2609,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(episodeRowHasProgress(tester, '1. Episode S1E1'), isFalse);
-      expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
+      expect(episodeRowHasProgress(tester, 'Episode S1E1'), isFalse);
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
     });
 
     Future<void> tapSeason(WidgetTester tester, String title) async {
@@ -2363,6 +2618,35 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
     }
+
+    testWidgets('the episode rail opens at the on-deck episode', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final episodes = [for (var index = 1; index <= 20; index++) buildEpisode(show, season1, index)];
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1],
+          season1.id: episodes,
+        },
+      )..onDeckEpisode = episodes[14];
+
+      await pumpPhoneDetail(tester, client, show);
+      await tester.pump();
+
+      final rail = tester.widget<Scrollable>(
+        find
+            .ancestor(
+              of: find.byType(EpisodeCard).first,
+              matching: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.right),
+            )
+            .first,
+      );
+      expect(rail.controller!.offset, greaterThan(0));
+      expect(episodeCardFor('Episode S1E15'), findsOneWidget);
+      // The rail builds lazily, so the start of the season is no longer laid out.
+      expect(episodeCardFor('Episode S1E1'), findsNothing);
+    });
 
     testWidgets('a failed season switch shows its error, not the previous season episodes', (tester) async {
       final show = buildShow();
@@ -2378,11 +2662,11 @@ void main() {
       );
 
       await pumpPhoneDetail(tester, client, show);
-      expect(episodeCardFor('1. Episode S1E1'), findsOneWidget);
+      expect(episodeCardFor('Episode S1E1'), findsOneWidget);
 
       await tapSeason(tester, 'Season 2');
 
-      expect(episodeCardFor('1. Episode S1E1'), findsNothing);
+      expect(episodeCardFor('Episode S1E1'), findsNothing);
       expect(find.text(t.messages.episodesLoadFailed), findsOneWidget);
     });
 
@@ -2412,8 +2696,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(episodeCardFor('1. Episode S2E1'), findsOneWidget);
-      expect(episodeCardFor('1. Episode S3E1'), findsNothing);
+      expect(episodeCardFor('Episode S2E1'), findsOneWidget);
+      expect(episodeCardFor('Episode S3E1'), findsNothing);
     });
 
     testWidgets('refreshing a season discards its older continuation page', (tester) async {
@@ -2434,16 +2718,24 @@ void main() {
       );
 
       await pumpPhoneDetail(tester, client, show);
-      final list = find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).first;
+      // Show pages list a season's episodes in a horizontal rail.
+      final rail = find
+          .ancestor(
+            of: find.byType(EpisodeCard).first,
+            matching: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.right),
+          )
+          .first;
+      await tester.ensureVisible(rail);
+      await tester.pump();
       int continuationRequests() =>
           client.childrenPageCalls.where((call) => call.parentId == season1.id && call.start == 200).length;
       Future<void> scrollToEnd({required int untilRequests}) async {
-        // Back off first: paging reacts to scrolling, and the list may already
+        // Back off first: paging reacts to scrolling, and the rail may already
         // rest at its end.
-        await tester.drag(list, const Offset(0, 1000));
+        await tester.drag(rail, const Offset(1000, 0));
         await tester.pump();
         for (var i = 0; i < 40 && continuationRequests() < untilRequests; i++) {
-          await tester.drag(list, const Offset(0, -4000));
+          await tester.drag(rail, const Offset(-4000, 0));
           await tester.pump();
         }
       }
@@ -2468,12 +2760,12 @@ void main() {
       // The refreshed first page asks for its own continuation.
       await scrollToEnd(untilRequests: 2);
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.drag(list, const Offset(0, -100000));
+      await tester.drag(rail, const Offset(-100000, 0));
       await tester.pump();
 
       expect(find.textContaining('Stale S1E'), findsNothing);
       expect(continuationRequests(), 2);
-      expect(episodeCardFor('250. Episode S1E250'), findsOneWidget);
+      expect(episodeCardFor('Episode S1E250'), findsOneWidget);
     });
 
     testWidgets('deleting the selected season moves the selection to its neighbour', (tester) async {
@@ -2490,7 +2782,7 @@ void main() {
       );
 
       await pumpPhoneDetail(tester, client, show);
-      expect(episodeCardFor('1. Episode S1E1'), findsOneWidget);
+      expect(episodeCardFor('Episode S1E1'), findsOneWidget);
 
       await emit(
         tester,
@@ -2508,8 +2800,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Season 1'), findsNothing);
-      expect(episodeCardFor('1. Episode S1E1'), findsNothing);
-      expect(episodeCardFor('1. Episode S2E1'), findsOneWidget);
+      expect(episodeCardFor('Episode S1E1'), findsNothing);
+      expect(episodeCardFor('Episode S2E1'), findsOneWidget);
       final season2Chip = tester.widget<FocusableTabChip>(
         find.ancestor(of: find.text('Season 2'), matching: find.byType(FocusableTabChip)),
       );
@@ -3060,6 +3352,7 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   /// What the item's own fetch returns, when it differs from the listing.
   final Map<String, MediaItem> detailItems;
+  final List<MediaHub> relatedHubs;
   Completer<void>? sourceGate;
   int itemReads = 0;
   int sourceReads = 0;
@@ -3090,6 +3383,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     this.pendingPlayableDescendants,
     this.mediaSourcesById = const {},
     this.detailItems = const {},
+    this.relatedHubs = const [],
   }) : childrenPageFuturesByStart = childrenPageFuturesByStart ?? {};
 
   @override
@@ -3190,7 +3484,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   }
 
   @override
-  Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => const [];
+  Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => relatedHubs;
 
   @override
   String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) {

@@ -6,9 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../providers/catalog_sources_provider.dart';
-import '../../providers/theme_provider.dart';
-import '../../services/settings_service.dart' hide ThemeMode;
-import '../../services/settings_service.dart' as settings show ThemeMode;
+import '../../services/settings_service.dart';
+import '../../theme/app_theme.dart';
 import '../../focus/focusable_slider.dart';
 import '../../services/device_performance.dart';
 import '../../utils/platform_detector.dart';
@@ -167,21 +166,16 @@ class AppearanceSettingsScreen extends StatelessWidget {
     );
   }
 
-  // Writes the pref directly; ThemeProvider listens to the pref's listenable
-  // and applies the change live. The Consumer only feeds the dynamic icon.
-  Widget _themeSelector() {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, _) {
-        return SettingSelectionTile<settings.ThemeMode>(
-          pref: SettingsService.themeMode,
-          icon: themeProvider.themeModeIcon,
-          title: t.settings.theme,
-          subtitleBuilder: themeModeLabel,
-          options: settings.ThemeMode.values.map((m) => DialogOption(value: m, title: themeModeLabel(m))).toList(),
-        );
-      },
-    );
-  }
+  // Both palettes are dark; the app repaints live, so the choice is its own preview.
+  Widget _themeSelector() => SettingSegmentedTile<AppTheme>(
+    pref: SettingsService.appTheme,
+    icon: Symbols.palette_rounded,
+    title: t.settings.theme,
+    segments: [
+      ButtonSegment(value: AppTheme.oled, label: Text(t.settings.oledTheme)),
+      ButtonSegment(value: AppTheme.slate, label: Text(t.settings.slateTheme)),
+    ],
+  );
 
   // Same label-row-plus-control layout as SegmentedSetting so slider and
   // button-group tiles read as one family inside a SettingsGroup.

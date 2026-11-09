@@ -39,7 +39,7 @@ Source: "staging\arm64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
     }
 
     return @"
-#define Name "Plezy"
+#define Name "TBD"
 #define Version "$Version"
 #define Publisher "edde746"
 #define ExeName "plezy.exe"
@@ -68,7 +68,7 @@ ArchitecturesInstallIn64BitMode=$ArchAllowed
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
-ElevationRequired=Plezy is installed in %1, which requires administrator privileges to update.%n%nRe-run this installer using "Run as administrator", or download the latest installer from https://github.com/edde746/plezy/releases/latest
+ElevationRequired=TBD is installed in %1, which requires administrator privileges to update.%n%nRe-run this installer using "Run as administrator", or download the latest installer from https://github.com/edde746/plezy/releases/latest
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

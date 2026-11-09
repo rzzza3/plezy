@@ -119,6 +119,26 @@ void main() {
     expect(harness.active.activeId, 'silo:srv/active');
     expect(events, isEmpty);
   });
+
+  testWidgets('an expired server is signed out without asking, and the other server stays', (tester) async {
+    final events = <String>[];
+    final harness = await _pumpHarness(tester, events: events, channel: channel);
+    addTearDown(harness.dispose);
+    final kept = harness.active.connectionFor(harness.active.active!)!;
+    final expired = await harness.stack.addServer('old', testHousehold([('gone', 'Gone')]));
+    await harness.active.reloadFromStorage();
+
+    await signOutExpiredSiloServers(harness.context, {
+      'old',
+    }, endSession: (connection) async => events.add('end-session:${connection.serverId}'));
+    await tester.pump();
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(await harness.stack.connections.get(expired.id), isNull);
+    expect(await harness.stack.connections.get(kept.id), isNotNull);
+    expect(harness.active.activeId, 'silo:srv/active');
+    expect(events, ['end-session:old', 'rebind']);
+  });
 }
 
 class _Harness {

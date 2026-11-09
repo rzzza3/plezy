@@ -71,6 +71,10 @@ class HubSection extends StatefulWidget {
   /// Overrides the standard media context menu for an item.
   final ValueChanged<MediaItem>? onItemLongPress;
 
+  /// Overrides the View All screen. Also keeps the trailing View All card
+  /// (needs [MediaHub.more]) in every input mode, not just keyboard mode.
+  final VoidCallback? onViewAll;
+
   /// Callback for vertical navigation (up/down). Return true if handled.
   final bool Function(bool isUp)? onVerticalNavigation;
 
@@ -89,6 +93,9 @@ class HubSection extends StatefulWidget {
   /// When true, removes internal horizontal padding (header + list).
   /// Use when the parent already provides edge spacing (e.g. inside Padding(16)).
   final bool inset;
+
+  /// False drops the title row, for a hub whose section already names it.
+  final bool showHeader;
 
   /// Controls whether cards follow top-level shelf or grid geometry.
   final HubCardSizing cardSizing;
@@ -114,11 +121,13 @@ class HubSection extends StatefulWidget {
     this.onFocusedItemChanged,
     this.onItemTap,
     this.onItemLongPress,
+    this.onViewAll,
     this.onVerticalNavigation,
     this.onBack,
     this.onNavigateUp,
     this.onNavigateToSidebar,
     this.inset = false,
+    this.showHeader = true,
     this.cardSizing = HubCardSizing.shelf,
     this.episodePosterModeOverride,
     this.focusScrollAlignment = 0.3,
@@ -439,6 +448,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
   }
 
   void _navigateToHubDetail(BuildContext context) {
+    if (widget.onViewAll case final onViewAll?) return onViewAll();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -496,74 +506,75 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
         mainAxisSize: .min,
         children: [
           // Hub header (NOT focusable - titles should not be focusable)
-          Padding(
-            padding: widget.inset
-                ? EdgeInsets.symmetric(vertical: isTv ? 6 : 2)
-                : EdgeInsets.fromLTRB(leadingPadding - 4, isTv ? 6 : 2, 8, isTv ? 8 : 2),
-            child: ExcludeFocus(
-              child: InkWell(
-                mouseCursor: widget.hub.more ? SystemMouseCursors.click : MouseCursor.defer,
-                onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,
-                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                child: Padding(
-                  padding: widget.inset
-                      ? const EdgeInsets.symmetric(vertical: 2)
-                      : const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  child: Row(
-                    mainAxisSize: .min,
-                    children: [
-                      if (!isTv) ...[AppIcon(widget.icon, fill: 1), const SizedBox(width: 8)],
-                      Flexible(
-                        child: Text(widget.hub.title, style: titleStyle, overflow: .ellipsis, maxLines: 1),
-                      ),
-                      if (widget.totalResults case final totalResults?) ...[
-                        SizedBox(width: isTv ? 12 : 8),
-                        Text(
-                          t.explore.totalResults(n: totalResults),
-                          maxLines: 1,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62),
-                            fontSize: isTv ? 17 : null,
-                            fontWeight: FontWeight.w600,
-                          ),
+          if (widget.showHeader)
+            Padding(
+              padding: widget.inset
+                  ? EdgeInsets.symmetric(vertical: isTv ? 6 : 2)
+                  : EdgeInsets.fromLTRB(leadingPadding - 4, isTv ? 6 : 2, 8, isTv ? 8 : 2),
+              child: ExcludeFocus(
+                child: InkWell(
+                  mouseCursor: widget.hub.more ? SystemMouseCursors.click : MouseCursor.defer,
+                  onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,
+                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                  child: Padding(
+                    padding: widget.inset
+                        ? const EdgeInsets.symmetric(vertical: 2)
+                        : const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Row(
+                      mainAxisSize: .min,
+                      children: [
+                        if (!isTv) ...[AppIcon(widget.icon, fill: 1), const SizedBox(width: 8)],
+                        Flexible(
+                          child: Text(widget.hub.title, style: titleStyle, overflow: .ellipsis, maxLines: 1),
                         ),
-                      ],
-                      if (widget.showServerName && widget.hub.serverName != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          '•',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                        if (widget.totalResults case final totalResults?) ...[
+                          SizedBox(width: isTv ? 12 : 8),
+                          Text(
+                            t.explore.totalResults(n: totalResults),
+                            maxLines: 1,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62),
+                              fontSize: isTv ? 17 : null,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          widget.hub.serverName!,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                        ],
+                        if (widget.showServerName && widget.hub.serverName != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '•',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Text(
+                            widget.hub.serverName!,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                        if (widget.hub.more && !isKeyboardMode) ...[
+                          const SizedBox(width: 4),
+                          if (isTv)
+                            AppIcon(
+                              Symbols.chevron_right_rounded,
+                              fill: 1,
+                              size: TvSectionHeaderTokens.chevronSize,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: TvSectionHeaderTokens.chevronAlpha),
+                            )
+                          else
+                            const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20),
+                        ],
                       ],
-                      if (widget.hub.more && !isKeyboardMode) ...[
-                        const SizedBox(width: 4),
-                        if (isTv)
-                          AppIcon(
-                            Symbols.chevron_right_rounded,
-                            fill: 1,
-                            size: TvSectionHeaderTokens.chevronSize,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: TvSectionHeaderTokens.chevronAlpha),
-                          )
-                        else
-                          const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20),
-                      ],
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
           if (widget.hub.items.isNotEmpty)
             Focus(
@@ -679,7 +690,9 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                           padding: widget.inset
                               ? EdgeInsets.symmetric(vertical: isTv ? 6 : 2)
                               : EdgeInsets.symmetric(horizontal: isTv ? leadingPadding : 8, vertical: isTv ? 6 : 2),
-                          itemCount: isKeyboardMode ? _totalItemCount : widget.hub.items.length,
+                          itemCount: isKeyboardMode || widget.onViewAll != null
+                              ? _totalItemCount
+                              : widget.hub.items.length,
                           itemBuilder: (context, index) {
                             final isItemFocused = hasFocus && index == _focusedIndex;
 

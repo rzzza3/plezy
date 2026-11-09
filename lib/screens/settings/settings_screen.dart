@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -24,8 +23,6 @@ import '../../services/download_storage_service.dart';
 import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
-import '../../providers/theme_provider.dart';
-import '../../providers/seerr_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
@@ -39,10 +36,8 @@ import '../../utils/update_dialog.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
-import '../../widgets/library_management_sheet.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/setting_tile.dart';
-import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import '../../widgets/system_bottom_inset.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -52,12 +47,12 @@ import 'add_connection_screen.dart';
 import 'appearance_settings_screen.dart';
 import 'general_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
+import 'libraries_settings_pane.dart';
 import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
 import '../profile/profile_switch_screen.dart';
-import 'services_settings_screen.dart';
+import 'settings_category_layout.dart';
 import 'settings_utils.dart';
-import 'tracker_service_info.dart';
 import '../../widgets/loading_indicator_box.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -89,13 +84,22 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       widget.backgroundWorkDiagnosticsService ?? BackgroundWorkDiagnosticsService.instance;
   late final FocusMemoryTracker _focusTracker;
 
+  // Categories
+  static const _catGeneral = 'general';
+  static const _catAppearance = 'appearance';
+  static const _catPlayback = 'playback';
+  static const _catConnections = 'connections';
+  static const _catLibraries = 'libraries';
+  static const _catDownloads = 'downloads';
+  static const _catControls = 'controls';
+  static const _catAdvanced = 'advanced';
+  static const _catAbout = 'about';
+
+  final _layoutKey = GlobalKey<SettingsCategoryLayoutState>();
+  String _category = _catGeneral;
+
   // Focus tracking keys
   static const _kDonate = 'donate';
-  static const _kGeneral = 'general';
-  static const _kAppearance = 'appearance';
-  static const _kPlayback = 'playback';
-  static const _kManageLibraries = 'manage_libraries';
-  static const _kServices = 'services';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
@@ -111,7 +115,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kResetSettings = 'reset_settings';
   static const _kCheckForUpdates = 'check_for_updates';
   static const _kAutoCheckUpdatesOnStartup = 'auto_check_updates_on_startup';
-  static const _kAbout = 'about';
   static const _kWatchTogetherRelay = 'watch_together_relay';
   static const _kExportSettings = 'export_settings';
   static const _kImportSettings = 'import_settings';
@@ -143,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   @override
   void focusActiveTabIfReady() {
     if (InputModeTracker.isKeyboardMode(context, listen: false)) {
-      _focusTracker.restoreFocus(fallbackKey: DonationService.isEnabled ? _kDonate : _kGeneral);
+      _layoutKey.currentState?.focusSelectedCategory();
     }
   }
 
@@ -151,100 +154,120 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     MainScreenFocusScope.focusSidebarOf(context);
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-      _navigateToSidebar();
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   settings.SettingsService get _settingsService => settings.SettingsService.instance;
 
   @override
   Widget build(BuildContext context) {
-    final hasLibraries = context.select<LibrariesProvider, bool>((p) => p.libraries.isNotEmpty);
-
     if (OverlaySheetController.maybeOf(context) != null) {
-      return _buildContent(context, hasLibraries: hasLibraries);
+      return _buildContent(context);
     }
 
     // Settings is hosted by MainScreen on side-navigation layouts, but it is a
     // separate pushed route on phones. Add a route-local host only for the
     // latter, and build its content from below the host so adaptive sheets do
     // not fall back to modal routes with a competing Android back path.
-    return OverlaySheetHost(
-      canPop: true,
-      child: Builder(builder: (hostContext) => _buildContent(hostContext, hasLibraries: hasLibraries)),
-    );
+    return OverlaySheetHost(canPop: true, child: Builder(builder: (hostContext) => _buildContent(hostContext)));
   }
 
-  Widget _buildContent(BuildContext sheetContext, {required bool hasLibraries}) {
-    return Scaffold(
-      body: Focus(
-        onKeyEvent: _handleKeyEvent,
-        child: CustomScrollView(
-          primary: false,
-          slivers: [
-            ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
-            SliverList(
-              delegate: SliverChildListDelegate([
-                const SizedBox(height: 8),
-                SettingsGroup(
-                  children: [
-                    if (DonationService.isEnabled) _buildDonateTile(),
-                    _buildGeneralTile(),
-                    _buildAppearanceTile(),
-                    _buildPlaybackTile(),
-                    if (hasLibraries) _buildManageLibrariesTile(sheetContext),
-                    _buildServicesTile(),
-                  ],
-                ),
-
-                _buildConnectionsSection(sheetContext),
-
-                if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
-
-                if (_keyboardShortcutsSupported || PlatformDetector.shouldActAsRemoteHost(sheetContext))
-                  _buildControlsSection(sheetContext),
-
-                _buildAdvancedSection(),
-
-                if (UpdateService.isUpdateCheckAvailable) ...[_buildUpdateSection()],
-
-                // Hidden on Android TV / tvOS (no document picker); desktop in
-                // force-TV mode keeps it — FilePickerService works there.
-                if (!PlatformDetector.isTV() || PlatformDetector.isDesktopOS()) _buildBackupSection(),
-
-                const SizedBox(height: 24),
-                SettingsGroup(
-                  children: [
-                    SettingNavigationTile(
-                      focusNode: _focusTracker.get(_kAbout),
-                      icon: Symbols.info_rounded,
-                      title: t.settings.about,
-                      subtitle: t.settings.aboutDescription,
-                      destinationBuilder: (context) => const AboutScreen(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ]),
-            ),
-            const SliverSystemBottomInset(),
+  Widget _buildContent(BuildContext sheetContext) {
+    final controls = _buildControlsChildren(sheetContext);
+    final categories = [
+      SettingsCategory(id: _catGeneral, label: t.settings.general, builder: (_) => const GeneralSettingsScreen()),
+      SettingsCategory(
+        id: _catAppearance,
+        label: t.settings.appearance,
+        builder: (_) => const AppearanceSettingsScreen(),
+      ),
+      SettingsCategory(
+        id: _catPlayback,
+        label: t.settings.videoPlayback,
+        builder: (_) => const PlaybackSettingsScreen(),
+      ),
+      SettingsCategory(
+        id: _catConnections,
+        label: t.connections.sectionTitle,
+        builder: (paneContext) => _paneList([_buildConnectionsSection(paneContext)]),
+      ),
+      SettingsCategory(id: _catLibraries, label: t.navigation.libraries, builder: (_) => const LibrariesSettingsPane()),
+      if (!PlatformDetector.isAppleTV())
+        SettingsCategory(
+          id: _catDownloads,
+          label: t.settings.downloads,
+          builder: (_) => _paneList([_buildDownloadsSection()]),
+        ),
+      // Keyboard platforms list nothing here until the shortcuts service loads.
+      if (controls.isNotEmpty)
+        SettingsCategory(
+          id: _catControls,
+          label: t.settings.controls,
+          builder: (_) => _paneList([SettingsGroup(children: controls)]),
+        ),
+      SettingsCategory(
+        id: _catAdvanced,
+        label: t.settings.advanced,
+        builder: (_) => _paneList([
+          _buildAdvancedSection(),
+          // Hidden on Android TV / tvOS (no document picker); desktop in
+          // force-TV mode keeps it — FilePickerService works there.
+          if (!PlatformDetector.isTV() || PlatformDetector.isDesktopOS()) _buildBackupSection(),
+        ]),
+      ),
+      SettingsCategory(
+        id: _catAbout,
+        label: t.settings.about,
+        builder: (_) => AboutScreen(
+          extra: [
+            if (UpdateService.isUpdateCheckAvailable) _buildUpdateSection(margin: EdgeInsets.zero),
+            if (DonationService.isEnabled) ...[
+              const SizedBox(height: 24),
+              SettingsGroup(margin: EdgeInsets.zero, children: [_buildDonateTile()]),
+            ],
           ],
         ),
+      ),
+    ];
+
+    return Scaffold(
+      // The rail and pane scroll on their own; the outer view only hosts the
+      // sliver app bar. The body takes exactly the space under the bar so the
+      // outer view has no extent for focus-driven ensureVisible to scroll
+      // (SliverFillRemaining would leave the bar's height scrollable).
+      body: CustomScrollView(
+        primary: false,
+        physics: const NeverScrollableScrollPhysics(),
+        slivers: [
+          ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
+          SliverLayoutBuilder(
+            builder: (context, constraints) => SliverToBoxAdapter(
+              child: SizedBox(
+                height: constraints.remainingPaintExtent,
+                child: SettingsCategoryLayout(
+                  key: _layoutKey,
+                  categories: categories,
+                  selectedId: _category,
+                  onSelected: (id) {
+                    if (id != _category) setState(() => _category = id);
+                  },
+                  onExitLeft: _navigateToSidebar,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildGeneralTile() {
-    return SettingNavigationTile(
-      focusNode: _focusTracker.get(_kGeneral),
-      icon: Symbols.settings_rounded,
-      title: t.settings.general,
-      subtitle: t.settings.generalDescription,
-      destinationBuilder: (context) => const GeneralSettingsScreen(),
+  /// Pane body for the categories this screen builds itself.
+  Widget _paneList(List<Widget> children) {
+    return CustomScrollView(
+      primary: false,
+      slivers: [
+        SliverList(
+          delegate: SliverChildListDelegate([const SizedBox(height: 8), ...children, const SizedBox(height: 24)]),
+        ),
+        const SliverSystemBottomInset(),
+      ],
     );
   }
 
@@ -264,68 +287,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Widget _buildAppearanceTile() {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, _) => SettingValueBuilder<int>(
-        pref: settings.SettingsService.libraryDensity,
-        builder: (context, libraryDensity, _) {
-          final summary = '${themeModeLabel(themeProvider.themeMode)} · ${t.settings.libraryDensity} $libraryDensity';
-          return SettingNavigationTile(
-            focusNode: _focusTracker.get(_kAppearance),
-            icon: Symbols.palette_rounded,
-            title: t.settings.appearance,
-            subtitle: summary,
-            destinationBuilder: (context) => const AppearanceSettingsScreen(),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildPlaybackTile() {
-    return SettingNavigationTile(
-      focusNode: _focusTracker.get(_kPlayback),
-      icon: Symbols.play_circle_rounded,
-      title: t.settings.videoPlayback,
-      subtitle: t.settings.videoPlaybackDescription,
-      destinationBuilder: (context) => const PlaybackSettingsScreen(),
-    );
-  }
-
-  Widget _buildManageLibrariesTile(BuildContext context) {
-    return SettingNavigationTile(
-      focusNode: _focusTracker.get(_kManageLibraries),
-      icon: Symbols.video_library_rounded,
-      title: t.libraries.manageLibraries,
-      subtitle: t.settings.manageLibrariesDescription,
-      onTap: () => showLibraryManagementSheet(context),
-    );
-  }
-
-  Widget _buildServicesTile() {
-    // The tracker account providers are watched through [TrackerServiceInfo].
-    return Consumer<SeerrAccountProvider>(
-      builder: (context, seerr, _) {
-        final connectedNames = <String>[
-          for (final info in TrackerServiceInfo.all)
-            if (info.isConnected(context)) info.displayName,
-          if (seerr.isConnected) t.services.names.seerr,
-        ];
-        final subtitle = connectedNames.isEmpty ? t.settings.servicesDescription : connectedNames.join(' · ');
-        return SettingNavigationTile(
-          focusNode: _focusTracker.get(_kServices),
-          icon: Symbols.sync_rounded,
-          title: t.settings.services,
-          subtitle: subtitle,
-          destinationBuilder: (_) => const ServicesSettingsScreen(),
-        );
-      },
-    );
-  }
-
   Widget _buildConnectionsSection(BuildContext context) {
     return SettingsGroup(
-      title: t.connections.sectionTitle,
       children: [
         SettingNavigationTile(
           icon: Symbols.add_link_rounded,
@@ -368,7 +331,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final isCustom = storageService.isUsingCustomPath();
 
     return SettingsGroup(
-      title: t.settings.downloads,
       children: [
         if (!Platform.isIOS)
           FutureBuilder<String>(
@@ -451,10 +413,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   /// Input devices: keyboard shortcuts on platforms with a physical keyboard,
   /// and the companion-remote host on surfaces that can be controlled from a
-  /// phone. Either half may be absent; the caller skips the section when both
+  /// phone. Either half may be absent; the caller skips the category when both
   /// are.
-  Widget _buildControlsSection(BuildContext context) {
-    final children = <Widget>[
+  List<Widget> _buildControlsChildren(BuildContext context) {
+    return <Widget>[
       if (_keyboardService != null) ...[
         SettingNavigationTile(
           focusNode: _focusTracker.get(_kVideoPlayerControls),
@@ -485,15 +447,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.companionRemoteServerDescription,
         ),
     ];
-    // Keyboard platforms render nothing until the shortcuts service loads; an
-    // empty SettingsGroup would paint a bare section title.
-    if (children.isEmpty) return const SizedBox.shrink();
-    return SettingsGroup(title: t.settings.controls, children: children);
   }
 
   Widget _buildAdvancedSection() {
     return SettingsGroup(
-      title: t.settings.advanced,
       children: [
         SettingNavigationTile(
           focusNode: _focusTracker.get(_kWatchTogetherRelay),
@@ -600,10 +557,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     subtitle: t.settings.autoCheckUpdatesOnStartupDescription,
   );
 
-  Widget _buildUpdateSection() {
+  Widget _buildUpdateSection({EdgeInsetsGeometry margin = const EdgeInsets.symmetric(horizontal: 16)}) {
     if (UpdateService.useNativeUpdater) {
       return SettingsGroup(
         title: t.settings.updates,
+        margin: margin,
         children: [
           SettingNavigationTile(
             focusNode: _focusTracker.get(_kCheckForUpdates),
@@ -620,6 +578,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
     return SettingsGroup(
       title: t.settings.updates,
+      margin: margin,
       children: [
         FocusableListTile(
           focusNode: _focusTracker.get(_kCheckForUpdates),

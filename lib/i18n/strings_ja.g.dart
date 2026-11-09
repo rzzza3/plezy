@@ -97,7 +97,7 @@ class _Translations$app$ja extends Translations$app$en {
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'TBD';
 }
 
 // Path: auth
@@ -207,7 +207,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 
 	// Translations
 	@override String get title => '設定';
-	@override String get supportDeveloper => 'Plezyを支援';
+	@override String get supportDeveloper => 'TBDを支援';
 	@override String get supportDeveloperDescription => 'Liberapayで寄付して開発を支援';
 	@override String get language => '言語';
 	@override String get theme => 'テーマ';
@@ -229,6 +229,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get lightTheme => 'ライト';
 	@override String get darkTheme => 'ダーク';
 	@override String get oledTheme => 'OLED';
+	@override String get slateTheme => 'スレート';
 	@override String get libraryDensity => 'ライブラリの密度';
 	@override String get displayScale => '表示スケール';
 	@override String get compact => 'コンパクト';
@@ -346,7 +347,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get importSettingsDescription => 'ファイルから設定を復元';
 	@override String get importSettingsConfirm => '現在の設定を置き換えます。続行しますか？';
 	@override String get importSettingsSuccess => '設定をインポートしました';
-	@override String get importSettingsInvalidFile => 'このファイルは有効なPlezyの設定エクスポートではありません';
+	@override String get importSettingsInvalidFile => 'このファイルは有効なTBDの設定エクスポートではありません';
 	@override String get importSettingsNoUser => '設定をインポートする前にサインインしてください';
 	@override String get shortcutsReset => 'ショートカットをデフォルトにリセットしました';
 	@override String get about => 'アプリについて';
@@ -409,8 +410,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discordで視聴中の内容を表示';
-	@override String get services => 'サービス';
-	@override String get servicesDescription => 'Trakt、MyAnimeList、Seerrなどを接続';
 	@override String get manageLibrariesDescription => 'ライブラリを並べ替えたり非表示にしたりできます';
 	@override String get companionRemoteServer => 'コンパニオンリモートサーバー';
 	@override String get companionRemoteServerDescription => 'ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする';
@@ -466,7 +465,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get forceTvMode => 'TVモードを強制';
 	@override String get forceTvModeDescription => 'TVレイアウトを強制します。自動検出しないデバイス向けです。再起動が必要です。';
 	@override String get startInFullscreen => '全画面表示で起動';
-	@override String get startInFullscreenDescription => '起動時にPlezyを全画面モードで開きます';
+	@override String get startInFullscreenDescription => '起動時にTBDを全画面モードで開きます';
 	@override String get exitFullscreenOnPlayerClose => 'プレイヤーを閉じたときに全画面を終了';
 	@override String get exitFullscreenOnPlayerCloseDescription => 'ビデオプレイヤーを閉じたときに自動的に全画面モードを終了します';
 	@override String get autoHidePerformanceOverlay => 'パフォーマンスオーバーレイを自動非表示';
@@ -512,7 +511,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get playerScopeGlobal => 'すべて';
 	@override String get playerScopeLibrary => 'ライブラリごと';
 	@override String get playerScopeTitle => '作品ごと';
-	@override String get exportDialogTitle => 'Plezyの設定をエクスポート';
+	@override String get exportDialogTitle => 'TBDの設定をエクスポート';
 }
 
 // Path: search
@@ -1016,10 +1015,8 @@ class _Translations$connections$ja extends Translations$connections$en {
 	@override String get sectionTitle => '接続';
 	@override String get addConnection => '接続を追加';
 	@override String sessionExpiredOne({required Object name}) => '${name} のセッションの有効期限が切れました';
-	@override String sessionExpiredMany({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました';
 	@override String accessDeniedOne({required Object name}) => '${name} がこのアカウントへのアクセスを拒否しました';
 	@override String accessDeniedMany({required Object count}) => '${count} 台のサーバーがこのアカウントへのアクセスを拒否しました';
-	@override String get signInAgain => '再度サインイン';
 }
 
 // Path: accountPreferences
@@ -1173,9 +1170,9 @@ class _Translations$startup$ja extends Translations$startup$en {
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get failedTitle => 'Plezyを起動できませんでした';
+	@override String get failedTitle => 'TBDを起動できませんでした';
 	@override String get failedBody => '起動中に問題が発生しました。以下の詳細に失敗の原因が示されています。';
-	@override String get failedBodyRepairable => 'Plezyの保存済み設定ファイルが破損しているため、Plezyを起動する前に再構築する必要があります。再試行しても解決しません —「ストレージを修復」を選択してください。';
+	@override String get failedBodyRepairable => 'TBDの保存済み設定ファイルが破損しているため、TBDを起動する前に再構築する必要があります。再試行しても解決しません —「ストレージを修復」を選択してください。';
 	@override String get phaseLabel => 'ステップ';
 	@override String get showDetails => '詳細を表示';
 	@override String get hideDetails => '詳細を非表示';
@@ -1184,16 +1181,16 @@ class _Translations$startup$ja extends Translations$startup$en {
 	@override String get uploadDetails => '詳細をアップロード';
 	@override String get repairStorage => 'ストレージを修復';
 	@override String get repairTitle => '保存データを修復しますか？';
-	@override String get repairBodyCommon => 'Plezyの設定ファイルが破損しており読み取れません。修復するとすべての設定がデフォルトにリセットされます。';
+	@override String get repairBodyCommon => 'TBDの設定ファイルが破損しており読み取れません。修復するとすべての設定がデフォルトにリセットされます。';
 	@override String get repairBodyOneCredential => '保存済みのサインインの1つが破損しており読み取れません。修復するとその1つだけが削除され、他の設定には影響しません。';
 	@override String get repairBodySignInsKept => 'サーバーとプロフィールはサインインしたままになります。';
 	@override String get repairBodySignInsLost => '保存済みのサインインを保護するキーをこのファイルから復元できないため、すべてのサーバーとプロフィールに再度サインインする必要があります。メディアサーバー上のデータには影響ありません。';
-	@override String get repairBodySessionsUncertain => 'トラッカー（MAL、AniList、Simkl、Trakt）とSeerrは別途保存されており、保持されるかどうかは不明です。Plezyは保持した内容を正確にお知らせします。';
+	@override String get repairBodySessionsUncertain => 'トラッカー（MAL、AniList、Simkl、Trakt）とSeerrは別途保存されており、保持されるかどうかは不明です。TBDは保持した内容を正確にお知らせします。';
 	@override String get repairConfirm => '修復';
 	@override String get repairSucceeded => 'ストレージを修復しました';
 	@override String get repairNeedsRestart => 'ストレージを修復しました — 再起動が必要です';
-	@override String get restartRequiredBody => 'データは修復されましたが、Plezyはそれを使用する前に再起動する必要があります。Plezyを閉じて再度開いてください。';
-	@override String get quitPlezy => 'Plezyを終了';
+	@override String get restartRequiredBody => 'データは修復されましたが、TBDはそれを使用する前に再起動する必要があります。TBDを閉じて再度開いてください。';
+	@override String get quitPlezy => 'TBDを終了';
 	@override String get repairFailed => '修復に失敗しました';
 	@override String get repairKeptSignIns => 'サーバーとプロフィールはサインインしたままです。';
 	@override String get repairLostSignIns => '保存済みのサインインを保護するキーを復元できませんでした。すべてのサーバーとプロフィールに再度サインインする必要があります。';
@@ -1202,7 +1199,7 @@ class _Translations$startup$ja extends Translations$startup$en {
 	@override String get backupWarning => 'このコピーにはサインイン資格情報が含まれています。アップロードや共有はしないでください。';
 	@override String get deleteBackup => 'コピーを削除';
 	@override String get backupDeleted => 'コピーを削除しました。';
-	@override String get previousFailureTitle => '前回、Plezyは起動に失敗しました';
+	@override String get previousFailureTitle => '前回、TBDは起動に失敗しました';
 }
 
 // Path: licenses
@@ -1813,11 +1810,11 @@ class _Translations$trakt$ja extends Translations$trakt$en {
 	@override String get connected => '接続済み';
 	@override String connectedAs({required Object username}) => '@${username}として接続済み';
 	@override String get disconnectConfirm => 'Traktアカウントとの接続を解除しますか？';
-	@override String get disconnectConfirmBody => 'PlezyはTraktへのイベント送信を停止します。いつでも再接続できます。';
+	@override String get disconnectConfirmBody => 'TBDはTraktへのイベント送信を停止します。いつでも再接続できます。';
 	@override String get scrobble => 'リアルタイムのスクロブル';
 	@override String get scrobbleDescription => '再生中に再生・一時停止・停止の各イベントをTraktに送信します。';
 	@override String get watchedSync => '視聴済みステータスを同期';
-	@override String get watchedSyncDescription => 'Plezyで項目を視聴済みにすると、Traktでも視聴済みになります。';
+	@override String get watchedSyncDescription => 'TBDで項目を視聴済みにすると、Traktでも視聴済みになります。';
 }
 
 // Path: seerr
@@ -1834,10 +1831,10 @@ class _Translations$seerr$ja extends Translations$seerr$en {
 	@override String get checkServer => '続ける';
 	@override String get signInWithLocal => 'ローカルアカウントを使う';
 	@override String get email => 'メールアドレス';
-	@override String get noSignInMethods => 'この Seerr インスタンスには Plezy が対応しているサインイン方法がありません。';
+	@override String get noSignInMethods => 'この Seerr インスタンスには TBD が対応しているサインイン方法がありません。';
 	@override String get instance => 'インスタンス';
 	@override String get disconnectConfirm => 'Seerr の接続を解除しますか？';
-	@override String get disconnectConfirmBody => 'Plezy はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。';
+	@override String get disconnectConfirmBody => 'TBD はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。';
 	@override String get request => 'リクエスト';
 	@override String get request4k => '4K でリクエスト';
 	@override String get seasons => 'シーズン';
@@ -1862,7 +1859,7 @@ class _Translations$seerr$ja extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'ブロックリスト登録済み';
 	@override String couldNotReach({required Object url, required Object error}) => '${url}に接続できませんでした: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url}にSeerrインスタンスがありません（HTTP ${status}）';
-	@override String get behindAuthProxy => 'Seerrではなく、認証が必要なリバースプロキシ（SSOまたはHTTP認証）が応答しました。Plezyはこれを通じてサインインできません。このアプリではSeerrの/api/v1パスをプロキシから除外するか、Seerrに直接到達するアドレスを使用してください。';
+	@override String get behindAuthProxy => 'Seerrではなく、認証が必要なリバースプロキシ（SSOまたはHTTP認証）が応答しました。TBDはこれを通じてサインインできません。このアプリではSeerrの/api/v1パスをプロキシから除外するか、Seerrに直接到達するアドレスを使用してください。';
 	@override String get invalidUrl => 'https://seerr.example.comのようなサーバーアドレスを入力してください';
 	@override String get notInitialized => 'このSeerrインスタンスでは初回セットアップが完了していません';
 	@override String get noStoredCredentials => '再サインインに使用できる保存済みの認証情報がありません';
@@ -1890,7 +1887,7 @@ class _Translations$services$ja extends Translations$services$en {
 	@override String get scrobble => '進捗を自動で記録';
 	@override String get scrobbleDescription => 'エピソードや映画を見終えたときにリストを更新します。';
 	@override String disconnectConfirm({required Object service}) => '${service} の接続を解除しますか？';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezyは${service}の更新を停止します。いつでも再接続できます。';
+	@override String disconnectConfirmBody({required Object service}) => 'TBDは${service}の更新を停止します。いつでも再接続できます。';
 	@override String connectFailed({required Object service}) => '${service} に接続できませんでした。もう一度お試しください。';
 	@override late final _Translations$services$names$ja names = _Translations$services$names$ja._(_root);
 	@override late final _Translations$services$deviceCode$ja deviceCode = _Translations$services$deviceCode$ja._(_root);
@@ -2362,14 +2359,14 @@ class _Translations$downloads$backgroundWarning$ja extends Translations$download
 	@override String get bannerAction => '詳細';
 	@override String get sheetTitle => 'バックグラウンドダウンロードはブロックされています';
 	@override String get sheetTitleDegraded => 'バックグラウンドダウンロードが制限される場合があります';
-	@override String get sheetIntro => 'Androidにより、Plezyはバックグラウンドで安定してダウンロードできません。';
-	@override String get sheetIntroDegraded => '端末により、Plezyがバックグラウンドでダウンロードできるタイミングが制限されています。';
-	@override String get reasonBackgroundRestricted => 'Plezyのバックグラウンド使用が制限されています。バッテリー使用量またはバックグラウンド使用を「制限なし」に設定してください。';
-	@override String get reasonStandbyRestricted => 'Androidにより、Plezyが制限付きのスタンバイ状態に設定されています。バッテリー使用量を「制限なし」に設定してください。';
+	@override String get sheetIntro => 'Androidにより、TBDはバックグラウンドで安定してダウンロードできません。';
+	@override String get sheetIntroDegraded => '端末により、TBDがバックグラウンドでダウンロードできるタイミングが制限されています。';
+	@override String get reasonBackgroundRestricted => 'TBDのバックグラウンド使用が制限されています。バッテリー使用量またはバックグラウンド使用を「制限なし」に設定してください。';
+	@override String get reasonStandbyRestricted => 'Androidにより、TBDが制限付きのスタンバイ状態に設定されています。バッテリー使用量を「制限なし」に設定してください。';
 	@override String get reasonDownloadChannelBlocked => 'ダウンロード通知がオフのため、進行状況や操作ボタンを利用できない場合があります。';
 	@override String get reasonNotificationsDisabled => '通知がオフです。Android 13以降では、長時間のバックグラウンドダウンロードに通知が必要です。';
 	@override String get reasonDataSaver => 'データセーバーがオンのため、モバイルデータ通信ではバックグラウンドダウンロードがブロックされます。Wi-Fiでは引き続きダウンロードできるはずです。';
-	@override String get reasonOemUnknown => 'Plezyがバックグラウンドで動作中に、ダウンロードが繰り返し停止しました。Plezyのバッテリー使用量またはバックグラウンド使用の設定を確認してください。';
+	@override String get reasonOemUnknown => 'TBDがバックグラウンドで動作中に、ダウンロードが繰り返し停止しました。TBDのバッテリー使用量またはバックグラウンド使用の設定を確認してください。';
 	@override String get openSettings => '設定を開く';
 	@override String get stillNotWorking => '端末別のヘルプ';
 	@override String get stillNotWorkingDescription => 'お使いの端末向けの手順を確認してください。問題が続く場合は、設定 › ログを表示 からログを送信してください。';
@@ -2427,13 +2424,13 @@ class _Translations$companionRemote$pairing$ja extends Translations$companionRem
 	@override String get connecting => '接続中…';
 	@override String get searchingForDevices => 'デバイスを検索中…';
 	@override String get noDevicesFound => 'ネットワーク上にデバイスが見つかりません';
-	@override String get noDevicesHint => 'デスクトップでPlezyを開き、同じWi-Fiネットワークに接続してください';
+	@override String get noDevicesHint => 'デスクトップでTBDを開き、同じWi-Fiネットワークに接続してください';
 	@override String get availableDevices => '利用可能なデバイス';
 	@override String get manualConnection => '手動接続';
 	@override String get validationHostRequired => 'ホストアドレスを入力してください';
 	@override String get validationHostFormat => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）';
 	@override String get connectionTimedOut => '接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。';
-	@override String get sessionNotFound => 'デバイスが見つかりません。ホストでPlezyが実行中か確認してください。';
+	@override String get sessionNotFound => 'デバイスが見つかりません。ホストでTBDが実行中か確認してください。';
 	@override String failedToConnect({required Object error}) => '接続に失敗しました: ${error}';
 }
 
@@ -2511,7 +2508,7 @@ class _Translations$services$deviceCode$ja extends Translations$services$deviceC
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => '${service} で Plezy を有効化';
+	@override String title({required Object service}) => '${service} で TBD を有効化';
 	@override String get instructions => 'QRコードをスキャンするか、以下のアドレスにアクセスしてこのコードを入力してください:';
 	@override String openToActivate({required Object service}) => '${service} を開いて有効化';
 	@override String get copyCode => 'アクティベーションコードをコピー';
@@ -2571,7 +2568,7 @@ class _Translations$services$libraryFilter$ja extends Translations$services$libr
 extension on TranslationsJa {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
+			'app.title' => 'TBD',
 			'auth.localDataRecoveryRequired' => 'ローカルのサインイン情報と保留中の再生データを安全に復元できませんでした。もう一度サインインしてください。',
 			'common.cancel' => 'キャンセル',
 			'common.save' => '保存',
@@ -2657,7 +2654,7 @@ extension on TranslationsJa {
 			'update.latestVersion' => '最新バージョンです',
 			'update.checkFailed' => 'アップデートの確認に失敗しました',
 			'settings.title' => '設定',
-			'settings.supportDeveloper' => 'Plezyを支援',
+			'settings.supportDeveloper' => 'TBDを支援',
 			'settings.supportDeveloperDescription' => 'Liberapayで寄付して開発を支援',
 			'settings.language' => '言語',
 			'settings.theme' => 'テーマ',
@@ -2679,6 +2676,7 @@ extension on TranslationsJa {
 			'settings.lightTheme' => 'ライト',
 			'settings.darkTheme' => 'ダーク',
 			'settings.oledTheme' => 'OLED',
+			'settings.slateTheme' => 'スレート',
 			'settings.libraryDensity' => 'ライブラリの密度',
 			'settings.displayScale' => '表示スケール',
 			'settings.compact' => 'コンパクト',
@@ -2796,7 +2794,7 @@ extension on TranslationsJa {
 			'settings.importSettingsDescription' => 'ファイルから設定を復元',
 			'settings.importSettingsConfirm' => '現在の設定を置き換えます。続行しますか？',
 			'settings.importSettingsSuccess' => '設定をインポートしました',
-			'settings.importSettingsInvalidFile' => 'このファイルは有効なPlezyの設定エクスポートではありません',
+			'settings.importSettingsInvalidFile' => 'このファイルは有効なTBDの設定エクスポートではありません',
 			'settings.importSettingsNoUser' => '設定をインポートする前にサインインしてください',
 			'settings.shortcutsReset' => 'ショートカットをデフォルトにリセットしました',
 			'settings.about' => 'アプリについて',
@@ -2859,8 +2857,6 @@ extension on TranslationsJa {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Discordで視聴中の内容を表示',
-			'settings.services' => 'サービス',
-			'settings.servicesDescription' => 'Trakt、MyAnimeList、Seerrなどを接続',
 			'settings.manageLibrariesDescription' => 'ライブラリを並べ替えたり非表示にしたりできます',
 			'settings.companionRemoteServer' => 'コンパニオンリモートサーバー',
 			'settings.companionRemoteServerDescription' => 'ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする',
@@ -2916,7 +2912,7 @@ extension on TranslationsJa {
 			'settings.forceTvMode' => 'TVモードを強制',
 			'settings.forceTvModeDescription' => 'TVレイアウトを強制します。自動検出しないデバイス向けです。再起動が必要です。',
 			'settings.startInFullscreen' => '全画面表示で起動',
-			'settings.startInFullscreenDescription' => '起動時にPlezyを全画面モードで開きます',
+			'settings.startInFullscreenDescription' => '起動時にTBDを全画面モードで開きます',
 			'settings.exitFullscreenOnPlayerClose' => 'プレイヤーを閉じたときに全画面を終了',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'ビデオプレイヤーを閉じたときに自動的に全画面モードを終了します',
 			'settings.autoHidePerformanceOverlay' => 'パフォーマンスオーバーレイを自動非表示',
@@ -2962,7 +2958,7 @@ extension on TranslationsJa {
 			'settings.playerScopeGlobal' => 'すべて',
 			'settings.playerScopeLibrary' => 'ライブラリごと',
 			'settings.playerScopeTitle' => '作品ごと',
-			'settings.exportDialogTitle' => 'Plezyの設定をエクスポート',
+			'settings.exportDialogTitle' => 'TBDの設定をエクスポート',
 			'search.hint' => '映画、番組、音楽を検索…',
 			'search.tryDifferentTerm' => '別の検索語をお試しください',
 			'search.searchYourMedia' => 'メディアを検索',
@@ -3083,9 +3079,9 @@ extension on TranslationsJa {
 			'fileInfo.previewIndex' => 'プレビューインデックス',
 			'fileInfo.packetLength' => 'パケット長',
 			'fileInfo.filePresent' => 'ファイルあり',
+			'fileInfo.fileReadable' => 'サーバーから読み取り可能',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.fileReadable' => 'サーバーから読み取り可能',
 			'fileInfo.streamPath' => 'ストリームパス',
 			'fileInfo.optimizedForStreaming' => 'ストリーミング最適化',
 			'fileInfo.has64bitOffsets' => '64ビットオフセット',
@@ -3371,10 +3367,8 @@ extension on TranslationsJa {
 			'connections.sectionTitle' => '接続',
 			'connections.addConnection' => '接続を追加',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} のセッションの有効期限が切れました',
-			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} がこのアカウントへのアクセスを拒否しました',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} 台のサーバーがこのアカウントへのアクセスを拒否しました',
-			'connections.signInAgain' => '再度サインイン',
 			'accountPreferences.sectionTitle' => 'アカウント設定',
 			'accountPreferences.unavailable' => 'このアカウントにアクセスできません',
 			'accountPreferences.autoSelectAudio' => '言語で音声を選択',
@@ -3487,9 +3481,9 @@ extension on TranslationsJa {
 			'logs.clearLogs' => 'ログをクリア',
 			'logs.copyLogs' => 'ログをコピー',
 			'logs.uploadLogs' => 'ログをアップロード',
-			'startup.failedTitle' => 'Plezyを起動できませんでした',
+			'startup.failedTitle' => 'TBDを起動できませんでした',
 			'startup.failedBody' => '起動中に問題が発生しました。以下の詳細に失敗の原因が示されています。',
-			'startup.failedBodyRepairable' => 'Plezyの保存済み設定ファイルが破損しているため、Plezyを起動する前に再構築する必要があります。再試行しても解決しません —「ストレージを修復」を選択してください。',
+			'startup.failedBodyRepairable' => 'TBDの保存済み設定ファイルが破損しているため、TBDを起動する前に再構築する必要があります。再試行しても解決しません —「ストレージを修復」を選択してください。',
 			'startup.phaseLabel' => 'ステップ',
 			'startup.showDetails' => '詳細を表示',
 			'startup.hideDetails' => '詳細を非表示',
@@ -3498,16 +3492,16 @@ extension on TranslationsJa {
 			'startup.uploadDetails' => '詳細をアップロード',
 			'startup.repairStorage' => 'ストレージを修復',
 			'startup.repairTitle' => '保存データを修復しますか？',
-			'startup.repairBodyCommon' => 'Plezyの設定ファイルが破損しており読み取れません。修復するとすべての設定がデフォルトにリセットされます。',
+			'startup.repairBodyCommon' => 'TBDの設定ファイルが破損しており読み取れません。修復するとすべての設定がデフォルトにリセットされます。',
 			'startup.repairBodyOneCredential' => '保存済みのサインインの1つが破損しており読み取れません。修復するとその1つだけが削除され、他の設定には影響しません。',
 			'startup.repairBodySignInsKept' => 'サーバーとプロフィールはサインインしたままになります。',
 			'startup.repairBodySignInsLost' => '保存済みのサインインを保護するキーをこのファイルから復元できないため、すべてのサーバーとプロフィールに再度サインインする必要があります。メディアサーバー上のデータには影響ありません。',
-			'startup.repairBodySessionsUncertain' => 'トラッカー（MAL、AniList、Simkl、Trakt）とSeerrは別途保存されており、保持されるかどうかは不明です。Plezyは保持した内容を正確にお知らせします。',
+			'startup.repairBodySessionsUncertain' => 'トラッカー（MAL、AniList、Simkl、Trakt）とSeerrは別途保存されており、保持されるかどうかは不明です。TBDは保持した内容を正確にお知らせします。',
 			'startup.repairConfirm' => '修復',
 			'startup.repairSucceeded' => 'ストレージを修復しました',
 			'startup.repairNeedsRestart' => 'ストレージを修復しました — 再起動が必要です',
-			'startup.restartRequiredBody' => 'データは修復されましたが、Plezyはそれを使用する前に再起動する必要があります。Plezyを閉じて再度開いてください。',
-			'startup.quitPlezy' => 'Plezyを終了',
+			'startup.restartRequiredBody' => 'データは修復されましたが、TBDはそれを使用する前に再起動する必要があります。TBDを閉じて再度開いてください。',
+			'startup.quitPlezy' => 'TBDを終了',
 			'startup.repairFailed' => '修復に失敗しました',
 			'startup.repairKeptSignIns' => 'サーバーとプロフィールはサインインしたままです。',
 			'startup.repairLostSignIns' => '保存済みのサインインを保護するキーを復元できませんでした。すべてのサーバーとプロフィールに再度サインインする必要があります。',
@@ -3516,7 +3510,7 @@ extension on TranslationsJa {
 			'startup.backupWarning' => 'このコピーにはサインイン資格情報が含まれています。アップロードや共有はしないでください。',
 			'startup.deleteBackup' => 'コピーを削除',
 			'startup.backupDeleted' => 'コピーを削除しました。',
-			'startup.previousFailureTitle' => '前回、Plezyは起動に失敗しました',
+			'startup.previousFailureTitle' => '前回、TBDは起動に失敗しました',
 			'licenses.relatedPackages' => '関連パッケージ',
 			'licenses.license' => 'ライセンス',
 			'licenses.licenseNumber' => ({required Object number}) => 'ライセンス ${number}',
@@ -3597,11 +3591,11 @@ extension on TranslationsJa {
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: 'コメント ${n}件', ), 
 			'explore.stats.votes' => ({required Object n}) => '投票 ${n}件',
 			'explore.stats.watching' => ({required Object n}) => '${n}人が視聴中',
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n}人が視聴済み',
 			'explore.stats.onHold' => ({required Object n}) => '${n}人が保留中',
 			'explore.stats.dropped' => ({required Object n}) => '${n}人が視聴中止',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => '冬',
 			'explore.season.spring' => '春',
 			'explore.season.summer' => '夏',
@@ -3915,14 +3909,14 @@ extension on TranslationsJa {
 			'downloads.backgroundWarning.bannerAction' => '詳細',
 			'downloads.backgroundWarning.sheetTitle' => 'バックグラウンドダウンロードはブロックされています',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'バックグラウンドダウンロードが制限される場合があります',
-			'downloads.backgroundWarning.sheetIntro' => 'Androidにより、Plezyはバックグラウンドで安定してダウンロードできません。',
-			'downloads.backgroundWarning.sheetIntroDegraded' => '端末により、Plezyがバックグラウンドでダウンロードできるタイミングが制限されています。',
-			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezyのバックグラウンド使用が制限されています。バッテリー使用量またはバックグラウンド使用を「制限なし」に設定してください。',
-			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Androidにより、Plezyが制限付きのスタンバイ状態に設定されています。バッテリー使用量を「制限なし」に設定してください。',
+			'downloads.backgroundWarning.sheetIntro' => 'Androidにより、TBDはバックグラウンドで安定してダウンロードできません。',
+			'downloads.backgroundWarning.sheetIntroDegraded' => '端末により、TBDがバックグラウンドでダウンロードできるタイミングが制限されています。',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'TBDのバックグラウンド使用が制限されています。バッテリー使用量またはバックグラウンド使用を「制限なし」に設定してください。',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Androidにより、TBDが制限付きのスタンバイ状態に設定されています。バッテリー使用量を「制限なし」に設定してください。',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'ダウンロード通知がオフのため、進行状況や操作ボタンを利用できない場合があります。',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => '通知がオフです。Android 13以降では、長時間のバックグラウンドダウンロードに通知が必要です。',
 			'downloads.backgroundWarning.reasonDataSaver' => 'データセーバーがオンのため、モバイルデータ通信ではバックグラウンドダウンロードがブロックされます。Wi-Fiでは引き続きダウンロードできるはずです。',
-			'downloads.backgroundWarning.reasonOemUnknown' => 'Plezyがバックグラウンドで動作中に、ダウンロードが繰り返し停止しました。Plezyのバッテリー使用量またはバックグラウンド使用の設定を確認してください。',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'TBDがバックグラウンドで動作中に、ダウンロードが繰り返し停止しました。TBDのバッテリー使用量またはバックグラウンド使用の設定を確認してください。',
 			'downloads.backgroundWarning.openSettings' => '設定を開く',
 			'downloads.backgroundWarning.stillNotWorking' => '端末別のヘルプ',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'お使いの端末向けの手順を確認してください。問題が続く場合は、設定 › ログを表示 からログを送信してください。',
@@ -3989,13 +3983,13 @@ extension on TranslationsJa {
 			'companionRemote.pairing.connecting' => '接続中…',
 			'companionRemote.pairing.searchingForDevices' => 'デバイスを検索中…',
 			'companionRemote.pairing.noDevicesFound' => 'ネットワーク上にデバイスが見つかりません',
-			'companionRemote.pairing.noDevicesHint' => 'デスクトップでPlezyを開き、同じWi-Fiネットワークに接続してください',
+			'companionRemote.pairing.noDevicesHint' => 'デスクトップでTBDを開き、同じWi-Fiネットワークに接続してください',
 			'companionRemote.pairing.availableDevices' => '利用可能なデバイス',
 			'companionRemote.pairing.manualConnection' => '手動接続',
 			'companionRemote.pairing.validationHostRequired' => 'ホストアドレスを入力してください',
 			'companionRemote.pairing.validationHostFormat' => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。',
-			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでPlezyが実行中か確認してください。',
+			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでTBDが実行中か確認してください。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションを切断しますか？',
 			'companionRemote.remote.reconnecting' => '再接続中…',
@@ -4111,11 +4105,11 @@ extension on TranslationsJa {
 			'externalPlayer.customPlayers' => 'カスタムプレーヤー',
 			'externalPlayer.systemDefault' => 'システム既定',
 			'externalPlayer.addCustomPlayer' => 'カスタムプレーヤーを追加',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerName' => 'プレーヤー名',
 			'externalPlayer.playerNameHint' => 'マイプレーヤー',
 			'externalPlayer.playerCommand' => 'コマンド',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerPackage' => 'パッケージ名',
 			'externalPlayer.playerUrlScheme' => 'URLスキーム',
 			'externalPlayer.off' => 'オフ',
@@ -4156,11 +4150,11 @@ extension on TranslationsJa {
 			'trakt.connected' => '接続済み',
 			'trakt.connectedAs' => ({required Object username}) => '@${username}として接続済み',
 			'trakt.disconnectConfirm' => 'Traktアカウントとの接続を解除しますか？',
-			'trakt.disconnectConfirmBody' => 'PlezyはTraktへのイベント送信を停止します。いつでも再接続できます。',
+			'trakt.disconnectConfirmBody' => 'TBDはTraktへのイベント送信を停止します。いつでも再接続できます。',
 			'trakt.scrobble' => 'リアルタイムのスクロブル',
 			'trakt.scrobbleDescription' => '再生中に再生・一時停止・停止の各イベントをTraktに送信します。',
 			'trakt.watchedSync' => '視聴済みステータスを同期',
-			'trakt.watchedSyncDescription' => 'Plezyで項目を視聴済みにすると、Traktでも視聴済みになります。',
+			'trakt.watchedSyncDescription' => 'TBDで項目を視聴済みにすると、Traktでも視聴済みになります。',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerrに接続',
 			'seerr.serverUrl' => 'サーバー URL',
@@ -4168,10 +4162,10 @@ extension on TranslationsJa {
 			'seerr.checkServer' => '続ける',
 			'seerr.signInWithLocal' => 'ローカルアカウントを使う',
 			'seerr.email' => 'メールアドレス',
-			'seerr.noSignInMethods' => 'この Seerr インスタンスには Plezy が対応しているサインイン方法がありません。',
+			'seerr.noSignInMethods' => 'この Seerr インスタンスには TBD が対応しているサインイン方法がありません。',
 			'seerr.instance' => 'インスタンス',
 			'seerr.disconnectConfirm' => 'Seerr の接続を解除しますか？',
-			'seerr.disconnectConfirmBody' => 'Plezy はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。',
+			'seerr.disconnectConfirmBody' => 'TBD はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。',
 			'seerr.request' => 'リクエスト',
 			'seerr.request4k' => '4K でリクエスト',
 			'seerr.seasons' => 'シーズン',
@@ -4196,7 +4190,7 @@ extension on TranslationsJa {
 			'seerr.statusBlocklisted' => 'ブロックリスト登録済み',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url}に接続できませんでした: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url}にSeerrインスタンスがありません（HTTP ${status}）',
-			'seerr.behindAuthProxy' => 'Seerrではなく、認証が必要なリバースプロキシ（SSOまたはHTTP認証）が応答しました。Plezyはこれを通じてサインインできません。このアプリではSeerrの/api/v1パスをプロキシから除外するか、Seerrに直接到達するアドレスを使用してください。',
+			'seerr.behindAuthProxy' => 'Seerrではなく、認証が必要なリバースプロキシ（SSOまたはHTTP認証）が応答しました。TBDはこれを通じてサインインできません。このアプリではSeerrの/api/v1パスをプロキシから除外するか、Seerrに直接到達するアドレスを使用してください。',
 			'seerr.invalidUrl' => 'https://seerr.example.comのようなサーバーアドレスを入力してください',
 			'seerr.notInitialized' => 'このSeerrインスタンスでは初回セットアップが完了していません',
 			'seerr.noStoredCredentials' => '再サインインに使用できる保存済みの認証情報がありません',
@@ -4215,14 +4209,14 @@ extension on TranslationsJa {
 			'services.scrobble' => '進捗を自動で記録',
 			'services.scrobbleDescription' => 'エピソードや映画を見終えたときにリストを更新します。',
 			'services.disconnectConfirm' => ({required Object service}) => '${service} の接続を解除しますか？',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezyは${service}の更新を停止します。いつでも再接続できます。',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'TBDは${service}の更新を停止します。いつでも再接続できます。',
 			'services.connectFailed' => ({required Object service}) => '${service} に接続できませんでした。もう一度お試しください。',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
-			'services.deviceCode.title' => ({required Object service}) => '${service} で Plezy を有効化',
+			'services.deviceCode.title' => ({required Object service}) => '${service} で TBD を有効化',
 			'services.deviceCode.instructions' => 'QRコードをスキャンするか、以下のアドレスにアクセスしてこのコードを入力してください:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '${service} を開いて有効化',
 			'services.deviceCode.copyCode' => 'アクティベーションコードをコピー',

@@ -1,9 +1,9 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "TBD"
   },
   "auth": {
-    "localDataRecoveryRequired": "Plezy 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。"
+    "localDataRecoveryRequired": "TBD 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。"
   },
   "common": {
     "cancel": "取消",
@@ -100,7 +100,7 @@
   },
   "settings": {
     "title": "设置",
-    "supportDeveloper": "支持 Plezy",
+    "supportDeveloper": "支持 TBD",
     "supportDeveloperDescription": "通过 Liberapay 捐赠支持开发",
     "language": "语言",
     "theme": "主题",
@@ -122,6 +122,7 @@
     "lightTheme": "浅色",
     "darkTheme": "深色",
     "oledTheme": "OLED",
+    "slateTheme": "石板灰",
     "libraryDensity": "媒体库密度",
     "displayScale": "界面缩放",
     "compact": "紧凑",
@@ -239,7 +240,7 @@
     "importSettingsDescription": "从文件恢复偏好设置",
     "importSettingsConfirm": "这将替换您当前的设置。继续吗？",
     "importSettingsSuccess": "设置已导入",
-    "importSettingsInvalidFile": "此文件不是有效的 Plezy 设置导出",
+    "importSettingsInvalidFile": "此文件不是有效的 TBD 设置导出",
     "importSettingsNoUser": "导入设置前请先登录",
     "shortcutsReset": "快捷键已重置为默认值",
     "resetShortcutsConfirm": "",
@@ -303,8 +304,6 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord 动态状态",
     "discordRichPresenceDescription": "在 Discord 上显示您正在观看的内容",
-    "services": "服务",
-    "servicesDescription": "连接 Trakt、MyAnimeList、Seerr 等",
     "manageLibrariesDescription": "重新排序和隐藏媒体库",
     "companionRemoteServer": "远程控制服务器",
     "companionRemoteServerDescription": "允许同一网络中的移动设备控制此应用",
@@ -368,7 +367,7 @@
     "forceTvMode": "强制 TV 模式",
     "forceTvModeDescription": "强制 TV 布局。适用于无法自动检测的设备。需要重启。",
     "startInFullscreen": "以全屏模式启动",
-    "startInFullscreenDescription": "启动时以全屏模式打开 Plezy",
+    "startInFullscreenDescription": "启动时以全屏模式打开 TBD",
     "exitFullscreenOnPlayerClose": "关闭播放器时退出全屏",
     "exitFullscreenOnPlayerCloseDescription": "关闭视频播放器时自动退出全屏模式",
     "autoHidePerformanceOverlay": "自动隐藏性能叠加层",
@@ -414,7 +413,7 @@
     "playerScopeGlobal": "所有位置",
     "playerScopeLibrary": "按媒体库",
     "playerScopeTitle": "按剧集或电影",
-    "exportDialogTitle": "导出 Plezy 设置"
+    "exportDialogTitle": "导出 TBD 设置"
   },
   "search": {
     "hint": "搜索电影、剧集、音乐…",
@@ -856,10 +855,8 @@
     "sectionTitle": "连接",
     "addConnection": "添加连接",
     "sessionExpiredOne": "${name} 的会话已过期",
-    "sessionExpiredMany": "${count} 个服务器的会话已过期",
     "accessDeniedOne": "${name} 拒绝此账户访问",
-    "accessDeniedMany": "${count} 台服务器拒绝此账户访问",
-    "signInAgain": "重新登录"
+    "accessDeniedMany": "${count} 台服务器拒绝此账户访问"
   },
   "accountPreferences": {
     "sectionTitle": "账户偏好",
@@ -1033,9 +1030,9 @@
     "uploadLogs": "上传日志"
   },
   "startup": {
-    "failedTitle": "Plezy 无法启动",
+    "failedTitle": "TBD 无法启动",
     "failedBody": "启动过程中出现问题。以下详情指出了失败的原因。",
-    "failedBodyRepairable": "Plezy 的已保存设置文件已损坏，必须先重建才能启动。重试没有用——请选择“修复存储”。",
+    "failedBodyRepairable": "TBD 的已保存设置文件已损坏，必须先重建才能启动。重试没有用——请选择“修复存储”。",
     "phaseLabel": "步骤",
     "showDetails": "显示详情",
     "hideDetails": "隐藏详情",
@@ -1044,16 +1041,16 @@
     "uploadDetails": "上传详情",
     "repairStorage": "修复存储",
     "repairTitle": "修复已存储的数据？",
-    "repairBodyCommon": "Plezy 的设置文件已损坏且无法读取。修复会将所有设置重置为默认值。",
+    "repairBodyCommon": "TBD 的设置文件已损坏且无法读取。修复会将所有设置重置为默认值。",
     "repairBodyOneCredential": "有一项已保存的登录信息已损坏且无法读取。修复只会移除这一项，其他设置保持不变。",
     "repairBodySignInsKept": "你的服务器和个人资料应保持登录状态。",
     "repairBodySignInsLost": "保护已保存登录信息的密钥无法从此文件中恢复，因此你需要重新登录每个服务器和个人资料。媒体服务器上的内容不受影响。",
-    "repairBodySessionsUncertain": "追踪服务（MAL、AniList、Simkl、Trakt）和 Seerr 是分开存储的，可能保留也可能无法保留。Plezy 会明确告诉你保留了哪些。",
+    "repairBodySessionsUncertain": "追踪服务（MAL、AniList、Simkl、Trakt）和 Seerr 是分开存储的，可能保留也可能无法保留。TBD 会明确告诉你保留了哪些。",
     "repairConfirm": "修复",
     "repairSucceeded": "存储已修复",
     "repairNeedsRestart": "存储已修复 — 需要重启",
-    "restartRequiredBody": "你的数据已修复，但 Plezy 需要重新启动后才能使用。请关闭 Plezy 并重新打开。",
-    "quitPlezy": "退出 Plezy",
+    "restartRequiredBody": "你的数据已修复，但 TBD 需要重新启动后才能使用。请关闭 TBD 并重新打开。",
+    "quitPlezy": "退出 TBD",
     "repairFailed": "修复失败",
     "repairKeptSignIns": "你的服务器和个人资料仍然保持登录状态。",
     "repairLostSignIns": "保护已保存登录信息的密钥无法恢复。你需要重新登录每个服务器和个人资料。",
@@ -1062,7 +1059,7 @@
     "backupWarning": "其中包含你的登录凭据。请勿上传或分享。",
     "deleteBackup": "删除副本",
     "backupDeleted": "副本已删除。",
-    "previousFailureTitle": "Plezy 上次启动失败"
+    "previousFailureTitle": "TBD 上次启动失败"
   },
   "licenses": {
     "relatedPackages": "相关软件包",
@@ -1520,14 +1517,14 @@
       "bannerAction": "详情",
       "sheetTitle": "后台下载已被阻止",
       "sheetTitleDegraded": "后台下载可能受限",
-      "sheetIntro": "Android 正在阻止 Plezy 在后台稳定下载。",
-      "sheetIntroDegraded": "你的设备限制了 Plezy 在后台下载的时机。",
-      "reasonBackgroundRestricted": "Plezy 的后台使用受到限制。请将其电池用量或后台使用设置为“不受限制”。",
-      "reasonStandbyRestricted": "Android 已将 Plezy 置于受限待机状态。请将其电池用量设为“不受限制”。",
+      "sheetIntro": "Android 正在阻止 TBD 在后台稳定下载。",
+      "sheetIntroDegraded": "你的设备限制了 TBD 在后台下载的时机。",
+      "reasonBackgroundRestricted": "TBD 的后台使用受到限制。请将其电池用量或后台使用设置为“不受限制”。",
+      "reasonStandbyRestricted": "Android 已将 TBD 置于受限待机状态。请将其电池用量设为“不受限制”。",
       "reasonDownloadChannelBlocked": "下载通知已关闭，因此可能无法查看进度或进行控制。",
       "reasonNotificationsDisabled": "通知已关闭。在 Android 13 或更高版本中，长时间后台下载需要开启通知。",
       "reasonDataSaver": "流量节省程序已开启，会阻止使用移动数据进行后台下载。使用 Wi-Fi 时下载应仍可进行。",
-      "reasonOemUnknown": "Plezy 在后台时，下载曾多次停止。请检查 Plezy 的电池用量或后台使用设置。",
+      "reasonOemUnknown": "TBD 在后台时，下载曾多次停止。请检查 TBD 的电池用量或后台使用设置。",
       "openSettings": "打开设置",
       "stillNotWorking": "设备专属帮助",
       "stillNotWorkingDescription": "查看适用于你设备的操作步骤；如果问题仍然存在，请通过设置 › 查看日志发送日志。",
@@ -1605,13 +1602,13 @@
       "connecting": "正在连接…",
       "searchingForDevices": "正在搜索设备…",
       "noDevicesFound": "未在网络中找到设备",
-      "noDevicesHint": "请在桌面端打开 Plezy，并确保设备连接到同一 Wi-Fi 网络",
+      "noDevicesHint": "请在桌面端打开 TBD，并确保设备连接到同一 Wi-Fi 网络",
       "availableDevices": "可用设备",
       "manualConnection": "手动连接",
       "validationHostRequired": "请输入主机地址",
       "validationHostFormat": "格式必须为 IP:端口（例如 192.168.1.100:48632）",
       "connectionTimedOut": "连接超时。请在两台设备上使用同一网络。",
-      "sessionNotFound": "未找到设备。请确认 Plezy 正在主机上运行。",
+      "sessionNotFound": "未找到设备。请确认 TBD 正在主机上运行。",
       "failedToConnect": "连接失败：${error}"
     },
     "remote": {
@@ -1796,11 +1793,11 @@
     "connected": "已连接",
     "connectedAs": "已以 @${username} 身份连接",
     "disconnectConfirm": "断开 Trakt 账户？",
-    "disconnectConfirmBody": "Plezy 将停止向 Trakt 发送事件。你可随时重新连接。",
+    "disconnectConfirmBody": "TBD 将停止向 Trakt 发送事件。你可随时重新连接。",
     "scrobble": "实时同步播放状态",
     "scrobbleDescription": "播放期间将播放、暂停和停止事件发送到 Trakt。",
     "watchedSync": "同步已观看状态",
-    "watchedSyncDescription": "在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。"
+    "watchedSyncDescription": "在 TBD 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。"
   },
   "seerr": {
     "title": "Seerr",
@@ -1810,10 +1807,10 @@
     "checkServer": "继续",
     "signInWithLocal": "使用本地账户",
     "email": "邮箱",
-    "noSignInMethods": "此 Seerr 实例未提供 Plezy 支持的登录方式。",
+    "noSignInMethods": "此 Seerr 实例未提供 TBD 支持的登录方式。",
     "instance": "实例",
     "disconnectConfirm": "断开 Seerr 连接？",
-    "disconnectConfirmBody": "Plezy 将忘记此 Seerr 实例。可随时重新连接。",
+    "disconnectConfirmBody": "TBD 将忘记此 Seerr 实例。可随时重新连接。",
     "request": "请求",
     "request4k": "请求 4K",
     "seasons": "季",
@@ -1838,7 +1835,7 @@
     "statusBlocklisted": "已加入屏蔽列表",
     "couldNotReach": "无法连接到 ${url}：${error}",
     "noInstanceAtUrl": "${url} 上没有 Seerr 实例（HTTP ${status}）",
-    "behindAuthProxy": "响应来自需要身份验证的反向代理（SSO 或 HTTP 认证），而非 Seerr。Plezy 无法通过它登录：请让 Seerr 的 /api/v1 路径为此应用绕过代理，或使用可直接访问 Seerr 的地址。",
+    "behindAuthProxy": "响应来自需要身份验证的反向代理（SSO 或 HTTP 认证），而非 Seerr。TBD 无法通过它登录：请让 Seerr 的 /api/v1 路径为此应用绕过代理，或使用可直接访问 Seerr 的地址。",
     "invalidUrl": "输入服务器地址，例如 https://seerr.example.com",
     "notInitialized": "此 Seerr 实例尚未完成首次运行设置",
     "noStoredCredentials": "没有已保存的凭据可用于重新登录",
@@ -1859,7 +1856,7 @@
     "scrobble": "自动记录进度",
     "scrobbleDescription": "观看完一集或一部电影后更新你的列表。",
     "disconnectConfirm": "断开 ${service} 连接？",
-    "disconnectConfirmBody": "Plezy 将停止更新 ${service}。可随时重新连接。",
+    "disconnectConfirmBody": "TBD 将停止更新 ${service}。可随时重新连接。",
     "connectFailed": "无法连接到 ${service}。请重试。",
     "names": {
       "mal": "MyAnimeList",
@@ -1873,7 +1870,7 @@
       "subtitle": ""
     },
     "deviceCode": {
-      "title": "在 ${service} 上激活 Plezy",
+      "title": "在 ${service} 上激活 TBD",
       "instructions": "扫描二维码，或访问下方地址并输入此代码：",
       "openToActivate": "打开 ${service} 以激活",
       "copyCode": "复制激活代码",

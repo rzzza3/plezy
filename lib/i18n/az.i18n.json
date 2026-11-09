@@ -1,9 +1,9 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "TBD"
   },
   "auth": {
-    "localDataRecoveryRequired": "Plezy yerli daxil olma və gözləyən oxutma məlumatlarını təhlükəsiz bərpa edə bilmədi. Lütfən təzədən daxil olun."
+    "localDataRecoveryRequired": "TBD yerli daxil olma və gözləyən oxutma məlumatlarını təhlükəsiz bərpa edə bilmədi. Lütfən təzədən daxil olun."
   },
   "common": {
     "cancel": "Ləğv et",
@@ -100,7 +100,7 @@
   },
   "settings": {
     "title": "Tənzimləmələr",
-    "supportDeveloper": "Plezy-yə dəstək ol",
+    "supportDeveloper": "TBD-yə dəstək ol",
     "supportDeveloperDescription": "İnkişafı maliyyələşdirmək üçün Liberapay vasitəsilə iyanə edin",
     "language": "Dil",
     "theme": "Mövzu",
@@ -239,7 +239,7 @@
     "importSettingsDescription": "Seçimləri fayldan bərpa edin",
     "importSettingsConfirm": "Bu cari tənzimləmələrinizin üzərinə yazacaq. Davam edilsin?",
     "importSettingsSuccess": "Tənzimləmələr idxal edildi",
-    "importSettingsInvalidFile": "Bu fayl düzgün Plezy tənzimləmələr faylı deyil",
+    "importSettingsInvalidFile": "Bu fayl düzgün TBD tənzimləmələr faylı deyil",
     "importSettingsNoUser": "Tənzimləmələri idxal etməzdən əvvəl daxil olun",
     "shortcutsReset": "Qısayollar defolt vəziyyətə sıfırlandı",
     "resetShortcutsConfirm": "",
@@ -303,8 +303,6 @@
     "maxVolumePercent": "%${percent}",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Discord-da nəyə baxdığınızı göstərin",
-    "services": "Xidmətlər",
-    "servicesDescription": "Trakt, MyAnimeList, Seerr və daha çoxunu qoşun",
     "manageLibrariesDescription": "Kitabxanaları yenidən sıralayın və gizlədin",
     "companionRemoteServer": "Köməkçi pult serveri",
     "companionRemoteServerDescription": "Şəbəkənizdəki mobil cihazların bu tətbiqi idarə etməsinə icazə verin",
@@ -368,7 +366,7 @@
     "forceTvMode": "TV rejimini məcburi et",
     "forceTvModeDescription": "TV interfeysini məcburi et. Avtomatik təyin etməyən cihazlar üçündür. Yenidən başlatma tələb olunur.",
     "startInFullscreen": "Tam ekranda başlat",
-    "startInFullscreenDescription": "Plezy-ni açılışda tam ekran rejimində aç",
+    "startInFullscreenDescription": "TBD-ni açılışda tam ekran rejimində aç",
     "exitFullscreenOnPlayerClose": "Oynadıcı bağlandıqda tam ekrandan çıx",
     "exitFullscreenOnPlayerCloseDescription": "Video oynadıcını bağlayarkən avtomatik tam ekrandan çıx",
     "autoHidePerformanceOverlay": "Məhsuldarlıq paneli avtomatik gizlənsin",
@@ -414,7 +412,7 @@
     "playerScopeGlobal": "Hər yerdə",
     "playerScopeLibrary": "Kitabxana üzrə",
     "playerScopeTitle": "Serial və ya film üzrə",
-    "exportDialogTitle": "Plezy tənzimləmələrini ixrac et"
+    "exportDialogTitle": "TBD tənzimləmələrini ixrac et"
   },
   "search": {
     "hint": "Kino, serial, musiqi axtar...",
@@ -857,10 +855,8 @@
     "sectionTitle": "Qoşulmalar",
     "addConnection": "Qoşulma əlavə et",
     "sessionExpiredOne": "${name} üçün seansın vaxtı bitdi",
-    "sessionExpiredMany": "${count} server üçün seansın vaxtı bitdi",
     "accessDeniedOne": "${name} bu hesaba girişi rədd etdi",
-    "accessDeniedMany": "${count} server bu hesaba girişi rədd etdi",
-    "signInAgain": "Yenidən daxil ol"
+    "accessDeniedMany": "${count} server bu hesaba girişi rədd etdi"
   },
   "accountPreferences": {
     "sectionTitle": "Hesab tərcihləri",
@@ -1035,9 +1031,9 @@
     "uploadLogs": "Jurnalları yüklə"
   },
   "startup": {
-    "failedTitle": "Plezy başlaya bilmədi",
+    "failedTitle": "TBD başlaya bilmədi",
     "failedBody": "Başlatma zamanı nəsə səhv getdi. Aşağıdakı təfərrüatlar nəyin uğursuz olduğunu göstərir.",
-    "failedBodyRepairable": "Plezy-nin saxlanmış tənzimləmə faylı zədələnib və Plezy başlamazdan əvvəl yenidən qurulmalıdır. Təzədən cəhd etmək kömək etməyəcək — Yaddaşı təmir et seçin.",
+    "failedBodyRepairable": "TBD-nin saxlanmış tənzimləmə faylı zədələnib və TBD başlamazdan əvvəl yenidən qurulmalıdır. Təzədən cəhd etmək kömək etməyəcək — Yaddaşı təmir et seçin.",
     "phaseLabel": "Addım",
     "showDetails": "Təfərrüatları göstər",
     "hideDetails": "Təfərrüatları gizlət",
@@ -1046,16 +1042,16 @@
     "uploadDetails": "Təfərrüatları yüklə",
     "repairStorage": "Yaddaşı təmir et",
     "repairTitle": "Saxlanmış məlumatlar təmir edilsin?",
-    "repairBodyCommon": "Plezy-nin tənzimləmə faylı zədələnib və oxuna bilmir. Təmir bütün tənzimləmələri defolt vəziyyətinə sıfırlayır.",
+    "repairBodyCommon": "TBD-nin tənzimləmə faylı zədələnib və oxuna bilmir. Təmir bütün tənzimləmələri defolt vəziyyətinə sıfırlayır.",
     "repairBodyOneCredential": "Bir saxlanmış daxil olma məlumatı zədələnib və oxuna bilmir. Təmir yalnız onu silir; digər tənzimləmələrinizə toxunulmur.",
     "repairBodySignInsKept": "Serverləriniz və profilləriniz daxil olmuş vəziyyətdə qalmalıdır.",
     "repairBodySignInsLost": "Saxlanmış daxil olmalarınızı qoruyan açar bu fayldan bərpa edilə bilmir, ona görə də hər serverə və profilə yenidən daxil olmalı olacaqsınız. Media serverinizdə heç nəyə təsir olunmur.",
-    "repairBodySessionsUncertain": "İzləyicilər (MAL, AniList, Simkl, Trakt) və Seerr ayrıca saxlanılır və qalıb-qalmayacaqları bəlli deyil. Plezy sizə nəyi saxladığını dəqiq bildirəcək.",
+    "repairBodySessionsUncertain": "İzləyicilər (MAL, AniList, Simkl, Trakt) və Seerr ayrıca saxlanılır və qalıb-qalmayacaqları bəlli deyil. TBD sizə nəyi saxladığını dəqiq bildirəcək.",
     "repairConfirm": "Təmir et",
     "repairSucceeded": "Yaddaş təmir edildi",
     "repairNeedsRestart": "Yaddaş təmir edildi — yenidən başlatma tələb olunur",
-    "restartRequiredBody": "Məlumatlarınız təmir edildi, lakin Plezy ondan istifadə etmək üçün yenidən başlamalıdır. Plezy-ni bağlayın və yenidən açın.",
-    "quitPlezy": "Plezy-dən çıx",
+    "restartRequiredBody": "Məlumatlarınız təmir edildi, lakin TBD ondan istifadə etmək üçün yenidən başlamalıdır. TBD-ni bağlayın və yenidən açın.",
+    "quitPlezy": "TBD-dən çıx",
     "repairFailed": "Təmir uğursuz oldu",
     "repairKeptSignIns": "Serverləriniz və profilləriniz hələ də daxil olub.",
     "repairLostSignIns": "Saxlanmış daxil olmalarınızı qoruyan açar bərpa edilə bilmədi. Hər serverə və profilə yenidən daxil olmalı olacaqsınız.",
@@ -1064,7 +1060,7 @@
     "backupWarning": "O, daxil olma məlumatlarınızı ehtiva edir. Onu yükləməyin və ya paylaşmayın.",
     "deleteBackup": "Nüsxəni sil",
     "backupDeleted": "Nüsxə silindi.",
-    "previousFailureTitle": "Plezy son dəfə başlaya bilmədi"
+    "previousFailureTitle": "TBD son dəfə başlaya bilmədi"
   },
   "licenses": {
     "relatedPackages": "Əlaqəli paketlər",
@@ -1528,14 +1524,14 @@
       "bannerAction": "Ətraflı",
       "sheetTitle": "Arxa fonda yükləmələr bloklanıb",
       "sheetTitleDegraded": "Arxa fonda yükləmələr məhdudlaşdırıla bilər",
-      "sheetIntro": "Android Plezy-nin arxa fonda etibarlı şəkildə yükləməsinə mane olur.",
-      "sheetIntroDegraded": "Cihazınız Plezy-nin arxa fonda nə vaxt yükləyə biləcəyini məhdudlaşdırır.",
-      "reasonBackgroundRestricted": "Plezy-nin arxa fon istifadəsi məhdudlaşdırılıb. Batareya və ya arxa fon istifadəsini \"Məhdudiyyətsiz\" edin.",
-      "reasonStandbyRestricted": "Android Plezy-ni məhdud gözləmə rejiminə salıb. Batareya istifadəsini \"Məhdudiyyətsiz\" edin.",
+      "sheetIntro": "Android TBD-nin arxa fonda etibarlı şəkildə yükləməsinə mane olur.",
+      "sheetIntroDegraded": "Cihazınız TBD-nin arxa fonda nə vaxt yükləyə biləcəyini məhdudlaşdırır.",
+      "reasonBackgroundRestricted": "TBD-nin arxa fon istifadəsi məhdudlaşdırılıb. Batareya və ya arxa fon istifadəsini \"Məhdudiyyətsiz\" edin.",
+      "reasonStandbyRestricted": "Android TBD-ni məhdud gözləmə rejiminə salıb. Batareya istifadəsini \"Məhdudiyyətsiz\" edin.",
       "reasonDownloadChannelBlocked": "Yükləmə bildirişləri söndürülüb, ona görə gedişat və idarəetmələr əlçatan olmaya bilər.",
       "reasonNotificationsDisabled": "Bildirişlər söndürülüb. Android 13 və daha yeni versiyalarda uzun arxa fon yükləmələri üçün onlar tələb olunur.",
       "reasonDataSaver": "Data Saver aktivdir və bu, mobil internetdə arxa fon yükləmələrini bloklayır. Wi-Fi ilə yükləmələr işləməlidir.",
-      "reasonOemUnknown": "Plezy arxa fonda olarkən yükləmələr dəfələrlə dayandı. Plezy-nin batareya və ya arxa fon istifadəsi tənzimləmələrini yoxlayın.",
+      "reasonOemUnknown": "TBD arxa fonda olarkən yükləmələr dəfələrlə dayandı. TBD-nin batareya və ya arxa fon istifadəsi tənzimləmələrini yoxlayın.",
       "openSettings": "Tənzimləmələri aç",
       "stillNotWorking": "Cihaza özəl kömək",
       "stillNotWorkingDescription": "Cihazınız üçün addımlara baxın və ya problem davam edərsə Tənzimləmələr › Jurnallara bax bölməsindən jurnal göndərin.",
@@ -1613,7 +1609,7 @@
       "connecting": "Qoşulunur...",
       "searchingForDevices": "Cihazlar axtarılır...",
       "noDevicesFound": "Şəbəkənizdə cihaz tapılmadı",
-      "noDevicesHint": "Masaüstündə Plezy-ni açın və eyni Wi-Fi-dan istifadə edin",
+      "noDevicesHint": "Masaüstündə TBD-ni açın və eyni Wi-Fi-dan istifadə edin",
       "availableDevices": "Əlçatan cihazlar",
       "manualConnection": "Əl ilə qoşulma",
       "validationHostRequired": "Lütfən əsas cihaz ünvanını daxil edin",
@@ -1804,11 +1800,11 @@
     "connected": "Qoşuldu",
     "connectedAs": "@${username} olaraq qoşuldu",
     "disconnectConfirm": "Trakt hesabı ayırılsın?",
-    "disconnectConfirmBody": "Plezy Trakt-a məlumat göndərməyi dayandıracaq.",
+    "disconnectConfirmBody": "TBD Trakt-a məlumat göndərməyi dayandıracaq.",
     "scrobble": "Real vaxt rejimində izləmə",
     "scrobbleDescription": "Oynatma zamanı Trakt-a məlumat göndər.",
     "watchedSync": "Baxış statusunu eyniləşdir",
-    "watchedSyncDescription": "Plezy-də baxıldı işarələdikdə Trakt-da da işarələnsin."
+    "watchedSyncDescription": "TBD-də baxıldı işarələdikdə Trakt-da da işarələnsin."
   },
   "seerr": {
     "title": "Seerr",
@@ -1821,7 +1817,7 @@
     "noSignInMethods": "Bu Seerr dəstəklənən daxil olma üsulu təklif etmir.",
     "instance": "Nüsxə",
     "disconnectConfirm": "Seerr ayırılsın?",
-    "disconnectConfirmBody": "Plezy bu Seerr serverini unudacaq. İstənilən vaxt yenidən qoşula bilərsiniz.",
+    "disconnectConfirmBody": "TBD bu Seerr serverini unudacaq. İstənilən vaxt yenidən qoşula bilərsiniz.",
     "request": "Sorğu göndər",
     "request4k": "4K sorğu göndər",
     "seasons": "Mövsümlər",
@@ -1846,7 +1842,7 @@
     "statusBlocklisted": "Bloklanmış",
     "couldNotReach": "${url} ünvanına çatmaq olmadı: ${error}",
     "noInstanceAtUrl": "${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})",
-    "behindAuthProxy": "Seerr əvəzinə autentifikasiya edən tərs proksi (SSO və ya HTTP auth) cavab verdi. Plezy onun vasitəsilə daxil ola bilmir: bu tətbiq üçün Seerr-in /api/v1 yolunun proksini yan keçməsinə icazə verin və ya Seerr-ə birbaşa çatan ünvan istifadə edin.",
+    "behindAuthProxy": "Seerr əvəzinə autentifikasiya edən tərs proksi (SSO və ya HTTP auth) cavab verdi. TBD onun vasitəsilə daxil ola bilmir: bu tətbiq üçün Seerr-in /api/v1 yolunun proksini yan keçməsinə icazə verin və ya Seerr-ə birbaşa çatan ünvan istifadə edin.",
     "invalidUrl": "https://seerr.example.com kimi server ünvanı daxil edin",
     "notInitialized": "Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb",
     "noStoredCredentials": "Yenidən daxil olmaq üçün yadda saxlanmış giriş məlumatları mövcud deyil",
@@ -1867,7 +1863,7 @@
     "scrobble": "Tərəqqini avtomatik izlə",
     "scrobbleDescription": "Bir epizodu və ya filmi bitirdikdə siyahınızı yeniləyin.",
     "disconnectConfirm": "${service} ayırılsın?",
-    "disconnectConfirmBody": "Plezy ${service} yeniləməyi dayandıracaq. İstənilən vaxt yenidən qoşula bilərsiniz.",
+    "disconnectConfirmBody": "TBD ${service} yeniləməyi dayandıracaq. İstənilən vaxt yenidən qoşula bilərsiniz.",
     "connectFailed": "${service} qoşula bilmədi. Təzədən cəhd edin.",
     "names": {
       "mal": "MyAnimeList",
@@ -1881,7 +1877,7 @@
       "subtitle": ""
     },
     "deviceCode": {
-      "title": "Plezy-ni ${service} üzərində aktivləşdirin",
+      "title": "TBD-ni ${service} üzərində aktivləşdirin",
       "instructions": "QR kodunu skan edin və ya aşağıdakı ünvana keçib bu kodu daxil edin:",
       "openToActivate": "Aktivləşdirmək üçün ${service} açın",
       "copyCode": "Aktivləşdirmə kodunu kopyala",

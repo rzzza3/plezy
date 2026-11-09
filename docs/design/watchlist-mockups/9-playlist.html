@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>9 · Playlist — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .top { position: absolute; left: var(--pad-x); top: 44px; z-index: 5; }
+
+  /* Left: the list treated as one playable thing (YouTube Watch Later). */
+  .cover { position: absolute; left: var(--pad-x); top: 140px; width: 560px; height: 900px; border-radius: 28px; overflow: hidden; padding: 36px; display: flex; flex-direction: column; }
+  .cover .tint { position: absolute; inset: 0; background: url(assets/w-holiday.jpg) center / cover; filter: blur(60px) saturate(1.2); transform: scale(1.3); opacity: 0.65; }
+  .cover .tint::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,15,18,0.15), rgba(14,15,18,0.85)); }
+  .cover > * { position: relative; }
+  .cover .lead { width: 488px; height: 275px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.45); }
+  .cover .lead img { width: 100%; height: 100%; object-fit: cover; }
+  .cover h1 { font-size: 52px; font-weight: 700; letter-spacing: -0.8px; margin: 34px 0 10px; }
+  .cover .sum { font-size: 22px; color: rgba(237,237,237,0.82); line-height: 1.55; font-variant-numeric: tabular-nums; }
+  .cover .sum b { color: var(--text); font-weight: 500; }
+  .cover .actions { margin-top: auto; display: flex; gap: 16px; }
+  .cover .btn-primary { flex: 1; justify-content: center; }
+  .cover .btn-wide { height: 76px; padding: 0 30px; border-radius: 38px; background: rgba(237,237,237,0.14); display: inline-flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 500; }
+  .cover .btn-wide .i { font-size: 26px; }
+
+  .list { position: absolute; left: 770px; right: 72px; top: 136px; bottom: 0; display: flex; flex-direction: column; gap: 6px; -webkit-mask-image: linear-gradient(180deg, #000 86%, transparent); mask-image: linear-gradient(180deg, #000 86%, transparent); }
+  .row { display: grid; grid-template-columns: 44px 30px 210px 1fr auto; align-items: center; gap: 22px; padding: 14px 22px 14px 12px; border-radius: var(--r-lg); }
+  .row .num { font-size: 22px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .row .grip { color: rgba(237,237,237,0.4); font-size: 26px; }
+  .row .th { position: relative; width: 210px; height: 118px; border-radius: 10px; overflow: hidden; }
+  .row .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .row .th .progress { height: 5px; }
+  .row .dur { position: absolute; right: 8px; bottom: 10px; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.8); font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .row .tt { font-size: 25px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .ss { font-size: 19px; color: var(--muted); margin-top: 6px; }
+  .row .more { color: var(--muted); font-size: 28px; }
+  .row.on { background: var(--raise); outline: 4px solid #fff; outline-offset: 2px; }
+  .row.on .grip, .row.on .more { color: var(--text); }
+  .row.now .num { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="screen">
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+  <div class="top">
+    <div class="tabs">
+      <span class="tab on"><i data-i="bookmarkf"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab"><i data-i="heart"></i>Favourites <span class="n">11</span></span>
+    </div>
+  </div>
+
+  <aside class="cover">
+    <div class="tint"></div>
+    <div class="lead"><img src="assets/w-holiday.jpg" alt=""></div>
+    <h1>Watchlist</h1>
+    <div class="sum"><b>18 titles</b> · 31h 40min<br>Updated today · Plays top to bottom, then stops</div>
+    <div class="actions">
+      <span class="btn-primary"><i data-i="play"></i>Play all</span>
+      <span class="btn-wide"><i data-i="shuffle"></i>Shuffle</span>
+    </div>
+  </aside>
+
+  <div class="list">
+    <div class="row now"><span class="num">1</span><span class="grip"><i data-i="drag"></i></span><div class="th"><img src="assets/w-holiday.jpg" alt=""><span class="dur">1:24:10</span><div class="progress"><i style="width:38%"></i></div></div><div><div class="tt">Holiday Touchdown: A Bears Love Story</div><div class="ss">Movie · 2026 · 52min left</div></div><span class="more"><i data-i="more"></i></span></div>
+    <div class="row on"><span class="num">2</span><span class="grip"><i data-i="drag"></i></span><div class="th"><img src="assets/w-ponyo.jpg" alt=""><span class="dur">1:41:02</span></div><div><div class="tt">Ponyo</div><div class="ss">Movie · 2008 · Added Oct 26</div></div><span class="more"><i data-i="more"></i></span></div>
+    <div class="row"><span class="num">3</span><span class="grip"><i data-i="drag"></i></span><div class="th"><img src="assets/w-crystal.jpg" alt=""><span class="dur">47:30</span></div><div><div class="tt">Crystal Lake</div><div class="ss">S1 E2 · New episode</div></div><span class="more"><i data-i="more"></i></span></div>
+    <div class="row"><span class="num">4</span><span class="grip"><i data-i="drag"></i></span><div class="th"><img src="assets/w-got.jpg" alt=""><span class="dur">52:14</span><div class="progress"><i style="width:48%"></i></div></div><div><div class="tt">Game of Thrones</div><div class="ss">S5 E1 · The Wars To Come · 26min left</div></div><span class="more"><i data-i="more"></i></span></div>
+    <div class="row"><span class="num">5</span><span class="grip"><i data-i="drag"></i></span><div class="th"><img src="assets/w-meg.jpg" alt=""><span class="dur">1:53:08</span><div class="progress"><i style="width:36%"></i></div></div><div><div class="tt">The Meg</div><div class="ss">Movie · 2018 · 1h 12min left</div></div><span class="more"><i data-i="more"></i></span></div>
+    <div class="row"><span class="num">6</span><span class="grip"><i data-i="drag"></i></span><div class="th"><img src="assets/w-traitors.jpg" alt=""><span class="dur">42:05</span></div><div><div class="tt">The Traitors</div><div class="ss">S5 E6 · A Murder of Necessity</div></div><span class="more"><i data-i="more"></i></span></div>
+    <div class="row"><span class="num">7</span><span class="grip"><i data-i="drag"></i></span><div class="th"><img src="assets/w-mortimer.jpg" alt=""><span class="dur">29:40</span></div><div><div class="tt">Mortimer &amp; Whitehouse: Gone Fishing</div><div class="ss">S8 E3 · Rochdale Canal</div></div><span class="more"><i data-i="more"></i></span></div>
+  </div>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

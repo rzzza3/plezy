@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kinetic Type</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="fx.css">
+<style>
+  /* Tilted marquees: giant words before you connect, your posters after. */
+  .bg { position: absolute; left: -300px; top: -260px; width: 2600px; display: flex; flex-direction: column; gap: 28px; transform: rotate(-9deg) scale(1.1); transform-origin: 50% 50%; transition: opacity 900ms, filter 600ms; }
+  .mrow { display: flex; gap: 28px; width: max-content; will-change: transform; transition: filter 400ms; }
+  .mrow .word { font-size: 170px; font-weight: 700; letter-spacing: -4px; line-height: 1; color: transparent; -webkit-text-stroke: 2px rgba(237,237,237,0.16); white-space: nowrap; padding: 30px 0; }
+  .mrow img { width: 210px; height: 315px; object-fit: cover; border-radius: 14px; flex: none; }
+  .blur .mrow { filter: blur(10px); }
+  .veil { position: absolute; inset: 0; pointer-events: none; transition: opacity 900ms;
+    background: linear-gradient(90deg, rgba(14,15,18,0.97) 0%, rgba(14,15,18,0.88) 42%, rgba(14,15,18,0.55) 75%, rgba(14,15,18,0.35) 100%); }
+  .veil.deep { opacity: 1; background: linear-gradient(90deg, rgba(14,15,18,0.98) 0%, rgba(14,15,18,0.93) 55%, rgba(14,15,18,0.7) 100%); }
+
+  .scene { transform: none; transition: opacity 400ms var(--ease), visibility 0s 400ms; }
+  .scene.on { transition: opacity 400ms var(--ease), visibility 0s; }
+  .lay { position: absolute; left: 150px; top: 170px; right: 150px; }
+  .mega { font-size: 128px; font-weight: 700; letter-spacing: -3.5px; line-height: 1.0; margin: 0; max-width: 12ch; }
+  .lede { font-size: 30px; margin-top: 26px; }
+  .bigin { margin-top: 56px; width: 1100px; font-size: 70px; font-weight: 500; padding-bottom: 16px; border-bottom: 3px solid rgba(237,237,237,0.3); height: 104px; transition: border-color var(--fast); }
+  .bigin .ph { color: rgba(237,237,237,0.45); } .bigin .val:not(:empty) + .ph { display: none; }
+  .bigin.f { border-color: var(--text); } .bigin.f .val::after { content: ""; display: inline-block; width: 4px; height: 64px; background: var(--text); vertical-align: -8px; margin-left: 4px; animation: caret 1s steps(1) infinite; }
+  .row-a { display: flex; gap: 18px; align-items: center; margin-top: 44px; }
+  .count { position: absolute; left: 150px; top: 330px; opacity: 0; }
+  .count b { display: block; font-size: 260px; font-weight: 700; letter-spacing: -10px; line-height: 0.9; font-variant-numeric: tabular-nums; }
+  .count span { display: block; font-size: 40px; font-weight: 500; color: var(--muted); margin: 34px 0 0 10px; }
+
+  .code { font-size: 190px; font-weight: 700; letter-spacing: 0; line-height: 1; height: 190px; margin-top: 60px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .qrpos { position: absolute; right: 150px; top: 250px; }
+
+  /* Giant selectable words: outlined until picked, then a fill wipes across */
+  .gw { display: inline-block; position: relative; font-weight: 700; letter-spacing: -2px; line-height: 1.12; margin-right: 0.38em; color: transparent; -webkit-text-stroke: 2px rgba(237,237,237,0.62);
+    background: linear-gradient(90deg, #ededed 0 50%, rgba(237,237,237,0) 50% 100%) 100% 0 / 200% 100% no-repeat; -webkit-background-clip: text; background-clip: text;
+    transition: background-position 700ms var(--ease), transform 500ms cubic-bezier(0.34,1.56,0.64,1); }
+  .gw.on { background-position: 0 0; -webkit-text-stroke-color: #ededed; }
+  .gw::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0.02em; height: 7px; border-radius: 4px; background: #fff; transform: scaleX(0); transform-origin: left; transition: transform 380ms var(--ease); }
+  .gw.f::after { transform: scaleX(1); }
+  .gw.f { transform: translateY(-6px); }
+  .gw sup { font-size: 0.24em; letter-spacing: 0; -webkit-text-stroke: 0; color: var(--muted); vertical-align: 1.7em; margin-left: 6px; font-weight: 500; }
+  .gw .x { position: absolute; left: -2%; right: -2%; top: 52%; height: 8px; border-radius: 4px; background: #ededed; transform: scaleX(0); transform-origin: left; transition: transform 500ms var(--ease); }
+  .gw.struck .x { transform: scaleX(1); }
+
+  .who .gw { font-size: 170px; display: block; width: max-content; }
+  .libs .gw { font-size: 96px; display: block; width: max-content; line-height: 1.06; }
+  .nets .gw { font-size: 88px; }
+  .gens .gw { font-size: 76px; }
+  .words { margin-top: 44px; max-width: 1640px; }
+  .col-art { position: absolute; right: 190px; top: 0; bottom: 0; width: 300px; overflow: hidden; transform: rotate(6deg); }
+  .col-art .strip { display: flex; flex-direction: column; gap: 24px; }
+  .col-art img { width: 300px; height: 450px; object-fit: cover; border-radius: 18px; }
+  .me { position: absolute; left: 56px; top: 44px; font-size: 40px; font-weight: 700; letter-spacing: -1px; z-index: 40; opacity: 0; }
+  .burst { position: absolute; width: 90px; height: 135px; border-radius: 10px; object-fit: cover; z-index: 30; pointer-events: none; box-shadow: 0 16px 40px rgba(0,0,0,0.6); }
+  .bottom-btn { position: absolute; left: 150px; bottom: 90px; }
+  #home-wrap { position: absolute; inset: 0; }
+</style></head>
+<body><div class="screen">
+  <div class="bg" id="bg"></div>
+  <div class="veil" id="veil"></div>
+  <div class="me" id="me">Sam</div>
+
+  <section class="scene on" id="s1"><div class="lay">
+    <h1 class="mega" id="h1">Let's find your library.</h1>
+    <div class="bigin" id="addr"><span class="val"></span><span class="ph">silo.example.com</span></div>
+    <div class="row-a"><div class="btn" id="b1">Connect</div><div class="status-line" id="st1"></div></div>
+  </div><div class="count" id="count"><b id="cnum">0</b><span>titles on Ashgrove</span></div></section>
+
+  <section class="scene" id="s2"><div class="lay">
+    <h1 class="mega" id="h2">Sign in on your phone.</h1>
+    <p class="lede">Go to <b style="color:var(--text)">silo.ashgrove.net/link</b> and enter</p>
+    <div class="code" id="code"></div>
+    <div class="row-a"><div class="status-line" id="st2"><span class="spin"></span><span>Waiting for approval…</span></div></div>
+  </div><div class="qrpos" id="qrpos"></div></section>
+
+  <section class="scene" id="s3"><div class="lay who" id="who" style="top:150px"></div></section>
+
+  <section class="scene" id="s4"><div class="lay libs" style="top:120px">
+    <div class="lede" style="margin:0 0 24px;color:var(--text);font-weight:500">Pin to your sidebar</div>
+    <div id="libs"></div>
+  </div><div class="col-art"><div class="strip" id="strip"></div></div>
+  <div class="bottom-btn"><div class="btn" id="b4">Next</div></div></section>
+
+  <section class="scene" id="s5"><div class="lay nets" style="top:130px">
+    <h1 class="mega" id="h5" style="font-size:96px">Your networks.</h1>
+    <div class="words" id="nets"></div>
+  </div><div class="bottom-btn"><div class="btn" id="b5">Next</div></div></section>
+
+  <section class="scene" id="s6"><div class="lay gens" style="top:130px">
+    <h1 class="mega" id="h6" style="font-size:96px">Your genres.</h1>
+    <div class="words" id="gens"></div>
+  </div><div class="bottom-btn"><div class="btn" id="b6">Show me my Library</div></div></section>
+
+  <section class="scene" id="s7"><div id="home-wrap"></div></section>
+</div>
+<script src="shared.js"></script>
+<script src="fx.js"></script>
+<script>
+const WORDS = [['MOVIES', 'SHOWS', 'ANIME', 'DOCUMENTARIES'], ['DRAMA', 'COMEDY', 'HORROR', 'THRILLER'], ['ACTION', 'ROMANCE', 'SCI-FI', 'WESTERN'], ['KIDS', 'MUSIC', 'MYSTERY', 'FANTASY'], ['CRIME', 'WAR', 'REALITY', 'HISTORY']];
+const PROWS = [['s-avatar','s-hxh','s-talladega','s-paradise','s-obsession','s-ponyo','s-dastaar','s-mononoke','s-hitlist','s-supergirl'],
+  ['s-michael','s-whittaker','s-hauntedween','s-mrmrs','s-bombay','s-tunnel','s-fnaf','s-hei','s-bullet','s-mothers'],
+  ['s-hayride','s-duck','s-cemetery','s-hawa','s-adinaasam','s-aew','s-allen','s-babygirl','s-buckley','s-dance'],
+  ['s-dearyou','s-essex','s-farasha','s-holiday','s-macamilco','s-monsters','s-notebook','s-runitback','s-sacrifice','s-silva'],
+  ['s-avatar','s-mononoke','s-ponyo','s-hxh','s-paradise','s-dastaar','s-michael','s-supergirl','s-tunnel','s-hei']];
+let anims = [];
+function fillRows(kind) {
+  const rows = $$('.mrow');
+  rows.forEach((r, i) => {
+    const one = kind === 'words' ? WORDS[i].map((w) => `<span class="word">${w}</span>`).join('') : PROWS[i].map((p) => `<img src="${A(p)}">`).join('');
+    r.innerHTML = one + one;
+  });
+}
+function startRows() {
+  anims.forEach((a) => a.cancel());
+  anims = $$('.mrow').map((r, i) => r.animate([{ transform: `translateX(${i % 2 ? '-50%' : '0'})` }, { transform: `translateX(${i % 2 ? '0' : '-50%'})` }], { duration: 60000 + i * 9000, iterations: Infinity }));
+}
+function speed(to, ms) {
+  const from = anims[0]?.playbackRate ?? 1, t0 = performance.now();
+  return new Promise((res) => { const tick = (t) => { const p = Math.min(1, (t - t0) / ms), e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; anims.forEach((a) => (a.playbackRate = from + (to - from) * e)); p < 1 ? requestAnimationFrame(tick) : res(); }; requestAnimationFrame(tick); });
+}
+const word = (txt, extra = '', attrs = '') => `<span class="gw ${extra}" ${attrs}>${txt}<i class="x"></i></span>`;
+window.BUILD = () => {
+  $('#bg').innerHTML = '<div class="mrow"></div>'.repeat(5);
+  fillRows('words');
+  $('#qrpos').innerHTML = qr(320);
+  $('#who').innerHTML = PROFILES.map((p) => word(p.name, '', `id="pw-${p.id}"`)).join('');
+  $('#libs').innerHTML = LIBS.map((l) => word(l.name, 'on', `id="lw-${l.id}"`)).join('');
+  $('#nets').innerHTML = NETWORKS.Streaming.map(([n, c]) => word(`${n}<sup>${c}</sup>`, DEFAULT_NETWORKS.includes(n) ? 'on' : '', `data-net="${n}"`)).join('');
+  $('#gens').innerHTML = GENRES.slice(0, 15).map((g) => word(g, DEFAULT_GENRES.includes(g) ? 'on' : '', `data-g="${g}"`)).join('');
+  splitWords('#h1'); splitWords('#h2'); splitWords('#h5'); splitWords('#h6');
+};
+function setStrip(id) {
+  const l = LIBS.find((x) => x.id === id), s = $('#strip');
+  s.innerHTML = [...l.posters, ...l.posters, ...l.posters].map((p) => `<img src="${A(p)}">`).join('');
+  s.getAnimations().forEach((a) => a.cancel());
+  s.animate([{ transform: 'translateY(-120px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1, offset: 0.1 }, { transform: 'translateY(-950px)', opacity: 1 }], { duration: 9000, easing: 'linear', fill: 'forwards' });
+}
+function burst(el, art) {
+  const r = rectOf(el);
+  for (let i = 0; i < 4; i++) {
+    const img = document.createElement('img'); img.className = 'burst'; img.src = A(art[i % art.length]);
+    Object.assign(img.style, { left: r.x + r.w / 2 - 45 + 'px', top: r.y + r.h / 2 - 67 + 'px' });
+    $('.screen').append(img);
+    const ang = (-150 + i * 40 + Math.random() * 20) * Math.PI / 180, d = 180 + Math.random() * 80;
+    img.animate([{ transform: 'scale(0.2) rotate(0)', opacity: 0 }, { transform: `translate(${Math.cos(ang) * d}px, ${Math.sin(ang) * d}px) scale(1) rotate(${(i - 1.5) * 14}deg)`, opacity: 1, offset: 0.45 },
+      { transform: `translate(${Math.cos(ang) * d * 1.2}px, ${Math.sin(ang) * d + 260}px) scale(0.7) rotate(${(i - 1.5) * 30}deg)`, opacity: 0 }], { duration: 1300, easing: OUT }).finished.then(() => img.remove());
+  }
+}
+const GART = { Action: ['s-bullet', 's-avatar', 's-hxh', 's-supergirl'], Crime: ['s-hitlist', 's-obsession', 's-paradise', 's-dastaar'], Fantasy: ['s-mononoke', 's-hei', 's-tunnel', 's-ponyo'], Documentary: ['s-notebook', 's-aew', 's-farasha', 's-dearyou'] };
+async function swapScene(id, headSel) { show(id); if (headSel) inWords(headSel, 100, 80); }
+
+window.SCRIPT = async () => {
+  startRows();
+  $('#bg').animate([{ opacity: 0, transform: 'rotate(-9deg) scale(1.3)' }, { opacity: 1, transform: 'rotate(-9deg) scale(1.1)' }], { duration: 1600, easing: OUT });
+  await inWords('#h1', 200, 110);
+  focus('#addr'); await wait(300);
+  await press('#addr', null, 150);
+  await typeInto('#addr', SERVER.host, 60);
+  await move('down', '#b1', 380);
+  await press('#b1', () => { $('#st1').innerHTML = '<span class="spin"></span><span>Checking…</span>'; }, 400);
+  // Whoosh: words accelerate to a blur, become posters, and settle.
+  $('#bg').classList.add('blur');
+  await speed(40, 900);
+  fillRows('posters'); startRows(); anims.forEach((a) => (a.playbackRate = 40));
+  $('#st1').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Found Ashgrove</span>`;
+  outWords('#h1');
+  ['#addr', '#s1 .row-a'].forEach((sel) => $(sel).animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-30px)' }], { duration: 400, fill: 'forwards' }));
+  $('#count').animate([{ opacity: 0, transform: 'translateY(60px) scale(0.9)' }, { opacity: 1, transform: 'none' }], { duration: 900, easing: OUT, fill: 'forwards' });
+  $('#bg').classList.remove('blur');
+  speed(1, 2200);
+  await countUp('#cnum', 2872, 2200);
+  await wait(1100);
+
+  $('#veil').classList.add('deep');
+  await swapScene('s2', '#h2');
+  $('#qrpos').animate([{ transform: 'scale(0) rotate(-30deg)' }, { transform: 'none' }], { duration: 900, delay: 500, easing: BOUNCE, fill: 'backwards' });
+  await wait(500);
+  await reels('#code', 'K7QM-24RX', { spins: 16, stagger: 130, dur: 1300 });
+  await wait(1700);
+  $('#st2').innerHTML = `<svg class="i okc"><use href="#i-check"/></svg><span>Signed in as sam</span>`;
+  pulse('#code', 1.05);
+  await wait(1000);
+
+  show('s3');
+  $$('#who .gw').forEach((w, i) => w.animate([{ transform: 'translateX(-260px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900, delay: i * 110, easing: OUT, fill: 'backwards' }));
+  await wait(700);
+  focus('#pw-sam'); await wait(800);
+  await move('down', '#pw-jo', 380);
+  await move('up', '#pw-sam', 380);
+  await press('#pw-sam', (el) => el.classList.add('on'), 600);
+  ['#pw-jo', '#pw-kids'].forEach((s, i) => $(s).animate([{ opacity: 1 }, { opacity: 0, transform: 'translateX(400px)' }], { duration: 500, delay: i * 70, easing: IN, fill: 'forwards' }));
+  const a = rectOf('#pw-sam'), b = rectOf('#me');
+  $('#pw-sam').animate([{ transform: 'none' }, { transform: `translate(${b.x - a.x}px, ${b.y - a.y - 18}px) scale(${40 / 170})`, opacity: 1 }], { duration: 900, easing: OUT, fill: 'forwards' }).finished.then(() => { $('#me').style.opacity = 1; $('#pw-sam').style.opacity = 0; });
+  $('#pw-sam').style.transformOrigin = '0 0';
+  await wait(1100);
+
+  show('s4');
+  $$('#libs .gw').forEach((w, i) => w.animate([{ transform: 'translateY(80px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 800, delay: i * 80, easing: OUT, fill: 'backwards' }));
+  await wait(600);
+  focus('#lw-movies'); setStrip('movies'); await wait(1300);
+  for (const id of ['shows', 'anime', 'kids']) { await move('down', '#lw-' + id, 0); setStrip(id); await wait(650); }
+  await press(null, (el) => { el.classList.remove('on'); el.classList.add('struck'); }, 700);
+  await move('down', '#lw-sports', 0); setStrip('sports'); await wait(650);
+  await press(null, (el) => { el.classList.remove('on'); el.classList.add('struck'); }, 800);
+  await move('down', '#lw-world', 0); setStrip('world'); await wait(700);
+  await move('down', '#b4', 380);
+  await press('#b4', null, 100);
+
+  await swapScene('s5', '#h5');
+  $$('#nets .gw').forEach((w, i) => w.animate([{ transform: 'translateY(60px) rotate(4deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 800, delay: 300 + i * 50, easing: OUT, fill: 'backwards' }));
+  const N = (n) => $(`#nets [data-net="${n}"]`);
+  await wait(1300);
+  focus(N('Netflix')); await wait(600);
+  for (const n of ['Prime Video', 'HBO']) await move('right', N(n), 300);
+  await move('right', N('Paramount+'), 380);
+  await press(null, (el) => el.classList.remove('on'), 550);
+  await move('down', N('Apple TV'), 380);
+  await press(null, (el) => { el.classList.add('on'); pulse(el, 1.08); }, 600);
+  for (const n of ['Hulu', 'Peacock']) await move('right', N(n), 280);
+  await move('down', N('Crunchyroll'), 380);
+  await press(null, (el) => { el.classList.add('on'); pulse(el, 1.08); }, 700);
+  await move('down', '#b5', 400);
+  await press('#b5', null, 100);
+
+  await swapScene('s6', '#h6');
+  $$('#gens .gw').forEach((w, i) => w.animate([{ transform: 'scale(0.5)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: 300 + i * 40, easing: BOUNCE, fill: 'backwards' }));
+  const G = (g) => $(`#gens [data-g="${g}"]`);
+  await wait(1200);
+  focus(G('Action')); await wait(500);
+  for (const g of ['Adventure', 'Animation', 'Comedy']) await move('right', G(g), 240);
+  await move('right', G('Crime'), 340);
+  await press(null, (el) => { el.classList.add('on'); burst(el, GART.Crime); }, 900);
+  await move('down', G('Documentary'), 340);
+  await press(null, (el) => { el.classList.add('on'); burst(el, GART.Documentary); }, 900);
+  for (const g of ['Drama', 'Family']) await move('right', G(g), 240);
+  await move('right', G('Fantasy'), 340);
+  await press(null, (el) => { el.classList.add('on'); burst(el, GART.Fantasy); }, 900);
+  await move('right', G('History'), 260);
+  await move('down', G('Horror'), 340);
+  await press(null, (el) => el.classList.remove('on'), 700);
+  await move('down', '#b6', 400);
+  await press('#b6', null, 100);
+
+  // Finale: the marquee straightens, slows and settles into the Library's rows.
+  outWords('#h6');
+  $('#veil').classList.remove('deep');
+  $('#bg').animate([{ transform: 'rotate(-9deg) scale(1.1)', opacity: 1 }, { transform: 'rotate(0deg) scale(0.9)', opacity: 0 }], { duration: 1400, easing: OUT, fill: 'forwards' });
+  speed(8, 600).then(() => speed(0.2, 900));
+  $('#me').style.opacity = 0;
+  await wait(500);
+  $('#home-wrap').innerHTML = homeHTML({ libs: LIBS.filter((l) => !$('#lw-' + l.id).classList.contains('struck')).map((l) => l.id),
+    networks: $$('#nets .gw.on').map((e) => e.dataset.net), genres: $$('#gens .gw.on').map((e) => e.dataset.g) });
+  show('s7');
+  const H = (s) => $('#home-wrap ' + s);
+  inWords(H('.greet'), 200, 60);
+  $$('#home-wrap .region').forEach((r, i) => r.animate([{ transform: 'translateX(1200px)' }, { transform: 'translateX(-30px)', offset: 0.75 }, { transform: 'none' }], { duration: 1300, delay: 200 + i * 160, easing: OUT, fill: 'backwards' }));
+  H('.rail').animate([{ transform: 'translateX(-140px)' }, { transform: 'none' }], { duration: 900, easing: OUT });
+  await wait(1700);
+  focus(H('.wcard'));
+  await wait(3000);
+};
+</script>
+</body></html>

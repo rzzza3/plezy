@@ -8,10 +8,27 @@ abstract final class TvDetailTokens {
   static const double editorialSpacing = 7;
   static const double actionGap = 12;
 
-  /// Crisp artwork in the top-right corner: a share of the screen width, at
-  /// a 16:9 box trimmed in height.
-  static const double artworkWidthFraction = 0.64;
-  static const double artworkHeightFraction = 0.70;
+  /// The hero's bottom inset, as a share of the screen height, and its floor
+  /// and ceiling before TV scaling.
+  static const double heroBottomFraction = 0.09;
+  static const double minHeroBottom = 32;
+  static const double maxHeroBottom = 72;
+
+  /// Top inset of the page under the hero, and the logo or title centred
+  /// there above the rails.
+  static const double railsPageTop = 28;
+  static const double railsPageLogoHeight = 64;
+  static const double railsPageLogoMaxWidth = 360;
+  static const double railsPageLogoGap = 8;
+  static const Duration pageSlide = Duration(milliseconds: 650);
+
+  /// Over the hero-to-rails scroll: the hero and its scrims are gone by 60%
+  /// of the way, and the rails fade in over the second half.
+  static const Interval heroFade = Interval(0, 0.6, curve: Curves.easeOut);
+  static const Interval railsFade = Interval(0.3, 1, curve: Curves.easeIn);
+
+  /// Blur of the artwork behind the rails page.
+  static const double railsArtworkBlur = 24;
 
   static const double logoHeight = 80;
   static const double minLogoHeight = 40;
@@ -40,7 +57,11 @@ abstract final class TvDetailTokens {
   static const TextStyle playLabel = TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
   static const TextStyle actionLabel = TextStyle(fontSize: 13, fontWeight: FontWeight.w600);
 
-  /// Horizontal room a focused circle adds around its label.
+  /// Widest a pill's label grows before it ellipsizes; download states carry
+  /// long sentences as their label.
+  static const double actionLabelMaxWidth = 150;
+
+  /// Horizontal room a pill adds around its label: icon, gap and padding.
   static const double actionLabelChrome = 54;
   static const Duration actionExpand = Duration(milliseconds: 280);
   static const Duration actionLabelFade = Duration(milliseconds: 180);
@@ -62,20 +83,22 @@ abstract final class TvDetailTokens {
   static const double actionFocusedBorderWidth = 0.8;
 }
 
-/// The TV detail page surface: opaque, with the item's artwork crisp in the
-/// top-right corner and dissolving into the page at its leading and lower
-/// edges.
+/// The TV detail page surface: the item's artwork full-bleed, washed toward
+/// the page at its leading and lower edges so the hero text over it reads.
+/// It blurs while [blurred] is set, as the page scrolls down to the rails.
 class _TvDetailArtwork extends StatelessWidget {
   final MediaItem item;
   final MediaServerClient? client;
   final String? Function(String artworkPath)? localArtworkPathResolver;
   final bool allowNetwork;
+  final ValueNotifier<bool> blurred;
 
   const _TvDetailArtwork({
     required this.item,
     required this.client,
     required this.localArtworkPathResolver,
     required this.allowNetwork,
+    required this.blurred,
   });
 
   @override
@@ -83,60 +106,42 @@ class _TvDetailArtwork extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final surface = Theme.of(context).scaffoldBackgroundColor;
     final aspect = size.width / size.height;
-    // Whole device pixels: a fractional leading edge leaves the mask's first
-    // pixel column unmasked, a visible seam down the artwork's edge.
-    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
-    double snap(double logical) => (logical * pixelRatio).floorToDouble() / pixelRatio;
-    final width = snap(size.width * TvDetailTokens.artworkWidthFraction);
-    final height = snap(size.width * 9 / 16 * TvDetailTokens.artworkHeightFraction);
 
     return ColoredBox(
       color: surface,
-      child: Align(
-        alignment: Alignment.topRight,
-        child: SizedBox(
-          width: width,
-          height: height,
-          child: RepaintBoundary(
-            child: ShaderMask(
-              blendMode: BlendMode.dstIn,
-              shaderCallback: (rect) => const LinearGradient(
-                colors: [Colors.transparent, Colors.white, Colors.white],
-                stops: [0, 0.68, 1],
-              ).createShader(rect),
-              child: ShaderMask(
-                blendMode: BlendMode.dstIn,
-                shaderCallback: (rect) => const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.white,
-                    Colors.white,
-                    Color.fromRGBO(255, 255, 255, 0.88),
-                    Color.fromRGBO(255, 255, 255, 0.58),
-                    Color.fromRGBO(255, 255, 255, 0.24),
-                    Colors.transparent,
-                  ],
-                  stops: [0, 0.38, 0.52, 0.68, 0.81, 0.90],
-                ).createShader(rect),
-                child: CyclingMediaBackdrop(
-                  mediaKey: item.globalKey,
-                  imagePaths: item.heroRotationPaths(containerAspectRatio: aspect),
-                  fallbackImagePaths: [
-                    ...item.heroArtCandidates(containerAspectRatio: aspect),
-                    ?item.thumbPath,
-                  ],
-                  client: client,
-                  localArtworkPathResolver: localArtworkPathResolver,
-                  allowNetwork: allowNetwork,
-                  // Requested at full-screen size, like the home spotlight, so
-                  // both share the cached transcode.
-                  width: size.width,
-                  height: size.height,
-                  fallbackColor: surface,
-                ),
-              ),
-            ),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: blurred,
+        // Same travel as the hero-to-rails scroll, so the blur lands with it.
+        builder: (context, isBlurred, child) => TweenAnimationBuilder<double>(
+          tween: Tween(end: isBlurred ? 1 : 0),
+          duration: TvDetailTokens.pageSlide,
+          curve: Curves.easeInOutCubic,
+          child: child,
+          builder: (context, progress, child) {
+            if (progress == 0) return child!;
+            final sigma = TvDetailTokens.railsArtworkBlur * progress;
+            return ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.clamp),
+              child: child,
+            );
+          },
+        ),
+        child: RepaintBoundary(
+          child: CyclingMediaBackdrop(
+            mediaKey: item.globalKey,
+            imagePaths: item.heroRotationPaths(containerAspectRatio: aspect),
+            fallbackImagePaths: [
+              ...item.heroArtCandidates(containerAspectRatio: aspect),
+              ?item.thumbPath,
+            ],
+            client: client,
+            localArtworkPathResolver: localArtworkPathResolver,
+            allowNetwork: allowNetwork,
+            // Requested at full-screen size, like the home spotlight, so
+            // both share the cached transcode.
+            width: size.width,
+            height: size.height,
+            fallbackColor: surface,
           ),
         ),
       ),
@@ -144,8 +149,46 @@ class _TvDetailArtwork extends StatelessWidget {
   }
 }
 
-/// A circular TV detail action. Focus inverts it to a white disc and widens
-/// it to a capsule that reveals [label].
+/// The hero's scrims: a wash from the leading edge behind the text and one up
+/// from the bottom behind the actions. They lift off the rails page, which
+/// shows the artwork blurred instead.
+class _TvDetailHeroScrim extends StatelessWidget {
+  const _TvDetailHeroScrim();
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = Theme.of(context).scaffoldBackgroundColor;
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          RasterizedGradient(
+            gradient: LinearGradient(
+              colors: [
+                surface.withValues(alpha: 0.86),
+                surface.withValues(alpha: 0.55),
+                surface.withValues(alpha: 0.12),
+                surface.withValues(alpha: 0),
+              ],
+              stops: const [0, 0.32, 0.6, 0.78],
+            ),
+          ),
+          RasterizedGradient(
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [surface.withValues(alpha: 0.92), surface.withValues(alpha: 0.5), surface.withValues(alpha: 0)],
+              stops: const [0, 0.3, 0.62],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A TV detail action pill: icon and [label] on a translucent capsule that
+/// focus inverts to a solid one. Without a label it is a circle.
 class _TvDetailCircleAction extends StatelessWidget {
   final Widget icon;
   final String? label;
@@ -164,7 +207,7 @@ class _TvDetailCircleAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = this.label;
-    final showLabel = focused && label != null && label.isNotEmpty;
+    final showLabel = label != null && label.isNotEmpty;
     final ink = Theme.of(context).colorScheme.onSurface;
     final page = Theme.of(context).scaffoldBackgroundColor;
     final restingForeground = foregroundColor ?? ink;
@@ -180,7 +223,7 @@ class _TvDetailCircleAction extends StatelessWidget {
         maxLines: 1,
         textDirection: Directionality.of(context),
       )..layout();
-      width = painter.width + TvDetailTokens.actionLabelChrome;
+      width = math.min(painter.width, TvDetailTokens.actionLabelMaxWidth) + TvDetailTokens.actionLabelChrome;
       painter.dispose();
     }
 
@@ -228,7 +271,7 @@ class _TvDetailCircleAction extends StatelessWidget {
                         label,
                         maxLines: 1,
                         softWrap: false,
-                        overflow: TextOverflow.clip,
+                        overflow: TextOverflow.ellipsis,
                         style: TvDetailTokens.actionLabel.copyWith(color: foreground),
                       ),
                     ),

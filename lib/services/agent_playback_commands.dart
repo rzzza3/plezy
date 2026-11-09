@@ -325,7 +325,7 @@ class AgentPlaybackCommands {
         _observer?.snapshot()['blocker'] == 'externalHandoffPending') {
       throw const AgentControlException(
         'unsupportedTarget',
-        'An external application cannot be stopped or observed by Plezy.',
+        'An external application cannot be stopped or observed by TBD.',
       );
     }
     if (scoped) return _stopScoped(context);

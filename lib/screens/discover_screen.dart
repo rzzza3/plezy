@@ -185,15 +185,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// The synthesized Continue Watching row, rendered ahead of the backend hubs
   /// on both the mobile list and the TV rail.
-  MediaHub get _continueWatchingHub => MediaHub(
-    id: 'continue_watching',
-    title: t.discover.continueWatching,
-    type: 'mixed',
-    identifier: '_continue_watching_',
-    size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
-    more: _hasMoreContinueWatching,
-    items: _onDeck,
-  );
+  MediaHub get _continueWatchingHub => _discover.continueWatchingHub(t.discover.continueWatching);
 
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
 

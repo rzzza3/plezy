@@ -23,6 +23,19 @@ void main() {
         NavigationTab.resolveDefaultTab(isOffline: false, preferredStartup: NavigationTabId.libraries),
         NavigationTabId.libraries,
       );
+      expect(
+        NavigationTab.resolveDefaultTab(isOffline: false, preferredStartup: NavigationTabId.library),
+        NavigationTabId.library,
+      );
+    });
+
+    test('Library is a startup choice, listed between Home and Libraries', () {
+      expect(startupSectionTabs, [
+        NavigationTabId.discover,
+        NavigationTabId.library,
+        NavigationTabId.libraries,
+        NavigationTabId.search,
+      ]);
     });
 
     test('online defaults to Home when no preference is set', () {

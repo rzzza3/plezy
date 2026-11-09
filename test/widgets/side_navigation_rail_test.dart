@@ -430,7 +430,9 @@ void main() {
     sideNavKey.currentState!.focusActiveItem();
     await tester.pumpAndSettle();
 
-    // Home -> Libraries -> Search. The Movies row is skipped while collapsed.
+    // Home -> Library -> Watchlist -> Libraries -> Search. The Movies row is skipped while collapsed.
+    await _press(tester, LogicalKeyboardKey.arrowDown);
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.enter);
@@ -493,8 +495,10 @@ void main() {
     sideNavKey.currentState!.focusActiveItem();
     await tester.pumpAndSettle();
 
-    // Home -> Libraries -> Search. The Movies row stays out of D-pad order
-    // while the rail is collapsed, so DOWN lands on the next real row.
+    // Home -> Library -> Watchlist -> Libraries -> Search. The Movies row stays out of D-pad
+    // order while the rail is collapsed, so DOWN lands on the next real row.
+    await _press(tester, LogicalKeyboardKey.arrowDown);
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.enter);
@@ -659,12 +663,14 @@ void main() {
       expect(focused(), 'nav_search');
 
       final visited = <String?>[];
-      for (var i = 0; i < 5; i++) {
+      for (var i = 0; i < 7; i++) {
         await _press(tester, LogicalKeyboardKey.arrowDown);
         visited.add(focused());
       }
       expect(visited, [
         'nav_home',
+        'nav_library',
+        'nav_watchlist',
         'nav_downloads',
         'nav_library:visible:${movies.globalKey}',
         'nav_settings',
@@ -721,7 +727,9 @@ void main() {
     sideNavKey.currentState!.focusActiveItem();
     await tester.pumpAndSettle();
 
-    // Home -> Settings. Downloads is hidden on Apple TV.
+    // Home -> Library -> Watchlist -> Settings. Downloads is hidden on Apple TV.
+    await _press(tester, LogicalKeyboardKey.arrowDown);
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.enter);
 
@@ -795,8 +803,9 @@ void main() {
     sideNavKey.currentState!.focusActiveItem();
     await tester.pumpAndSettle();
 
-    // Home -> Libraries -> Server A header -> visible A -> Server B header -> visible B -> Hidden Libraries.
-    for (var i = 0; i < 6; i++) {
+    // Home -> Library -> Watchlist -> Libraries -> Server A header -> visible A -> Server B header -> visible B ->
+    // Hidden Libraries.
+    for (var i = 0; i < 8; i++) {
       await _press(tester, LogicalKeyboardKey.arrowDown);
     }
     await _press(tester, LogicalKeyboardKey.enter);

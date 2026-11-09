@@ -72,8 +72,8 @@ Future<void> showLibraryManagementSheet(
 /// libraries: rows keep the sheet's order, libraries loaded since the sheet
 /// last synced follow in their current order, and libraries that have gone
 /// are dropped. A reorder therefore never saves a stale snapshot, which would
-/// drop newly loaded libraries or bring back removed ones.
-@visibleForTesting
+/// drop newly loaded libraries or bring back removed ones. Shared with the
+/// Settings → Libraries pane, which saves the same way.
 List<MediaLibrary> reconcileLibraryOrder(List<MediaLibrary> sheetOrder, List<MediaLibrary> current) {
   final remaining = {for (final library in current) library.globalKey: library};
   return [for (final library in sheetOrder) ?remaining.remove(library.globalKey), ...remaining.values];

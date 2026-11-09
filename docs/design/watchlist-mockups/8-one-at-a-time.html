@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>8 · One at a time — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .bleed { position: absolute; inset: 0; }
+  .bleed img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
+  .bleed::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(14,15,18,0.92) 0%, rgba(14,15,18,0.7) 30%, rgba(14,15,18,0) 62%),
+                linear-gradient(0deg, rgba(14,15,18,0.96) 0%, rgba(14,15,18,0.6) 24%, rgba(14,15,18,0) 46%); }
+  .top { position: absolute; left: var(--pad-x); top: 44px; z-index: 5; display: flex; align-items: center; gap: 30px; }
+  .pos { font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; color: rgba(237,237,237,0.85); }
+  .pos b { color: var(--text); font-weight: 700; }
+
+  .story { position: absolute; left: var(--pad-x); top: 214px; width: 820px; z-index: 5; }
+  .story h1 { font-size: 132px; font-weight: 700; letter-spacing: -3px; line-height: 0.95; margin: 0; }
+  .story .credit { font-size: 27px; font-weight: 500; margin-top: 26px; }
+  .story .facts { font-size: 22px; color: rgba(237,237,237,0.8); margin-top: 8px; letter-spacing: 0.3px; }
+  .story .synopsis { margin-top: 26px; font-size: 26px; max-width: 760px; color: rgba(237,237,237,0.86); }
+  .story .actions { margin-top: 36px; }
+  .story .note { margin-top: 22px; font-size: 20px; color: rgba(237,237,237,0.75); }
+
+  .strip { position: absolute; left: var(--pad-x); right: 0; bottom: 48px; z-index: 5; display: flex; gap: 14px; align-items: flex-end; }
+  .fr { position: relative; width: 150px; height: 84px; border-radius: 10px; overflow: hidden; flex: none; opacity: 0.62; background: var(--surface-2); }
+  .fr img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .fr.on { width: 240px; height: 135px; margin: 0 6px; opacity: 1; outline: 4px solid #fff; outline-offset: 4px; }
+  .strip .more { font-size: 20px; color: var(--muted); align-self: center; margin-left: 10px; font-variant-numeric: tabular-nums; }
+  .hint { position: absolute; right: 72px; bottom: 214px; z-index: 5; }
+</style>
+</head>
+<body>
+<div class="screen scrim">
+  <div class="bleed"><img src="assets/b-ponyo-hill.jpg" alt=""></div>
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+
+  <div class="top">
+    <div class="tabs">
+      <span class="tab on"><i data-i="bookmarkf"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab"><i data-i="heart"></i>Favourites <span class="n">11</span></span>
+    </div>
+    <span class="pos"><b>4</b> of 18</span>
+  </div>
+
+  <section class="story">
+    <h1>Ponyo</h1>
+    <div class="credit">Directed by Hayao Miyazaki</div>
+    <div class="facts">Japan · 2008 · 1h 41min · G · Japanese, English</div>
+    <p class="synopsis">A goldfish princess slips away from the sea, is found by five-year-old Sōsuke, and decides she wants to become human.</p>
+    <div class="actions">
+      <span class="btn-primary"><i data-i="play"></i>Play</span>
+      <span class="btn-circle solid"><i data-i="bookmarkf"></i></span>
+      <span class="btn-circle"><i data-i="heart"></i></span>
+      <span class="btn-circle"><i data-i="info"></i></span>
+    </div>
+    <div class="note">On your Watchlist since Oct 26</div>
+  </section>
+
+  <div class="hints hint">
+    <span><span class="key"><i data-i="left"></i></span><span class="key"><i data-i="right"></i></span>Previous / next</span>
+  </div>
+
+  <div class="strip">
+    <div class="fr seen"><img src="assets/w-crystal.jpg" alt=""></div>
+    <div class="fr seen"><img src="assets/w-got.jpg" alt=""></div>
+    <div class="fr seen"><img src="assets/w-holiday.jpg" alt=""></div>
+    <div class="fr on"><img src="assets/b-ponyo-hill.jpg" alt=""></div>
+    <div class="fr"><img src="assets/w-meg.jpg" alt=""></div>
+    <div class="fr"><img src="assets/w-traitors.jpg" alt=""></div>
+    <div class="fr"><img src="assets/w-mortimer.jpg" alt=""></div>
+    <div class="fr"><img src="assets/w-dusk.jpg" alt=""></div>
+    <div class="fr"><img src="assets/w-topgear.jpg" alt=""></div>
+    <span class="more">+9</span>
+  </div>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

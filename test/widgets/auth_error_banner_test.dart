@@ -36,18 +36,15 @@ void main() {
     await pumpBanner(tester);
 
     expect(find.text(t.connections.accessDeniedOne(name: 'denied')), findsOneWidget);
-    expect(find.text(t.connections.signInAgain), findsNothing);
     expect(find.textContaining(t.connections.sessionExpiredOne(name: 'denied')), findsNothing);
   });
 
-  testWidgets('a rejected token keeps its sign-in prompt beside a refused account', (tester) async {
+  testWidgets('a rejected token is left to the automatic sign-out, not the banner', (tester) async {
     manager.debugMarkAuthErrorForTesting(ServerId('expired'));
-    manager.debugMarkAccessDeniedForTesting(ServerId('denied'));
 
     await pumpBanner(tester);
 
-    expect(find.text(t.connections.sessionExpiredOne(name: 'expired')), findsOneWidget);
-    expect(find.text(t.connections.accessDeniedOne(name: 'denied')), findsOneWidget);
-    expect(find.text(t.connections.signInAgain), findsOneWidget);
+    expect(find.descendant(of: find.byType(AuthErrorBanner), matching: find.byType(Material)), findsNothing);
+    expect(find.textContaining(t.connections.sessionExpiredOne(name: 'expired')), findsNothing);
   });
 }

@@ -19,13 +19,6 @@ import '../../widgets/scroll_ink_boundary.dart';
 import '../../widgets/tv_color_picker.dart';
 import '../../widgets/tv_number_spinner.dart';
 
-String themeModeLabel(settings.ThemeMode mode) => switch (mode) {
-  settings.ThemeMode.system => t.settings.systemTheme,
-  settings.ThemeMode.light => t.settings.lightTheme,
-  settings.ThemeMode.dark => t.settings.darkTheme,
-  settings.ThemeMode.oled => t.settings.oledTheme,
-};
-
 /// Model for option selection dialogs.
 class DialogOption<T> {
   final T value;

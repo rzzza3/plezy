@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>10 · Edit mode — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .top { position: absolute; left: var(--pad-x); right: 62px; top: 44px; display: flex; align-items: center; gap: 28px; z-index: 5; }
+  .bar { position: absolute; left: var(--pad-x); right: 72px; top: 146px; display: flex; align-items: center; gap: 14px; }
+  .bar h2 { font-size: 34px; font-weight: 500; margin: 0 14px 0 0; }
+  .bar .sp { flex: 1; }
+  .bar .sel { font-size: 22px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar .sel b { color: var(--text); font-weight: 500; }
+
+  .grid { position: absolute; left: var(--pad-x); right: 0; top: 236px; display: grid; grid-template-columns: repeat(5, 316px); column-gap: 26px; row-gap: 30px; }
+  .wide .art { width: 316px; height: 178px; }
+  .wide .t { font-size: 21px; margin-top: 10px; }
+  .wide .s { font-size: 17px; }
+
+  /* Selection state (Prime Video / Hulu "Edit"). Unselected items step back. */
+  .pick { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,0.9); background: rgba(14,15,18,0.45); display: grid; place-items: center; font-size: 24px; color: transparent; }
+  .wide.sel .pick { background: #fff; border-color: #fff; color: var(--bg); }
+  .wide.sel .pick .i { stroke-width: 3; }
+  .wide.sel .art::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.9); background: rgba(14,15,18,0.18); }
+  .wide:not(.sel) .art img { filter: brightness(0.62) saturate(0.85); }
+
+  .dock { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 10; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 48px; background: #23252b; box-shadow: 0 24px 50px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35); border: 1px solid var(--outline); }
+  .dock .act { white-space: nowrap; height: 68px; padding: 0 28px; border-radius: 34px; display: inline-flex; align-items: center; gap: 12px; font-size: 23px; font-weight: 500; }
+  .dock .act .i { font-size: 26px; }
+  .dock .act.danger { background: var(--text); color: var(--bg); }
+  .dock .act.on { outline: 4px solid #fff; outline-offset: 3px; }
+  .dock .div { width: 1px; height: 40px; background: var(--outline); margin: 0 4px; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+  <div class="top">
+    <div class="tabs">
+      <span class="tab on"><i data-i="bookmarkf"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab"><i data-i="heart"></i>Favourites <span class="n">11</span></span>
+    </div>
+  </div>
+
+  <div class="bar">
+    <h2>Edit Watchlist</h2>
+    <span class="chip">Select all</span>
+    <span class="chip">Select watched</span>
+    <span class="sp"></span>
+    <span class="sel"><b>3</b> of 18 selected</span>
+  </div>
+
+  <div class="grid">
+    <div class="card wide sel"><div class="art"><img src="assets/w-meg.jpg" alt=""><span class="pick"><i data-i="check"></i></span></div><div class="t">The Meg</div><div class="s">Movie · watched</div></div>
+    <div class="card wide"><div class="art"><img src="assets/w-holiday.jpg" alt=""><span class="pick"><i data-i="check"></i></span></div><div class="t">Holiday Touchdown</div><div class="s">Movie · 52min left</div></div>
+    <div class="card wide sel"><div class="art"><img src="assets/w-dusk.jpg" alt=""><span class="pick"><i data-i="check"></i></span></div><div class="t">From Dusk Till Dawn 3</div><div class="s">Movie · watched</div></div>
+    <div class="card wide"><div class="art"><img src="assets/w-ponyo.jpg" alt=""><span class="pick"><i data-i="check"></i></span></div><div class="t">Ponyo</div><div class="s">Movie · not started</div></div>
+    <div class="card wide"><div class="art"><img src="assets/w-crystal.jpg" alt=""><span class="pick"><i data-i="check"></i></span></div><div class="t">Crystal Lake</div><div class="s">TV · new episode</div></div>
+
+    <div class="card wide"><div class="art"><img src="assets/w-got.jpg" alt=""><span class="pick"><i data-i="check"></i></span></div><div class="t">Game of Thrones</div><div class="s">TV · S5 E1</div></div>
+    <div class="card wide sel"><div class="art"><img src="assets/w-topgear.jpg" alt=""><span class="pick"><i data-i="check"></i></span></div><div class="t">Top Gear</div><div class="s">TV · 33 series</div></div>
+    <div class="card wide"><div class="art"><img src="assets/w-traitors.jpg" alt=""><span class="pick"><i data-i="check"></i></span></div><div class="t">The Traitors</div><div class="s">TV · new episode</div></div>
+    <div class="card wide"><div class="art"><img src="assets/w-mortimer.jpg" alt=""><span class="pick"><i data-i="check"></i></span></div><div class="t">Gone Fishing</div><div class="s">TV · 8 series</div></div>
+    <div class="card wide"><div class="art"><img src="assets/p-degaulle.jpg" alt="" style="object-position:center 30%"><span class="pick"><i data-i="check"></i></span></div><div class="t">De Gaulle: Résistance</div><div class="s">Movie · not started</div></div>
+
+    <div class="card wide"><div class="art"><img src="assets/p-dontmove.jpg" alt="" style="object-position:center 45%"><span class="pick"><i data-i="check"></i></span></div><div class="t">Don't Move</div><div class="s">Movie · not started</div></div>
+  </div>
+
+  <div class="dock">
+    <span class="act danger on"><i data-i="close"></i>Remove 3</span>
+    <span class="act"><i data-i="heart"></i>Move to Favourites</span>
+    <span class="act"><i data-i="check"></i>Mark as watched</span>
+    <span class="div"></span>
+    <span class="act"><i data-i="left"></i>Done</span>
+  </div>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

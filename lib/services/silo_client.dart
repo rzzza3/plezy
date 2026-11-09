@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import '../connection/connection.dart';
 import '../exceptions/media_server_exceptions.dart';
@@ -402,6 +403,167 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     return item;
   }
 
+  /// Episodes of followed shows airing from [first] to [last] (local dates,
+  /// inclusive), as
+  /// episode items whose [MediaItem.originallyAvailableAt] is the local air
+  /// date. The calendar carries only the series poster; [fetchItem] has the
+  /// rest. The request pads a day each side because the server buckets by its
+  /// own timezone, and the local date comes from `air_at` when it is known.
+  /// Each episode comes with its air instant, when the server knows it.
+  Future<List<({MediaItem item, DateTime? airAt})>> fetchCalendarEpisodes(DateTime first, DateTime last) async {
+    String iso(DateTime day) =>
+        '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    final from = iso(first);
+    final to = iso(last);
+    final releases = await catalog.calendar(
+      start: iso(first.subtract(const Duration(days: 1))),
+      end: iso(last.add(const Duration(days: 1))),
+      filter: 'following',
+    );
+    return [
+      for (final release in releases)
+        if (release.isEpisode)
+          if ((release.airAt == null ? release.localAirDate : iso(release.airAt!.toLocal())) case final date
+              when date.compareTo(from) >= 0 && date.compareTo(to) <= 0)
+            (
+              airAt: release.airAt,
+              item: MediaItem.silo(
+                id: release.contentId,
+                kind: MediaKind.episode,
+                title: release.episodeTitle,
+                parentIndex: release.seasonNumber,
+                index: release.episodeNumber,
+                grandparentId: release.seriesId,
+                grandparentTitle: release.title,
+                grandparentThumbPath: release.posterUrl,
+                viewCount: release.watched ? 1 : 0,
+                originallyAvailableAt: date,
+                serverId: serverId.value,
+                serverName: serverName,
+              ),
+            ),
+    ];
+  }
+
+  /// Up to [limit] movies across every library whose runtime falls in
+  /// [minMinutes]..[maxMinutes] (inclusive; null leaves that end open),
+  /// highest rated first. Runtime rules need the server's
+  /// `extended_query_rules`; one without it answers 400. Movies with no known
+  /// runtime are never included.
+  Future<List<MediaItem>> fetchMoviesByRuntime({int? minMinutes, int? maxMinutes, int limit = 40}) async {
+    final min = minMinutes == null || minMinutes < 1 ? 1 : minMinutes;
+    final rule = maxMinutes == null
+        ? SiloRule('runtime', 'gte', min)
+        : SiloRule('runtime', 'between', ['$min', '$maxMinutes']);
+    final page = await catalog.browse(
+      SiloCatalogQuery(
+        type: 'movie',
+        match: 'all',
+        groups: [
+          SiloRuleGroup('all', [rule]),
+        ],
+        sort: 'rating_imdb',
+        descending: true,
+        limit: limit.clamp(1, siloPageSize),
+      ),
+    );
+    return [
+      for (final card in page.items)
+        if (!isSiloHiddenType(card.type)) siloCardToItem(card, _origin),
+    ];
+  }
+
+  /// Every movie ([MediaKind.movie]) or series ([MediaKind.show]) from
+  /// [years] (both ends included) across the profile's libraries, Title
+  /// A-Z, each with its TMDB id when the server lists one. Silo's Networks
+  /// row reads the whole library in one listing
+  /// (`S/repository/NetworksRepository.kt:102-127`); callers read year ranges
+  /// side by side instead, as a cursor chain can't be split. One request per
+  /// 100 titles; a broken cursor chain throws [SiloInvalidCursorException].
+  Future<List<({MediaItem item, int? tmdbId})>> fetchTitles(MediaKind kind, {required (int, int) years}) async {
+    final query = SiloCatalogQuery(
+      type: siloCatalogTypeForKind(kind),
+      match: 'all',
+      groups: [
+        SiloRuleGroup('all', [
+          SiloRule('year', 'between', [years.$1, years.$2]),
+        ]),
+      ],
+      sort: 'title',
+    );
+    final titles = <({MediaItem item, int? tmdbId})>[];
+    final seenCursors = <String>{};
+    String? cursor;
+    do {
+      final page = await catalog.browse(query, cursor: cursor);
+      for (final card in page.items) {
+        if (!isSiloHiddenType(card.type)) titles.add((item: siloCardToItem(card, _origin), tmdbId: card.tmdbId));
+      }
+      cursor = page.nextCursor;
+      if (!page.hasMore) break;
+      if (cursor == null || !seenCursors.add(cursor)) throw const SiloInvalidCursorException();
+    } while (true);
+    return titles;
+  }
+
+  /// Up to [limit] movies or series in any of [genres] (as Silo names them)
+  /// across the profile's libraries, by [sort] descending, each with its
+  /// TMDB id when the server lists one. One request.
+  Future<List<({MediaItem item, int? tmdbId})>> fetchTitlesInGenres(
+    MediaKind kind,
+    List<String> genres, {
+    required String sort,
+    int limit = siloPageSize,
+  }) async {
+    final page = await catalog.browse(
+      SiloCatalogQuery(
+        type: siloCatalogTypeForKind(kind),
+        match: 'all',
+        groups: [
+          SiloRuleGroup('any', [for (final genre in genres) SiloRule('genre', 'contains', genre)]),
+        ],
+        sort: sort,
+        descending: true,
+        limit: limit.clamp(1, siloPageSize),
+      ),
+    );
+    return [
+      for (final card in page.items)
+        if (!isSiloHiddenType(card.type)) (item: siloCardToItem(card, _origin), tmdbId: card.tmdbId),
+    ];
+  }
+
+  /// The profile's main For You row (`for-you-main`) in full, in the server's
+  /// order; empty until the recommendation engine has a profile for it.
+  Future<List<MediaItem>> fetchForYou({int limit = 60}) async => [
+    for (final card in await catalog.recommendationSection('for-you-main', limit: limit))
+      if (!isSiloHiddenType(card.type)) siloCardToItem(card, _origin),
+  ];
+
+  /// The profile's Watchlist (`source=watchlist`) or Favorites
+  /// (`source=favorites`) in the server's stored list order, so no sort is
+  /// sent (`S/viewmodel/PersonalListViewModels.kt:313-350`). Reads pages of
+  /// 100 until [maxItems]; [total] is the server's count, which can exceed
+  /// what was read. A broken cursor chain throws [SiloInvalidCursorException].
+  Future<({List<MediaItem> items, int total})> fetchPersonalList(SiloPersonalList list, {int maxItems = 300}) async {
+    final query = SiloCatalogQuery(source: list.source);
+    final items = <MediaItem>[];
+    final seenCursors = <String>{};
+    var total = 0;
+    String? cursor;
+    do {
+      final page = await catalog.browse(query, cursor: cursor);
+      total = page.total;
+      for (final card in page.items) {
+        if (!isSiloHiddenType(card.type)) items.add(siloCardToItem(card, _origin));
+      }
+      cursor = page.nextCursor;
+      if (!page.hasMore || items.length >= maxItems) break;
+      if (cursor == null || !seenCursors.add(cursor)) throw const SiloInvalidCursorException();
+    } while (true);
+    return (items: items, total: math.max(total, items.length));
+  }
+
   /// File Info reads the catalog detail, which lists every file of a movie
   /// or episode with its streams.
   @override
@@ -661,6 +823,18 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     await catalog.dismissHomeItem(dismissal.surface, dismissal.itemId, dismissal.anchor);
   }
 
+  /// Whether [item] is a favorite and on the watchlist. The detail response
+  /// carries neither, so both lists are asked directly.
+  Future<({bool favorite, bool watchlisted})> fetchMembership(MediaItem item) async {
+    // Future.wait rethrows the first failure as itself, where a record's
+    // `.wait` would wrap it in a ParallelWaitError.
+    final lists = await Future.wait([
+      catalog.isOnList(SiloPersonalList.favorites, item.id),
+      catalog.isOnList(SiloPersonalList.watchlist, item.id),
+    ]);
+    return (favorite: lists[0], watchlisted: lists[1]);
+  }
+
   Future<void> setWatchlisted(MediaItem item, bool listed) async {
     await catalog.setWatchlisted(item.id, listed);
     _homeChanged();
@@ -736,11 +910,13 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
       );
     }
     final device = await SiloApp.playbackFacts();
+    final video = await SiloApp.videoProbe();
     Future<SiloPlaybackSession> startSession({required bool pinFile}) async =>
         SiloPlaybackSession.start(http, await SiloApp.playbackJournal(), (
           contentId: options.metadata.id,
           profileId: profile,
           device: device,
+          video: video,
           fileId: fileId,
           pinFile: pinFile,
           quality: quality,

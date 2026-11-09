@@ -1,0 +1,110 @@
+/* Plezy "Watchlist / Favourites" mockups — shared tokens mirrored from lib/theme/mono_theme.dart (dark). */
+@font-face { font-family: "Roboto"; src: url(assets/fonts/Roboto-Regular.ttf); font-weight: 400; }
+@font-face { font-family: "Roboto"; src: url(assets/fonts/Roboto-Medium.ttf); font-weight: 500; }
+@font-face { font-family: "Roboto"; src: url(assets/fonts/Roboto-Bold.ttf); font-weight: 700; }
+
+:root {
+  --bg: #0e0f12;
+  --surface: #15171c;
+  --surface-2: #1d1f25;
+  --raise: #2a2c32;
+  --outline: rgba(255, 255, 255, 0.12);
+  --text: #ededed;
+  --muted: rgba(237, 237, 237, 0.62);
+  --faint: rgba(237, 237, 237, 0.5);
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-card: 14px;
+  --r-lg: 20px;
+  --pad-x: 170px; /* content inset right of the rail, matches home */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #000; }
+body { font-family: "Roboto", system-ui, sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+::selection { background: rgba(237, 237, 237, 0.85); color: var(--bg); }
+
+.screen {
+  position: relative; width: 1920px; height: 1080px; overflow: hidden;
+  background: var(--bg); transform-origin: top left;
+}
+
+/* ---------- Icons ---------- */
+.i { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.i.fill { fill: currentColor; stroke: none; }
+
+/* ---------- Left rail (main_screen side navigation) ---------- */
+.rail {
+  position: absolute; inset: 0 auto 0 0; width: 128px; z-index: 20;
+  display: flex; flex-direction: column; align-items: center; padding-top: 66px;
+  background: linear-gradient(90deg, rgba(14,15,18,0.92) 0%, rgba(14,15,18,0.55) 70%, rgba(14,15,18,0) 100%);
+}
+.rail .avatar {
+  width: 44px; height: 44px; border-radius: 50%; background: #3a3c42; color: var(--text);
+  display: grid; place-items: center; font-weight: 500; font-size: 20px; margin-bottom: 56px;
+}
+.rail .item { width: 88px; height: 70px; border-radius: 35px; display: grid; place-items: center; color: var(--text); font-size: 30px; margin-bottom: 10px; opacity: 0.92; }
+.rail .item.lib { font-size: 30px; height: 70px; margin-bottom: 10px; }
+.rail .item.on { background: var(--raise); opacity: 1; }
+.rail .sep { width: 56px; height: 2px; background: var(--outline); margin: 6px 0 22px; }
+.rail .bottom { margin-top: auto; margin-bottom: 52px; }
+
+/* ---------- Top-right status cluster ---------- */
+.status { position: absolute; top: 40px; right: 62px; display: flex; align-items: center; gap: 52px; z-index: 20; font-size: 46px; text-shadow: 0 1px 12px rgba(0,0,0,0.5); filter: drop-shadow(0 2px 10px rgba(0,0,0,0.45)); }
+.screen.scrim::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 180px; z-index: 4; pointer-events: none; background: linear-gradient(180deg, rgba(14,15,18,0.7), rgba(14,15,18,0)); }
+.status .clock { font-size: 31px; font-weight: 500; letter-spacing: 0.2px; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+/* ---------- Pill tabs (same as the library "Recommended / Browse" switch) ---------- */
+.tabs { display: flex; gap: 6px; align-items: center; }
+.tab { height: 52px; padding: 0 26px; border-radius: 26px; display: inline-flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 500; color: var(--muted); }
+.tab .n { font-size: 18px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tab.on { background: var(--text); color: var(--bg); }
+.tab.on .n { color: rgba(14,15,18,0.72); }
+.tab .i { font-size: 24px; }
+
+/* Chips (filters / sort) */
+.chip { height: 46px; padding: 0 20px; border-radius: 23px; display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 500; color: var(--text); background: var(--surface-2); border: 1px solid var(--outline); }
+.chip .i { font-size: 22px; opacity: 0.8; }
+.chip.on { background: rgba(237,237,237,0.16); border-color: rgba(237,237,237,0.35); }
+.chip.ghost { background: transparent; }
+
+/* ---------- Buttons (media detail action bar) ---------- */
+.btn-primary { height: 76px; padding: 0 44px 0 36px; border-radius: 38px; background: var(--text); color: var(--bg); display: inline-flex; align-items: center; gap: 16px; font-size: 28px; font-weight: 500; }
+.btn-primary .i { font-size: 30px; }
+.btn-circle { width: 76px; height: 76px; border-radius: 50%; border: 2px solid rgba(237,237,237,0.5); display: inline-grid; place-items: center; color: var(--text); font-size: 30px; }
+.btn-circle.solid { background: rgba(237,237,237,0.14); border-color: transparent; }
+.actions { display: flex; align-items: center; gap: 18px; }
+
+/* ---------- Typography ---------- */
+.h-section { font-size: 34px; font-weight: 500; margin: 0; letter-spacing: 0.1px; }
+.hero-title { font-size: 76px; font-weight: 700; letter-spacing: -1.2px; line-height: 1.02; margin: 0; }
+.meta { font-size: 26px; font-weight: 500; display: flex; align-items: center; gap: 14px; }
+.meta .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.9; }
+.synopsis { font-size: 28px; line-height: 1.5; color: rgba(237,237,237,0.78); letter-spacing: 0.4px; max-width: 900px; margin: 0; }
+.muted { color: var(--muted); }
+
+/* ---------- Cards ---------- */
+.card { position: relative; flex: none; }
+.card .art { position: relative; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); }
+.card .art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.card .t { font-size: 24px; font-weight: 500; margin-top: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .s { font-size: 20px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px; }
+.card.focus .art { outline: 4px solid #fff; outline-offset: 4px; }
+.card.focus { transform: scale(1.04); transform-origin: center top; z-index: 2; }
+
+.progress { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: rgba(237,237,237,0.25); }
+.progress > i { display: block; height: 100%; background: #fff; }
+
+.badge { position: absolute; top: 12px; left: 12px; height: 32px; padding: 0 12px; border-radius: 16px; background: rgba(14,15,18,0.82); color: var(--text); font-size: 16px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.3px; backdrop-filter: blur(6px); }
+.badge.light { background: var(--text); color: var(--bg); }
+.tick { position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; border-radius: 50%; background: #fff; color: var(--bg); display: grid; place-items: center; font-size: 26px; }
+.tick .i { stroke-width: 2.6; }
+
+/* Hint bar for remote/D-pad keys */
+.hints { display: flex; gap: 34px; align-items: center; font-size: 20px; color: var(--muted); }
+.key { display: inline-grid; place-items: center; min-width: 38px; height: 34px; padding: 0 10px; border-radius: 8px; border: 1.5px solid rgba(237,237,237,0.45); color: var(--text); font-size: 17px; font-weight: 500; margin-right: 10px; }
+.key .i { font-size: 18px; }
+
+/* Gallery scaling helper */
+body.fit { overflow: hidden; }

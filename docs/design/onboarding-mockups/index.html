@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onboarding Directions</title>
+<style>
+  @font-face { font-family: "Roboto"; src: url(assets/fonts/Roboto-Regular.ttf); font-weight: 400; }
+  @font-face { font-family: "Roboto"; src: url(assets/fonts/Roboto-Medium.ttf); font-weight: 500; }
+  @font-face { font-family: "Roboto"; src: url(assets/fonts/Roboto-Bold.ttf); font-weight: 700; }
+  :root { --bg: #0e0f12; --surface: #15171c; --surface-2: #1d1f25; --outline: rgba(255,255,255,0.12); --text: #ededed; --muted: rgba(237,237,237,0.66); --ok: #8fd6a4; }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 17px/1.55 "Roboto", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(237,237,237,0.85); color: var(--bg); }
+  a { color: var(--text); text-underline-offset: 3px; text-decoration-color: rgba(237,237,237,0.4); }
+  a:focus-visible, video:focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 6px; }
+  main { max-width: 1240px; margin: 0 auto; padding: 72px 32px 96px; }
+  h1 { font-size: clamp(34px, 5vw, 52px); line-height: 1.08; letter-spacing: -0.8px; margin: 0; }
+  .intro { color: var(--muted); max-width: 68ch; margin: 18px 0 0; font-size: 19px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 0; padding: 0; list-style: none; }
+  .flow li { padding: 7px 16px; border-radius: 20px; background: var(--surface-2); border: 1px solid var(--outline); font-size: 15px; font-weight: 500; }
+  article { margin-top: 88px; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+  article video { width: 100%; aspect-ratio: 16 / 9; display: block; border-radius: 14px; background: #000; border: 1px solid var(--outline); }
+  h2 { font-size: 30px; line-height: 1.15; margin: 0; letter-spacing: -0.3px; }
+  .one { color: var(--muted); margin: 10px 0 0; font-size: 18px; }
+  h3 { font-size: 14px; font-weight: 500; color: var(--muted); margin: 26px 0 8px; letter-spacing: 0.2px; }
+  ul.pts { margin: 0; padding-left: 18px; } ul.pts li { margin: 5px 0; }
+  .links { margin-top: 22px; font-size: 15px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap; }
+  .pick { margin-top: 110px; padding: 40px; border-radius: 22px; background: var(--surface); border: 1px solid var(--outline); }
+  .pick h2 { font-size: 28px; }
+  .pick p { max-width: 72ch; color: var(--muted); }
+  .pick p strong { color: var(--text); font-weight: 500; }
+  footer { margin-top: 56px; color: var(--muted); font-size: 15px; max-width: 80ch; }
+  @media (max-width: 860px) { article { grid-template-columns: 1fr; gap: 24px; margin-top: 64px; } .pick { padding: 26px 20px; } main { padding: 48px 16px 72px; } }
+</style></head>
+<body><main>
+  <h1>Onboarding: eight directions</h1>
+  <p class="intro">First run on TV, from an empty app to a Library tab that's already yours. Every direction covers the same steps and lands on the same screen. 1–5 differ in how much they ask and how soon you see the result; 6–8 push the motion further.</p>
+  <ul class="flow" aria-label="Steps every direction covers"><li>Silo server</li><li>Sign in (code or password)</li><li>Profile</li><li>Sidebar libraries</li><li>Networks row</li><li>Genres row</li><li>Library tab</li></ul>
+
+  <article id="d1">
+    <video src="videos/1-setup-checklist.mp4" poster="renders/1-setup-checklist.png" controls muted playsinline preload="none"></video>
+    <div>
+      <h2>Setup checklist</h2>
+      <p class="one">A step list on the left, the current task on the right. Each finished step leaves its answer behind as a summary.</p>
+      <h3>Good at</h3>
+      <ul class="pts"><li>Most predictable on a remote. You always know where you are and what's left.</li><li>Back goes to the previous step and you can see what it holds.</li><li>Has all three network groups (Streaming, US, UK) in tabs.</li></ul>
+      <h3>Costs</h3>
+      <ul class="pts"><li>Your Library only appears at the very end, so the payoff comes last.</li><li>The most screens of the five.</li></ul>
+      <div class="links"><a href="1-setup-checklist.html">Open the clickable mockup</a><span>43s</span></div>
+    </div>
+  </article>
+
+  <article id="d2">
+    <video src="videos/2-library-builds-itself.mp4" poster="renders/2-library-builds-itself.png" controls muted playsinline preload="none"></video>
+    <div>
+      <h2>Library builds itself</h2>
+      <p class="one">The real Library tab sits behind a setup panel. Each answer fills in the part it controls: Continue Watching after the profile, sidebar icons as you pin, tiles as you pick networks and genres.</p>
+      <h3>Good at</h3>
+      <ul class="pts"><li>Shows the payoff early: your own Continue Watching appears right after the profile step.</li><li>Every choice has a visible effect, so nothing needs explaining.</li><li>Defaults are shown as defaults ("We started you with four").</li></ul>
+      <h3>Costs</h3>
+      <ul class="pts"><li>The panel covers the right half of the rows it's editing.</li><li>US and UK channels are pushed to Settings to keep the panel small.</li></ul>
+      <div class="links"><a href="2-library-builds-itself.html">Open the clickable mockup</a><span>39s</span></div>
+    </div>
+  </article>
+
+  <article id="d3">
+    <video src="videos/3-one-question.mp4" poster="renders/3-one-question.png" controls muted playsinline preload="none"></video>
+    <div>
+      <h2>One question at a time</h2>
+      <p class="one">Full-screen and cinematic. One big question per screen, and the backdrop follows focus: library art behind libraries, a show from that network behind each network, genre art behind genres.</p>
+      <h3>Good at</h3>
+      <ul class="pts"><li>Feels like the app, not a settings form. Your own artwork carries every step.</li><li>Readable from the couch: 92px questions, a 168px sign-in code.</li><li>Genres become one line of words you light up, with no grid to scan.</li></ul>
+      <h3>Costs</h3>
+      <ul class="pts"><li>Heaviest to build: per-item backdrops and a network→title lookup.</li><li>Choices sit far apart on screen, so it's slower for people who just want defaults.</li></ul>
+      <div class="links"><a href="3-one-question.html">Open the clickable mockup</a><span>43s</span></div>
+    </div>
+  </article>
+
+  <article id="d4">
+    <video src="videos/4-pick-by-poster.mp4" poster="renders/4-pick-by-poster.png" controls muted playsinline preload="none"></video>
+    <div>
+      <h2>Pick by poster</h2>
+      <p class="one">Nobody asks you about networks or genres. You pick titles from your own library that you'd watch tonight, and a side column works out sidebar, networks and genres as you go. Then one review screen to remove anything that doesn't fit.</p>
+      <h3>Good at</h3>
+      <ul class="pts"><li>Asks a question people can actually answer.</li><li>Server and sign-in share one screen; the code appears once the server answers.</li><li>Every card is a Silo item; TMDB is used only to match networks and genres.</li></ul>
+      <h3>Costs</h3>
+      <ul class="pts"><li>Needs new inference logic, plus network and genre data for each picked item.</li><li>A few picks can over-fit (one war drama adds War to your genres), so the review screen is required.</li></ul>
+      <div class="links"><a href="4-pick-by-poster.html">Open the clickable mockup</a><span>39s</span></div>
+    </div>
+  </article>
+
+  <article id="d5">
+    <video src="videos/5-preview-and-confirm.mp4" poster="renders/5-preview-and-confirm.png" controls muted playsinline preload="none"></video>
+    <div>
+      <h2>Preview and confirm</h2>
+      <p class="one">Sign in once, in a single card that grows (this one shows the password path). Then everything is already chosen from what your server has most of, next to a live preview. "Looks good" is focused, so one press finishes setup.</p>
+      <h3>Good at</h3>
+      <ul class="pts"><li>Fastest: a default setup is two inputs and one press.</li><li>Each choice comes with its reason ("Most titles on your server").</li><li>Editing a row lights up that row in the preview, and the preview zooms into the real Library at the end.</li></ul>
+      <h3>Costs</h3>
+      <ul class="pts"><li>Needs per-network and per-genre title counts at setup time.</li><li>People who accept everything never learn the rows can be changed.</li></ul>
+      <div class="links"><a href="5-preview-and-confirm.html">Open the clickable mockup</a><span>34s</span></div>
+    </div>
+  </article>
+
+  <article id="d6">
+    <video src="videos/6-poster-wall-3d.mp4" poster="renders/6-poster-wall-3d.png" controls muted playsinline preload="none"></video>
+    <div>
+      <h2>3D poster wall</h2>
+      <p class="one">A tilted wall of blank cards. When the server answers, the cards flip over into your posters while the title count ticks up. The camera moves to a new angle on every step after that.</p>
+      <h3>Motion</h3>
+      <ul class="pts"><li>Card-flip wave across the whole wall on connect.</li><li>Split-flap sign-in code; a light sweep across the card when you're approved.</li><li>Your avatar flies into the corner and stays there as you continue.</li><li>Libraries are stacks that fan out on focus and lie flat when unpinned. Networks sit on a 3D carousel ring.</li></ul>
+      <h3>Costs</h3>
+      <ul class="pts"><li>The heaviest of the eight on low-end Android TV boxes, which would need a lighter version of the wall.</li><li>The ring hides the networks at its back, so you can't see all your picks at once.</li></ul>
+      <div class="links"><a href="6-poster-wall-3d.html">Open the clickable mockup</a><span>46s</span></div>
+    </div>
+  </article>
+
+  <article id="d7">
+    <video src="videos/7-fly-into-place.mp4" poster="renders/7-fly-into-place.png" controls muted playsinline preload="none"></video>
+    <div>
+      <h2>Fly into place</h2>
+      <p class="one">Nothing cuts. One card changes shape through every early step: button, server field, spinner, sign-in code, then your avatar, which shrinks into the sidebar. After that, every pick flies to where it will live on the Library tab.</p>
+      <h3>Motion</h3>
+      <ul class="pts"><li>The one card keeps changing shape from the first button to the sidebar avatar.</li><li>Library icons fly into the real sidebar; unpinning sends them back.</li><li>Network and genre tiles fly into their rows, and the row closes the gap when one leaves.</li><li>The finished rows are the real ones; Continue Watching arrives last.</li></ul>
+      <h3>Costs</h3>
+      <ul class="pts"><li>The steps have to line up exactly with the Library tab's layout, so a layout change breaks the setup screens too.</li><li>Dark and plain until the very end.</li></ul>
+      <div class="links"><a href="7-fly-into-place.html">Open the clickable mockup</a><span>50s</span></div>
+    </div>
+  </article>
+
+  <article id="d8">
+    <video src="videos/8-kinetic-type.mp4" poster="renders/8-kinetic-type.png" controls muted playsinline preload="none"></video>
+    <div>
+      <h2>Kinetic type</h2>
+      <p class="one">Huge type over tilted, scrolling marquees. Before you connect, the marquees are outlined words. Connect speeds them up to a blur, and they come back as your posters. Every choice is a giant word.</p>
+      <h3>Motion</h3>
+      <ul class="pts"><li>Speed-up and blur when the words change into posters.</li><li>Slot-machine reels for the sign-in code.</li><li>Words fill in from the left when picked; unpinned libraries get a line drawn through them.</li><li>Picking a genre bursts a few matching posters out of the word. The finale straightens the marquee and slides your Library's rows in.</li></ul>
+      <h3>Costs</h3>
+      <ul class="pts"><li>The loudest of the eight, and nothing else in the app looks like it.</li><li>Outlined words are harder to read from across a room than filled tiles.</li></ul>
+      <div class="links"><a href="8-kinetic-type.html">Open the clickable mockup</a><span>48s</span></div>
+    </div>
+  </article>
+
+  <section class="pick">
+    <h2>If I had to pick</h2>
+    <p><strong>Direction 5 as the base, with direction 2's live building in the editors.</strong> Most people want the defaults. Ranking networks and genres by what the server actually has makes those defaults good, and the preview shows the result before anyone commits. Inside "Change", the row filling in live (direction 2) is what makes an edit feel safe.</p>
+    <p>For more flash, take <strong>direction 7's flying picks</strong> into those editors. Each pick lands where it will live, so the motion explains the result. Directions 6 and 8 make a stronger first impression, but they're louder than anything after setup. Their best moments, the card flip on connect and the slot-machine code, could be reused on their own.</p>
+    <p>Direction 4 is the most original. It's worth a prototype if the inference holds up on a real library, but I wouldn't build it first.</p>
+  </section>
+
+  <footer>Mockups only; no app code changed. Server, profiles, counts and the sign-in code are placeholders. Network tiles use plain wordmarks where the app shows TMDB logos. Each mockup replays its script in the browser; add <code>?raw</code> to view it at 1920×1080. To re-record, run <code>node record.cjs</code>.</footer>
+</main></body></html>

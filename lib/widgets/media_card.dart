@@ -242,6 +242,11 @@ class MediaCard extends StatefulWidget {
   /// Paint-time black tint amount for the artwork, from 0 (clear) to 1 (black).
   final Animation<double>? artworkDim;
 
+  /// Lead the subtitle with how much is left to watch ("1h 39min left") when
+  /// the item is part-watched: in place of a movie's year, and after an
+  /// episode's number and title.
+  final bool showTimeLeft;
+
   /// Overrides the silhouette inferred from the item itself. Collection and
   /// playlist records do not encode the media-library shape, so their owning
   /// surface supplies this for music libraries.
@@ -271,6 +276,7 @@ class MediaCard extends StatefulWidget {
     this.showTitleImplied = false,
     this.artworkDim,
     this.cardShapeOverride,
+    this.showTimeLeft = false,
   }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
   @override
@@ -695,6 +701,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                   enableDetailLinks: widget.onTap == null,
                   showTitleImplied: _impliesShowTitle(item),
                   catalogItem: _catalogItem,
+                  timeLeft: widget.showTimeLeft ? _timeLeft(item) : null,
                 ),
             ],
           ),
@@ -704,6 +711,12 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   }
 
   bool _impliesShowTitle(MediaItem item) => widget.showTitleImplied && item.isEpisode;
+
+  /// "1h 39min left" for a part-watched item, else null.
+  static String? _timeLeft(MediaItem item) {
+    if (!item.hasActiveProgress) return null;
+    return t.libraryHome.timeLeft(duration: formatDurationTextual(item.durationMs! - item.viewOffsetMs!));
+  }
 }
 
 class _MediaCardList extends StatelessWidget {
@@ -1182,6 +1195,7 @@ class _MediaCardHelpers {
     bool enableDetailLinks = true,
     bool showTitleImplied = false,
     CatalogItem? catalogItem,
+    String? timeLeft,
   }) {
     final catalogMetadata = catalogItem == null
         ? ''
@@ -1201,7 +1215,17 @@ class _MediaCardHelpers {
         style: _captionStyle(context),
         enableDetailLinks: true,
         isOffline: isOffline,
+        trailing: timeLeft,
       );
+    }
+
+    if (timeLeft != null && catalogMetadata.isEmpty) {
+      // An episode keeps its number (and title, unless implied) ahead of the
+      // time left; anything else shows just the time left.
+      final episode = mi.isEpisode && mi.parentIndex != null
+          ? _metadataSubtitleText(mi, catalogMetadata: '', showTitleImplied: showTitleImplied)
+          : null;
+      return _caption(context, [?episode, timeLeft].join(' · '));
     }
 
     final text = _metadataSubtitleText(mi, catalogMetadata: catalogMetadata, showTitleImplied: showTitleImplied);
@@ -1453,6 +1477,7 @@ Widget _buildEpisodeSubtitleRow(
   required TextStyle? style,
   required bool enableDetailLinks,
   required bool isOffline,
+  String? trailing,
 }) {
   final seasonLabel = 'S${mi.parentIndex}';
   return Row(
@@ -1471,6 +1496,8 @@ Widget _buildEpisodeSubtitleRow(
           child: Text(mi.displaySubtitle ?? mi.displayTitle, maxLines: 1, overflow: .ellipsis, style: style),
         ),
       ),
+      // After the title, which gives way first, so the time left stays whole.
+      if (trailing != null) ExcludeSemantics(child: Text(' · $trailing', style: style)),
     ],
   );
 }

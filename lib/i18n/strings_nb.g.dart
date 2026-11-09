@@ -97,7 +97,7 @@ class _Translations$app$nb extends Translations$app$en {
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'TBD';
 }
 
 // Path: auth
@@ -107,7 +107,7 @@ class _Translations$auth$nb extends Translations$auth$en {
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
-	@override String get localDataRecoveryRequired => 'Plezy kunne ikke gjenopprette lokale innloggingsdata og ventende avspillingsdata på en sikker måte. Logg inn på nytt.';
+	@override String get localDataRecoveryRequired => 'TBD kunne ikke gjenopprette lokale innloggingsdata og ventende avspillingsdata på en sikker måte. Logg inn på nytt.';
 }
 
 // Path: common
@@ -207,7 +207,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 
 	// Translations
 	@override String get title => 'Innstillinger';
-	@override String get supportDeveloper => 'Støtt Plezy';
+	@override String get supportDeveloper => 'Støtt TBD';
 	@override String get supportDeveloperDescription => 'Doner via Liberapay for å finansiere utviklingen';
 	@override String get language => 'Språk';
 	@override String get theme => 'Tema';
@@ -229,6 +229,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get lightTheme => 'Lyst';
 	@override String get darkTheme => 'Mørkt';
 	@override String get oledTheme => 'OLED';
+	@override String get slateTheme => 'Skifer';
 	@override String get libraryDensity => 'Innholdstetthet i biblioteket';
 	@override String get displayScale => 'Skalering';
 	@override String get compact => 'Kompakt';
@@ -346,7 +347,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get importSettingsDescription => 'Gjenopprett innstillinger fra en fil';
 	@override String get importSettingsConfirm => 'Dette vil erstatte nåværende innstillinger. Fortsette?';
 	@override String get importSettingsSuccess => 'Innstillinger importert';
-	@override String get importSettingsInvalidFile => 'Denne filen er ikke en gyldig Plezy-innstillingseksport';
+	@override String get importSettingsInvalidFile => 'Denne filen er ikke en gyldig TBD-innstillingseksport';
 	@override String get importSettingsNoUser => 'Logg inn før import av innstillinger';
 	@override String get shortcutsReset => 'Snarveier tilbakestilt til standard';
 	@override String get about => 'Om';
@@ -409,8 +410,6 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String maxVolumePercent({required Object percent}) => '${percent} %';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Vis hva du ser på Discord';
-	@override String get services => 'Tjenester';
-	@override String get servicesDescription => 'Koble til Trakt, MyAnimeList, Seerr og mer';
 	@override String get manageLibrariesDescription => 'Omorganiser og skjul biblioteker';
 	@override String get companionRemoteServer => 'Fjernkontrollserver';
 	@override String get companionRemoteServerDescription => 'La mobilenheter på nettverket styre denne appen';
@@ -466,7 +465,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get forceTvMode => 'Tving TV-modus';
 	@override String get forceTvModeDescription => 'Tving TV-oppsett. For enheter som ikke oppdages automatisk. Krever omstart.';
 	@override String get startInFullscreen => 'Start i fullskjerm';
-	@override String get startInFullscreenDescription => 'Åpne Plezy i fullskjermmodus ved oppstart';
+	@override String get startInFullscreenDescription => 'Åpne TBD i fullskjermmodus ved oppstart';
 	@override String get exitFullscreenOnPlayerClose => 'Avslutt fullskjerm ved lukking av avspiller';
 	@override String get exitFullscreenOnPlayerCloseDescription => 'Avslutt fullskjerm automatisk når videospilleren lukkes';
 	@override String get autoHidePerformanceOverlay => 'Skjul ytelsesoverlegg automatisk';
@@ -512,7 +511,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get playerScopeGlobal => 'Overalt';
 	@override String get playerScopeLibrary => 'Per bibliotek';
 	@override String get playerScopeTitle => 'Per serie eller film';
-	@override String get exportDialogTitle => 'Eksporter Plezy-innstillinger';
+	@override String get exportDialogTitle => 'Eksporter TBD-innstillinger';
 }
 
 // Path: search
@@ -1017,10 +1016,8 @@ class _Translations$connections$nb extends Translations$connections$en {
 	@override String get sectionTitle => 'Tilkoblinger';
 	@override String get addConnection => 'Legg til tilkobling';
 	@override String sessionExpiredOne({required Object name}) => 'Økten er utløpt for ${name}';
-	@override String sessionExpiredMany({required Object count}) => 'Økten er utløpt for ${count} servere';
 	@override String accessDeniedOne({required Object name}) => '${name} nektet tilgang for denne kontoen';
 	@override String accessDeniedMany({required Object count}) => '${count} servere nektet tilgang for denne kontoen';
-	@override String get signInAgain => 'Logg inn igjen';
 }
 
 // Path: accountPreferences
@@ -1175,9 +1172,9 @@ class _Translations$startup$nb extends Translations$startup$en {
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
-	@override String get failedTitle => 'Plezy kunne ikke starte';
+	@override String get failedTitle => 'TBD kunne ikke starte';
 	@override String get failedBody => 'Noe gikk galt under oppstart. Detaljene nedenfor viser hva som feilet.';
-	@override String get failedBodyRepairable => 'Plezy\'s lagrede innstillingsfil er skadet og må bygges på nytt før Plezy kan starte. Å prøve igjen hjelper ikke – velg Reparer lagring.';
+	@override String get failedBodyRepairable => 'TBD\'s lagrede innstillingsfil er skadet og må bygges på nytt før TBD kan starte. Å prøve igjen hjelper ikke – velg Reparer lagring.';
 	@override String get phaseLabel => 'Trinn';
 	@override String get showDetails => 'Vis detaljer';
 	@override String get hideDetails => 'Skjul detaljer';
@@ -1186,16 +1183,16 @@ class _Translations$startup$nb extends Translations$startup$en {
 	@override String get uploadDetails => 'Last opp detaljer';
 	@override String get repairStorage => 'Reparer lagring';
 	@override String get repairTitle => 'Reparere lagrede data?';
-	@override String get repairBodyCommon => 'Plezy\'s innstillingsfil er skadet og kan ikke leses. Reparasjon tilbakestiller alle innstillinger til standard.';
+	@override String get repairBodyCommon => 'TBD\'s innstillingsfil er skadet og kan ikke leses. Reparasjon tilbakestiller alle innstillinger til standard.';
 	@override String get repairBodyOneCredential => 'Én lagret pålogging er skadet og kan ikke leses. Reparasjon fjerner bare den; de andre innstillingene dine blir urørt.';
 	@override String get repairBodySignInsKept => 'Serverne og profilene dine skal forbli pålogget.';
 	@override String get repairBodySignInsLost => 'Nøkkelen som beskytter de lagrede påloggingene dine kan ikke gjenvinnes fra denne filen, så du må logge på alle servere og profiler på nytt. Ingenting på medieserveren din påvirkes.';
-	@override String get repairBodySessionsUncertain => 'Trackere (MAL, AniList, Simkl, Trakt) og Seerr lagres separat og kan overleve eller ikke. Plezy vil fortelle deg nøyaktig hva det beholdt.';
+	@override String get repairBodySessionsUncertain => 'Trackere (MAL, AniList, Simkl, Trakt) og Seerr lagres separat og kan overleve eller ikke. TBD vil fortelle deg nøyaktig hva det beholdt.';
 	@override String get repairConfirm => 'Reparer';
 	@override String get repairSucceeded => 'Lagring reparert';
 	@override String get repairNeedsRestart => 'Lagring reparert – omstart kreves';
-	@override String get restartRequiredBody => 'Dataene dine ble reparert, men Plezy må starte på nytt før det kan bruke dem. Lukk Plezy og åpne det igjen.';
-	@override String get quitPlezy => 'Avslutt Plezy';
+	@override String get restartRequiredBody => 'Dataene dine ble reparert, men TBD må starte på nytt før det kan bruke dem. Lukk TBD og åpne det igjen.';
+	@override String get quitPlezy => 'Avslutt TBD';
 	@override String get repairFailed => 'Reparasjon mislyktes';
 	@override String get repairKeptSignIns => 'Serverne og profilene dine er fortsatt pålogget.';
 	@override String get repairLostSignIns => 'Nøkkelen som beskytter de lagrede påloggingene dine kunne ikke gjenvinnes. Du må logge på alle servere og profiler på nytt.';
@@ -1204,7 +1201,7 @@ class _Translations$startup$nb extends Translations$startup$en {
 	@override String get backupWarning => 'Den inneholder påloggingsinformasjonen din. Ikke last den opp eller del den.';
 	@override String get deleteBackup => 'Slett kopi';
 	@override String get backupDeleted => 'Kopi slettet.';
-	@override String get previousFailureTitle => 'Plezy mislyktes i å starte forrige gang';
+	@override String get previousFailureTitle => 'TBD mislyktes i å starte forrige gang';
 }
 
 // Path: licenses
@@ -1819,11 +1816,11 @@ class _Translations$trakt$nb extends Translations$trakt$en {
 	@override String get connected => 'Tilkoblet';
 	@override String connectedAs({required Object username}) => 'Tilkoblet som @${username}';
 	@override String get disconnectConfirm => 'Koble fra Trakt-konto?';
-	@override String get disconnectConfirmBody => 'Plezy slutter å sende hendelser til Trakt. Du kan koble til igjen når som helst.';
+	@override String get disconnectConfirmBody => 'TBD slutter å sende hendelser til Trakt. Du kan koble til igjen når som helst.';
 	@override String get scrobble => 'Sanntids-scrobbling';
 	@override String get scrobbleDescription => 'Send avspillings-, pause- og stopphendelser til Trakt under avspilling.';
 	@override String get watchedSync => 'Synkroniser settstatus';
-	@override String get watchedSyncDescription => 'Når du markerer elementer som sett i Plezy, markeres de også som sett på Trakt.';
+	@override String get watchedSyncDescription => 'Når du markerer elementer som sett i TBD, markeres de også som sett på Trakt.';
 }
 
 // Path: seerr
@@ -1840,10 +1837,10 @@ class _Translations$seerr$nb extends Translations$seerr$en {
 	@override String get checkServer => 'Fortsett';
 	@override String get signInWithLocal => 'Bruk en lokal konto';
 	@override String get email => 'E-post';
-	@override String get noSignInMethods => 'Denne Seerr-instansen tilbyr ingen innloggingsmetode som Plezy støtter.';
+	@override String get noSignInMethods => 'Denne Seerr-instansen tilbyr ingen innloggingsmetode som TBD støtter.';
 	@override String get instance => 'Instans';
 	@override String get disconnectConfirm => 'Koble fra Seerr?';
-	@override String get disconnectConfirmBody => 'Plezy glemmer denne Seerr-instansen. Koble til igjen når som helst.';
+	@override String get disconnectConfirmBody => 'TBD glemmer denne Seerr-instansen. Koble til igjen når som helst.';
 	@override String get request => 'Be om';
 	@override String get request4k => 'Be om i 4K';
 	@override String get seasons => 'Sesonger';
@@ -1868,7 +1865,7 @@ class _Translations$seerr$nb extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'På blokkeringslisten';
 	@override String couldNotReach({required Object url, required Object error}) => 'Kunne ikke nå ${url}: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'Ingen Seerr-instans på ${url} (HTTP ${status})';
-	@override String get behindAuthProxy => 'En autentiserende omvendt proxy (SSO eller HTTP-autentisering) svarte i stedet for Seerr. Plezy kan ikke logge inn gjennom den: La Seerrs /api/v1-sti omgå proxyen for denne appen, eller bruk en adresse som når Seerr direkte.';
+	@override String get behindAuthProxy => 'En autentiserende omvendt proxy (SSO eller HTTP-autentisering) svarte i stedet for Seerr. TBD kan ikke logge inn gjennom den: La Seerrs /api/v1-sti omgå proxyen for denne appen, eller bruk en adresse som når Seerr direkte.';
 	@override String get invalidUrl => 'Skriv inn en serveradresse som https://seerr.example.com';
 	@override String get notInitialized => 'Denne Seerr-instansen har ikke fullført førstegangsoppsettet';
 	@override String get noStoredCredentials => 'Ingen lagret påloggingsinformasjon er tilgjengelig for å logge inn på nytt';
@@ -1896,7 +1893,7 @@ class _Translations$services$nb extends Translations$services$en {
 	@override String get scrobble => 'Registrer fremdrift automatisk';
 	@override String get scrobbleDescription => 'Oppdater listen din når du er ferdig med en episode eller film.';
 	@override String disconnectConfirm({required Object service}) => 'Koble fra ${service}?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy slutter å oppdatere ${service}. Koble til igjen når som helst.';
+	@override String disconnectConfirmBody({required Object service}) => 'TBD slutter å oppdatere ${service}. Koble til igjen når som helst.';
 	@override String connectFailed({required Object service}) => 'Kunne ikke koble til ${service}. Prøv igjen.';
 	@override late final _Translations$services$names$nb names = _Translations$services$names$nb._(_root);
 	@override late final _Translations$services$deviceCode$nb deviceCode = _Translations$services$deviceCode$nb._(_root);
@@ -2370,14 +2367,14 @@ class _Translations$downloads$backgroundWarning$nb extends Translations$download
 	@override String get bannerAction => 'Detaljer';
 	@override String get sheetTitle => 'Bakgrunnsnedlastinger er blokkert';
 	@override String get sheetTitleDegraded => 'Bakgrunnsnedlastinger kan være begrenset';
-	@override String get sheetIntro => 'Android hindrer Plezy i å laste ned pålitelig i bakgrunnen.';
-	@override String get sheetIntroDegraded => 'Enheten din begrenser når Plezy kan laste ned i bakgrunnen.';
-	@override String get reasonBackgroundRestricted => 'Bakgrunnsbruken til Plezy er begrenset. Sett batteribruk eller bakgrunnsbruk til «Ubegrenset».';
-	@override String get reasonStandbyRestricted => 'Android har satt Plezy i begrenset hvilemodus. Sett batteribruken til «Ubegrenset».';
+	@override String get sheetIntro => 'Android hindrer TBD i å laste ned pålitelig i bakgrunnen.';
+	@override String get sheetIntroDegraded => 'Enheten din begrenser når TBD kan laste ned i bakgrunnen.';
+	@override String get reasonBackgroundRestricted => 'Bakgrunnsbruken til TBD er begrenset. Sett batteribruk eller bakgrunnsbruk til «Ubegrenset».';
+	@override String get reasonStandbyRestricted => 'Android har satt TBD i begrenset hvilemodus. Sett batteribruken til «Ubegrenset».';
 	@override String get reasonDownloadChannelBlocked => 'Varsler om nedlastinger er slått av, så fremdrift og kontroller kan være utilgjengelige.';
 	@override String get reasonNotificationsDisabled => 'Varsler er slått av. På Android 13 eller nyere kreves de for lange bakgrunnsnedlastinger.';
 	@override String get reasonDataSaver => 'Datasparing er slått på og blokkerer bakgrunnsnedlastinger via mobildata. Nedlastinger skal fortsatt fungere på Wi-Fi.';
-	@override String get reasonOemUnknown => 'Nedlastinger har stoppet gjentatte ganger mens Plezy var i bakgrunnen. Sjekk innstillingene for batteribruk eller bakgrunnsbruk for Plezy.';
+	@override String get reasonOemUnknown => 'Nedlastinger har stoppet gjentatte ganger mens TBD var i bakgrunnen. Sjekk innstillingene for batteribruk eller bakgrunnsbruk for TBD.';
 	@override String get openSettings => 'Åpne innstillinger';
 	@override String get stillNotWorking => 'Enhetsspesifikk hjelp';
 	@override String get stillNotWorkingDescription => 'Se fremgangsmåten for enheten din, eller send en logg fra Innstillinger › Vis logger hvis problemet vedvarer.';
@@ -2435,13 +2432,13 @@ class _Translations$companionRemote$pairing$nb extends Translations$companionRem
 	@override String get connecting => 'Kobler til...';
 	@override String get searchingForDevices => 'Søker etter enheter...';
 	@override String get noDevicesFound => 'Ingen enheter funnet på nettverket ditt';
-	@override String get noDevicesHint => 'Åpne Plezy på datamaskinen, og bruk samme Wi-Fi';
+	@override String get noDevicesHint => 'Åpne TBD på datamaskinen, og bruk samme Wi-Fi';
 	@override String get availableDevices => 'Tilgjengelige enheter';
 	@override String get manualConnection => 'Manuell tilkobling';
 	@override String get validationHostRequired => 'Vennligst oppgi vertsadresse';
 	@override String get validationHostFormat => 'Format må være IP:port (f.eks. 192.168.1.100:48632)';
 	@override String get connectionTimedOut => 'Tilkoblingen fikk tidsavbrudd. Bruk samme nettverk på begge enheter.';
-	@override String get sessionNotFound => 'Enhet ikke funnet. Sørg for at Plezy kjører på verten.';
+	@override String get sessionNotFound => 'Enhet ikke funnet. Sørg for at TBD kjører på verten.';
 	@override String failedToConnect({required Object error}) => 'Kunne ikke koble til: ${error}';
 }
 
@@ -2519,7 +2516,7 @@ class _Translations$services$deviceCode$nb extends Translations$services$deviceC
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => 'Aktiver Plezy på ${service}';
+	@override String title({required Object service}) => 'Aktiver TBD på ${service}';
 	@override String get instructions => 'Skann QR-koden, eller gå til adressen nedenfor og skriv inn denne koden:';
 	@override String openToActivate({required Object service}) => 'Åpne ${service} for å aktivere';
 	@override String get copyCode => 'Kopier aktiveringskode';
@@ -2579,8 +2576,8 @@ class _Translations$services$libraryFilter$nb extends Translations$services$libr
 extension on TranslationsNb {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
-			'auth.localDataRecoveryRequired' => 'Plezy kunne ikke gjenopprette lokale innloggingsdata og ventende avspillingsdata på en sikker måte. Logg inn på nytt.',
+			'app.title' => 'TBD',
+			'auth.localDataRecoveryRequired' => 'TBD kunne ikke gjenopprette lokale innloggingsdata og ventende avspillingsdata på en sikker måte. Logg inn på nytt.',
 			'common.cancel' => 'Avbryt',
 			'common.save' => 'Lagre',
 			'common.close' => 'Lukk',
@@ -2665,7 +2662,7 @@ extension on TranslationsNb {
 			'update.latestVersion' => 'Du har den nyeste versjonen',
 			'update.checkFailed' => 'Kunne ikke se etter oppdateringer',
 			'settings.title' => 'Innstillinger',
-			'settings.supportDeveloper' => 'Støtt Plezy',
+			'settings.supportDeveloper' => 'Støtt TBD',
 			'settings.supportDeveloperDescription' => 'Doner via Liberapay for å finansiere utviklingen',
 			'settings.language' => 'Språk',
 			'settings.theme' => 'Tema',
@@ -2687,6 +2684,7 @@ extension on TranslationsNb {
 			'settings.lightTheme' => 'Lyst',
 			'settings.darkTheme' => 'Mørkt',
 			'settings.oledTheme' => 'OLED',
+			'settings.slateTheme' => 'Skifer',
 			'settings.libraryDensity' => 'Innholdstetthet i biblioteket',
 			'settings.displayScale' => 'Skalering',
 			'settings.compact' => 'Kompakt',
@@ -2804,7 +2802,7 @@ extension on TranslationsNb {
 			'settings.importSettingsDescription' => 'Gjenopprett innstillinger fra en fil',
 			'settings.importSettingsConfirm' => 'Dette vil erstatte nåværende innstillinger. Fortsette?',
 			'settings.importSettingsSuccess' => 'Innstillinger importert',
-			'settings.importSettingsInvalidFile' => 'Denne filen er ikke en gyldig Plezy-innstillingseksport',
+			'settings.importSettingsInvalidFile' => 'Denne filen er ikke en gyldig TBD-innstillingseksport',
 			'settings.importSettingsNoUser' => 'Logg inn før import av innstillinger',
 			'settings.shortcutsReset' => 'Snarveier tilbakestilt til standard',
 			'settings.about' => 'Om',
@@ -2867,8 +2865,6 @@ extension on TranslationsNb {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent} %',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Vis hva du ser på Discord',
-			'settings.services' => 'Tjenester',
-			'settings.servicesDescription' => 'Koble til Trakt, MyAnimeList, Seerr og mer',
 			'settings.manageLibrariesDescription' => 'Omorganiser og skjul biblioteker',
 			'settings.companionRemoteServer' => 'Fjernkontrollserver',
 			'settings.companionRemoteServerDescription' => 'La mobilenheter på nettverket styre denne appen',
@@ -2924,7 +2920,7 @@ extension on TranslationsNb {
 			'settings.forceTvMode' => 'Tving TV-modus',
 			'settings.forceTvModeDescription' => 'Tving TV-oppsett. For enheter som ikke oppdages automatisk. Krever omstart.',
 			'settings.startInFullscreen' => 'Start i fullskjerm',
-			'settings.startInFullscreenDescription' => 'Åpne Plezy i fullskjermmodus ved oppstart',
+			'settings.startInFullscreenDescription' => 'Åpne TBD i fullskjermmodus ved oppstart',
 			'settings.exitFullscreenOnPlayerClose' => 'Avslutt fullskjerm ved lukking av avspiller',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Avslutt fullskjerm automatisk når videospilleren lukkes',
 			'settings.autoHidePerformanceOverlay' => 'Skjul ytelsesoverlegg automatisk',
@@ -2970,7 +2966,7 @@ extension on TranslationsNb {
 			'settings.playerScopeGlobal' => 'Overalt',
 			'settings.playerScopeLibrary' => 'Per bibliotek',
 			'settings.playerScopeTitle' => 'Per serie eller film',
-			'settings.exportDialogTitle' => 'Eksporter Plezy-innstillinger',
+			'settings.exportDialogTitle' => 'Eksporter TBD-innstillinger',
 			'search.hint' => 'Søk i filmer, serier, musikk...',
 			'search.tryDifferentTerm' => 'Prøv et annet søkeord',
 			'search.searchYourMedia' => 'Søk i mediene dine',
@@ -3091,9 +3087,9 @@ extension on TranslationsNb {
 			'fileInfo.previewIndex' => 'Forhåndsvisningsindeks',
 			'fileInfo.packetLength' => 'Pakkelengde',
 			'fileInfo.filePresent' => 'Fil til stede',
+			'fileInfo.fileReadable' => 'Lesbar for serveren',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.fileReadable' => 'Lesbar for serveren',
 			'fileInfo.streamPath' => 'Strømbane',
 			'fileInfo.optimizedForStreaming' => 'Optimalisert for strømming',
 			'fileInfo.has64bitOffsets' => '64-biters forskyvninger',
@@ -3379,10 +3375,8 @@ extension on TranslationsNb {
 			'connections.sectionTitle' => 'Tilkoblinger',
 			'connections.addConnection' => 'Legg til tilkobling',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Økten er utløpt for ${name}',
-			'connections.sessionExpiredMany' => ({required Object count}) => 'Økten er utløpt for ${count} servere',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} nektet tilgang for denne kontoen',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servere nektet tilgang for denne kontoen',
-			'connections.signInAgain' => 'Logg inn igjen',
 			'accountPreferences.sectionTitle' => 'Kontoinnstillinger',
 			'accountPreferences.unavailable' => 'Kan ikke nå denne kontoen',
 			'accountPreferences.autoSelectAudio' => 'Velg lyd etter språk',
@@ -3495,9 +3489,9 @@ extension on TranslationsNb {
 			'logs.clearLogs' => 'Tøm logger',
 			'logs.copyLogs' => 'Kopier logger',
 			'logs.uploadLogs' => 'Last opp logger',
-			'startup.failedTitle' => 'Plezy kunne ikke starte',
+			'startup.failedTitle' => 'TBD kunne ikke starte',
 			'startup.failedBody' => 'Noe gikk galt under oppstart. Detaljene nedenfor viser hva som feilet.',
-			'startup.failedBodyRepairable' => 'Plezy\'s lagrede innstillingsfil er skadet og må bygges på nytt før Plezy kan starte. Å prøve igjen hjelper ikke – velg Reparer lagring.',
+			'startup.failedBodyRepairable' => 'TBD\'s lagrede innstillingsfil er skadet og må bygges på nytt før TBD kan starte. Å prøve igjen hjelper ikke – velg Reparer lagring.',
 			'startup.phaseLabel' => 'Trinn',
 			'startup.showDetails' => 'Vis detaljer',
 			'startup.hideDetails' => 'Skjul detaljer',
@@ -3506,16 +3500,16 @@ extension on TranslationsNb {
 			'startup.uploadDetails' => 'Last opp detaljer',
 			'startup.repairStorage' => 'Reparer lagring',
 			'startup.repairTitle' => 'Reparere lagrede data?',
-			'startup.repairBodyCommon' => 'Plezy\'s innstillingsfil er skadet og kan ikke leses. Reparasjon tilbakestiller alle innstillinger til standard.',
+			'startup.repairBodyCommon' => 'TBD\'s innstillingsfil er skadet og kan ikke leses. Reparasjon tilbakestiller alle innstillinger til standard.',
 			'startup.repairBodyOneCredential' => 'Én lagret pålogging er skadet og kan ikke leses. Reparasjon fjerner bare den; de andre innstillingene dine blir urørt.',
 			'startup.repairBodySignInsKept' => 'Serverne og profilene dine skal forbli pålogget.',
 			'startup.repairBodySignInsLost' => 'Nøkkelen som beskytter de lagrede påloggingene dine kan ikke gjenvinnes fra denne filen, så du må logge på alle servere og profiler på nytt. Ingenting på medieserveren din påvirkes.',
-			'startup.repairBodySessionsUncertain' => 'Trackere (MAL, AniList, Simkl, Trakt) og Seerr lagres separat og kan overleve eller ikke. Plezy vil fortelle deg nøyaktig hva det beholdt.',
+			'startup.repairBodySessionsUncertain' => 'Trackere (MAL, AniList, Simkl, Trakt) og Seerr lagres separat og kan overleve eller ikke. TBD vil fortelle deg nøyaktig hva det beholdt.',
 			'startup.repairConfirm' => 'Reparer',
 			'startup.repairSucceeded' => 'Lagring reparert',
 			'startup.repairNeedsRestart' => 'Lagring reparert – omstart kreves',
-			'startup.restartRequiredBody' => 'Dataene dine ble reparert, men Plezy må starte på nytt før det kan bruke dem. Lukk Plezy og åpne det igjen.',
-			'startup.quitPlezy' => 'Avslutt Plezy',
+			'startup.restartRequiredBody' => 'Dataene dine ble reparert, men TBD må starte på nytt før det kan bruke dem. Lukk TBD og åpne det igjen.',
+			'startup.quitPlezy' => 'Avslutt TBD',
 			'startup.repairFailed' => 'Reparasjon mislyktes',
 			'startup.repairKeptSignIns' => 'Serverne og profilene dine er fortsatt pålogget.',
 			'startup.repairLostSignIns' => 'Nøkkelen som beskytter de lagrede påloggingene dine kunne ikke gjenvinnes. Du må logge på alle servere og profiler på nytt.',
@@ -3524,7 +3518,7 @@ extension on TranslationsNb {
 			'startup.backupWarning' => 'Den inneholder påloggingsinformasjonen din. Ikke last den opp eller del den.',
 			'startup.deleteBackup' => 'Slett kopi',
 			'startup.backupDeleted' => 'Kopi slettet.',
-			'startup.previousFailureTitle' => 'Plezy mislyktes i å starte forrige gang',
+			'startup.previousFailureTitle' => 'TBD mislyktes i å starte forrige gang',
 			'licenses.relatedPackages' => 'Relaterte pakker',
 			'licenses.license' => 'Lisens',
 			'licenses.licenseNumber' => ({required Object number}) => 'Lisens ${number}',
@@ -3605,11 +3599,11 @@ extension on TranslationsNb {
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: '${n} kommentar', other: '${n} kommentarer', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} stemmer',
 			'explore.stats.watching' => ({required Object n}) => '${n} ser på den',
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} fullførte',
 			'explore.stats.onHold' => ({required Object n}) => '${n} på pause',
 			'explore.stats.dropped' => ({required Object n}) => '${n} droppet',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Vinter',
 			'explore.season.spring' => 'Vår',
 			'explore.season.summer' => 'Sommer',
@@ -3923,14 +3917,14 @@ extension on TranslationsNb {
 			'downloads.backgroundWarning.bannerAction' => 'Detaljer',
 			'downloads.backgroundWarning.sheetTitle' => 'Bakgrunnsnedlastinger er blokkert',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Bakgrunnsnedlastinger kan være begrenset',
-			'downloads.backgroundWarning.sheetIntro' => 'Android hindrer Plezy i å laste ned pålitelig i bakgrunnen.',
-			'downloads.backgroundWarning.sheetIntroDegraded' => 'Enheten din begrenser når Plezy kan laste ned i bakgrunnen.',
-			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Bakgrunnsbruken til Plezy er begrenset. Sett batteribruk eller bakgrunnsbruk til «Ubegrenset».',
-			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android har satt Plezy i begrenset hvilemodus. Sett batteribruken til «Ubegrenset».',
+			'downloads.backgroundWarning.sheetIntro' => 'Android hindrer TBD i å laste ned pålitelig i bakgrunnen.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Enheten din begrenser når TBD kan laste ned i bakgrunnen.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Bakgrunnsbruken til TBD er begrenset. Sett batteribruk eller bakgrunnsbruk til «Ubegrenset».',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android har satt TBD i begrenset hvilemodus. Sett batteribruken til «Ubegrenset».',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Varsler om nedlastinger er slått av, så fremdrift og kontroller kan være utilgjengelige.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Varsler er slått av. På Android 13 eller nyere kreves de for lange bakgrunnsnedlastinger.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'Datasparing er slått på og blokkerer bakgrunnsnedlastinger via mobildata. Nedlastinger skal fortsatt fungere på Wi-Fi.',
-			'downloads.backgroundWarning.reasonOemUnknown' => 'Nedlastinger har stoppet gjentatte ganger mens Plezy var i bakgrunnen. Sjekk innstillingene for batteribruk eller bakgrunnsbruk for Plezy.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Nedlastinger har stoppet gjentatte ganger mens TBD var i bakgrunnen. Sjekk innstillingene for batteribruk eller bakgrunnsbruk for TBD.',
 			'downloads.backgroundWarning.openSettings' => 'Åpne innstillinger',
 			'downloads.backgroundWarning.stillNotWorking' => 'Enhetsspesifikk hjelp',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Se fremgangsmåten for enheten din, eller send en logg fra Innstillinger › Vis logger hvis problemet vedvarer.',
@@ -3997,13 +3991,13 @@ extension on TranslationsNb {
 			'companionRemote.pairing.connecting' => 'Kobler til...',
 			'companionRemote.pairing.searchingForDevices' => 'Søker etter enheter...',
 			'companionRemote.pairing.noDevicesFound' => 'Ingen enheter funnet på nettverket ditt',
-			'companionRemote.pairing.noDevicesHint' => 'Åpne Plezy på datamaskinen, og bruk samme Wi-Fi',
+			'companionRemote.pairing.noDevicesHint' => 'Åpne TBD på datamaskinen, og bruk samme Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Tilgjengelige enheter',
 			'companionRemote.pairing.manualConnection' => 'Manuell tilkobling',
 			'companionRemote.pairing.validationHostRequired' => 'Vennligst oppgi vertsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format må være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tilkoblingen fikk tidsavbrudd. Bruk samme nettverk på begge enheter.',
-			'companionRemote.pairing.sessionNotFound' => 'Enhet ikke funnet. Sørg for at Plezy kjører på verten.',
+			'companionRemote.pairing.sessionNotFound' => 'Enhet ikke funnet. Sørg for at TBD kjører på verten.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke koble til: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du koble fra fjernøkten?',
 			'companionRemote.remote.reconnecting' => 'Kobler til på nytt...',
@@ -4119,11 +4113,11 @@ extension on TranslationsNb {
 			'externalPlayer.customPlayers' => 'Egendefinerte spillere',
 			'externalPlayer.systemDefault' => 'Systemstandard',
 			'externalPlayer.addCustomPlayer' => 'Legg til egendefinert spiller',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Spillernavn',
 			'externalPlayer.playerNameHint' => 'Min spiller',
 			'externalPlayer.playerCommand' => 'Kommando',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerPackage' => 'Pakkenavn',
 			'externalPlayer.playerUrlScheme' => 'URL-skjema',
 			'externalPlayer.off' => 'Av',
@@ -4164,11 +4158,11 @@ extension on TranslationsNb {
 			'trakt.connected' => 'Tilkoblet',
 			'trakt.connectedAs' => ({required Object username}) => 'Tilkoblet som @${username}',
 			'trakt.disconnectConfirm' => 'Koble fra Trakt-konto?',
-			'trakt.disconnectConfirmBody' => 'Plezy slutter å sende hendelser til Trakt. Du kan koble til igjen når som helst.',
+			'trakt.disconnectConfirmBody' => 'TBD slutter å sende hendelser til Trakt. Du kan koble til igjen når som helst.',
 			'trakt.scrobble' => 'Sanntids-scrobbling',
 			'trakt.scrobbleDescription' => 'Send avspillings-, pause- og stopphendelser til Trakt under avspilling.',
 			'trakt.watchedSync' => 'Synkroniser settstatus',
-			'trakt.watchedSyncDescription' => 'Når du markerer elementer som sett i Plezy, markeres de også som sett på Trakt.',
+			'trakt.watchedSyncDescription' => 'Når du markerer elementer som sett i TBD, markeres de også som sett på Trakt.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Koble til Seerr',
 			'seerr.serverUrl' => 'Server-URL',
@@ -4176,10 +4170,10 @@ extension on TranslationsNb {
 			'seerr.checkServer' => 'Fortsett',
 			'seerr.signInWithLocal' => 'Bruk en lokal konto',
 			'seerr.email' => 'E-post',
-			'seerr.noSignInMethods' => 'Denne Seerr-instansen tilbyr ingen innloggingsmetode som Plezy støtter.',
+			'seerr.noSignInMethods' => 'Denne Seerr-instansen tilbyr ingen innloggingsmetode som TBD støtter.',
 			'seerr.instance' => 'Instans',
 			'seerr.disconnectConfirm' => 'Koble fra Seerr?',
-			'seerr.disconnectConfirmBody' => 'Plezy glemmer denne Seerr-instansen. Koble til igjen når som helst.',
+			'seerr.disconnectConfirmBody' => 'TBD glemmer denne Seerr-instansen. Koble til igjen når som helst.',
 			'seerr.request' => 'Be om',
 			'seerr.request4k' => 'Be om i 4K',
 			'seerr.seasons' => 'Sesonger',
@@ -4204,7 +4198,7 @@ extension on TranslationsNb {
 			'seerr.statusBlocklisted' => 'På blokkeringslisten',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Kunne ikke nå ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'Ingen Seerr-instans på ${url} (HTTP ${status})',
-			'seerr.behindAuthProxy' => 'En autentiserende omvendt proxy (SSO eller HTTP-autentisering) svarte i stedet for Seerr. Plezy kan ikke logge inn gjennom den: La Seerrs /api/v1-sti omgå proxyen for denne appen, eller bruk en adresse som når Seerr direkte.',
+			'seerr.behindAuthProxy' => 'En autentiserende omvendt proxy (SSO eller HTTP-autentisering) svarte i stedet for Seerr. TBD kan ikke logge inn gjennom den: La Seerrs /api/v1-sti omgå proxyen for denne appen, eller bruk en adresse som når Seerr direkte.',
 			'seerr.invalidUrl' => 'Skriv inn en serveradresse som https://seerr.example.com',
 			'seerr.notInitialized' => 'Denne Seerr-instansen har ikke fullført førstegangsoppsettet',
 			'seerr.noStoredCredentials' => 'Ingen lagret påloggingsinformasjon er tilgjengelig for å logge inn på nytt',
@@ -4223,14 +4217,14 @@ extension on TranslationsNb {
 			'services.scrobble' => 'Registrer fremdrift automatisk',
 			'services.scrobbleDescription' => 'Oppdater listen din når du er ferdig med en episode eller film.',
 			'services.disconnectConfirm' => ({required Object service}) => 'Koble fra ${service}?',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy slutter å oppdatere ${service}. Koble til igjen når som helst.',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'TBD slutter å oppdatere ${service}. Koble til igjen når som helst.',
 			'services.connectFailed' => ({required Object service}) => 'Kunne ikke koble til ${service}. Prøv igjen.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
-			'services.deviceCode.title' => ({required Object service}) => 'Aktiver Plezy på ${service}',
+			'services.deviceCode.title' => ({required Object service}) => 'Aktiver TBD på ${service}',
 			'services.deviceCode.instructions' => 'Skann QR-koden, eller gå til adressen nedenfor og skriv inn denne koden:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Åpne ${service} for å aktivere',
 			'services.deviceCode.copyCode' => 'Kopier aktiveringskode',

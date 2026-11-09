@@ -1,0 +1,14 @@
+/* Motion primitives for directions 6–8 (pairs with fx.js). */
+.wd { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.04em 0.02em 0.1em; margin: -0.04em -0.02em -0.1em; }
+.wi { display: inline-block; will-change: transform; }
+.flyer { position: absolute; z-index: 80; pointer-events: none; transform-origin: center; will-change: transform; }
+.flyer > * { width: 100% !important; height: 100% !important; margin: 0 !important; }
+.flap { display: inline-block; transform-origin: 50% 0; }
+.reel { display: inline-block; width: 0.68em; text-align: center; height: 1em; line-height: 1em; overflow: hidden; vertical-align: top; }
+.reel.dash { overflow: visible; width: auto; padding: 0 0.04em; }
+.reel .strip { display: block; }
+.reel .strip > span { display: block; height: 1em; text-align: center; }
+.shine { position: absolute; top: -10%; bottom: -10%; left: 0; width: 34%; pointer-events: none; z-index: 5;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.22), rgba(255,255,255,0)); }
+.ripple { position: absolute; inset: -6px; border-radius: inherit; border: 3px solid #fff; pointer-events: none; z-index: 6; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }

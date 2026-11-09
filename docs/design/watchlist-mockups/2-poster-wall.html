@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>2 · Poster wall — Plezy Watchlist</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .screen { background: radial-gradient(1200px 620px at 78% -10%, rgba(64,74,92,0.28), rgba(14,15,18,0) 70%), var(--bg); }
+  .top { position: absolute; left: var(--pad-x); right: 62px; top: 44px; display: flex; align-items: center; gap: 28px; }
+  .bar { position: absolute; left: var(--pad-x); right: 72px; top: 150px; display: flex; align-items: center; gap: 12px; }
+  .bar .sp { flex: 1; }
+  .bar .sum { font-size: 22px; color: var(--muted); margin-right: 18px; font-variant-numeric: tabular-nums; }
+
+  .grid { position: absolute; left: var(--pad-x); right: 0; top: 246px; display: grid; grid-template-columns: repeat(7, 214px); column-gap: 30px; row-gap: 40px; }
+  .poster .art { width: 214px; height: 321px; }
+  .poster .t { font-size: 22px; margin-top: 12px; }
+  .poster .s { font-size: 18px; }
+
+  /* Focused-title strip, docked bottom like Netflix's preview line */
+  .peek { position: absolute; left: 0; right: 0; bottom: 0; height: 132px; z-index: 6;
+    background: linear-gradient(0deg, var(--bg) 58%, rgba(14,15,18,0)); display: flex; align-items: flex-end; padding: 0 72px 36px var(--pad-x); gap: 40px; }
+  .peek .ttl { font-size: 30px; font-weight: 500; }
+  .peek .meta { font-size: 21px; color: var(--muted); font-weight: 400; margin-top: 6px; }
+  .peek .sp { flex: 1; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <nav class="rail" data-build></nav>
+  <div class="status" data-build></div>
+
+  <div class="top">
+    <div class="tabs">
+      <span class="tab on"><i data-i="bookmarkf"></i>Watchlist <span class="n">18</span></span>
+      <span class="tab"><i data-i="heart"></i>Favourites <span class="n">11</span></span>
+    </div>
+  </div>
+
+  <div class="bar">
+    <span class="chip on">All</span>
+    <span class="chip">Movies</span>
+    <span class="chip">TV Shows</span>
+    <span class="chip">Not started</span>
+    <span class="sp"></span>
+    <span class="sum">18 titles · 31h 40min</span>
+    <span class="chip ghost"><i data-i="sort"></i>Recently added</span>
+  </div>
+
+  <div class="grid">
+    <div class="card poster"><div class="art"><img src="assets/p-dontmove.jpg" alt=""></div><div class="t">Don't Move</div><div class="s">Movie · 2026</div></div>
+    <div class="card poster focus"><div class="art"><img src="assets/p-degaulle.jpg" alt=""></div><div class="t">De Gaulle: Résistance</div><div class="s">Movie · 2026</div></div>
+    <div class="card poster"><div class="art"><img src="assets/s-hxh.jpg" alt=""><span class="badge light">3 new</span></div><div class="t">Hunter x Hunter</div><div class="s">TV · 6 seasons</div></div>
+    <div class="card poster"><div class="art"><img src="assets/p-buddy.jpg" alt=""><div class="progress"><i style="width:22%"></i></div></div><div class="t">Buddy</div><div class="s">1h 14min left</div></div>
+    <div class="card poster"><div class="art"><img src="assets/p-barrio.jpg" alt=""></div><div class="t">Barrio Triste</div><div class="s">Movie · 2026</div></div>
+    <div class="card poster"><div class="art"><img src="assets/s-paradise.jpg" alt=""></div><div class="t">The Paradise</div><div class="s">Movie · 2026</div></div>
+    <div class="card poster"><div class="art"><img src="assets/s-hei.jpg" alt=""></div><div class="t">The Legend of Hei II</div><div class="s">Movie · 2025</div></div>
+
+    <div class="card poster"><div class="art"><img src="assets/s-avatar.jpg" alt=""></div><div class="t">Avatar: Fire and Ash</div><div class="s">Movie · 2025</div></div>
+    <div class="card poster"><div class="art"><img src="assets/s-ponyo.jpg" alt=""></div><div class="t">Ponyo</div><div class="s">Movie · 2008</div></div>
+    <div class="card poster"><div class="art"><img src="assets/s-tunnel.jpg" alt=""></div><div class="t">The Tunnel to Summer</div><div class="s">Movie · 2022</div></div>
+    <div class="card poster"><div class="art"><img src="assets/s-mononoke.jpg" alt=""></div><div class="t">Princess Mononoke</div><div class="s">Movie · 1997</div></div>
+    <div class="card poster"><div class="art"><img src="assets/s-cemetery.jpg" alt=""></div><div class="t">Cemetery of Terror</div><div class="s">Movie · 1985</div></div>
+    <div class="card poster"><div class="art"><img src="assets/s-hayride.jpg" alt=""></div><div class="t">Hayride to Hell</div><div class="s">Movie · 2023</div></div>
+    <div class="card poster"><div class="art"><img src="assets/s-mrmrs.jpg" alt=""></div><div class="t">Mr. &amp; Mrs. Christmas</div><div class="s">Movie · 2026</div></div>
+  </div>
+
+  <div class="peek">
+    <div>
+      <div class="ttl">De Gaulle: Résistance</div>
+      <div class="meta">2026 · 2h 4min · Added Oct 30 · In 4K and 1080p</div>
+    </div>
+    <span class="sp"></span>
+    <div class="hints">
+      <span><span class="key">OK</span>Open</span>
+      <span><span class="key"><i data-i="play"></i></span>Play</span>
+      <span><span class="key">Hold OK</span>Remove or move to Favourites</span>
+    </div>
+  </div>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

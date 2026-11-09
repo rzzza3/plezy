@@ -4,5 +4,6 @@
     <color name="splash_background">#F7F7F8</color>
     <color name="splash_dark">#0E0F12</color>
     <color name="splash_oled">#000000</color>
+    <color name="splash_slate">#151A21</color>
     <color name="splash_light">#F7F7F8</color>
 </resources>

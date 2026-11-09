@@ -70,6 +70,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$startup$en startup = Translations$startup$en.internal(_root);
 	late final Translations$licenses$en licenses = Translations$licenses$en.internal(_root);
 	late final Translations$navigation$en navigation = Translations$navigation$en.internal(_root);
+	late final Translations$watchlistPage$en watchlistPage = Translations$watchlistPage$en.internal(_root);
+	late final Translations$libraryHome$en libraryHome = Translations$libraryHome$en.internal(_root);
 	late final Translations$explore$en explore = Translations$explore$en.internal(_root);
 	late final Translations$liveTv$en liveTv = Translations$liveTv$en.internal(_root);
 	late final Translations$collections$en collections = Translations$collections$en.internal(_root);
@@ -100,8 +102,8 @@ class Translations$app$en {
 
 	// Translations
 
-	/// en: 'Plezy'
-	String get title => 'Plezy';
+	/// en: 'TBD'
+	String get title => 'TBD';
 }
 
 // Path: auth
@@ -112,8 +114,8 @@ class Translations$auth$en {
 
 	// Translations
 
-	/// en: 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.'
-	String get localDataRecoveryRequired => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.';
+	/// en: 'TBD could not safely recover local sign-in and pending playback data. Please sign in again.'
+	String get localDataRecoveryRequired => 'TBD could not safely recover local sign-in and pending playback data. Please sign in again.';
 }
 
 // Path: common
@@ -338,8 +340,8 @@ class Translations$settings$en {
 	/// en: 'Settings'
 	String get title => 'Settings';
 
-	/// en: 'Support Plezy'
-	String get supportDeveloper => 'Support Plezy';
+	/// en: 'Support TBD'
+	String get supportDeveloper => 'Support TBD';
 
 	/// en: 'Donate via Liberapay to fund development'
 	String get supportDeveloperDescription => 'Donate via Liberapay to fund development';
@@ -403,6 +405,9 @@ class Translations$settings$en {
 
 	/// en: 'OLED'
 	String get oledTheme => 'OLED';
+
+	/// en: 'Slate'
+	String get slateTheme => 'Slate';
 
 	/// en: 'Library Density'
 	String get libraryDensity => 'Library Density';
@@ -755,8 +760,8 @@ class Translations$settings$en {
 	/// en: 'Settings imported'
 	String get importSettingsSuccess => 'Settings imported';
 
-	/// en: 'This file isn't a valid Plezy settings export'
-	String get importSettingsInvalidFile => 'This file isn\'t a valid Plezy settings export';
+	/// en: 'This file isn't a valid TBD settings export'
+	String get importSettingsInvalidFile => 'This file isn\'t a valid TBD settings export';
 
 	/// en: 'Sign in before importing settings'
 	String get importSettingsNoUser => 'Sign in before importing settings';
@@ -950,12 +955,6 @@ class Translations$settings$en {
 	/// en: 'Show what you're watching on Discord'
 	String get discordRichPresenceDescription => 'Show what you\'re watching on Discord';
 
-	/// en: 'Services'
-	String get services => 'Services';
-
-	/// en: 'Connect Trakt, MyAnimeList, Seerr, and more'
-	String get servicesDescription => 'Connect Trakt, MyAnimeList, Seerr, and more';
-
 	/// en: 'Reorder and hide libraries'
 	String get manageLibrariesDescription => 'Reorder and hide libraries';
 
@@ -1145,8 +1144,8 @@ class Translations$settings$en {
 	/// en: 'Start in fullscreen'
 	String get startInFullscreen => 'Start in fullscreen';
 
-	/// en: 'Open Plezy in fullscreen mode at launch'
-	String get startInFullscreenDescription => 'Open Plezy in fullscreen mode at launch';
+	/// en: 'Open TBD in fullscreen mode at launch'
+	String get startInFullscreenDescription => 'Open TBD in fullscreen mode at launch';
 
 	/// en: 'Exit fullscreen on player close'
 	String get exitFullscreenOnPlayerClose => 'Exit fullscreen on player close';
@@ -1286,8 +1285,8 @@ class Translations$settings$en {
 	/// en: 'Per show or movie'
 	String get playerScopeTitle => 'Per show or movie';
 
-	/// en: 'Export Plezy settings'
-	String get exportDialogTitle => 'Export Plezy settings';
+	/// en: 'Export TBD settings'
+	String get exportDialogTitle => 'Export TBD settings';
 }
 
 // Path: search
@@ -2568,17 +2567,11 @@ class Translations$connections$en {
 	/// en: 'Session expired for ${name}'
 	String sessionExpiredOne({required Object name}) => 'Session expired for ${name}';
 
-	/// en: 'Session expired for ${count} servers'
-	String sessionExpiredMany({required Object count}) => 'Session expired for ${count} servers';
-
 	/// en: '${name} refused access for this account'
 	String accessDeniedOne({required Object name}) => '${name} refused access for this account';
 
 	/// en: '${count} servers refused access for this account'
 	String accessDeniedMany({required Object count}) => '${count} servers refused access for this account';
-
-	/// en: 'Sign in again'
-	String get signInAgain => 'Sign in again';
 }
 
 // Path: accountPreferences
@@ -2779,6 +2772,18 @@ class Translations$libraries$en {
 	/// en: 'Hide library'
 	String get hideLibrary => 'Hide library';
 
+	/// en: 'Choose which libraries show in the sidebar, and drag the handles to set their order.'
+	String get sidebarIntro => 'Choose which libraries show in the sidebar, and drag the handles to set their order.';
+
+	/// en: 'Choose which libraries show in the sidebar. Select a handle to move that library.'
+	String get sidebarIntroTv => 'Choose which libraries show in the sidebar. Select a handle to move that library.';
+
+	/// en: 'Move ${title}'
+	String moveLibrary({required Object title}) => 'Move ${title}';
+
+	/// en: 'Up and down to move, Select to place, Back to cancel'
+	String get movingHint => 'Up and down to move, Select to place, Back to cancel';
+
 	/// en: 'Library options'
 	String get libraryOptions => 'Library options';
 
@@ -2884,14 +2889,14 @@ class Translations$startup$en {
 
 	// Translations
 
-	/// en: 'Plezy could not start'
-	String get failedTitle => 'Plezy could not start';
+	/// en: 'TBD could not start'
+	String get failedTitle => 'TBD could not start';
 
 	/// en: 'Something went wrong during startup. The details below identify what failed.'
 	String get failedBody => 'Something went wrong during startup. The details below identify what failed.';
 
-	/// en: 'Plezy's saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.'
-	String get failedBodyRepairable => 'Plezy\'s saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.';
+	/// en: 'TBD's saved settings file is damaged and has to be rebuilt before TBD can start. Retrying will not help — choose Repair storage.'
+	String get failedBodyRepairable => 'TBD\'s saved settings file is damaged and has to be rebuilt before TBD can start. Retrying will not help — choose Repair storage.';
 
 	/// en: 'Step'
 	String get phaseLabel => 'Step';
@@ -2917,8 +2922,8 @@ class Translations$startup$en {
 	/// en: 'Repair stored data?'
 	String get repairTitle => 'Repair stored data?';
 
-	/// en: 'Plezy's settings file is damaged and cannot be read. Repairing resets every setting to its default.'
-	String get repairBodyCommon => 'Plezy\'s settings file is damaged and cannot be read. Repairing resets every setting to its default.';
+	/// en: 'TBD's settings file is damaged and cannot be read. Repairing resets every setting to its default.'
+	String get repairBodyCommon => 'TBD\'s settings file is damaged and cannot be read. Repairing resets every setting to its default.';
 
 	/// en: 'One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.'
 	String get repairBodyOneCredential => 'One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.';
@@ -2929,8 +2934,8 @@ class Translations$startup$en {
 	/// en: 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.'
 	String get repairBodySignInsLost => 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.';
 
-	/// en: 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.'
-	String get repairBodySessionsUncertain => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.';
+	/// en: 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. TBD will tell you exactly what it kept.'
+	String get repairBodySessionsUncertain => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. TBD will tell you exactly what it kept.';
 
 	/// en: 'Repair'
 	String get repairConfirm => 'Repair';
@@ -2941,11 +2946,11 @@ class Translations$startup$en {
 	/// en: 'Storage repaired — restart required'
 	String get repairNeedsRestart => 'Storage repaired — restart required';
 
-	/// en: 'Your data was repaired, but Plezy has to start fresh before it can use it. Close Plezy and open it again.'
-	String get restartRequiredBody => 'Your data was repaired, but Plezy has to start fresh before it can use it. Close Plezy and open it again.';
+	/// en: 'Your data was repaired, but TBD has to start fresh before it can use it. Close TBD and open it again.'
+	String get restartRequiredBody => 'Your data was repaired, but TBD has to start fresh before it can use it. Close TBD and open it again.';
 
-	/// en: 'Quit Plezy'
-	String get quitPlezy => 'Quit Plezy';
+	/// en: 'Quit TBD'
+	String get quitPlezy => 'Quit TBD';
 
 	/// en: 'Repair failed'
 	String get repairFailed => 'Repair failed';
@@ -2971,8 +2976,8 @@ class Translations$startup$en {
 	/// en: 'Copy deleted.'
 	String get backupDeleted => 'Copy deleted.';
 
-	/// en: 'Plezy failed to start last time'
-	String get previousFailureTitle => 'Plezy failed to start last time';
+	/// en: 'TBD failed to start last time'
+	String get previousFailureTitle => 'TBD failed to start last time';
 }
 
 // Path: licenses
@@ -3004,6 +3009,9 @@ class Translations$navigation$en {
 
 	// Translations
 
+	/// en: 'Library'
+	String get library => 'Library';
+
 	/// en: 'Libraries'
 	String get libraries => 'Libraries';
 
@@ -3015,6 +3023,315 @@ class Translations$navigation$en {
 
 	/// en: 'Explore'
 	String get explore => 'Explore';
+
+	/// en: 'Watchlist'
+	String get watchlist => 'Watchlist';
+}
+
+// Path: watchlistPage
+class Translations$watchlistPage$en {
+	Translations$watchlistPage$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Watchlist'
+	String get watchlist => 'Watchlist';
+
+	/// en: 'Favorites'
+	String get favorites => 'Favorites';
+
+	/// en: 'Movies'
+	String get movies => 'Movies';
+
+	/// en: 'TV Shows'
+	String get shows => 'TV Shows';
+
+	/// en: 'In Progress'
+	String get inProgress => 'In Progress';
+
+	/// en: 'Not Started'
+	String get notStarted => 'Not Started';
+
+	/// en: 'Unwatched'
+	String get unwatched => 'Unwatched';
+
+	/// en: 'Watched'
+	String get watched => 'Watched';
+
+	/// en: 'Everything on your Watchlist'
+	String get allWatchlist => 'Everything on your Watchlist';
+
+	/// en: 'All your Favorites'
+	String get allFavorites => 'All your Favorites';
+
+	/// en: 'Watch again'
+	String get watchAgain => 'Watch again';
+
+	/// en: 'Resume'
+	String get resume => 'Resume';
+
+	/// en: 'Add to Watchlist'
+	String get addToWatchlist => 'Add to Watchlist';
+
+	/// en: 'Added to Watchlist'
+	String get addedToWatchlist => 'Added to Watchlist';
+
+	/// en: 'Remove from Watchlist'
+	String get removeFromWatchlist => 'Remove from Watchlist';
+
+	/// en: 'Removed from Watchlist'
+	String get removedFromWatchlist => 'Removed from Watchlist';
+
+	/// en: 'Add to Favorites'
+	String get addToFavorites => 'Add to Favorites';
+
+	/// en: 'Added to Favorites'
+	String get addedToFavorites => 'Added to Favorites';
+
+	/// en: 'Remove from Favorites'
+	String get removeFromFavorites => 'Remove from Favorites';
+
+	/// en: 'Removed from Favorites'
+	String get removedFromFavorites => 'Removed from Favorites';
+
+	/// en: 'Couldn't update the list'
+	String get updateFailed => 'Couldn\'t update the list';
+
+	/// en: 'Couldn't load your lists'
+	String get loadFailed => 'Couldn\'t load your lists';
+
+	/// en: 'Nothing on your Watchlist yet'
+	String get emptyWatchlist => 'Nothing on your Watchlist yet';
+
+	/// en: 'No Favorites yet'
+	String get emptyFavorites => 'No Favorites yet';
+
+	/// en: 'Titles you save in any Silo app show up here.'
+	String get emptyHint => 'Titles you save in any Silo app show up here.';
+
+	/// en: 'Movies & TV'
+	String get allTypes => 'Movies & TV';
+
+	/// en: 'All Genres'
+	String get allGenres => 'All Genres';
+
+	/// en: 'Any Status'
+	String get anyStatus => 'Any Status';
+
+	/// en: 'List Order'
+	String get listOrder => 'List Order';
+
+	/// en: 'Clear'
+	String get clearFilters => 'Clear';
+
+	/// en: 'No titles match these filters'
+	String get noMatches => 'No titles match these filters';
+
+	/// en: '(one) {${n} season} (other) {${n} seasons}'
+	String seasons({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} season',
+		other: '${n} seasons',
+	);
+}
+
+// Path: libraryHome
+class Translations$libraryHome$en {
+	Translations$libraryHome$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Ready for a morning pick-me-up?'
+	String get greetingMorning => 'Ready for a morning pick-me-up?';
+
+	/// en: 'Ready for a morning pick-me-up, ${name}?'
+	String greetingMorningNamed({required Object name}) => 'Ready for a morning pick-me-up, ${name}?';
+
+	/// en: 'Ready for an afternoon break?'
+	String get greetingAfternoon => 'Ready for an afternoon break?';
+
+	/// en: 'Ready for an afternoon break, ${name}?'
+	String greetingAfternoonNamed({required Object name}) => 'Ready for an afternoon break, ${name}?';
+
+	/// en: 'Settling in for the evening?'
+	String get greetingEvening => 'Settling in for the evening?';
+
+	/// en: 'Settling in for the evening, ${name}?'
+	String greetingEveningNamed({required Object name}) => 'Settling in for the evening, ${name}?';
+
+	/// en: 'One more before bed?'
+	String get greetingNight => 'One more before bed?';
+
+	/// en: 'One more before bed, ${name}?'
+	String greetingNightNamed({required Object name}) => 'One more before bed, ${name}?';
+
+	/// en: 'Movies & Shows'
+	String get moviesAndShows => 'Movies & Shows';
+
+	/// en: 'Movies'
+	String get movies => 'Movies';
+
+	/// en: 'Shows'
+	String get shows => 'Shows';
+
+	/// en: 'Browse All'
+	String get browseAll => 'Browse All';
+
+	/// en: 'Resume ${title}'
+	String resumeTitle({required Object title}) => 'Resume ${title}';
+
+	/// en: '${duration} left'
+	String timeLeft({required Object duration}) => '${duration} left';
+
+	/// en: 'Calendar'
+	String get calendar => 'Calendar';
+
+	/// en: 'Today'
+	String get today => 'Today';
+
+	/// en: 'Nothing from shows you follow on this day'
+	String get nothingAiring => 'Nothing from shows you follow on this day';
+
+	/// en: 'Couldn't load the calendar'
+	String get calendarFailed => 'Couldn\'t load the calendar';
+
+	/// en: 'How much time you got?'
+	String get runtimeTitle => 'How much time you got?';
+
+	/// en: 'Under 60 Minutes'
+	String get runtimeUnder60 => 'Under 60 Minutes';
+
+	/// en: 'Under 150 Minutes'
+	String get runtimeUnder150 => 'Under 150 Minutes';
+
+	/// en: 'All Night'
+	String get runtimeAllNight => 'All Night';
+
+	/// en: 'No movies of this length'
+	String get runtimeEmpty => 'No movies of this length';
+
+	/// en: 'Couldn't load movies'
+	String get runtimeFailed => 'Couldn\'t load movies';
+
+	/// en: 'For You'
+	String get forYouTitle => 'For You';
+
+	/// en: 'Networks'
+	String get networks => 'Networks';
+
+	/// en: 'Trending on ${name}'
+	String networkTrending({required Object name}) => 'Trending on ${name}';
+
+	/// en: 'Top Movies'
+	String get networkTopMovies => 'Top Movies';
+
+	/// en: 'Top TV'
+	String get networkTopShows => 'Top TV';
+
+	/// en: 'All Content'
+	String get networkAllContent => 'All Content';
+
+	/// en: 'Popularity'
+	String get networkPopularity => 'Popularity';
+
+	/// en: 'Type'
+	String get networkType => 'Type';
+
+	/// en: 'No titles match these filters'
+	String get networkNoMatches => 'No titles match these filters';
+
+	/// en: 'Edit Library'
+	String get editLibrary => 'Edit Library';
+
+	/// en: 'Your Networks row'
+	String get editLibraryNetworksRow => 'Your Networks row';
+
+	/// en: 'Your Genres row'
+	String get editLibraryGenresRow => 'Your Genres row';
+
+	/// en: '${count} of ${total}'
+	String editLibraryShown({required Object count, required Object total}) => '${count} of ${total}';
+
+	/// en: 'Reset to defaults'
+	String get editLibraryReset => 'Reset to defaults';
+
+	/// en: 'Streaming'
+	String get editLibraryStreaming => 'Streaming';
+
+	/// en: 'US channels'
+	String get editLibraryUsChannels => 'US channels';
+
+	/// en: 'UK channels'
+	String get editLibraryUkChannels => 'UK channels';
+
+	/// en: 'Nothing picked, so the Library hides this row. Pick one below.'
+	String get editLibraryEmpty => 'Nothing picked, so the Library hides this row. Pick one below.';
+
+	/// en: 'Press OK on a tile to move it'
+	String get editLibraryMoveHint => 'Press OK on a tile to move it';
+
+	/// en: 'Hold a tile and drag to move it'
+	String get editLibraryDragHint => 'Hold a tile and drag to move it';
+
+	/// en: 'Left and right move it. OK puts it down.'
+	String get editLibraryMovingHint => 'Left and right move it. OK puts it down.';
+
+	/// en: 'Rows'
+	String get editLibraryRows => 'Rows';
+
+	/// en: 'Your Library rows'
+	String get editLibraryRowsHeading => 'Your Library rows';
+
+	/// en: 'Press OK on a row to move it'
+	String get editLibraryRowsMoveHint => 'Press OK on a row to move it';
+
+	/// en: 'Drag a row by its handle to move it'
+	String get editLibraryRowsDragHint => 'Drag a row by its handle to move it';
+
+	/// en: 'Up and down move it. OK puts it down.'
+	String get editLibraryRowsMovingHint => 'Up and down move it. OK puts it down.';
+
+	/// en: 'Shown'
+	String get editLibraryRowShown => 'Shown';
+
+	/// en: 'Hidden'
+	String get editLibraryRowHidden => 'Hidden';
+
+	/// en: 'Every row is hidden, so the Library shows only its header.'
+	String get editLibraryRowsAllHidden => 'Every row is hidden, so the Library shows only its header.';
+
+	/// en: 'Seasonal Picks'
+	String get seasonalPicks => 'Seasonal Picks';
+
+	/// en: 'When the season has a collection'
+	String get seasonalPicksDetail => 'When the season has a collection';
+
+	/// en: 'Genres'
+	String get genres => 'Genres';
+
+	/// en: 'Trending in ${name}'
+	String genreTrending({required Object name}) => 'Trending in ${name}';
+
+	/// en: '(one) {${n} title in your library} (other) {${n} titles in your library}'
+	String networkTitleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} title in your library',
+		other: '${n} titles in your library',
+	);
+
+	/// en: '${count} in progress'
+	String networkInProgress({required Object count}) => '${count} in progress';
+
+	/// en: 'Browse all ${count}'
+	String networkBrowseAll({required Object count}) => 'Browse all ${count}';
+
+	/// en: 'Trending'
+	String get networkTabTrending => 'Trending';
+
+	/// en: 'Open ${name}'
+	String networkOpen({required Object name}) => 'Open ${name}';
 }
 
 // Path: explore
@@ -4476,8 +4793,8 @@ class Translations$trakt$en {
 	/// en: 'Disconnect Trakt account?'
 	String get disconnectConfirm => 'Disconnect Trakt account?';
 
-	/// en: 'Plezy will stop sending events to Trakt. You can reconnect any time.'
-	String get disconnectConfirmBody => 'Plezy will stop sending events to Trakt. You can reconnect any time.';
+	/// en: 'TBD will stop sending events to Trakt. You can reconnect any time.'
+	String get disconnectConfirmBody => 'TBD will stop sending events to Trakt. You can reconnect any time.';
 
 	/// en: 'Real-time scrobbling'
 	String get scrobble => 'Real-time scrobbling';
@@ -4488,8 +4805,8 @@ class Translations$trakt$en {
 	/// en: 'Sync watched status'
 	String get watchedSync => 'Sync watched status';
 
-	/// en: 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.'
-	String get watchedSyncDescription => 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.';
+	/// en: 'When you mark items as watched in TBD, they are also marked as watched on Trakt.'
+	String get watchedSyncDescription => 'When you mark items as watched in TBD, they are also marked as watched on Trakt.';
 }
 
 // Path: seerr
@@ -4521,8 +4838,8 @@ class Translations$seerr$en {
 	/// en: 'Email'
 	String get email => 'Email';
 
-	/// en: 'This Seerr instance offers no sign-in method Plezy supports.'
-	String get noSignInMethods => 'This Seerr instance offers no sign-in method Plezy supports.';
+	/// en: 'This Seerr instance offers no sign-in method TBD supports.'
+	String get noSignInMethods => 'This Seerr instance offers no sign-in method TBD supports.';
 
 	/// en: 'Instance'
 	String get instance => 'Instance';
@@ -4530,8 +4847,8 @@ class Translations$seerr$en {
 	/// en: 'Disconnect Seerr?'
 	String get disconnectConfirm => 'Disconnect Seerr?';
 
-	/// en: 'Plezy will forget this Seerr instance. Reconnect any time.'
-	String get disconnectConfirmBody => 'Plezy will forget this Seerr instance. Reconnect any time.';
+	/// en: 'TBD will forget this Seerr instance. Reconnect any time.'
+	String get disconnectConfirmBody => 'TBD will forget this Seerr instance. Reconnect any time.';
 
 	/// en: 'Request'
 	String get request => 'Request';
@@ -4605,8 +4922,8 @@ class Translations$seerr$en {
 	/// en: 'No Seerr instance at ${url} (HTTP ${status})'
 	String noInstanceAtUrl({required Object url, required Object status}) => 'No Seerr instance at ${url} (HTTP ${status})';
 
-	/// en: 'An authenticating reverse proxy (SSO or HTTP auth) answered instead of Seerr. Plezy cannot sign in through it: let Seerr's /api/v1 path bypass the proxy for this app, or use an address that reaches Seerr directly.'
-	String get behindAuthProxy => 'An authenticating reverse proxy (SSO or HTTP auth) answered instead of Seerr. Plezy cannot sign in through it: let Seerr\'s /api/v1 path bypass the proxy for this app, or use an address that reaches Seerr directly.';
+	/// en: 'An authenticating reverse proxy (SSO or HTTP auth) answered instead of Seerr. TBD cannot sign in through it: let Seerr's /api/v1 path bypass the proxy for this app, or use an address that reaches Seerr directly.'
+	String get behindAuthProxy => 'An authenticating reverse proxy (SSO or HTTP auth) answered instead of Seerr. TBD cannot sign in through it: let Seerr\'s /api/v1 path bypass the proxy for this app, or use an address that reaches Seerr directly.';
 
 	/// en: 'Enter a server address like https://seerr.example.com'
 	String get invalidUrl => 'Enter a server address like https://seerr.example.com';
@@ -4671,8 +4988,8 @@ class Translations$services$en {
 	/// en: 'Disconnect ${service}?'
 	String disconnectConfirm({required Object service}) => 'Disconnect ${service}?';
 
-	/// en: 'Plezy will stop updating ${service}. Reconnect any time.'
-	String disconnectConfirmBody({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.';
+	/// en: 'TBD will stop updating ${service}. Reconnect any time.'
+	String disconnectConfirmBody({required Object service}) => 'TBD will stop updating ${service}. Reconnect any time.';
 
 	/// en: 'Couldn't connect to ${service}. Try again.'
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
@@ -4750,8 +5067,8 @@ class Translations$silo$en {
 	/// en: 'Can't reach this server. Check the address and try again.'
 	String get unreachable => 'Can\'t reach this server. Check the address and try again.';
 
-	/// en: 'This server needs an update before Plezy can use it.'
-	String get needsUpdate => 'This server needs an update before Plezy can use it.';
+	/// en: 'This server needs an update before TBD can use it.'
+	String get needsUpdate => 'This server needs an update before TBD can use it.';
 
 	/// en: 'This server isn't set up yet. Finish its setup in a browser first.'
 	String get needsSetup => 'This server isn\'t set up yet. Finish its setup in a browser first.';
@@ -4810,8 +5127,8 @@ class Translations$silo$en {
 	/// en: 'Too many requests. Still trying…'
 	String get codeRateLimited => 'Too many requests. Still trying…';
 
-	/// en: 'This server or Plezy needs an update.'
-	String get codeUpdateRequired => 'This server or Plezy needs an update.';
+	/// en: 'This server or TBD needs an update.'
+	String get codeUpdateRequired => 'This server or TBD needs an update.';
 
 	/// en: 'Get a new code'
 	String get codeNew => 'Get a new code';
@@ -5844,17 +6161,17 @@ class Translations$downloads$backgroundWarning$en {
 	/// en: 'Background downloads may be limited'
 	String get sheetTitleDegraded => 'Background downloads may be limited';
 
-	/// en: 'Android is preventing Plezy from downloading reliably in the background.'
-	String get sheetIntro => 'Android is preventing Plezy from downloading reliably in the background.';
+	/// en: 'Android is preventing TBD from downloading reliably in the background.'
+	String get sheetIntro => 'Android is preventing TBD from downloading reliably in the background.';
 
-	/// en: 'Your device is limiting when Plezy can download in the background.'
-	String get sheetIntroDegraded => 'Your device is limiting when Plezy can download in the background.';
+	/// en: 'Your device is limiting when TBD can download in the background.'
+	String get sheetIntroDegraded => 'Your device is limiting when TBD can download in the background.';
 
-	/// en: 'Plezy's background usage is restricted. Set its battery or background usage to "Unrestricted".'
-	String get reasonBackgroundRestricted => 'Plezy\'s background usage is restricted. Set its battery or background usage to "Unrestricted".';
+	/// en: 'TBD's background usage is restricted. Set its battery or background usage to "Unrestricted".'
+	String get reasonBackgroundRestricted => 'TBD\'s background usage is restricted. Set its battery or background usage to "Unrestricted".';
 
-	/// en: 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".'
-	String get reasonStandbyRestricted => 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".';
+	/// en: 'Android has put TBD in a restricted standby state. Set its battery usage to "Unrestricted".'
+	String get reasonStandbyRestricted => 'Android has put TBD in a restricted standby state. Set its battery usage to "Unrestricted".';
 
 	/// en: 'Download notifications are turned off, so progress and controls may be unavailable.'
 	String get reasonDownloadChannelBlocked => 'Download notifications are turned off, so progress and controls may be unavailable.';
@@ -5865,8 +6182,8 @@ class Translations$downloads$backgroundWarning$en {
 	/// en: 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.'
 	String get reasonDataSaver => 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.';
 
-	/// en: 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy's battery or background usage settings.'
-	String get reasonOemUnknown => 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy\'s battery or background usage settings.';
+	/// en: 'Downloads repeatedly stopped while TBD was in the background. Check TBD's battery or background usage settings.'
+	String get reasonOemUnknown => 'Downloads repeatedly stopped while TBD was in the background. Check TBD\'s battery or background usage settings.';
 
 	/// en: 'Open settings'
 	String get openSettings => 'Open settings';
@@ -5976,8 +6293,8 @@ class Translations$companionRemote$pairing$en {
 
 	// Translations
 
-	/// en: 'Plezy devices signed in to the same Silo account appear here'
-	String get discoveryDescription => 'Plezy devices signed in to the same Silo account appear here';
+	/// en: 'TBD devices signed in to the same Silo account appear here'
+	String get discoveryDescription => 'TBD devices signed in to the same Silo account appear here';
 
 	/// en: '192.168.1.100:48632'
 	String get hostAddressHint => '192.168.1.100:48632';
@@ -5991,8 +6308,8 @@ class Translations$companionRemote$pairing$en {
 	/// en: 'No devices found on your network'
 	String get noDevicesFound => 'No devices found on your network';
 
-	/// en: 'Open Plezy on desktop and use the same Wi-Fi'
-	String get noDevicesHint => 'Open Plezy on desktop and use the same Wi-Fi';
+	/// en: 'Open TBD on desktop and use the same Wi-Fi'
+	String get noDevicesHint => 'Open TBD on desktop and use the same Wi-Fi';
 
 	/// en: 'Available Devices'
 	String get availableDevices => 'Available Devices';
@@ -6012,8 +6329,8 @@ class Translations$companionRemote$pairing$en {
 	/// en: 'Connection timed out. Use the same network on both devices.'
 	String get connectionTimedOut => 'Connection timed out. Use the same network on both devices.';
 
-	/// en: 'Device not found. Make sure Plezy is running on the host.'
-	String get sessionNotFound => 'Device not found. Make sure Plezy is running on the host.';
+	/// en: 'Device not found. Make sure TBD is running on the host.'
+	String get sessionNotFound => 'Device not found. Make sure TBD is running on the host.';
 
 	/// en: 'Authentication failed. Both devices need the same Silo account.'
 	String get authFailed => 'Authentication failed. Both devices need the same Silo account.';
@@ -6180,8 +6497,8 @@ class Translations$services$simklReconnect$en {
 	/// en: 'Reconnect Simkl'
 	String get title => 'Reconnect Simkl';
 
-	/// en: 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.'
-	String get subtitle => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.';
+	/// en: 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve TBD — TBD never sees your password. Your watch history stays on Simkl.'
+	String get subtitle => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve TBD — TBD never sees your password. Your watch history stays on Simkl.';
 }
 
 // Path: services.deviceCode
@@ -6192,8 +6509,8 @@ class Translations$services$deviceCode$en {
 
 	// Translations
 
-	/// en: 'Activate Plezy on ${service}'
-	String title({required Object service}) => 'Activate Plezy on ${service}';
+	/// en: 'Activate TBD on ${service}'
+	String title({required Object service}) => 'Activate TBD on ${service}';
 
 	/// en: 'Scan the QR code, or visit the address below and enter this code:'
 	String get instructions => 'Scan the QR code, or visit the address below and enter this code:';
@@ -6330,8 +6647,8 @@ class Translations$silo$errors$en {
 	/// en: 'The sign-in changed while it was saving. Try again.'
 	String get identityChanged => 'The sign-in changed while it was saving. Try again.';
 
-	/// en: 'This server or Plezy needs an update.'
-	String get updateRequired => 'This server or Plezy needs an update.';
+	/// en: 'This server or TBD needs an update.'
+	String get updateRequired => 'This server or TBD needs an update.';
 
 	/// en: 'Network error. Check the connection and try again.'
 	String get network => 'Network error. Check the connection and try again.';
@@ -6348,8 +6665,8 @@ class Translations$silo$errors$en {
 extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
-			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
+			'app.title' => 'TBD',
+			'auth.localDataRecoveryRequired' => 'TBD could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
@@ -6434,7 +6751,7 @@ extension on Translations {
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
 			'settings.title' => 'Settings',
-			'settings.supportDeveloper' => 'Support Plezy',
+			'settings.supportDeveloper' => 'Support TBD',
 			'settings.supportDeveloperDescription' => 'Donate via Liberapay to fund development',
 			'settings.language' => 'Language',
 			'settings.theme' => 'Theme',
@@ -6456,6 +6773,7 @@ extension on Translations {
 			'settings.lightTheme' => 'Light',
 			'settings.darkTheme' => 'Dark',
 			'settings.oledTheme' => 'OLED',
+			'settings.slateTheme' => 'Slate',
 			'settings.libraryDensity' => 'Library Density',
 			'settings.displayScale' => 'Display Scale',
 			'settings.compact' => 'Compact',
@@ -6573,7 +6891,7 @@ extension on Translations {
 			'settings.importSettingsDescription' => 'Restore preferences from a file',
 			'settings.importSettingsConfirm' => 'This will replace your current settings. Continue?',
 			'settings.importSettingsSuccess' => 'Settings imported',
-			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid Plezy settings export',
+			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid TBD settings export',
 			'settings.importSettingsNoUser' => 'Sign in before importing settings',
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
 			'settings.resetShortcutsConfirm' => 'This will replace your custom shortcuts with the defaults. Continue?',
@@ -6638,8 +6956,6 @@ extension on Translations {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
-			'settings.services' => 'Services',
-			'settings.servicesDescription' => 'Connect Trakt, MyAnimeList, Seerr, and more',
 			'settings.manageLibrariesDescription' => 'Reorder and hide libraries',
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
@@ -6703,7 +7019,7 @@ extension on Translations {
 			'settings.forceTvMode' => 'Force TV mode',
 			'settings.forceTvModeDescription' => 'Force TV layout. For devices that don\'t auto-detect. Requires restart.',
 			'settings.startInFullscreen' => 'Start in fullscreen',
-			'settings.startInFullscreenDescription' => 'Open Plezy in fullscreen mode at launch',
+			'settings.startInFullscreenDescription' => 'Open TBD in fullscreen mode at launch',
 			'settings.exitFullscreenOnPlayerClose' => 'Exit fullscreen on player close',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Automatically exit fullscreen when closing the video player',
 			'settings.autoHidePerformanceOverlay' => 'Auto-Hide Performance Overlay',
@@ -6750,7 +7066,7 @@ extension on Translations {
 			'settings.playerScopeGlobal' => 'Everywhere',
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
-			'settings.exportDialogTitle' => 'Export Plezy settings',
+			'settings.exportDialogTitle' => 'Export TBD settings',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -6860,9 +7176,9 @@ extension on Translations {
 			'fileInfo.sidecarPath' => 'Sidecar Path',
 			'fileInfo.sourceStream' => 'Copied From',
 			'fileInfo.temporary' => 'Temporary',
+			'fileInfo.timeBase' => 'Time Base',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
 			'fileInfo.fileName' => 'File Name',
@@ -7168,10 +7484,8 @@ extension on Translations {
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitle' => 'Connect to a Silo server',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
-			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servers refused access for this account',
-			'connections.signInAgain' => 'Sign in again',
 			'accountPreferences.sectionTitle' => 'Account preferences',
 			'accountPreferences.unavailable' => 'Can\'t reach this account',
 			'accountPreferences.autoSelectAudio' => 'Choose audio by language',
@@ -7233,6 +7547,10 @@ extension on Translations {
 			'libraries.filters' => 'Filters',
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
+			'libraries.sidebarIntro' => 'Choose which libraries show in the sidebar, and drag the handles to set their order.',
+			'libraries.sidebarIntroTv' => 'Choose which libraries show in the sidebar. Select a handle to move that library.',
+			'libraries.moveLibrary' => ({required Object title}) => 'Move ${title}',
+			'libraries.movingHint' => 'Up and down to move, Select to place, Back to cancel',
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',
@@ -7312,9 +7630,9 @@ extension on Translations {
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
 			'logs.uploadLogs' => 'Upload Logs',
-			'startup.failedTitle' => 'Plezy could not start',
+			'startup.failedTitle' => 'TBD could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
-			'startup.failedBodyRepairable' => 'Plezy\'s saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.',
+			'startup.failedBodyRepairable' => 'TBD\'s saved settings file is damaged and has to be rebuilt before TBD can start. Retrying will not help — choose Repair storage.',
 			'startup.phaseLabel' => 'Step',
 			'startup.showDetails' => 'Show details',
 			'startup.hideDetails' => 'Hide details',
@@ -7323,16 +7641,16 @@ extension on Translations {
 			'startup.uploadDetails' => 'Upload details',
 			'startup.repairStorage' => 'Repair storage',
 			'startup.repairTitle' => 'Repair stored data?',
-			'startup.repairBodyCommon' => 'Plezy\'s settings file is damaged and cannot be read. Repairing resets every setting to its default.',
+			'startup.repairBodyCommon' => 'TBD\'s settings file is damaged and cannot be read. Repairing resets every setting to its default.',
 			'startup.repairBodyOneCredential' => 'One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.',
 			'startup.repairBodySignInsKept' => 'Your servers and profiles should stay signed in.',
 			'startup.repairBodySignInsLost' => 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.',
-			'startup.repairBodySessionsUncertain' => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.',
+			'startup.repairBodySessionsUncertain' => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. TBD will tell you exactly what it kept.',
 			'startup.repairConfirm' => 'Repair',
 			'startup.repairSucceeded' => 'Storage repaired',
 			'startup.repairNeedsRestart' => 'Storage repaired — restart required',
-			'startup.restartRequiredBody' => 'Your data was repaired, but Plezy has to start fresh before it can use it. Close Plezy and open it again.',
-			'startup.quitPlezy' => 'Quit Plezy',
+			'startup.restartRequiredBody' => 'Your data was repaired, but TBD has to start fresh before it can use it. Close TBD and open it again.',
+			'startup.quitPlezy' => 'Quit TBD',
 			'startup.repairFailed' => 'Repair failed',
 			'startup.repairKeptSignIns' => 'Your servers and profiles are still signed in.',
 			'startup.repairLostSignIns' => 'The key protecting your saved sign-ins could not be recovered. You will have to sign in to every server and profile again.',
@@ -7341,15 +7659,113 @@ extension on Translations {
 			'startup.backupWarning' => 'It contains your sign-in credentials. Do not upload or share it.',
 			'startup.deleteBackup' => 'Delete copy',
 			'startup.backupDeleted' => 'Copy deleted.',
-			'startup.previousFailureTitle' => 'Plezy failed to start last time',
+			'startup.previousFailureTitle' => 'TBD failed to start last time',
 			'licenses.relatedPackages' => 'Related Packages',
 			'licenses.license' => 'License',
 			'licenses.licenseNumber' => ({required Object number}) => 'License ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenses',
+			'navigation.library' => 'Library',
 			'navigation.libraries' => 'Libraries',
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live TV',
 			'navigation.explore' => 'Explore',
+			'navigation.watchlist' => 'Watchlist',
+			'watchlistPage.watchlist' => 'Watchlist',
+			'watchlistPage.favorites' => 'Favorites',
+			'watchlistPage.movies' => 'Movies',
+			'watchlistPage.shows' => 'TV Shows',
+			'watchlistPage.inProgress' => 'In Progress',
+			'watchlistPage.notStarted' => 'Not Started',
+			'watchlistPage.unwatched' => 'Unwatched',
+			'watchlistPage.watched' => 'Watched',
+			'watchlistPage.allWatchlist' => 'Everything on your Watchlist',
+			'watchlistPage.allFavorites' => 'All your Favorites',
+			'watchlistPage.watchAgain' => 'Watch again',
+			'watchlistPage.resume' => 'Resume',
+			'watchlistPage.addToWatchlist' => 'Add to Watchlist',
+			'watchlistPage.addedToWatchlist' => 'Added to Watchlist',
+			'watchlistPage.removeFromWatchlist' => 'Remove from Watchlist',
+			'watchlistPage.removedFromWatchlist' => 'Removed from Watchlist',
+			'watchlistPage.addToFavorites' => 'Add to Favorites',
+			'watchlistPage.addedToFavorites' => 'Added to Favorites',
+			'watchlistPage.removeFromFavorites' => 'Remove from Favorites',
+			'watchlistPage.removedFromFavorites' => 'Removed from Favorites',
+			'watchlistPage.updateFailed' => 'Couldn\'t update the list',
+			_ => null,
+		} ?? switch (path) {
+			'watchlistPage.loadFailed' => 'Couldn\'t load your lists',
+			'watchlistPage.emptyWatchlist' => 'Nothing on your Watchlist yet',
+			'watchlistPage.emptyFavorites' => 'No Favorites yet',
+			'watchlistPage.emptyHint' => 'Titles you save in any Silo app show up here.',
+			'watchlistPage.allTypes' => 'Movies & TV',
+			'watchlistPage.allGenres' => 'All Genres',
+			'watchlistPage.anyStatus' => 'Any Status',
+			'watchlistPage.listOrder' => 'List Order',
+			'watchlistPage.clearFilters' => 'Clear',
+			'watchlistPage.noMatches' => 'No titles match these filters',
+			'watchlistPage.seasons' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} season', other: '${n} seasons', ), 
+			'libraryHome.greetingMorning' => 'Ready for a morning pick-me-up?',
+			'libraryHome.greetingMorningNamed' => ({required Object name}) => 'Ready for a morning pick-me-up, ${name}?',
+			'libraryHome.greetingAfternoon' => 'Ready for an afternoon break?',
+			'libraryHome.greetingAfternoonNamed' => ({required Object name}) => 'Ready for an afternoon break, ${name}?',
+			'libraryHome.greetingEvening' => 'Settling in for the evening?',
+			'libraryHome.greetingEveningNamed' => ({required Object name}) => 'Settling in for the evening, ${name}?',
+			'libraryHome.greetingNight' => 'One more before bed?',
+			'libraryHome.greetingNightNamed' => ({required Object name}) => 'One more before bed, ${name}?',
+			'libraryHome.moviesAndShows' => 'Movies & Shows',
+			'libraryHome.movies' => 'Movies',
+			'libraryHome.shows' => 'Shows',
+			'libraryHome.browseAll' => 'Browse All',
+			'libraryHome.resumeTitle' => ({required Object title}) => 'Resume ${title}',
+			'libraryHome.timeLeft' => ({required Object duration}) => '${duration} left',
+			'libraryHome.calendar' => 'Calendar',
+			'libraryHome.today' => 'Today',
+			'libraryHome.nothingAiring' => 'Nothing from shows you follow on this day',
+			'libraryHome.calendarFailed' => 'Couldn\'t load the calendar',
+			'libraryHome.runtimeTitle' => 'How much time you got?',
+			'libraryHome.runtimeUnder60' => 'Under 60 Minutes',
+			'libraryHome.runtimeUnder150' => 'Under 150 Minutes',
+			'libraryHome.runtimeAllNight' => 'All Night',
+			'libraryHome.runtimeEmpty' => 'No movies of this length',
+			'libraryHome.runtimeFailed' => 'Couldn\'t load movies',
+			'libraryHome.forYouTitle' => 'For You',
+			'libraryHome.networks' => 'Networks',
+			'libraryHome.networkTrending' => ({required Object name}) => 'Trending on ${name}',
+			'libraryHome.networkTopMovies' => 'Top Movies',
+			'libraryHome.networkTopShows' => 'Top TV',
+			'libraryHome.networkAllContent' => 'All Content',
+			'libraryHome.networkPopularity' => 'Popularity',
+			'libraryHome.networkType' => 'Type',
+			'libraryHome.networkNoMatches' => 'No titles match these filters',
+			'libraryHome.editLibrary' => 'Edit Library',
+			'libraryHome.editLibraryNetworksRow' => 'Your Networks row',
+			'libraryHome.editLibraryGenresRow' => 'Your Genres row',
+			'libraryHome.editLibraryShown' => ({required Object count, required Object total}) => '${count} of ${total}',
+			'libraryHome.editLibraryReset' => 'Reset to defaults',
+			'libraryHome.editLibraryStreaming' => 'Streaming',
+			'libraryHome.editLibraryUsChannels' => 'US channels',
+			'libraryHome.editLibraryUkChannels' => 'UK channels',
+			'libraryHome.editLibraryEmpty' => 'Nothing picked, so the Library hides this row. Pick one below.',
+			'libraryHome.editLibraryMoveHint' => 'Press OK on a tile to move it',
+			'libraryHome.editLibraryDragHint' => 'Hold a tile and drag to move it',
+			'libraryHome.editLibraryMovingHint' => 'Left and right move it. OK puts it down.',
+			'libraryHome.editLibraryRows' => 'Rows',
+			'libraryHome.editLibraryRowsHeading' => 'Your Library rows',
+			'libraryHome.editLibraryRowsMoveHint' => 'Press OK on a row to move it',
+			'libraryHome.editLibraryRowsDragHint' => 'Drag a row by its handle to move it',
+			'libraryHome.editLibraryRowsMovingHint' => 'Up and down move it. OK puts it down.',
+			'libraryHome.editLibraryRowShown' => 'Shown',
+			'libraryHome.editLibraryRowHidden' => 'Hidden',
+			'libraryHome.editLibraryRowsAllHidden' => 'Every row is hidden, so the Library shows only its header.',
+			'libraryHome.seasonalPicks' => 'Seasonal Picks',
+			'libraryHome.seasonalPicksDetail' => 'When the season has a collection',
+			'libraryHome.genres' => 'Genres',
+			'libraryHome.genreTrending' => ({required Object name}) => 'Trending in ${name}',
+			'libraryHome.networkTitleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} title in your library', other: '${n} titles in your library', ), 
+			'libraryHome.networkInProgress' => ({required Object count}) => '${count} in progress',
+			'libraryHome.networkBrowseAll' => ({required Object count}) => 'Browse all ${count}',
+			'libraryHome.networkTabTrending' => 'Trending',
+			'libraryHome.networkOpen' => ({required Object name}) => 'Open ${name}',
 			'explore.title' => 'Explore',
 			'explore.selectSource' => 'Select source',
 			'explore.rows.watchlist' => 'Watchlist',
@@ -7374,8 +7790,6 @@ extension on Translations {
 			'explore.cast' => 'Cast',
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
-			_ => null,
-		} ?? switch (path) {
 			'explore.removeFromWatchlist' => 'Remove from Watchlist',
 			'explore.addedToWatchlist' => 'Added to watchlist',
 			'explore.removedFromWatchlist' => 'Removed from watchlist',
@@ -7746,14 +8160,14 @@ extension on Translations {
 			'downloads.backgroundWarning.bannerAction' => 'Details',
 			'downloads.backgroundWarning.sheetTitle' => 'Background downloads are blocked',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Background downloads may be limited',
-			'downloads.backgroundWarning.sheetIntro' => 'Android is preventing Plezy from downloading reliably in the background.',
-			'downloads.backgroundWarning.sheetIntroDegraded' => 'Your device is limiting when Plezy can download in the background.',
-			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy\'s background usage is restricted. Set its battery or background usage to "Unrestricted".',
-			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".',
+			'downloads.backgroundWarning.sheetIntro' => 'Android is preventing TBD from downloading reliably in the background.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Your device is limiting when TBD can download in the background.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'TBD\'s background usage is restricted. Set its battery or background usage to "Unrestricted".',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android has put TBD in a restricted standby state. Set its battery usage to "Unrestricted".',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Download notifications are turned off, so progress and controls may be unavailable.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.',
-			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy\'s battery or background usage settings.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while TBD was in the background. Check TBD\'s battery or background usage settings.',
 			'downloads.backgroundWarning.openSettings' => 'Open settings',
 			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
@@ -7791,6 +8205,8 @@ extension on Translations {
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
 			'shaders.artcnnVariantNeutral' => 'Neutral',
+			_ => null,
+		} ?? switch (path) {
 			'shaders.artcnnVariantDenoise' => 'Denoise',
 			'shaders.artcnnVariantDenoiseSharpen' => 'Denoise + Sharpen',
 			'shaders.qualityFast' => 'Fast',
@@ -7817,19 +8233,19 @@ extension on Translations {
 			'companionRemote.session.stopServer' => 'Stop Server',
 			'companionRemote.session.minimize' => 'Minimize',
 			'companionRemote.session.manualAddressHint' => 'Manual connection address:',
-			'companionRemote.pairing.discoveryDescription' => 'Plezy devices signed in to the same Silo account appear here',
+			'companionRemote.pairing.discoveryDescription' => 'TBD devices signed in to the same Silo account appear here',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
-			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
+			'companionRemote.pairing.noDevicesHint' => 'Open TBD on desktop and use the same Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Silo first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
-			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
+			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure TBD is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Silo account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
@@ -7888,8 +8304,6 @@ extension on Translations {
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
@@ -7998,11 +8412,11 @@ extension on Translations {
 			'trakt.connected' => 'Connected',
 			'trakt.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'trakt.disconnectConfirm' => 'Disconnect Trakt account?',
-			'trakt.disconnectConfirmBody' => 'Plezy will stop sending events to Trakt. You can reconnect any time.',
+			'trakt.disconnectConfirmBody' => 'TBD will stop sending events to Trakt. You can reconnect any time.',
 			'trakt.scrobble' => 'Real-time scrobbling',
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
-			'trakt.watchedSyncDescription' => 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.',
+			'trakt.watchedSyncDescription' => 'When you mark items as watched in TBD, they are also marked as watched on Trakt.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Connect Seerr',
 			'seerr.serverUrl' => 'Server URL',
@@ -8010,10 +8424,10 @@ extension on Translations {
 			'seerr.checkServer' => 'Continue',
 			'seerr.signInWithLocal' => 'Use a local account',
 			'seerr.email' => 'Email',
-			'seerr.noSignInMethods' => 'This Seerr instance offers no sign-in method Plezy supports.',
+			'seerr.noSignInMethods' => 'This Seerr instance offers no sign-in method TBD supports.',
 			'seerr.instance' => 'Instance',
 			'seerr.disconnectConfirm' => 'Disconnect Seerr?',
-			'seerr.disconnectConfirmBody' => 'Plezy will forget this Seerr instance. Reconnect any time.',
+			'seerr.disconnectConfirmBody' => 'TBD will forget this Seerr instance. Reconnect any time.',
 			'seerr.request' => 'Request',
 			'seerr.request4k' => 'Request in 4K',
 			'seerr.seasons' => 'Seasons',
@@ -8038,7 +8452,7 @@ extension on Translations {
 			'seerr.statusBlocklisted' => 'Blocklisted',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Could not reach ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'No Seerr instance at ${url} (HTTP ${status})',
-			'seerr.behindAuthProxy' => 'An authenticating reverse proxy (SSO or HTTP auth) answered instead of Seerr. Plezy cannot sign in through it: let Seerr\'s /api/v1 path bypass the proxy for this app, or use an address that reaches Seerr directly.',
+			'seerr.behindAuthProxy' => 'An authenticating reverse proxy (SSO or HTTP auth) answered instead of Seerr. TBD cannot sign in through it: let Seerr\'s /api/v1 path bypass the proxy for this app, or use an address that reaches Seerr directly.',
 			'seerr.invalidUrl' => 'Enter a server address like https://seerr.example.com',
 			'seerr.notInitialized' => 'This Seerr instance has not completed first-run setup',
 			'seerr.noStoredCredentials' => 'No stored credentials are available to sign in again',
@@ -8057,7 +8471,7 @@ extension on Translations {
 			'services.scrobble' => 'Track progress automatically',
 			'services.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
 			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'TBD will stop updating ${service}. Reconnect any time.',
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
@@ -8065,8 +8479,8 @@ extension on Translations {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Reconnect Simkl',
-			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
-			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
+			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve TBD — TBD never sees your password. Your watch history stays on Simkl.',
+			'services.deviceCode.title' => ({required Object service}) => 'Activate TBD on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
 			'services.deviceCode.copyCode' => 'Copy activation code',
@@ -8105,7 +8519,7 @@ extension on Translations {
 			'silo.checking' => 'Checking the server…',
 			'silo.invalidAddress' => 'Enter a server address, such as silo.example.com.',
 			'silo.unreachable' => 'Can\'t reach this server. Check the address and try again.',
-			'silo.needsUpdate' => 'This server needs an update before Plezy can use it.',
+			'silo.needsUpdate' => 'This server needs an update before TBD can use it.',
 			'silo.needsSetup' => 'This server isn\'t set up yet. Finish its setup in a browser first.',
 			'silo.cleartextTitle' => 'Connect without encryption?',
 			'silo.cleartextMessage' => ({required Object origin}) => '${origin} doesn\'t use HTTPS. Your sign-in would cross the network unencrypted.',
@@ -8125,7 +8539,7 @@ extension on Translations {
 			'silo.codePaused' => 'Paused after an hour without a sign-in.',
 			'silo.codeUnreachable' => 'Can\'t reach the server. Still trying…',
 			'silo.codeRateLimited' => 'Too many requests. Still trying…',
-			'silo.codeUpdateRequired' => 'This server or Plezy needs an update.',
+			'silo.codeUpdateRequired' => 'This server or TBD needs an update.',
 			'silo.codeNew' => 'Get a new code',
 			'silo.passwordHeading' => 'Or sign in with your password',
 			'silo.username' => 'Username',
@@ -8144,7 +8558,7 @@ extension on Translations {
 			'silo.errors.passwordExpired' => 'Your password has expired. Change it in a browser first.',
 			'silo.errors.accountRequired' => 'This sign-in needs an account on the server.',
 			'silo.errors.identityChanged' => 'The sign-in changed while it was saving. Try again.',
-			'silo.errors.updateRequired' => 'This server or Plezy needs an update.',
+			'silo.errors.updateRequired' => 'This server or TBD needs an update.',
 			'silo.errors.network' => 'Network error. Check the connection and try again.',
 			'silo.errors.server' => 'The server couldn\'t sign you in.',
 			'silo.profilesTitle' => 'Who\'s watching?',

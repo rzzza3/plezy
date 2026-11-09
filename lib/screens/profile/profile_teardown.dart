@@ -78,6 +78,7 @@ Future<bool> settleSessionAfterRemoval(
   SessionTeardownScope scope, {
   bool rebindIfActiveKept = false,
   String? endedShelfOwner,
+  String? authMessage,
 }) async {
   final hasConnections = (await scope.connections.list()).whereType<SiloConnection>().isNotEmpty;
   await scope.active.reloadFromStorage();
@@ -88,7 +89,10 @@ Future<bool> settleSessionAfterRemoval(
     await scope.binder.rebindActive();
     if (scope.navigator.mounted) {
       unawaited(
-        scope.navigator.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const AuthScreen()), (_) => false),
+        scope.navigator.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => AuthScreen(initialErrorMessage: authMessage)),
+          (_) => false,
+        ),
       );
     }
     return true;
@@ -223,31 +227,12 @@ Future<bool> confirmAndSignOutSiloServer(BuildContext context, {required SiloCon
 
   final scope = SessionTeardownScope.of(context);
   try {
-    final activeProfile = scope.active.active;
-    final endedOwner = activeProfile != null && activeProfile.connectionId == connection.id ? activeProfile.id : null;
-    final navigatedAway = await withEndedProfileSession(scope, endedOwner, () async {
-      if (deleteDownloads) {
-        // Physical download cleanup can fail. Finish it while the connection
-        // still exists so a retry resolves the same profiles.
-        for (final profileId in profileIds) {
-          await scope.downloads.deleteDownloadsForProfile(profileId);
-        }
-      }
-      await signOutSiloConnection(connection);
-      await scope.connections.remove(connection.id);
-      final serverId = ServerId.tryParse(connection.serverId);
-      if (serverId != null) {
-        scope.serverManager.removeServer(serverId);
-        await scope.storage.clearLibraryPreferencesForServerEverywhere(serverId);
-      }
-      for (final profileId in profileIds) {
-        await scope.database.deleteSyncRulesForProfile(profileId);
-        await scope.database.deleteDownloadCollectionsForProfile(profileId);
-        await scope.database.deleteWatchActionsForProfile(profileId);
-        await scope.database.deleteMusicSessionForProfile(profileId);
-      }
-      return settleSessionAfterRemoval(scope, rebindIfActiveKept: true, endedShelfOwner: endedOwner);
-    });
+    final navigatedAway = await _signOutSiloServer(
+      scope,
+      connection: connection,
+      profileIds: profileIds,
+      deleteDownloads: deleteDownloads,
+    );
     if (!navigatedAway && context.mounted) {
       showSuccessSnackBar(context, t.profiles.signedOutServer(serverName: connection.serverName));
     }
@@ -259,6 +244,86 @@ Future<bool> confirmAndSignOutSiloServer(BuildContext context, {required SiloCon
     }
     return false;
   }
+}
+
+/// Signs this device out of every Silo server in [serverIds] without asking:
+/// each one rejected this device's session, so there is nothing left to keep
+/// signed in. Downloads stay, as with a manual sign-out that keeps them. When
+/// no server is left this lands on [AuthScreen] with the reason shown;
+/// otherwise a snackbar says which server was signed out.
+Future<void> signOutExpiredSiloServers(
+  BuildContext context,
+  Set<String> serverIds, {
+  @visibleForTesting Future<void> Function(SiloConnection) endSession = signOutSiloConnection,
+}) async {
+  final scope = SessionTeardownScope.of(context);
+  final connections = [
+    for (final connection in (await scope.connections.list()).whereType<SiloConnection>())
+      if (serverIds.contains(connection.serverId)) connection,
+  ];
+  for (final connection in connections) {
+    final message = t.connections.sessionExpiredOne(name: connection.serverName);
+    try {
+      final navigatedAway = await _signOutSiloServer(
+        scope,
+        connection: connection,
+        profileIds: [
+          for (final profile in scope.active.profiles)
+            if (profile.connectionId == connection.id) profile.id,
+        ],
+        deleteDownloads: false,
+        authMessage: message,
+        endSession: endSession,
+      );
+      if (navigatedAway) return;
+      showMainSnackBar(message);
+    } catch (e, st) {
+      appLogger.w('Expired-session sign-out failed for ${connection.serverName}', error: e, stackTrace: st);
+    }
+  }
+}
+
+/// The sign-out shared by [confirmAndSignOutSiloServer] and
+/// [signOutExpiredSiloServers]. Returns true when it navigated to
+/// [AuthScreen].
+Future<bool> _signOutSiloServer(
+  SessionTeardownScope scope, {
+  required SiloConnection connection,
+  required List<String> profileIds,
+  required bool deleteDownloads,
+  String? authMessage,
+  Future<void> Function(SiloConnection) endSession = signOutSiloConnection,
+}) {
+  final activeProfile = scope.active.active;
+  final endedOwner = activeProfile != null && activeProfile.connectionId == connection.id ? activeProfile.id : null;
+  return withEndedProfileSession(scope, endedOwner, () async {
+    if (deleteDownloads) {
+      // Physical download cleanup can fail. Finish it while the connection
+      // still exists so a retry resolves the same profiles.
+      for (final profileId in profileIds) {
+        await scope.downloads.deleteDownloadsForProfile(profileId);
+      }
+    }
+    await endSession(connection);
+    await scope.connections.remove(connection.id);
+    final serverId = ServerId.tryParse(connection.serverId);
+    if (serverId != null) {
+      scope.serverManager.removeServer(serverId);
+      await scope.storage.clearLibraryPreferencesForServerEverywhere(serverId);
+    }
+    for (final profileId in profileIds) {
+      await scope.database.deleteSyncRulesForProfile(profileId);
+      await scope.database.deleteDownloadCollectionsForProfile(profileId);
+      await scope.database.deleteWatchActionsForProfile(profileId);
+      await scope.database.deleteMusicSessionForProfile(profileId);
+    }
+    return settleSessionAfterRemoval(
+      scope,
+      rebindIfActiveKept: true,
+      endedShelfOwner: endedOwner,
+      authMessage: authMessage,
+    );
+  });
 }
 
 /// Full logout: sign out of every server and clear every connection,
