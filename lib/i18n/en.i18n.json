@@ -106,7 +106,6 @@
     "theme": "Theme",
     "appearance": "Appearance",
     "videoPlayback": "Video Playback",
-    "videoPlaybackDescription": "Configure playback behavior",
     "advanced": "Advanced",
     "episodePosterMode": "Episode Poster Style",
     "seriesPoster": "Series Poster",
@@ -118,9 +117,6 @@
     "secondsShort": "s",
     "minutesShort": "m",
     "durationHint": "Enter duration (${min}-${max})",
-    "systemTheme": "System",
-    "lightTheme": "Light",
-    "darkTheme": "Dark",
     "oledTheme": "OLED",
     "slateTheme": "Slate",
     "libraryDensity": "Library Density",
@@ -245,7 +241,6 @@
     "shortcutsReset": "Shortcuts reset to defaults",
     "resetShortcutsConfirm": "This will replace your custom shortcuts with the defaults. Continue?",
     "about": "About",
-    "aboutDescription": "App information and licenses",
     "updates": "Updates",
     "updateAvailable": "Update Available",
     "checkForUpdates": "Check for Updates",
@@ -303,9 +298,6 @@
     "maxVolume": "Maximum Volume",
     "maxVolumeDescription": "Allow volume boost above 100% for quiet media",
     "maxVolumePercent": "${percent}%",
-    "discordRichPresence": "Discord Rich Presence",
-    "discordRichPresenceDescription": "Show what you're watching on Discord",
-    "manageLibrariesDescription": "Reorder and hide libraries",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Allow mobile devices on your network to control this app",
     "companionRemoteServerStartFailed": "Couldn't start the companion server",
@@ -379,7 +371,6 @@
     "showExploreTab": "Show Explore Tab",
     "showExploreTabDescription": "Display the Explore tab with content from connected trackers",
     "general": "General",
-    "generalDescription": "Language, startup, and window behavior",
     "languageAndRegion": "Language & Region",
     "startup": "Startup",
     "display": "Display",
@@ -387,7 +378,6 @@
     "homeScreen": "Home Screen",
     "navigation": "Navigation",
     "window": "Window",
-    "liveTv": "Live TV",
     "player": "Player",
     "videoAndDisplay": "Video & Display",
     "audio": "Audio",
@@ -845,7 +835,6 @@
     "switchingProfile": "Switching profile…",
     "active": "Active",
     "manage": "Manage",
-    "delete": "Delete",
     "signOut": "Sign out",
     "signOutServerTitle": "Sign out of ${serverName}?",
     "signOutServerMessage": "Remove ${serverName} and its profiles from this device? Sign back in anytime.",
@@ -857,7 +846,6 @@
     "summarySingle": "Profiles come from your Silo server",
     "summaryMultipleWithActive": "${count} profiles · active: ${activeName}",
     "summaryMultiple": "${count} profiles",
-    "add": "Add",
     "noConnections": "No connections",
     "incorrectPinTryAgain": "Incorrect PIN. Please try again."
   },
@@ -869,33 +857,11 @@
     "accessDeniedOne": "${name} refused access for this account",
     "accessDeniedMany": "${count} servers refused access for this account"
   },
-  "accountPreferences": {
-    "sectionTitle": "Account preferences",
-    "unavailable": "Can't reach this account",
-    "autoSelectAudio": "Choose audio by language",
-    "subtitleMode": "Turn subtitles on",
-    "subtitleModes": {
-      "none": "Manually selected",
-      "defaultMode": "Follow the track flags",
-      "always": "Always enabled",
-      "onlyForced": "Only forced subtitles",
-      "smart": "Shown with foreign audio"
-    },
-    "forcedSubtitleOptions": {
-      "onlyForced": "Only forced subtitles"
-    },
-    "watchedIndicatorOptions": {
-      "none": "Never",
-      "movies": "Movies only",
-      "shows": "TV shows only"
-    }
-  },
   "discover": {
     "title": "Discover",
     "noContentAvailable": "No content available",
     "addMediaToLibraries": "Add some media to your libraries",
     "continueWatching": "Continue Watching",
-    "nextUp": "Next Up",
     "playEpisode": "S${season}E${episode}",
     "overview": "Overview",
     "cast": "Cast",
@@ -980,20 +946,15 @@
       "genre": "Genre",
       "year": "Year",
       "contentRating": "Content Rating",
-      "tag": "Tag",
-      "unwatched": "Unwatched",
-      "filePath": "File Path"
+      "unwatched": "Unwatched"
     },
     "sortLabels": {
       "title": "Title",
       "dateAdded": "Date Added",
       "releaseDate": "Release Date",
       "rating": "Rating",
-      "userRating": "User Rating",
       "productionYear": "Production Year",
       "runtime": "Runtime",
-      "startDate": "Start Date",
-      "studio": "Studio",
       "dateDownloaded": "Date Downloaded",
       "size": "Size",
       "library": "Library"
@@ -1088,7 +1049,6 @@
     "library": "Library",
     "libraries": "Libraries",
     "downloads": "Downloads",
-    "liveTv": "Live TV",
     "explore": "Explore",
     "watchlist": "Watchlist"
   },
@@ -1100,7 +1060,6 @@
     "inProgress": "In Progress",
     "notStarted": "Not Started",
     "unwatched": "Unwatched",
-    "watched": "Watched",
     "allWatchlist": "Everything on your Watchlist",
     "allFavorites": "All your Favorites",
     "watchAgain": "Watch again",
@@ -1156,10 +1115,8 @@
     "runtimeFailed": "Couldn't load movies",
     "forYouTitle": "For You",
     "networks": "Networks",
-    "networkTrending": "Trending on ${name}",
     "networkTopMovies": "Top Movies",
     "networkTopShows": "Top TV",
-    "networkAllContent": "All Content",
     "networkPopularity": "Popularity",
     "networkType": "Type",
     "networkNoMatches": "No titles match these filters",
@@ -1186,7 +1143,6 @@
     "seasonalPicks": "Seasonal Picks",
     "seasonalPicksDetail": "When the season has a collection",
     "genres": "Genres",
-    "genreTrending": "Trending in ${name}",
     "networkTitleCount": {
       "one": "${n} title in your library",
       "other": "${n} titles in your library"
@@ -1378,16 +1334,8 @@
     }
   },
   "liveTv": {
-    "title": "Live TV",
-    "serverUnavailable": "Live TV server is not available.",
-    "live": "LIVE",
-    "searchHint": "Search channels & programs",
-    "now": "Now",
     "today": "Today",
-    "tomorrow": "Tomorrow",
-    "joinSession": "Join Session in Progress",
-    "record": "Record",
-    "invalidPlaybackData": "${product} returned invalid Live TV playback data"
+    "tomorrow": "Tomorrow"
   },
   "collections": {
     "title": "Collections",
@@ -1884,42 +1832,6 @@
     "appNotInstalled": "${name} is not installed",
     "playInExternalPlayer": "Play in External Player"
   },
-  "metadataEdit": {
-    "artwork": "Artwork",
-    "title": "Title",
-    "sortTitle": "Sort Title",
-    "originalTitle": "Original Title",
-    "releaseDate": "Release Date",
-    "contentRating": "Content Rating",
-    "studio": "Studio",
-    "tagline": "Tagline",
-    "summary": "Summary",
-    "poster": "Poster",
-    "background": "Background",
-    "logo": "Logo",
-    "imageUrl": "Image URL",
-    "allEpisodes": "All episodes",
-    "never": "Never",
-    "seasons": "Seasons",
-    "show": "Show",
-    "hide": "Hide",
-    "subtitleMode": "Auto-Select Subtitle Mode",
-    "tags": "Tags",
-    "genre": "Genre",
-    "director": "Director",
-    "writer": "Writer",
-    "producer": "Producer",
-    "country": "Country",
-    "collection": "Collection",
-    "label": "Label"
-  },
-  "matchScreen": {
-    "match": "Match...",
-    "search": "Search"
-  },
-  "serverTasks": {
-    "title": "Server Tasks"
-  },
   "trakt": {
     "title": "Trakt",
     "connected": "Connected",
@@ -1937,7 +1849,6 @@
     "serverUrl": "Server URL",
     "serverUrlHelper": "The address of your Seerr instance",
     "checkServer": "Continue",
-    "signInWithLocal": "Use a local account",
     "email": "Email",
     "noSignInMethods": "This Seerr instance offers no sign-in method TBD supports.",
     "instance": "Instance",
@@ -1980,10 +1891,6 @@
     "permissionRevoked": "You no longer have permission to request this"
   },
   "services": {
-    "title": "Services",
-    "hubSubtitle": "Sync watch progress and request new titles.",
-    "integrations": "Integrations",
-    "notConnected": "Not connected",
     "connectedAs": "Connected as @${username}",
     "scrobble": "Track progress automatically",
     "scrobbleDescription": "Update your list when you finish an episode or movie.",
@@ -1994,7 +1901,6 @@
       "mal": "MyAnimeList",
       "anilist": "AniList",
       "simkl": "Simkl",
-      "seerr": "Seerr",
       "mdblist": "MDBList"
     },
     "simklReconnect": {
@@ -2034,14 +1940,12 @@
     }
   },
   "addServer": {
-    "username": "Username",
     "password": "Password",
     "signIn": "Sign in",
     "change": "Change",
     "required": "Required",
     "couldNotReachServer": "Could not reach the server: ${error}",
-    "addConnectionTitle": "Add connection",
-    "invalidCredentials": "Invalid username or password"
+    "addConnectionTitle": "Add connection"
   },
   "silo": {
     "connectCard": "Connect to Silo",

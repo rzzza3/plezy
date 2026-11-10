@@ -59,7 +59,6 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$mpvConfig$kk mpvConfig = _Translations$mpvConfig$kk._(_root);
 	@override late final _Translations$profiles$kk profiles = _Translations$profiles$kk._(_root);
 	@override late final _Translations$connections$kk connections = _Translations$connections$kk._(_root);
-	@override late final _Translations$accountPreferences$kk accountPreferences = _Translations$accountPreferences$kk._(_root);
 	@override late final _Translations$discover$kk discover = _Translations$discover$kk._(_root);
 	@override late final _Translations$errors$kk errors = _Translations$errors$kk._(_root);
 	@override late final _Translations$libraries$kk libraries = _Translations$libraries$kk._(_root);
@@ -81,9 +80,6 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$videoSettings$kk videoSettings = _Translations$videoSettings$kk._(_root);
 	@override late final _Translations$performanceOverlay$kk performanceOverlay = _Translations$performanceOverlay$kk._(_root);
 	@override late final _Translations$externalPlayer$kk externalPlayer = _Translations$externalPlayer$kk._(_root);
-	@override late final _Translations$metadataEdit$kk metadataEdit = _Translations$metadataEdit$kk._(_root);
-	@override late final _Translations$matchScreen$kk matchScreen = _Translations$matchScreen$kk._(_root);
-	@override late final _Translations$serverTasks$kk serverTasks = _Translations$serverTasks$kk._(_root);
 	@override late final _Translations$trakt$kk trakt = _Translations$trakt$kk._(_root);
 	@override late final _Translations$seerr$kk seerr = _Translations$seerr$kk._(_root);
 	@override late final _Translations$services$kk services = _Translations$services$kk._(_root);
@@ -213,7 +209,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get theme => 'Тақырып';
 	@override String get appearance => 'Сыртқы келбеті';
 	@override String get videoPlayback => 'Видеоны ойнату';
-	@override String get videoPlaybackDescription => 'Ойнату параметрлерін реттеңіз';
 	@override String get advanced => 'Кеңейтілген';
 	@override String get episodePosterMode => 'Бөлім постерінің стилі';
 	@override String get seriesPoster => 'Сериал постері';
@@ -225,9 +220,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get secondsShort => 'сек';
 	@override String get minutesShort => 'мин';
 	@override String durationHint({required Object min, required Object max}) => 'Уақытты енгізіңіз (${min}-${max})';
-	@override String get systemTheme => 'Жүйелік';
-	@override String get lightTheme => 'Жарық';
-	@override String get darkTheme => 'Қараңғы';
 	@override String get oledTheme => 'OLED';
 	@override String get libraryDensity => 'Кітапхана тығыздығы';
 	@override String get displayScale => 'Дисплей масштабы';
@@ -350,7 +342,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get importSettingsNoUser => 'Баптауларды импорттау алдында жүйеге кіріңіз';
 	@override String get shortcutsReset => 'Пернелер тіркесі әдепкі күйге қайтарылды';
 	@override String get about => 'Қолданба туралы';
-	@override String get aboutDescription => 'Қолданба туралы ақпарат пен лицензиялар';
 	@override String get updates => 'Жаңартулар';
 	@override String get updateAvailable => 'Жаңарту бар';
 	@override String get checkForUpdates => 'Жаңартуларды тексеру';
@@ -407,9 +398,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get maxVolume => 'Максималды дыбыс';
 	@override String get maxVolumeDescription => 'Ақырын видеолар үшін дыбысты 100%-дан асыруға рұқсат беру';
 	@override String maxVolumePercent({required Object percent}) => '%${percent}';
-	@override String get discordRichPresence => 'Discord Rich Presence';
-	@override String get discordRichPresenceDescription => 'Discord-та не көріп жатқаныңызды көрсету';
-	@override String get manageLibrariesDescription => 'Кітапханаларды қайта реттеу және жасыру';
 	@override String get companionRemoteServer => 'Көмекші пульт сервері';
 	@override String get companionRemoteServerDescription => 'Желідегі мобильді құрылғыларға осы қолданбаны басқаруға рұқсат беру';
 	@override String get companionRemoteServerStartFailed => 'Көмекші серверді іске қосу мүмкін болмады';
@@ -474,7 +462,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get startupSection => 'Бастапқы бөлім';
 	@override String get showExploreTab => '«Шолу» қойындысын көрсету';
 	@override String get general => 'Жалпы';
-	@override String get generalDescription => 'Тіл, іске қосу және терезе мінез-құлқы';
 	@override String get languageAndRegion => 'Тіл және аймақ';
 	@override String get startup => 'Іске қосу';
 	@override String get display => 'Дисплей';
@@ -482,7 +469,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get homeScreen => 'Басты экран';
 	@override String get navigation => 'Навигация';
 	@override String get window => 'Терезе';
-	@override String get liveTv => 'Тікелей TV';
 	@override String get player => 'Ойнатқыш';
 	@override String get videoAndDisplay => 'Видео және дисплей';
 	@override String get audio => 'Аудио';
@@ -994,13 +980,11 @@ class _Translations$profiles$kk extends Translations$profiles$en {
 	@override String get switchingProfile => 'Профильді ауыстыру…';
 	@override String get active => 'Белсенді';
 	@override String get manage => 'Басқару';
-	@override String get delete => 'Өшіру';
 	@override String get signOut => 'Шығу';
 	@override String get signOutFailed => 'Шығу мүмкін болмады.';
 	@override String get sectionTitle => 'Профильдер';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} профиль · белсенді: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} профиль';
-	@override String get add => 'Қосу';
 	@override String get noConnections => 'Қосылымдар жоқ';
 	@override String get incorrectPinTryAgain => 'Қате PIN код. Қайтадан байқап көріңіз.';
 }
@@ -1019,22 +1003,6 @@ class _Translations$connections$kk extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => '${count} сервер бұл тіркелгіге кіруден бас тартты';
 }
 
-// Path: accountPreferences
-class _Translations$accountPreferences$kk extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Тіркелгі баптаулары';
-	@override String get unavailable => 'Бұл тіркелгіге қол жеткізу мүмкін емес';
-	@override String get autoSelectAudio => 'Аудионы тілі бойынша таңдау';
-	@override String get subtitleMode => 'Субтитрлерді қосу';
-	@override late final _Translations$accountPreferences$subtitleModes$kk subtitleModes = _Translations$accountPreferences$subtitleModes$kk._(_root);
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$kk forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$kk._(_root);
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$kk watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$kk._(_root);
-}
-
 // Path: discover
 class _Translations$discover$kk extends Translations$discover$en {
 	_Translations$discover$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -1046,7 +1014,6 @@ class _Translations$discover$kk extends Translations$discover$en {
 	@override String get noContentAvailable => 'Мазмұн қолжетімсіз';
 	@override String get addMediaToLibraries => 'Кітапханаларыңызға медиа қосыңыз';
 	@override String get continueWatching => 'Көруді жалғастыру';
-	@override String get nextUp => 'Келесіде';
 	@override String playEpisode({required Object season, required Object episode}) => 'М${season}Б${episode}';
 	@override String get overview => 'Сипаттамасы';
 	@override String get cast => 'Актерлер';
@@ -1225,7 +1192,6 @@ class _Translations$navigation$kk extends Translations$navigation$en {
 	// Translations
 	@override String get libraries => 'Кітапханалар';
 	@override String get downloads => 'Жүктеулер';
-	@override String get liveTv => 'Тікелей TV';
 	@override String get explore => 'Шолу';
 }
 
@@ -1288,16 +1254,8 @@ class _Translations$liveTv$kk extends Translations$liveTv$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Тікелей TV';
-	@override String get serverUnavailable => 'Тікелей TV сервері қолжетімсіз.';
-	@override String get live => 'ТІКЕЛЕЙ ЭФИР';
-	@override String get searchHint => 'Арналар мен бағдарламаларды іздеу';
-	@override String get now => 'Қазір';
 	@override String get today => 'Бүгін';
 	@override String get tomorrow => 'Ертең';
-	@override String get joinSession => 'Сеансқа қосылу';
-	@override String get record => 'Жазу';
-	@override String invalidPlaybackData({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды';
 }
 
 // Path: collections
@@ -1747,63 +1705,6 @@ class _Translations$externalPlayer$kk extends Translations$externalPlayer$en {
 	@override String get playInExternalPlayer => 'Сыртқы ойнатқышта ойнату';
 }
 
-// Path: metadataEdit
-class _Translations$metadataEdit$kk extends Translations$metadataEdit$en {
-	_Translations$metadataEdit$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get artwork => 'Суреттер/Постерлер';
-	@override String get title => 'Атауы';
-	@override String get sortTitle => 'Сұрыптау атауы';
-	@override String get originalTitle => 'Түпнұсқа атауы';
-	@override String get releaseDate => 'Шыққан күні';
-	@override String get contentRating => 'Мазмұн рейтингі';
-	@override String get studio => 'Студия';
-	@override String get tagline => 'Ұран/Слоган';
-	@override String get summary => 'Сипаттамасы/Күйі';
-	@override String get poster => 'Постер';
-	@override String get background => 'Фон';
-	@override String get logo => 'Логотип';
-	@override String get imageUrl => 'Сурет URL-і';
-	@override String get allEpisodes => 'Барлық бөлімдер';
-	@override String get never => 'Ешқашан';
-	@override String get seasons => 'Маусымдар';
-	@override String get show => 'Көрсету';
-	@override String get hide => 'Жасыру';
-	@override String get subtitleMode => 'Автоматты субтитр таңдау режимі';
-	@override String get tags => 'Тегтер';
-	@override String get genre => 'Жанр';
-	@override String get director => 'Режиссер';
-	@override String get writer => 'Сценарист';
-	@override String get producer => 'Продюсер';
-	@override String get country => 'Ел';
-	@override String get collection => 'Топтама';
-	@override String get label => 'Белгі';
-}
-
-// Path: matchScreen
-class _Translations$matchScreen$kk extends Translations$matchScreen$en {
-	_Translations$matchScreen$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get match => 'Сәйкестендіру...';
-	@override String get search => 'Іздеу';
-}
-
-// Path: serverTasks
-class _Translations$serverTasks$kk extends Translations$serverTasks$en {
-	_Translations$serverTasks$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Сервер тапсырмалары';
-}
-
 // Path: trakt
 class _Translations$trakt$kk extends Translations$trakt$en {
 	_Translations$trakt$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -1834,7 +1735,6 @@ class _Translations$seerr$kk extends Translations$seerr$en {
 	@override String get serverUrl => 'Сервер URL-і';
 	@override String get serverUrlHelper => 'Seerr мекенжайыңыз';
 	@override String get checkServer => 'Жалғастыру';
-	@override String get signInWithLocal => 'Жергілікті тіркелгіні пайдалану';
 	@override String get email => 'Электрондық пошта';
 	@override String get noSignInMethods => 'Бұл Seerr қолдау көрсетілетін кіру әдісін ұсынбайды.';
 	@override String get instance => 'Инстанция';
@@ -1884,10 +1784,6 @@ class _Translations$services$kk extends Translations$services$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Қызметтер';
-	@override String get hubSubtitle => 'Көру барысын синхрондаңыз және жаңа мазмұн сұраңыз.';
-	@override String get integrations => 'Интеграциялар';
-	@override String get notConnected => 'Қосылмаған';
 	@override String connectedAs({required Object username}) => '@${username} ретінде қосылды';
 	@override String get scrobble => 'Барысты автоматты бақылау';
 	@override String get scrobbleDescription => 'Эпизодты немесе фильмді көріп болғанда тізіміңізді жаңарту.';
@@ -1908,14 +1804,12 @@ class _Translations$addServer$kk extends Translations$addServer$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get username => 'Пайдаланушы аты';
 	@override String get password => 'Құпия сөз';
 	@override String get signIn => 'Кіру';
 	@override String get change => 'Өзгерту';
 	@override String get required => 'Міндетті';
 	@override String couldNotReachServer({required Object error}) => 'Серверге қосылу мүмкін болмады: ${error}';
 	@override String get addConnectionTitle => 'Қосылым қосу';
-	@override String get invalidCredentials => 'Пайдаланушы аты немесе құпия сөз қате';
 }
 
 // Path: common.ratingSource
@@ -2010,42 +1904,6 @@ class _Translations$videoControls$pipErrors$kk extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Қате орын алды: ${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$kk extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Қолмен таңдалған';
-	@override String get defaultMode => 'Трек белгілерін қолдану';
-	@override String get always => 'Әрдайым қосылған';
-	@override String get onlyForced => 'Тек мәжбүрлі субтитрлер';
-	@override String get smart => 'Шет тіліндегі аудио кезінде көрсету';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$kk extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get onlyForced => 'Тек мәжбүрлі субтитрлер';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$kk extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Ешқашан';
-	@override String get movies => 'Тек фильмдер';
-	@override String get shows => 'Тек сериалдар';
-}
-
 // Path: libraries.tabs
 class _Translations$libraries$tabs$kk extends Translations$libraries$tabs$en {
 	_Translations$libraries$tabs$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -2088,7 +1946,6 @@ class _Translations$libraries$filterCategories$kk extends Translations$libraries
 	@override String get genre => 'Жанр';
 	@override String get year => 'Жыл';
 	@override String get contentRating => 'Мазмұн рейтингі';
-	@override String get tag => 'Тег';
 	@override String get unwatched => 'Көрілмеген';
 }
 
@@ -2103,11 +1960,8 @@ class _Translations$libraries$sortLabels$kk extends Translations$libraries$sortL
 	@override String get dateAdded => 'Қосылған күні';
 	@override String get releaseDate => 'Шыққан күні';
 	@override String get rating => 'Рейтинг';
-	@override String get userRating => 'Пайдаланушы рейтингі';
 	@override String get productionYear => 'Шығарылған жылы';
 	@override String get runtime => 'Ұзақтығы';
-	@override String get startDate => 'Басталған күні';
-	@override String get studio => 'Студия';
 	@override String get dateDownloaded => 'Жүктелген күні';
 	@override String get size => 'Көлемі';
 	@override String get library => 'Кітапхана';
@@ -2504,7 +2358,6 @@ class _Translations$services$names$kk extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2667,7 +2520,6 @@ extension on TranslationsKk {
 			'settings.theme' => 'Тақырып',
 			'settings.appearance' => 'Сыртқы келбеті',
 			'settings.videoPlayback' => 'Видеоны ойнату',
-			'settings.videoPlaybackDescription' => 'Ойнату параметрлерін реттеңіз',
 			'settings.advanced' => 'Кеңейтілген',
 			'settings.episodePosterMode' => 'Бөлім постерінің стилі',
 			'settings.seriesPoster' => 'Сериал постері',
@@ -2679,9 +2531,6 @@ extension on TranslationsKk {
 			'settings.secondsShort' => 'сек',
 			'settings.minutesShort' => 'мин',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Уақытты енгізіңіз (${min}-${max})',
-			'settings.systemTheme' => 'Жүйелік',
-			'settings.lightTheme' => 'Жарық',
-			'settings.darkTheme' => 'Қараңғы',
 			'settings.oledTheme' => 'OLED',
 			'settings.libraryDensity' => 'Кітапхана тығыздығы',
 			'settings.displayScale' => 'Дисплей масштабы',
@@ -2804,7 +2653,6 @@ extension on TranslationsKk {
 			'settings.importSettingsNoUser' => 'Баптауларды импорттау алдында жүйеге кіріңіз',
 			'settings.shortcutsReset' => 'Пернелер тіркесі әдепкі күйге қайтарылды',
 			'settings.about' => 'Қолданба туралы',
-			'settings.aboutDescription' => 'Қолданба туралы ақпарат пен лицензиялар',
 			'settings.updates' => 'Жаңартулар',
 			'settings.updateAvailable' => 'Жаңарту бар',
 			'settings.checkForUpdates' => 'Жаңартуларды тексеру',
@@ -2861,9 +2709,6 @@ extension on TranslationsKk {
 			'settings.maxVolume' => 'Максималды дыбыс',
 			'settings.maxVolumeDescription' => 'Ақырын видеолар үшін дыбысты 100%-дан асыруға рұқсат беру',
 			'settings.maxVolumePercent' => ({required Object percent}) => '%${percent}',
-			'settings.discordRichPresence' => 'Discord Rich Presence',
-			'settings.discordRichPresenceDescription' => 'Discord-та не көріп жатқаныңызды көрсету',
-			'settings.manageLibrariesDescription' => 'Кітапханаларды қайта реттеу және жасыру',
 			'settings.companionRemoteServer' => 'Көмекші пульт сервері',
 			'settings.companionRemoteServerDescription' => 'Желідегі мобильді құрылғыларға осы қолданбаны басқаруға рұқсат беру',
 			'settings.companionRemoteServerStartFailed' => 'Көмекші серверді іске қосу мүмкін болмады',
@@ -2928,7 +2773,6 @@ extension on TranslationsKk {
 			'settings.startupSection' => 'Бастапқы бөлім',
 			'settings.showExploreTab' => '«Шолу» қойындысын көрсету',
 			'settings.general' => 'Жалпы',
-			'settings.generalDescription' => 'Тіл, іске қосу және терезе мінез-құлқы',
 			'settings.languageAndRegion' => 'Тіл және аймақ',
 			'settings.startup' => 'Іске қосу',
 			'settings.display' => 'Дисплей',
@@ -2936,7 +2780,6 @@ extension on TranslationsKk {
 			'settings.homeScreen' => 'Басты экран',
 			'settings.navigation' => 'Навигация',
 			'settings.window' => 'Терезе',
-			'settings.liveTv' => 'Тікелей TV',
 			'settings.player' => 'Ойнатқыш',
 			'settings.videoAndDisplay' => 'Видео және дисплей',
 			'settings.audio' => 'Аудио',
@@ -3087,8 +2930,6 @@ extension on TranslationsKk {
 			'fileInfo.filePresent' => 'Файл бар',
 			'fileInfo.fileReadable' => 'Сервер оқи алады',
 			'fileInfo.streamPath' => 'Ағын жолы',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Ағынды беру үшін оңтайландырылған',
 			'fileInfo.has64bitOffsets' => '64-биттік ығысулар',
 			'fileInfo.protocol' => 'Протокол',
@@ -3099,6 +2940,8 @@ extension on TranslationsKk {
 			'fileInfo.deletedAt' => 'Өшірілген',
 			'fileInfo.remoteSource' => 'Қашықтағы дереккөз',
 			'fileInfo.infiniteStream' => 'Шексіз ағын',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.directPlay' => 'Тікелей ойнату',
 			'fileInfo.directStream' => 'Тікелей ағын',
 			'fileInfo.transcoding' => 'Транскодтау',
@@ -3361,13 +3204,11 @@ extension on TranslationsKk {
 			'profiles.switchingProfile' => 'Профильді ауыстыру…',
 			'profiles.active' => 'Белсенді',
 			'profiles.manage' => 'Басқару',
-			'profiles.delete' => 'Өшіру',
 			'profiles.signOut' => 'Шығу',
 			'profiles.signOutFailed' => 'Шығу мүмкін болмады.',
 			'profiles.sectionTitle' => 'Профильдер',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} профиль · белсенді: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} профиль',
-			'profiles.add' => 'Қосу',
 			'profiles.noConnections' => 'Қосылымдар жоқ',
 			'profiles.incorrectPinTryAgain' => 'Қате PIN код. Қайтадан байқап көріңіз.',
 			'connections.sectionTitle' => 'Қосылымдар',
@@ -3375,24 +3216,10 @@ extension on TranslationsKk {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} үшін сеанс мерзімі өтті',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} бұл тіркелгіге кіруден бас тартты',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} сервер бұл тіркелгіге кіруден бас тартты',
-			'accountPreferences.sectionTitle' => 'Тіркелгі баптаулары',
-			'accountPreferences.unavailable' => 'Бұл тіркелгіге қол жеткізу мүмкін емес',
-			'accountPreferences.autoSelectAudio' => 'Аудионы тілі бойынша таңдау',
-			'accountPreferences.subtitleMode' => 'Субтитрлерді қосу',
-			'accountPreferences.subtitleModes.none' => 'Қолмен таңдалған',
-			'accountPreferences.subtitleModes.defaultMode' => 'Трек белгілерін қолдану',
-			'accountPreferences.subtitleModes.always' => 'Әрдайым қосылған',
-			'accountPreferences.subtitleModes.onlyForced' => 'Тек мәжбүрлі субтитрлер',
-			'accountPreferences.subtitleModes.smart' => 'Шет тіліндегі аудио кезінде көрсету',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Тек мәжбүрлі субтитрлер',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Ешқашан',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Тек фильмдер',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Тек сериалдар',
 			'discover.title' => 'Шолу',
 			'discover.noContentAvailable' => 'Мазмұн қолжетімсіз',
 			'discover.addMediaToLibraries' => 'Кітапханаларыңызға медиа қосыңыз',
 			'discover.continueWatching' => 'Көруді жалғастыру',
-			'discover.nextUp' => 'Келесіде',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'М${season}Б${episode}',
 			'discover.overview' => 'Сипаттамасы',
 			'discover.cast' => 'Актерлер',
@@ -3461,17 +3288,13 @@ extension on TranslationsKk {
 			'libraries.filterCategories.genre' => 'Жанр',
 			'libraries.filterCategories.year' => 'Жыл',
 			'libraries.filterCategories.contentRating' => 'Мазмұн рейтингі',
-			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Көрілмеген',
 			'libraries.sortLabels.title' => 'Атауы',
 			'libraries.sortLabels.dateAdded' => 'Қосылған күні',
 			'libraries.sortLabels.releaseDate' => 'Шыққан күні',
 			'libraries.sortLabels.rating' => 'Рейтинг',
-			'libraries.sortLabels.userRating' => 'Пайдаланушы рейтингі',
 			'libraries.sortLabels.productionYear' => 'Шығарылған жылы',
 			'libraries.sortLabels.runtime' => 'Ұзақтығы',
-			'libraries.sortLabels.startDate' => 'Басталған күні',
-			'libraries.sortLabels.studio' => 'Студия',
 			'libraries.sortLabels.dateDownloaded' => 'Жүктелген күні',
 			'libraries.sortLabels.size' => 'Көлемі',
 			'libraries.sortLabels.library' => 'Кітапхана',
@@ -3523,7 +3346,6 @@ extension on TranslationsKk {
 			'licenses.licensesCount' => ({required Object count}) => '${count} лицензия',
 			'navigation.libraries' => 'Кітапханалар',
 			'navigation.downloads' => 'Жүктеулер',
-			'navigation.liveTv' => 'Тікелей TV',
 			'navigation.explore' => 'Шолу',
 			'explore.title' => 'Шолу',
 			'explore.selectSource' => 'Дереккөзді таңдаңыз',
@@ -3601,8 +3423,6 @@ extension on TranslationsKk {
 			'explore.stats.onHold' => ({required Object n}) => '${n} кейінге қалдырды',
 			'explore.stats.dropped' => ({required Object n}) => '${n} тастады',
 			'explore.season.winter' => 'Қыс',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.spring' => 'Көктем',
 			'explore.season.summer' => 'Жаз',
 			'explore.season.fall' => 'Күз',
@@ -3634,6 +3454,8 @@ extension on TranslationsKk {
 			'explore.relation.sideStory' => 'Жанама оқиға',
 			'explore.relation.spinOff' => 'Спин-офф',
 			'explore.relation.alternativeVersion' => 'Балама нұсқа',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.summary' => 'Қысқаша мазмұны',
 			'explore.relation.parentStory' => 'Негізгі оқиға',
 			'explore.relation.adaptation' => 'Экранизация',
@@ -3670,16 +3492,8 @@ extension on TranslationsKk {
 			'explore.detail.relatedTitles' => 'Қатысты атаулар',
 			'explore.detail.background' => 'Фон',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} нәтиже', other: '${n} нәтиже', ), 
-			'liveTv.title' => 'Тікелей TV',
-			'liveTv.serverUnavailable' => 'Тікелей TV сервері қолжетімсіз.',
-			'liveTv.live' => 'ТІКЕЛЕЙ ЭФИР',
-			'liveTv.searchHint' => 'Арналар мен бағдарламаларды іздеу',
-			'liveTv.now' => 'Қазір',
 			'liveTv.today' => 'Бүгін',
 			'liveTv.tomorrow' => 'Ертең',
-			'liveTv.joinSession' => 'Сеансқа қосылу',
-			'liveTv.record' => 'Жазу',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
 			'collections.title' => 'Топтамалар',
 			'collections.collection' => 'Топтама',
 			'collections.empty' => 'Топтама бос',
@@ -4115,43 +3929,11 @@ extension on TranslationsKk {
 			'externalPlayer.playerNameHint' => 'Менің ойнатқышым',
 			'externalPlayer.playerCommand' => 'Пәрмен',
 			'externalPlayer.playerPackage' => 'Пакет атауы',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerUrlScheme' => 'URL схемасы',
 			'externalPlayer.off' => 'Өшірулі',
 			'externalPlayer.launchFailed' => 'Сыртқы ойнатқышты іске қосу мүмкін болмады',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} орнатылмаған',
 			'externalPlayer.playInExternalPlayer' => 'Сыртқы ойнатқышта ойнату',
-			'metadataEdit.artwork' => 'Суреттер/Постерлер',
-			'metadataEdit.title' => 'Атауы',
-			'metadataEdit.sortTitle' => 'Сұрыптау атауы',
-			'metadataEdit.originalTitle' => 'Түпнұсқа атауы',
-			'metadataEdit.releaseDate' => 'Шыққан күні',
-			'metadataEdit.contentRating' => 'Мазмұн рейтингі',
-			'metadataEdit.studio' => 'Студия',
-			'metadataEdit.tagline' => 'Ұран/Слоган',
-			'metadataEdit.summary' => 'Сипаттамасы/Күйі',
-			'metadataEdit.poster' => 'Постер',
-			'metadataEdit.background' => 'Фон',
-			'metadataEdit.logo' => 'Логотип',
-			'metadataEdit.imageUrl' => 'Сурет URL-і',
-			'metadataEdit.allEpisodes' => 'Барлық бөлімдер',
-			'metadataEdit.never' => 'Ешқашан',
-			'metadataEdit.seasons' => 'Маусымдар',
-			'metadataEdit.show' => 'Көрсету',
-			'metadataEdit.hide' => 'Жасыру',
-			'metadataEdit.subtitleMode' => 'Автоматты субтитр таңдау режимі',
-			'metadataEdit.tags' => 'Тегтер',
-			'metadataEdit.genre' => 'Жанр',
-			'metadataEdit.director' => 'Режиссер',
-			'metadataEdit.writer' => 'Сценарист',
-			'metadataEdit.producer' => 'Продюсер',
-			'metadataEdit.country' => 'Ел',
-			'metadataEdit.collection' => 'Топтама',
-			'metadataEdit.label' => 'Белгі',
-			'matchScreen.match' => 'Сәйкестендіру...',
-			'matchScreen.search' => 'Іздеу',
-			'serverTasks.title' => 'Сервер тапсырмалары',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Қосылды',
 			'trakt.connectedAs' => ({required Object username}) => '@${username} ретінде қосылды',
@@ -4166,7 +3948,6 @@ extension on TranslationsKk {
 			'seerr.serverUrl' => 'Сервер URL-і',
 			'seerr.serverUrlHelper' => 'Seerr мекенжайыңыз',
 			'seerr.checkServer' => 'Жалғастыру',
-			'seerr.signInWithLocal' => 'Жергілікті тіркелгіні пайдалану',
 			'seerr.email' => 'Электрондық пошта',
 			'seerr.noSignInMethods' => 'Бұл Seerr қолдау көрсетілетін кіру әдісін ұсынбайды.',
 			'seerr.instance' => 'Инстанция',
@@ -4187,6 +3968,8 @@ extension on TranslationsKk {
 			'seerr.animeNote' => 'Бұл сериал — аниме.',
 			'seerr.requestSubmitted' => 'Сұрау жіберілді',
 			'seerr.requestFailed' => ({required Object error}) => 'Сұрау қатесі: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.requestsLoadFailed' => 'Параметрлерді жүктеу мүмкін болмады',
 			'seerr.nothingToRequest' => 'Барлығы бұрыннан бар немесе сұралған.',
 			'seerr.statusAvailable' => 'Қолжетімді',
@@ -4207,10 +3990,6 @@ extension on TranslationsKk {
 			'seerr.sessionRejectedAfterReauth' => 'Қайта кіргеннен кейін сеанс қабылданбады',
 			'seerr.permissionDenied' => 'Seerr бұл әрекетті қабылдамады: тіркелгіңізде енді қажетті рұқсат жоқ',
 			'seerr.permissionRevoked' => 'Мұны сұрауға енді рұқсатыңыз жоқ',
-			'services.title' => 'Қызметтер',
-			'services.hubSubtitle' => 'Көру барысын синхрондаңыз және жаңа мазмұн сұраңыз.',
-			'services.integrations' => 'Интеграциялар',
-			'services.notConnected' => 'Қосылмаған',
 			'services.connectedAs' => ({required Object username}) => '@${username} ретінде қосылды',
 			'services.scrobble' => 'Барысты автоматты бақылау',
 			'services.scrobbleDescription' => 'Эпизодты немесе фильмді көріп болғанда тізіміңізді жаңарту.',
@@ -4220,7 +3999,6 @@ extension on TranslationsKk {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'TBD-ді ${service} қызметінде белсендіру',
 			'services.deviceCode.instructions' => 'QR кодын сканерлеңіз немесе төмендегі мекенжайға өтіп, мына кодты енгізіңіз:',
@@ -4245,14 +4023,12 @@ extension on TranslationsKk {
 			'services.libraryFilter.modeHintWhitelist' => 'Тек төменде таңдалған кітапханаларды синхрондау.',
 			'services.libraryFilter.libraries' => 'Кітапханалар',
 			'services.libraryFilter.noLibraries' => 'Кітапханалар жоқ',
-			'addServer.username' => 'Пайдаланушы аты',
 			'addServer.password' => 'Құпия сөз',
 			'addServer.signIn' => 'Кіру',
 			'addServer.change' => 'Өзгерту',
 			'addServer.required' => 'Міндетті',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Серверге қосылу мүмкін болмады: ${error}',
 			'addServer.addConnectionTitle' => 'Қосылым қосу',
-			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',
 			_ => null,
 		};
 	}

@@ -215,7 +215,6 @@ void main() {
       await s.setActiveProfileId('local-user-2');
       expect(s.getLibraryOrder(), ['u2-a']);
     });
-
   });
 
   group('Library filters / sort / grouping / tab', () {

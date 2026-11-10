@@ -59,7 +59,6 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$mpvConfig$ru mpvConfig = _Translations$mpvConfig$ru._(_root);
 	@override late final _Translations$profiles$ru profiles = _Translations$profiles$ru._(_root);
 	@override late final _Translations$connections$ru connections = _Translations$connections$ru._(_root);
-	@override late final _Translations$accountPreferences$ru accountPreferences = _Translations$accountPreferences$ru._(_root);
 	@override late final _Translations$discover$ru discover = _Translations$discover$ru._(_root);
 	@override late final _Translations$errors$ru errors = _Translations$errors$ru._(_root);
 	@override late final _Translations$libraries$ru libraries = _Translations$libraries$ru._(_root);
@@ -81,9 +80,6 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$videoSettings$ru videoSettings = _Translations$videoSettings$ru._(_root);
 	@override late final _Translations$performanceOverlay$ru performanceOverlay = _Translations$performanceOverlay$ru._(_root);
 	@override late final _Translations$externalPlayer$ru externalPlayer = _Translations$externalPlayer$ru._(_root);
-	@override late final _Translations$metadataEdit$ru metadataEdit = _Translations$metadataEdit$ru._(_root);
-	@override late final _Translations$matchScreen$ru matchScreen = _Translations$matchScreen$ru._(_root);
-	@override late final _Translations$serverTasks$ru serverTasks = _Translations$serverTasks$ru._(_root);
 	@override late final _Translations$trakt$ru trakt = _Translations$trakt$ru._(_root);
 	@override late final _Translations$seerr$ru seerr = _Translations$seerr$ru._(_root);
 	@override late final _Translations$services$ru services = _Translations$services$ru._(_root);
@@ -213,7 +209,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get theme => 'Тема';
 	@override String get appearance => 'Внешний вид';
 	@override String get videoPlayback => 'Воспроизведение видео';
-	@override String get videoPlaybackDescription => 'Настройка поведения воспроизведения';
 	@override String get advanced => 'Дополнительно';
 	@override String get episodePosterMode => 'Стиль постера эпизода';
 	@override String get seriesPoster => 'Постер сериала';
@@ -225,9 +220,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get secondsShort => 'с';
 	@override String get minutesShort => 'м';
 	@override String durationHint({required Object min, required Object max}) => 'Введите длительность (${min}-${max})';
-	@override String get systemTheme => 'Системная';
-	@override String get lightTheme => 'Светлая';
-	@override String get darkTheme => 'Тёмная';
 	@override String get oledTheme => 'OLED';
 	@override String get slateTheme => 'Сланец';
 	@override String get libraryDensity => 'Плотность библиотеки';
@@ -351,7 +343,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get importSettingsNoUser => 'Войдите в систему перед импортом настроек';
 	@override String get shortcutsReset => 'Горячие клавиши сброшены по умолчанию';
 	@override String get about => 'О приложении';
-	@override String get aboutDescription => 'Информация о приложении и лицензии';
 	@override String get updates => 'Обновления';
 	@override String get updateAvailable => 'Доступно обновление';
 	@override String get checkForUpdates => 'Проверить обновления';
@@ -408,9 +399,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get maxVolume => 'Максимальная громкость';
 	@override String get maxVolumeDescription => 'Разрешить усиление громкости выше 100% для тихих медиа';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get discordRichPresence => 'Discord Rich Presence';
-	@override String get discordRichPresenceDescription => 'Показывать, что вы смотрите, в Discord';
-	@override String get manageLibrariesDescription => 'Изменять порядок и скрывать библиотеки';
 	@override String get companionRemoteServer => 'Сервер удалённого управления';
 	@override String get companionRemoteServerDescription => 'Разрешить мобильным устройствам в сети управлять этим приложением';
 	@override String get companionRemoteServerStartFailed => 'Не удалось запустить сервер удалённого управления';
@@ -475,7 +463,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get startupSection => 'Начальный раздел';
 	@override String get showExploreTab => 'Показывать вкладку «Обзор»';
 	@override String get general => 'Основные';
-	@override String get generalDescription => 'Язык, запуск и поведение окна';
 	@override String get languageAndRegion => 'Язык и регион';
 	@override String get startup => 'Запуск';
 	@override String get display => 'Экран';
@@ -483,7 +470,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get homeScreen => 'Главный экран';
 	@override String get navigation => 'Навигация';
 	@override String get window => 'Окно';
-	@override String get liveTv => 'Прямой эфир';
 	@override String get player => 'Плеер';
 	@override String get videoAndDisplay => 'Видео и экран';
 	@override String get audio => 'Аудио';
@@ -997,13 +983,11 @@ class _Translations$profiles$ru extends Translations$profiles$en {
 	@override String get switchingProfile => 'Переключение профиля…';
 	@override String get active => 'Активный';
 	@override String get manage => 'Управление';
-	@override String get delete => 'Удалить';
 	@override String get signOut => 'Выйти';
 	@override String get signOutFailed => 'Не удалось выйти.';
 	@override String get sectionTitle => 'Профили';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} профилей · активный: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} профилей';
-	@override String get add => 'Добавить';
 	@override String get noConnections => 'Нет соединений';
 	@override String get incorrectPinTryAgain => 'Неверный PIN. Попробуйте ещё раз.';
 }
@@ -1022,22 +1006,6 @@ class _Translations$connections$ru extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => 'Доступ для этой учётной записи запрещён на ${count} серверах';
 }
 
-// Path: accountPreferences
-class _Translations$accountPreferences$ru extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Настройки аккаунта';
-	@override String get unavailable => 'Не удаётся получить доступ к этому аккаунту';
-	@override String get autoSelectAudio => 'Выбирать аудиодорожку по языку';
-	@override String get subtitleMode => 'Включать субтитры';
-	@override late final _Translations$accountPreferences$subtitleModes$ru subtitleModes = _Translations$accountPreferences$subtitleModes$ru._(_root);
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$ru forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$ru._(_root);
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$ru watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$ru._(_root);
-}
-
 // Path: discover
 class _Translations$discover$ru extends Translations$discover$en {
 	_Translations$discover$ru._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -1049,7 +1017,6 @@ class _Translations$discover$ru extends Translations$discover$en {
 	@override String get noContentAvailable => 'Контент недоступен';
 	@override String get addMediaToLibraries => 'Добавьте медиафайлы в ваши библиотеки';
 	@override String get continueWatching => 'Продолжить просмотр';
-	@override String get nextUp => 'Далее';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Обзор';
 	@override String get cast => 'В ролях';
@@ -1230,7 +1197,6 @@ class _Translations$navigation$ru extends Translations$navigation$en {
 	// Translations
 	@override String get libraries => 'Библиотеки';
 	@override String get downloads => 'Загрузки';
-	@override String get liveTv => 'Прямой эфир';
 	@override String get explore => 'Обзор';
 }
 
@@ -1299,16 +1265,8 @@ class _Translations$liveTv$ru extends Translations$liveTv$en {
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'ТВ в прямом эфире';
-	@override String get serverUnavailable => 'Сервер прямого эфира недоступен.';
-	@override String get live => 'ЭФИР';
-	@override String get searchHint => 'Поиск каналов и программ';
-	@override String get now => 'Сейчас';
 	@override String get today => 'Сегодня';
 	@override String get tomorrow => 'Завтра';
-	@override String get joinSession => 'Присоединиться к текущему сеансу';
-	@override String get record => 'Запись';
-	@override String invalidPlaybackData({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире';
 }
 
 // Path: collections
@@ -1760,63 +1718,6 @@ class _Translations$externalPlayer$ru extends Translations$externalPlayer$en {
 	@override String get playInExternalPlayer => 'Воспроизвести во внешнем плеере';
 }
 
-// Path: metadataEdit
-class _Translations$metadataEdit$ru extends Translations$metadataEdit$en {
-	_Translations$metadataEdit$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get artwork => 'Обложка';
-	@override String get title => 'Название';
-	@override String get sortTitle => 'Название для сортировки';
-	@override String get originalTitle => 'Оригинальное название';
-	@override String get releaseDate => 'Дата выпуска';
-	@override String get contentRating => 'Возрастной рейтинг';
-	@override String get studio => 'Студия';
-	@override String get tagline => 'Слоган';
-	@override String get summary => 'Описание';
-	@override String get poster => 'Постер';
-	@override String get background => 'Фон';
-	@override String get logo => 'Логотип';
-	@override String get imageUrl => 'URL изображения';
-	@override String get allEpisodes => 'Все эпизоды';
-	@override String get never => 'Никогда';
-	@override String get seasons => 'Сезоны';
-	@override String get show => 'Показать';
-	@override String get hide => 'Скрыть';
-	@override String get subtitleMode => 'Автовыбор субтитров';
-	@override String get tags => 'Теги';
-	@override String get genre => 'Жанр';
-	@override String get director => 'Режиссёр';
-	@override String get writer => 'Сценарист';
-	@override String get producer => 'Продюсер';
-	@override String get country => 'Страна';
-	@override String get collection => 'Коллекция';
-	@override String get label => 'Метка';
-}
-
-// Path: matchScreen
-class _Translations$matchScreen$ru extends Translations$matchScreen$en {
-	_Translations$matchScreen$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get match => 'Сопоставить...';
-	@override String get search => 'Поиск';
-}
-
-// Path: serverTasks
-class _Translations$serverTasks$ru extends Translations$serverTasks$en {
-	_Translations$serverTasks$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Задачи сервера';
-}
-
 // Path: trakt
 class _Translations$trakt$ru extends Translations$trakt$en {
 	_Translations$trakt$ru._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -1847,7 +1748,6 @@ class _Translations$seerr$ru extends Translations$seerr$en {
 	@override String get serverUrl => 'URL сервера';
 	@override String get serverUrlHelper => 'Адрес вашего экземпляра Seerr';
 	@override String get checkServer => 'Продолжить';
-	@override String get signInWithLocal => 'Использовать локальную учётную запись';
 	@override String get email => 'Эл. почта';
 	@override String get noSignInMethods => 'Этот экземпляр Seerr не предлагает способа входа, поддерживаемого TBD.';
 	@override String get instance => 'Экземпляр';
@@ -1897,10 +1797,6 @@ class _Translations$services$ru extends Translations$services$en {
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Сервисы';
-	@override String get hubSubtitle => 'Синхронизируйте прогресс просмотра и запрашивайте новые фильмы и сериалы.';
-	@override String get integrations => 'Интеграции';
-	@override String get notConnected => 'Не подключено';
 	@override String connectedAs({required Object username}) => 'Подключено как @${username}';
 	@override String get scrobble => 'Автоматически отслеживать прогресс';
 	@override String get scrobbleDescription => 'Обновляет список, когда вы заканчиваете эпизод или фильм.';
@@ -1921,14 +1817,12 @@ class _Translations$addServer$ru extends Translations$addServer$en {
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
-	@override String get username => 'Имя пользователя';
 	@override String get password => 'Пароль';
 	@override String get signIn => 'Войти';
 	@override String get change => 'Изменить';
 	@override String get required => 'Обязательно';
 	@override String couldNotReachServer({required Object error}) => 'Не удалось связаться с сервером: ${error}';
 	@override String get addConnectionTitle => 'Добавить подключение';
-	@override String get invalidCredentials => 'Неверное имя пользователя или пароль';
 }
 
 // Path: common.ratingSource
@@ -2023,42 +1917,6 @@ class _Translations$videoControls$pipErrors$ru extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Произошла ошибка: ${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$ru extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Выбор вручную';
-	@override String get defaultMode => 'Следовать флагам дорожки';
-	@override String get always => 'Всегда включены';
-	@override String get onlyForced => 'Только принудительные субтитры';
-	@override String get smart => 'Показывать при иноязычном аудио';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$ru extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get onlyForced => 'Только принудительные субтитры';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$ru extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Никогда';
-	@override String get movies => 'Только фильмы';
-	@override String get shows => 'Только сериалы';
-}
-
 // Path: libraries.tabs
 class _Translations$libraries$tabs$ru extends Translations$libraries$tabs$en {
 	_Translations$libraries$tabs$ru._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -2101,7 +1959,6 @@ class _Translations$libraries$filterCategories$ru extends Translations$libraries
 	@override String get genre => 'Жанр';
 	@override String get year => 'Год';
 	@override String get contentRating => 'Возрастной рейтинг';
-	@override String get tag => 'Тег';
 	@override String get unwatched => 'Непросмотренные';
 }
 
@@ -2116,11 +1973,8 @@ class _Translations$libraries$sortLabels$ru extends Translations$libraries$sortL
 	@override String get dateAdded => 'Дата добавления';
 	@override String get releaseDate => 'Дата выхода';
 	@override String get rating => 'Рейтинг';
-	@override String get userRating => 'Пользовательская оценка';
 	@override String get productionYear => 'Год производства';
 	@override String get runtime => 'Длительность';
-	@override String get startDate => 'Дата начала';
-	@override String get studio => 'Студия';
 	@override String get dateDownloaded => 'Дата загрузки';
 	@override String get size => 'Размер';
 	@override String get library => 'Библиотека';
@@ -2521,7 +2375,6 @@ class _Translations$services$names$ru extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2684,7 +2537,6 @@ extension on TranslationsRu {
 			'settings.theme' => 'Тема',
 			'settings.appearance' => 'Внешний вид',
 			'settings.videoPlayback' => 'Воспроизведение видео',
-			'settings.videoPlaybackDescription' => 'Настройка поведения воспроизведения',
 			'settings.advanced' => 'Дополнительно',
 			'settings.episodePosterMode' => 'Стиль постера эпизода',
 			'settings.seriesPoster' => 'Постер сериала',
@@ -2696,9 +2548,6 @@ extension on TranslationsRu {
 			'settings.secondsShort' => 'с',
 			'settings.minutesShort' => 'м',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Введите длительность (${min}-${max})',
-			'settings.systemTheme' => 'Системная',
-			'settings.lightTheme' => 'Светлая',
-			'settings.darkTheme' => 'Тёмная',
 			'settings.oledTheme' => 'OLED',
 			'settings.slateTheme' => 'Сланец',
 			'settings.libraryDensity' => 'Плотность библиотеки',
@@ -2822,7 +2671,6 @@ extension on TranslationsRu {
 			'settings.importSettingsNoUser' => 'Войдите в систему перед импортом настроек',
 			'settings.shortcutsReset' => 'Горячие клавиши сброшены по умолчанию',
 			'settings.about' => 'О приложении',
-			'settings.aboutDescription' => 'Информация о приложении и лицензии',
 			'settings.updates' => 'Обновления',
 			'settings.updateAvailable' => 'Доступно обновление',
 			'settings.checkForUpdates' => 'Проверить обновления',
@@ -2879,9 +2727,6 @@ extension on TranslationsRu {
 			'settings.maxVolume' => 'Максимальная громкость',
 			'settings.maxVolumeDescription' => 'Разрешить усиление громкости выше 100% для тихих медиа',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.discordRichPresence' => 'Discord Rich Presence',
-			'settings.discordRichPresenceDescription' => 'Показывать, что вы смотрите, в Discord',
-			'settings.manageLibrariesDescription' => 'Изменять порядок и скрывать библиотеки',
 			'settings.companionRemoteServer' => 'Сервер удалённого управления',
 			'settings.companionRemoteServerDescription' => 'Разрешить мобильным устройствам в сети управлять этим приложением',
 			'settings.companionRemoteServerStartFailed' => 'Не удалось запустить сервер удалённого управления',
@@ -2946,7 +2791,6 @@ extension on TranslationsRu {
 			'settings.startupSection' => 'Начальный раздел',
 			'settings.showExploreTab' => 'Показывать вкладку «Обзор»',
 			'settings.general' => 'Основные',
-			'settings.generalDescription' => 'Язык, запуск и поведение окна',
 			'settings.languageAndRegion' => 'Язык и регион',
 			'settings.startup' => 'Запуск',
 			'settings.display' => 'Экран',
@@ -2954,7 +2798,6 @@ extension on TranslationsRu {
 			'settings.homeScreen' => 'Главный экран',
 			'settings.navigation' => 'Навигация',
 			'settings.window' => 'Окно',
-			'settings.liveTv' => 'Прямой эфир',
 			'settings.player' => 'Плеер',
 			'settings.videoAndDisplay' => 'Видео и экран',
 			'settings.audio' => 'Аудио',
@@ -3104,8 +2947,6 @@ extension on TranslationsRu {
 			'fileInfo.packetLength' => 'Длина пакета',
 			'fileInfo.filePresent' => 'Файл присутствует',
 			'fileInfo.fileReadable' => 'Доступен для чтения сервером',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamPath' => 'Путь потока',
 			'fileInfo.optimizedForStreaming' => 'Оптимизировано для потоковой передачи',
 			'fileInfo.has64bitOffsets' => '64-битные смещения',
@@ -3116,6 +2957,8 @@ extension on TranslationsRu {
 			'fileInfo.optimizationTarget' => 'Цель оптимизации',
 			'fileInfo.deletedAt' => 'Удалено',
 			'fileInfo.remoteSource' => 'Удалённый источник',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.infiniteStream' => 'Бесконечный поток',
 			'fileInfo.directPlay' => 'Прямое воспроизведение',
 			'fileInfo.directStream' => 'Прямой поток',
@@ -3379,13 +3222,11 @@ extension on TranslationsRu {
 			'profiles.switchingProfile' => 'Переключение профиля…',
 			'profiles.active' => 'Активный',
 			'profiles.manage' => 'Управление',
-			'profiles.delete' => 'Удалить',
 			'profiles.signOut' => 'Выйти',
 			'profiles.signOutFailed' => 'Не удалось выйти.',
 			'profiles.sectionTitle' => 'Профили',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} профилей · активный: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} профилей',
-			'profiles.add' => 'Добавить',
 			'profiles.noConnections' => 'Нет соединений',
 			'profiles.incorrectPinTryAgain' => 'Неверный PIN. Попробуйте ещё раз.',
 			'connections.sectionTitle' => 'Подключения',
@@ -3393,24 +3234,10 @@ extension on TranslationsRu {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сессия истекла для ${name}',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} отказал в доступе этой учётной записи',
 			'connections.accessDeniedMany' => ({required Object count}) => 'Доступ для этой учётной записи запрещён на ${count} серверах',
-			'accountPreferences.sectionTitle' => 'Настройки аккаунта',
-			'accountPreferences.unavailable' => 'Не удаётся получить доступ к этому аккаунту',
-			'accountPreferences.autoSelectAudio' => 'Выбирать аудиодорожку по языку',
-			'accountPreferences.subtitleMode' => 'Включать субтитры',
-			'accountPreferences.subtitleModes.none' => 'Выбор вручную',
-			'accountPreferences.subtitleModes.defaultMode' => 'Следовать флагам дорожки',
-			'accountPreferences.subtitleModes.always' => 'Всегда включены',
-			'accountPreferences.subtitleModes.onlyForced' => 'Только принудительные субтитры',
-			'accountPreferences.subtitleModes.smart' => 'Показывать при иноязычном аудио',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Только принудительные субтитры',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Никогда',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Только фильмы',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Только сериалы',
 			'discover.title' => 'Обзор',
 			'discover.noContentAvailable' => 'Контент недоступен',
 			'discover.addMediaToLibraries' => 'Добавьте медиафайлы в ваши библиотеки',
 			'discover.continueWatching' => 'Продолжить просмотр',
-			'discover.nextUp' => 'Далее',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Обзор',
 			'discover.cast' => 'В ролях',
@@ -3479,17 +3306,13 @@ extension on TranslationsRu {
 			'libraries.filterCategories.genre' => 'Жанр',
 			'libraries.filterCategories.year' => 'Год',
 			'libraries.filterCategories.contentRating' => 'Возрастной рейтинг',
-			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Непросмотренные',
 			'libraries.sortLabels.title' => 'Название',
 			'libraries.sortLabels.dateAdded' => 'Дата добавления',
 			'libraries.sortLabels.releaseDate' => 'Дата выхода',
 			'libraries.sortLabels.rating' => 'Рейтинг',
-			'libraries.sortLabels.userRating' => 'Пользовательская оценка',
 			'libraries.sortLabels.productionYear' => 'Год производства',
 			'libraries.sortLabels.runtime' => 'Длительность',
-			'libraries.sortLabels.startDate' => 'Дата начала',
-			'libraries.sortLabels.studio' => 'Студия',
 			'libraries.sortLabels.dateDownloaded' => 'Дата загрузки',
 			'libraries.sortLabels.size' => 'Размер',
 			'libraries.sortLabels.library' => 'Библиотека',
@@ -3541,7 +3364,6 @@ extension on TranslationsRu {
 			'licenses.licensesCount' => ({required Object count}) => '${count} лицензий',
 			'navigation.libraries' => 'Библиотеки',
 			'navigation.downloads' => 'Загрузки',
-			'navigation.liveTv' => 'Прямой эфир',
 			'navigation.explore' => 'Обзор',
 			'explore.title' => 'Обзор',
 			'explore.selectSource' => 'Выбрать источник',
@@ -3618,8 +3440,6 @@ extension on TranslationsRu {
 			'explore.stats.completed' => ({required Object n}) => '${n} завершили',
 			'explore.stats.onHold' => ({required Object n}) => '${n} отложили',
 			'explore.stats.dropped' => ({required Object n}) => '${n} бросили',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Зима',
 			'explore.season.spring' => 'Весна',
 			'explore.season.summer' => 'Лето',
@@ -3651,6 +3471,8 @@ extension on TranslationsRu {
 			'explore.relation.sequel' => 'Сиквел',
 			'explore.relation.sideStory' => 'Побочная история',
 			'explore.relation.spinOff' => 'Спин-офф',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => 'Альтернативная версия',
 			'explore.relation.summary' => 'Краткое изложение',
 			'explore.relation.parentStory' => 'Основная история',
@@ -3688,16 +3510,8 @@ extension on TranslationsRu {
 			'explore.detail.relatedTitles' => 'Связанные названия',
 			'explore.detail.background' => 'Фон',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n, one: '${n} результат', few: '${n} результата', many: '${n} результатов', other: '${n} результатов', ), 
-			'liveTv.title' => 'ТВ в прямом эфире',
-			'liveTv.serverUnavailable' => 'Сервер прямого эфира недоступен.',
-			'liveTv.live' => 'ЭФИР',
-			'liveTv.searchHint' => 'Поиск каналов и программ',
-			'liveTv.now' => 'Сейчас',
 			'liveTv.today' => 'Сегодня',
 			'liveTv.tomorrow' => 'Завтра',
-			'liveTv.joinSession' => 'Присоединиться к текущему сеансу',
-			'liveTv.record' => 'Запись',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
 			'collections.empty' => 'Коллекция пуста',
@@ -4132,44 +3946,12 @@ extension on TranslationsRu {
 			'externalPlayer.playerName' => 'Название плеера',
 			'externalPlayer.playerNameHint' => 'Мой плеер',
 			'externalPlayer.playerCommand' => 'Команда',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerPackage' => 'Имя пакета',
 			'externalPlayer.playerUrlScheme' => 'URL-схема',
 			'externalPlayer.off' => 'Выкл.',
 			'externalPlayer.launchFailed' => 'Не удалось открыть внешний плеер',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не установлен',
 			'externalPlayer.playInExternalPlayer' => 'Воспроизвести во внешнем плеере',
-			'metadataEdit.artwork' => 'Обложка',
-			'metadataEdit.title' => 'Название',
-			'metadataEdit.sortTitle' => 'Название для сортировки',
-			'metadataEdit.originalTitle' => 'Оригинальное название',
-			'metadataEdit.releaseDate' => 'Дата выпуска',
-			'metadataEdit.contentRating' => 'Возрастной рейтинг',
-			'metadataEdit.studio' => 'Студия',
-			'metadataEdit.tagline' => 'Слоган',
-			'metadataEdit.summary' => 'Описание',
-			'metadataEdit.poster' => 'Постер',
-			'metadataEdit.background' => 'Фон',
-			'metadataEdit.logo' => 'Логотип',
-			'metadataEdit.imageUrl' => 'URL изображения',
-			'metadataEdit.allEpisodes' => 'Все эпизоды',
-			'metadataEdit.never' => 'Никогда',
-			'metadataEdit.seasons' => 'Сезоны',
-			'metadataEdit.show' => 'Показать',
-			'metadataEdit.hide' => 'Скрыть',
-			'metadataEdit.subtitleMode' => 'Автовыбор субтитров',
-			'metadataEdit.tags' => 'Теги',
-			'metadataEdit.genre' => 'Жанр',
-			'metadataEdit.director' => 'Режиссёр',
-			'metadataEdit.writer' => 'Сценарист',
-			'metadataEdit.producer' => 'Продюсер',
-			'metadataEdit.country' => 'Страна',
-			'metadataEdit.collection' => 'Коллекция',
-			'metadataEdit.label' => 'Метка',
-			'matchScreen.match' => 'Сопоставить...',
-			'matchScreen.search' => 'Поиск',
-			'serverTasks.title' => 'Задачи сервера',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Подключено',
 			'trakt.connectedAs' => ({required Object username}) => 'Подключено как @${username}',
@@ -4184,7 +3966,6 @@ extension on TranslationsRu {
 			'seerr.serverUrl' => 'URL сервера',
 			'seerr.serverUrlHelper' => 'Адрес вашего экземпляра Seerr',
 			'seerr.checkServer' => 'Продолжить',
-			'seerr.signInWithLocal' => 'Использовать локальную учётную запись',
 			'seerr.email' => 'Эл. почта',
 			'seerr.noSignInMethods' => 'Этот экземпляр Seerr не предлагает способа входа, поддерживаемого TBD.',
 			'seerr.instance' => 'Экземпляр',
@@ -4204,6 +3985,8 @@ extension on TranslationsRu {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (по умолчанию)',
 			'seerr.animeNote' => 'Этот сериал — аниме.',
 			'seerr.requestSubmitted' => 'Запрос отправлен',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => 'Ошибка запроса: ${error}',
 			'seerr.requestsLoadFailed' => 'Не удалось загрузить параметры запроса',
 			'seerr.nothingToRequest' => 'Всё уже доступно или запрошено.',
@@ -4225,10 +4008,6 @@ extension on TranslationsRu {
 			'seerr.sessionRejectedAfterReauth' => 'Сеанс был отклонён после повторного входа',
 			'seerr.permissionDenied' => 'Seerr отклонил это действие: у вашей учётной записи больше нет необходимого разрешения',
 			'seerr.permissionRevoked' => 'У вас больше нет разрешения запрашивать это',
-			'services.title' => 'Сервисы',
-			'services.hubSubtitle' => 'Синхронизируйте прогресс просмотра и запрашивайте новые фильмы и сериалы.',
-			'services.integrations' => 'Интеграции',
-			'services.notConnected' => 'Не подключено',
 			'services.connectedAs' => ({required Object username}) => 'Подключено как @${username}',
 			'services.scrobble' => 'Автоматически отслеживать прогресс',
 			'services.scrobbleDescription' => 'Обновляет список, когда вы заканчиваете эпизод или фильм.',
@@ -4238,7 +4017,6 @@ extension on TranslationsRu {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Активируйте TBD в ${service}',
 			'services.deviceCode.instructions' => 'Отсканируйте QR-код или перейдите по адресу ниже и введите этот код:',
@@ -4263,14 +4041,12 @@ extension on TranslationsRu {
 			'services.libraryFilter.modeHintWhitelist' => 'Синхронизировать только библиотеки, отмеченные ниже.',
 			'services.libraryFilter.libraries' => 'Библиотеки',
 			'services.libraryFilter.noLibraries' => 'Библиотеки недоступны',
-			'addServer.username' => 'Имя пользователя',
 			'addServer.password' => 'Пароль',
 			'addServer.signIn' => 'Войти',
 			'addServer.change' => 'Изменить',
 			'addServer.required' => 'Обязательно',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Не удалось связаться с сервером: ${error}',
 			'addServer.addConnectionTitle' => 'Добавить подключение',
-			'addServer.invalidCredentials' => 'Неверное имя пользователя или пароль',
 			_ => null,
 		};
 	}

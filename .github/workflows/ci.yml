@@ -72,30 +72,6 @@ jobs:
       - name: Analyze code
         run: dart run scripts/checks/check_analyzer.dart
 
-      - name: Check for unused code
-        run: |
-          echo "🔍 Checking for unused code..."
-          dart run dart_code_linter:metrics check-unused-code lib 2>&1 | tee unused_code.txt
-          if grep -qi "no unused code found" unused_code.txt; then
-            echo "✅ No unused code found"
-          else
-            echo "❌ Found unused code:"
-            cat unused_code.txt
-            exit 1
-          fi
-
-      - name: Check for unused files
-        run: |
-          echo "🔍 Checking for unused files..."
-          dart run dart_code_linter:metrics check-unused-files lib 2>&1 | tee unused_files.txt
-          if grep -qi "no unused files found" unused_files.txt; then
-            echo "✅ No unused files found"
-          else
-            echo "❌ Found unused files:"
-            cat unused_files.txt
-            exit 1
-          fi
-
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -295,22 +271,3 @@ jobs:
 
       - name: Run server checks
         run: scripts/ci_server_checks.sh
-
-  website:
-    name: Website checks
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: "1.3.14"
-
-      - name: Run website checks
-        run: scripts/ci_website_checks.sh

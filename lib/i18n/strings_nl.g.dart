@@ -59,7 +59,6 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$mpvConfig$nl mpvConfig = _Translations$mpvConfig$nl._(_root);
 	@override late final _Translations$profiles$nl profiles = _Translations$profiles$nl._(_root);
 	@override late final _Translations$connections$nl connections = _Translations$connections$nl._(_root);
-	@override late final _Translations$accountPreferences$nl accountPreferences = _Translations$accountPreferences$nl._(_root);
 	@override late final _Translations$discover$nl discover = _Translations$discover$nl._(_root);
 	@override late final _Translations$errors$nl errors = _Translations$errors$nl._(_root);
 	@override late final _Translations$libraries$nl libraries = _Translations$libraries$nl._(_root);
@@ -81,9 +80,6 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$videoSettings$nl videoSettings = _Translations$videoSettings$nl._(_root);
 	@override late final _Translations$performanceOverlay$nl performanceOverlay = _Translations$performanceOverlay$nl._(_root);
 	@override late final _Translations$externalPlayer$nl externalPlayer = _Translations$externalPlayer$nl._(_root);
-	@override late final _Translations$metadataEdit$nl metadataEdit = _Translations$metadataEdit$nl._(_root);
-	@override late final _Translations$matchScreen$nl matchScreen = _Translations$matchScreen$nl._(_root);
-	@override late final _Translations$serverTasks$nl serverTasks = _Translations$serverTasks$nl._(_root);
 	@override late final _Translations$trakt$nl trakt = _Translations$trakt$nl._(_root);
 	@override late final _Translations$seerr$nl seerr = _Translations$seerr$nl._(_root);
 	@override late final _Translations$services$nl services = _Translations$services$nl._(_root);
@@ -213,7 +209,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get theme => 'Thema';
 	@override String get appearance => 'Uiterlijk';
 	@override String get videoPlayback => 'Video afspelen';
-	@override String get videoPlaybackDescription => 'Afspeelgedrag configureren';
 	@override String get advanced => 'Geavanceerd';
 	@override String get episodePosterMode => 'Stijl van afleveringsposter';
 	@override String get seriesPoster => 'Serieposter';
@@ -225,9 +220,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get secondsShort => 's';
 	@override String get minutesShort => 'm';
 	@override String durationHint({required Object min, required Object max}) => 'Voer duur in (${min}-${max})';
-	@override String get systemTheme => 'Systeem';
-	@override String get lightTheme => 'Licht';
-	@override String get darkTheme => 'Donker';
 	@override String get oledTheme => 'OLED';
 	@override String get slateTheme => 'Leisteen';
 	@override String get libraryDensity => 'Bibliotheekdichtheid';
@@ -351,7 +343,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get importSettingsNoUser => 'Meld je aan voordat je instellingen importeert';
 	@override String get shortcutsReset => 'Sneltoetsen gereset naar standaard';
 	@override String get about => 'Over';
-	@override String get aboutDescription => 'App-informatie en licenties';
 	@override String get updates => 'Updates';
 	@override String get updateAvailable => 'Update beschikbaar';
 	@override String get checkForUpdates => 'Controleer op updates';
@@ -408,9 +399,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get maxVolume => 'Maximaal volume';
 	@override String get maxVolumeDescription => 'Volume boven 100% toestaan voor stille media';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get discordRichPresence => 'Discord Rich Presence';
-	@override String get discordRichPresenceDescription => 'Toon op Discord wat je aan het kijken bent';
-	@override String get manageLibrariesDescription => 'Bibliotheken herordenen en verbergen';
 	@override String get companionRemoteServer => 'Companion Remote-server';
 	@override String get companionRemoteServerDescription => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen';
 	@override String get companionRemoteServerStartFailed => 'Kan de Companion Remote-server niet starten';
@@ -475,7 +463,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get startupSection => 'Opstartsectie';
 	@override String get showExploreTab => 'Tabblad Ontdekken tonen';
 	@override String get general => 'Algemeen';
-	@override String get generalDescription => 'Taal, opstart- en venstergedrag';
 	@override String get languageAndRegion => 'Taal en regio';
 	@override String get startup => 'Opstarten';
 	@override String get display => 'Weergave';
@@ -483,7 +470,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get homeScreen => 'Startscherm';
 	@override String get navigation => 'Navigatie';
 	@override String get window => 'Venster';
-	@override String get liveTv => 'Live-tv';
 	@override String get player => 'Speler';
 	@override String get videoAndDisplay => 'Video en weergave';
 	@override String get audio => 'Audio';
@@ -995,13 +981,11 @@ class _Translations$profiles$nl extends Translations$profiles$en {
 	@override String get switchingProfile => 'Profiel wisselen…';
 	@override String get active => 'Actief';
 	@override String get manage => 'Beheren';
-	@override String get delete => 'Verwijderen';
 	@override String get signOut => 'Afmelden';
 	@override String get signOutFailed => 'Afmelden mislukt.';
 	@override String get sectionTitle => 'Profielen';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} profielen · actief: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} profielen';
-	@override String get add => 'Toevoegen';
 	@override String get noConnections => 'Geen verbindingen';
 	@override String get incorrectPinTryAgain => 'Onjuiste pincode. Probeer het opnieuw.';
 }
@@ -1020,22 +1004,6 @@ class _Translations$connections$nl extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => '${count} servers weigerden toegang voor dit account';
 }
 
-// Path: accountPreferences
-class _Translations$accountPreferences$nl extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Accountvoorkeuren';
-	@override String get unavailable => 'Dit account is niet bereikbaar';
-	@override String get autoSelectAudio => 'Kies audio op taal';
-	@override String get subtitleMode => 'Ondertitels inschakelen';
-	@override late final _Translations$accountPreferences$subtitleModes$nl subtitleModes = _Translations$accountPreferences$subtitleModes$nl._(_root);
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$nl forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$nl._(_root);
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$nl watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$nl._(_root);
-}
-
 // Path: discover
 class _Translations$discover$nl extends Translations$discover$en {
 	_Translations$discover$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -1047,7 +1015,6 @@ class _Translations$discover$nl extends Translations$discover$en {
 	@override String get noContentAvailable => 'Geen inhoud beschikbaar';
 	@override String get addMediaToLibraries => 'Voeg wat media toe aan je bibliotheken';
 	@override String get continueWatching => 'Verder kijken';
-	@override String get nextUp => 'Volgende';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Overzicht';
 	@override String get cast => 'Acteurs';
@@ -1226,7 +1193,6 @@ class _Translations$navigation$nl extends Translations$navigation$en {
 	// Translations
 	@override String get libraries => 'Media';
 	@override String get downloads => 'Downloads';
-	@override String get liveTv => 'Live-tv';
 	@override String get explore => 'Verkennen';
 }
 
@@ -1289,16 +1255,8 @@ class _Translations$liveTv$nl extends Translations$liveTv$en {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Live-tv';
-	@override String get serverUnavailable => 'De live-tv-server is niet beschikbaar.';
-	@override String get live => 'LIVE';
-	@override String get searchHint => 'Zoek zenders en programma\'s';
-	@override String get now => 'Nu';
 	@override String get today => 'Vandaag';
 	@override String get tomorrow => 'Morgen';
-	@override String get joinSession => 'Deelnemen aan lopende sessie';
-	@override String get record => 'Opnemen';
-	@override String invalidPlaybackData({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd';
 }
 
 // Path: collections
@@ -1748,63 +1706,6 @@ class _Translations$externalPlayer$nl extends Translations$externalPlayer$en {
 	@override String get playInExternalPlayer => 'Afspelen in externe speler';
 }
 
-// Path: metadataEdit
-class _Translations$metadataEdit$nl extends Translations$metadataEdit$en {
-	_Translations$metadataEdit$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get artwork => 'Illustraties';
-	@override String get title => 'Titel';
-	@override String get sortTitle => 'Sorteertitel';
-	@override String get originalTitle => 'Oorspronkelijke titel';
-	@override String get releaseDate => 'Releasedatum';
-	@override String get contentRating => 'Leeftijdsclassificatie';
-	@override String get studio => 'Studio';
-	@override String get tagline => 'Slogan';
-	@override String get summary => 'Samenvatting';
-	@override String get poster => 'Poster';
-	@override String get background => 'Achtergrond';
-	@override String get logo => 'Logo';
-	@override String get imageUrl => 'Afbeeldings-URL';
-	@override String get allEpisodes => 'Alle afleveringen';
-	@override String get never => 'Nooit';
-	@override String get seasons => 'Seizoenen';
-	@override String get show => 'Tonen';
-	@override String get hide => 'Verbergen';
-	@override String get subtitleMode => 'Automatische ondertitelselectie';
-	@override String get tags => 'Tags';
-	@override String get genre => 'Genre';
-	@override String get director => 'Regisseur';
-	@override String get writer => 'Schrijver';
-	@override String get producer => 'Producent';
-	@override String get country => 'Land';
-	@override String get collection => 'Collectie';
-	@override String get label => 'Label';
-}
-
-// Path: matchScreen
-class _Translations$matchScreen$nl extends Translations$matchScreen$en {
-	_Translations$matchScreen$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get match => 'Koppelen...';
-	@override String get search => 'Zoeken';
-}
-
-// Path: serverTasks
-class _Translations$serverTasks$nl extends Translations$serverTasks$en {
-	_Translations$serverTasks$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Servertaken';
-}
-
 // Path: trakt
 class _Translations$trakt$nl extends Translations$trakt$en {
 	_Translations$trakt$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -1835,7 +1736,6 @@ class _Translations$seerr$nl extends Translations$seerr$en {
 	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrlHelper => 'Het adres van je Seerr-instantie';
 	@override String get checkServer => 'Doorgaan';
-	@override String get signInWithLocal => 'Een lokaal account gebruiken';
 	@override String get email => 'E-mail';
 	@override String get noSignInMethods => 'Deze Seerr-instantie biedt geen inlogmethode die TBD ondersteunt.';
 	@override String get instance => 'Instantie';
@@ -1885,10 +1785,6 @@ class _Translations$services$nl extends Translations$services$en {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Diensten';
-	@override String get hubSubtitle => 'Synchroniseer kijkvoortgang en vraag nieuwe titels aan.';
-	@override String get integrations => 'Integraties';
-	@override String get notConnected => 'Niet verbonden';
 	@override String connectedAs({required Object username}) => 'Verbonden als @${username}';
 	@override String get scrobble => 'Voortgang automatisch volgen';
 	@override String get scrobbleDescription => 'Werk je lijst bij wanneer je een aflevering of film afrondt.';
@@ -1909,14 +1805,12 @@ class _Translations$addServer$nl extends Translations$addServer$en {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get username => 'Gebruikersnaam';
 	@override String get password => 'Wachtwoord';
 	@override String get signIn => 'Inloggen';
 	@override String get change => 'Wijzigen';
 	@override String get required => 'Vereist';
 	@override String couldNotReachServer({required Object error}) => 'Kon de server niet bereiken: ${error}';
 	@override String get addConnectionTitle => 'Verbinding toevoegen';
-	@override String get invalidCredentials => 'Ongeldige gebruikersnaam of ongeldig wachtwoord';
 }
 
 // Path: common.ratingSource
@@ -2011,42 +1905,6 @@ class _Translations$videoControls$pipErrors$nl extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Er is een fout opgetreden: ${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$nl extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Handmatig geselecteerd';
-	@override String get defaultMode => 'Trackvlaggen volgen';
-	@override String get always => 'Altijd ingeschakeld';
-	@override String get onlyForced => 'Alleen geforceerde ondertitels';
-	@override String get smart => 'Weergeven bij anderstalig geluid';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$nl extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get onlyForced => 'Alleen geforceerde ondertitels';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$nl extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Nooit';
-	@override String get movies => 'Alleen films';
-	@override String get shows => 'Alleen tv-series';
-}
-
 // Path: libraries.tabs
 class _Translations$libraries$tabs$nl extends Translations$libraries$tabs$en {
 	_Translations$libraries$tabs$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -2089,7 +1947,6 @@ class _Translations$libraries$filterCategories$nl extends Translations$libraries
 	@override String get genre => 'Genre';
 	@override String get year => 'Jaar';
 	@override String get contentRating => 'Leeftijdsclassificatie';
-	@override String get tag => 'Tag';
 	@override String get unwatched => 'Onbekeken';
 }
 
@@ -2104,11 +1961,8 @@ class _Translations$libraries$sortLabels$nl extends Translations$libraries$sortL
 	@override String get dateAdded => 'Toegevoegd op';
 	@override String get releaseDate => 'Uitgavedatum';
 	@override String get rating => 'Beoordeling';
-	@override String get userRating => 'Gebruikersbeoordeling';
 	@override String get productionYear => 'Productiejaar';
 	@override String get runtime => 'Speelduur';
-	@override String get startDate => 'Begindatum';
-	@override String get studio => 'Studio';
 	@override String get dateDownloaded => 'Gedownload op';
 	@override String get size => 'Grootte';
 	@override String get library => 'Bibliotheek';
@@ -2505,7 +2359,6 @@ class _Translations$services$names$nl extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2668,7 +2521,6 @@ extension on TranslationsNl {
 			'settings.theme' => 'Thema',
 			'settings.appearance' => 'Uiterlijk',
 			'settings.videoPlayback' => 'Video afspelen',
-			'settings.videoPlaybackDescription' => 'Afspeelgedrag configureren',
 			'settings.advanced' => 'Geavanceerd',
 			'settings.episodePosterMode' => 'Stijl van afleveringsposter',
 			'settings.seriesPoster' => 'Serieposter',
@@ -2680,9 +2532,6 @@ extension on TranslationsNl {
 			'settings.secondsShort' => 's',
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Voer duur in (${min}-${max})',
-			'settings.systemTheme' => 'Systeem',
-			'settings.lightTheme' => 'Licht',
-			'settings.darkTheme' => 'Donker',
 			'settings.oledTheme' => 'OLED',
 			'settings.slateTheme' => 'Leisteen',
 			'settings.libraryDensity' => 'Bibliotheekdichtheid',
@@ -2806,7 +2655,6 @@ extension on TranslationsNl {
 			'settings.importSettingsNoUser' => 'Meld je aan voordat je instellingen importeert',
 			'settings.shortcutsReset' => 'Sneltoetsen gereset naar standaard',
 			'settings.about' => 'Over',
-			'settings.aboutDescription' => 'App-informatie en licenties',
 			'settings.updates' => 'Updates',
 			'settings.updateAvailable' => 'Update beschikbaar',
 			'settings.checkForUpdates' => 'Controleer op updates',
@@ -2863,9 +2711,6 @@ extension on TranslationsNl {
 			'settings.maxVolume' => 'Maximaal volume',
 			'settings.maxVolumeDescription' => 'Volume boven 100% toestaan voor stille media',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.discordRichPresence' => 'Discord Rich Presence',
-			'settings.discordRichPresenceDescription' => 'Toon op Discord wat je aan het kijken bent',
-			'settings.manageLibrariesDescription' => 'Bibliotheken herordenen en verbergen',
 			'settings.companionRemoteServer' => 'Companion Remote-server',
 			'settings.companionRemoteServerDescription' => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen',
 			'settings.companionRemoteServerStartFailed' => 'Kan de Companion Remote-server niet starten',
@@ -2930,7 +2775,6 @@ extension on TranslationsNl {
 			'settings.startupSection' => 'Opstartsectie',
 			'settings.showExploreTab' => 'Tabblad Ontdekken tonen',
 			'settings.general' => 'Algemeen',
-			'settings.generalDescription' => 'Taal, opstart- en venstergedrag',
 			'settings.languageAndRegion' => 'Taal en regio',
 			'settings.startup' => 'Opstarten',
 			'settings.display' => 'Weergave',
@@ -2938,7 +2782,6 @@ extension on TranslationsNl {
 			'settings.homeScreen' => 'Startscherm',
 			'settings.navigation' => 'Navigatie',
 			'settings.window' => 'Venster',
-			'settings.liveTv' => 'Live-tv',
 			'settings.player' => 'Speler',
 			'settings.videoAndDisplay' => 'Video en weergave',
 			'settings.audio' => 'Audio',
@@ -3088,8 +2931,6 @@ extension on TranslationsNl {
 			'fileInfo.packetLength' => 'Pakketlengte',
 			'fileInfo.filePresent' => 'Bestand aanwezig',
 			'fileInfo.fileReadable' => 'Leesbaar door server',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamPath' => 'Streampad',
 			'fileInfo.optimizedForStreaming' => 'Geoptimaliseerd voor streaming',
 			'fileInfo.has64bitOffsets' => '64-bits offsets',
@@ -3100,6 +2941,8 @@ extension on TranslationsNl {
 			'fileInfo.optimizationTarget' => 'Optimalisatiedoel',
 			'fileInfo.deletedAt' => 'Verwijderd',
 			'fileInfo.remoteSource' => 'Externe bron',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.infiniteStream' => 'Oneindige stream',
 			'fileInfo.directPlay' => 'Direct Play',
 			'fileInfo.directStream' => 'Direct Stream',
@@ -3363,13 +3206,11 @@ extension on TranslationsNl {
 			'profiles.switchingProfile' => 'Profiel wisselen…',
 			'profiles.active' => 'Actief',
 			'profiles.manage' => 'Beheren',
-			'profiles.delete' => 'Verwijderen',
 			'profiles.signOut' => 'Afmelden',
 			'profiles.signOutFailed' => 'Afmelden mislukt.',
 			'profiles.sectionTitle' => 'Profielen',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profielen · actief: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profielen',
-			'profiles.add' => 'Toevoegen',
 			'profiles.noConnections' => 'Geen verbindingen',
 			'profiles.incorrectPinTryAgain' => 'Onjuiste pincode. Probeer het opnieuw.',
 			'connections.sectionTitle' => 'Verbindingen',
@@ -3377,24 +3218,10 @@ extension on TranslationsNl {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessie verlopen voor ${name}',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} weigerde toegang voor dit account',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servers weigerden toegang voor dit account',
-			'accountPreferences.sectionTitle' => 'Accountvoorkeuren',
-			'accountPreferences.unavailable' => 'Dit account is niet bereikbaar',
-			'accountPreferences.autoSelectAudio' => 'Kies audio op taal',
-			'accountPreferences.subtitleMode' => 'Ondertitels inschakelen',
-			'accountPreferences.subtitleModes.none' => 'Handmatig geselecteerd',
-			'accountPreferences.subtitleModes.defaultMode' => 'Trackvlaggen volgen',
-			'accountPreferences.subtitleModes.always' => 'Altijd ingeschakeld',
-			'accountPreferences.subtitleModes.onlyForced' => 'Alleen geforceerde ondertitels',
-			'accountPreferences.subtitleModes.smart' => 'Weergeven bij anderstalig geluid',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Alleen geforceerde ondertitels',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Nooit',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Alleen films',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Alleen tv-series',
 			'discover.title' => 'Ontdekken',
 			'discover.noContentAvailable' => 'Geen inhoud beschikbaar',
 			'discover.addMediaToLibraries' => 'Voeg wat media toe aan je bibliotheken',
 			'discover.continueWatching' => 'Verder kijken',
-			'discover.nextUp' => 'Volgende',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overzicht',
 			'discover.cast' => 'Acteurs',
@@ -3463,17 +3290,13 @@ extension on TranslationsNl {
 			'libraries.filterCategories.genre' => 'Genre',
 			'libraries.filterCategories.year' => 'Jaar',
 			'libraries.filterCategories.contentRating' => 'Leeftijdsclassificatie',
-			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Onbekeken',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Toegevoegd op',
 			'libraries.sortLabels.releaseDate' => 'Uitgavedatum',
 			'libraries.sortLabels.rating' => 'Beoordeling',
-			'libraries.sortLabels.userRating' => 'Gebruikersbeoordeling',
 			'libraries.sortLabels.productionYear' => 'Productiejaar',
 			'libraries.sortLabels.runtime' => 'Speelduur',
-			'libraries.sortLabels.startDate' => 'Begindatum',
-			'libraries.sortLabels.studio' => 'Studio',
 			'libraries.sortLabels.dateDownloaded' => 'Gedownload op',
 			'libraries.sortLabels.size' => 'Grootte',
 			'libraries.sortLabels.library' => 'Bibliotheek',
@@ -3525,7 +3348,6 @@ extension on TranslationsNl {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenties',
 			'navigation.libraries' => 'Media',
 			'navigation.downloads' => 'Downloads',
-			'navigation.liveTv' => 'Live-tv',
 			'navigation.explore' => 'Verkennen',
 			'explore.title' => 'Verkennen',
 			'explore.selectSource' => 'Bron kiezen',
@@ -3602,8 +3424,6 @@ extension on TranslationsNl {
 			'explore.stats.completed' => ({required Object n}) => '${n} afgerond',
 			'explore.stats.onHold' => ({required Object n}) => '${n} op pauze',
 			'explore.stats.dropped' => ({required Object n}) => '${n} gestopt',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Lente',
 			'explore.season.summer' => 'Zomer',
@@ -3635,6 +3455,8 @@ extension on TranslationsNl {
 			'explore.relation.sequel' => 'Sequel',
 			'explore.relation.sideStory' => 'Side story',
 			'explore.relation.spinOff' => 'Spin-off',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => 'Alternatieve versie',
 			'explore.relation.summary' => 'Samenvatting',
 			'explore.relation.parentStory' => 'Hoofdverhaal',
@@ -3672,16 +3494,8 @@ extension on TranslationsNl {
 			'explore.detail.relatedTitles' => 'Gerelateerde titels',
 			'explore.detail.background' => 'Achtergrond',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${n} resultaat', other: '${n} resultaten', ), 
-			'liveTv.title' => 'Live-tv',
-			'liveTv.serverUnavailable' => 'De live-tv-server is niet beschikbaar.',
-			'liveTv.live' => 'LIVE',
-			'liveTv.searchHint' => 'Zoek zenders en programma\'s',
-			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Vandaag',
 			'liveTv.tomorrow' => 'Morgen',
-			'liveTv.joinSession' => 'Deelnemen aan lopende sessie',
-			'liveTv.record' => 'Opnemen',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd',
 			'collections.title' => 'Collecties',
 			'collections.collection' => 'Collectie',
 			'collections.empty' => 'Collectie is leeg',
@@ -4116,44 +3930,12 @@ extension on TranslationsNl {
 			'externalPlayer.playerName' => 'Spelernaam',
 			'externalPlayer.playerNameHint' => 'Mijn speler',
 			'externalPlayer.playerCommand' => 'Commando',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerPackage' => 'Pakketnaam',
 			'externalPlayer.playerUrlScheme' => 'URL-schema',
 			'externalPlayer.off' => 'Uit',
 			'externalPlayer.launchFailed' => 'Kan externe speler niet openen',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is niet geïnstalleerd',
 			'externalPlayer.playInExternalPlayer' => 'Afspelen in externe speler',
-			'metadataEdit.artwork' => 'Illustraties',
-			'metadataEdit.title' => 'Titel',
-			'metadataEdit.sortTitle' => 'Sorteertitel',
-			'metadataEdit.originalTitle' => 'Oorspronkelijke titel',
-			'metadataEdit.releaseDate' => 'Releasedatum',
-			'metadataEdit.contentRating' => 'Leeftijdsclassificatie',
-			'metadataEdit.studio' => 'Studio',
-			'metadataEdit.tagline' => 'Slogan',
-			'metadataEdit.summary' => 'Samenvatting',
-			'metadataEdit.poster' => 'Poster',
-			'metadataEdit.background' => 'Achtergrond',
-			'metadataEdit.logo' => 'Logo',
-			'metadataEdit.imageUrl' => 'Afbeeldings-URL',
-			'metadataEdit.allEpisodes' => 'Alle afleveringen',
-			'metadataEdit.never' => 'Nooit',
-			'metadataEdit.seasons' => 'Seizoenen',
-			'metadataEdit.show' => 'Tonen',
-			'metadataEdit.hide' => 'Verbergen',
-			'metadataEdit.subtitleMode' => 'Automatische ondertitelselectie',
-			'metadataEdit.tags' => 'Tags',
-			'metadataEdit.genre' => 'Genre',
-			'metadataEdit.director' => 'Regisseur',
-			'metadataEdit.writer' => 'Schrijver',
-			'metadataEdit.producer' => 'Producent',
-			'metadataEdit.country' => 'Land',
-			'metadataEdit.collection' => 'Collectie',
-			'metadataEdit.label' => 'Label',
-			'matchScreen.match' => 'Koppelen...',
-			'matchScreen.search' => 'Zoeken',
-			'serverTasks.title' => 'Servertaken',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Verbonden',
 			'trakt.connectedAs' => ({required Object username}) => 'Verbonden als @${username}',
@@ -4168,7 +3950,6 @@ extension on TranslationsNl {
 			'seerr.serverUrl' => 'Server-URL',
 			'seerr.serverUrlHelper' => 'Het adres van je Seerr-instantie',
 			'seerr.checkServer' => 'Doorgaan',
-			'seerr.signInWithLocal' => 'Een lokaal account gebruiken',
 			'seerr.email' => 'E-mail',
 			'seerr.noSignInMethods' => 'Deze Seerr-instantie biedt geen inlogmethode die TBD ondersteunt.',
 			'seerr.instance' => 'Instantie',
@@ -4188,6 +3969,8 @@ extension on TranslationsNl {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (standaard)',
 			'seerr.animeNote' => 'Deze serie is een anime.',
 			'seerr.requestSubmitted' => 'Aanvraag verzonden',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => 'Aanvraag mislukt: ${error}',
 			'seerr.requestsLoadFailed' => 'Aanvraagopties konden niet worden geladen',
 			'seerr.nothingToRequest' => 'Alles is al beschikbaar of aangevraagd.',
@@ -4209,10 +3992,6 @@ extension on TranslationsNl {
 			'seerr.sessionRejectedAfterReauth' => 'De sessie is na het opnieuw inloggen geweigerd',
 			'seerr.permissionDenied' => 'Seerr heeft deze actie geweigerd: je account heeft niet langer de vereiste machtiging',
 			'seerr.permissionRevoked' => 'Je hebt geen toestemming meer om dit aan te vragen',
-			'services.title' => 'Diensten',
-			'services.hubSubtitle' => 'Synchroniseer kijkvoortgang en vraag nieuwe titels aan.',
-			'services.integrations' => 'Integraties',
-			'services.notConnected' => 'Niet verbonden',
 			'services.connectedAs' => ({required Object username}) => 'Verbonden als @${username}',
 			'services.scrobble' => 'Voortgang automatisch volgen',
 			'services.scrobbleDescription' => 'Werk je lijst bij wanneer je een aflevering of film afrondt.',
@@ -4222,7 +4001,6 @@ extension on TranslationsNl {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'TBD activeren op ${service}',
 			'services.deviceCode.instructions' => 'Scan de QR-code of ga naar het onderstaande adres en voer deze code in:',
@@ -4247,14 +4025,12 @@ extension on TranslationsNl {
 			'services.libraryFilter.modeHintWhitelist' => 'Synchroniseer alleen de hieronder aangevinkte bibliotheken.',
 			'services.libraryFilter.libraries' => 'Bibliotheken',
 			'services.libraryFilter.noLibraries' => 'Geen bibliotheken beschikbaar',
-			'addServer.username' => 'Gebruikersnaam',
 			'addServer.password' => 'Wachtwoord',
 			'addServer.signIn' => 'Inloggen',
 			'addServer.change' => 'Wijzigen',
 			'addServer.required' => 'Vereist',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
 			'addServer.addConnectionTitle' => 'Verbinding toevoegen',
-			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
 			_ => null,
 		};
 	}

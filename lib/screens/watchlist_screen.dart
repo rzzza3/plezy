@@ -252,13 +252,12 @@ class _WatchlistScreenState extends State<WatchlistScreen> with TabVisibilityAwa
   /// (Silo's list cards can arrive without progress, which would put every
   /// title in "Not Started").
   List<_Category> _statusCategories() {
-    final s = t.watchlistPage;
     final items = _items;
     final ids = _tab == SiloPersonalList.watchlist ? const ['in_progress', 'not_started'] : const ['unwatched'];
     String label(String id) => switch (id) {
-      'in_progress' => s.inProgress,
-      'not_started' => s.notStarted,
-      _ => s.unwatched,
+      'in_progress' => t.watchlistPage.inProgress,
+      'not_started' => t.watchlistPage.notStarted,
+      _ => t.watchlistPage.unwatched,
     };
     return [
       for (final id in ids)

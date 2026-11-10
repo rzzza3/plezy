@@ -104,8 +104,7 @@ class MainActivity : FlutterActivity() {
     // Anything but Slate, including values older builds stored, opens on black.
     private fun launchWindowColor(mode: String?): Int = if (mode == "slate") SLATE_WINDOW_COLOR else Color.BLACK
 
-    private fun splashThemeFor(mode: String?): Int =
-      if (mode == "slate") R.style.SplashTheme_Slate else R.style.SplashTheme_Oled
+    private fun splashThemeFor(mode: String?): Int = if (mode == "slate") R.style.SplashTheme_Slate else R.style.SplashTheme_Oled
   }
 
   private val PIP_CHANNEL = "com.plezy/pip"

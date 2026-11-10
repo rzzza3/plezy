@@ -723,12 +723,11 @@ class _MoveHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final keyboard = InputModeTracker.isKeyboardMode(context);
-    final s = t.libraryHome;
     final text = moving
-        ? (vertical ? s.editLibraryRowsMovingHint : s.editLibraryMovingHint)
+        ? (vertical ? t.libraryHome.editLibraryRowsMovingHint : t.libraryHome.editLibraryMovingHint)
         : keyboard
-        ? (vertical ? s.editLibraryRowsMoveHint : s.editLibraryMoveHint)
-        : (vertical ? s.editLibraryRowsDragHint : s.editLibraryDragHint);
+        ? (vertical ? t.libraryHome.editLibraryRowsMoveHint : t.libraryHome.editLibraryMoveHint)
+        : (vertical ? t.libraryHome.editLibraryRowsDragHint : t.libraryHome.editLibraryDragHint);
     return Text(
       text,
       style: theme.textTheme.bodySmall?.copyWith(

@@ -59,7 +59,6 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$mpvConfig$hu mpvConfig = _Translations$mpvConfig$hu._(_root);
 	@override late final _Translations$profiles$hu profiles = _Translations$profiles$hu._(_root);
 	@override late final _Translations$connections$hu connections = _Translations$connections$hu._(_root);
-	@override late final _Translations$accountPreferences$hu accountPreferences = _Translations$accountPreferences$hu._(_root);
 	@override late final _Translations$discover$hu discover = _Translations$discover$hu._(_root);
 	@override late final _Translations$errors$hu errors = _Translations$errors$hu._(_root);
 	@override late final _Translations$libraries$hu libraries = _Translations$libraries$hu._(_root);
@@ -81,9 +80,6 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$videoSettings$hu videoSettings = _Translations$videoSettings$hu._(_root);
 	@override late final _Translations$performanceOverlay$hu performanceOverlay = _Translations$performanceOverlay$hu._(_root);
 	@override late final _Translations$externalPlayer$hu externalPlayer = _Translations$externalPlayer$hu._(_root);
-	@override late final _Translations$metadataEdit$hu metadataEdit = _Translations$metadataEdit$hu._(_root);
-	@override late final _Translations$matchScreen$hu matchScreen = _Translations$matchScreen$hu._(_root);
-	@override late final _Translations$serverTasks$hu serverTasks = _Translations$serverTasks$hu._(_root);
 	@override late final _Translations$trakt$hu trakt = _Translations$trakt$hu._(_root);
 	@override late final _Translations$seerr$hu seerr = _Translations$seerr$hu._(_root);
 	@override late final _Translations$services$hu services = _Translations$services$hu._(_root);
@@ -213,7 +209,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get theme => 'Téma';
 	@override String get appearance => 'Megjelenés';
 	@override String get videoPlayback => 'Videólejátszás';
-	@override String get videoPlaybackDescription => 'Lejátszási viselkedés beállítása';
 	@override String get advanced => 'Haladó';
 	@override String get episodePosterMode => 'Epizódborító stílusa';
 	@override String get seriesPoster => 'Sorozatborító';
@@ -225,9 +220,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get secondsShort => 'mp';
 	@override String get minutesShort => 'p';
 	@override String durationHint({required Object min, required Object max}) => 'Add meg az időtartamot (${min}-${max})';
-	@override String get systemTheme => 'Rendszer';
-	@override String get lightTheme => 'Világos';
-	@override String get darkTheme => 'Sötét';
 	@override String get oledTheme => 'OLED';
 	@override String get slateTheme => 'Pala';
 	@override String get libraryDensity => 'Könyvtársűrűség';
@@ -351,7 +343,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get importSettingsNoUser => 'Jelentkezz be a beállítások importálása előtt';
 	@override String get shortcutsReset => 'A billentyűparancsok visszaálltak az alapértelmezettekre';
 	@override String get about => 'Névjegy';
-	@override String get aboutDescription => 'Alkalmazásadatok és licencek';
 	@override String get updates => 'Frissítések';
 	@override String get updateAvailable => 'Frissítés érhető el';
 	@override String get checkForUpdates => 'Frissítések keresése';
@@ -408,9 +399,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get maxVolume => 'Maximális hangerő';
 	@override String get maxVolumeDescription => 'A hangerő 100% fölé emelésének engedélyezése halk tartalmak esetén';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get discordRichPresence => 'Discord Rich Presence';
-	@override String get discordRichPresenceDescription => 'Megjeleníti a Discordon, hogy éppen mit nézel';
-	@override String get manageLibrariesDescription => 'Könyvtárak sorrendjének módosítása és elrejtése';
 	@override String get companionRemoteServer => 'Kísérőtávirányító szervere';
 	@override String get companionRemoteServerDescription => 'Lehetővé teszi, hogy a hálózaton lévő mobileszközökről vezéreld az alkalmazást';
 	@override String get companionRemoteServerStartFailed => 'Nem sikerült elindítani a kísérőtávirányító szerverét';
@@ -475,7 +463,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get startupSection => 'Indítási oldal';
 	@override String get showExploreTab => 'Felfedezés lap megjelenítése';
 	@override String get general => 'Általános';
-	@override String get generalDescription => 'Nyelv, indítás és ablakviselkedés';
 	@override String get languageAndRegion => 'Nyelv és régió';
 	@override String get startup => 'Indítás';
 	@override String get display => 'Kijelző';
@@ -483,7 +470,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get homeScreen => 'Kezdőképernyő';
 	@override String get navigation => 'Navigáció';
 	@override String get window => 'Ablak';
-	@override String get liveTv => 'Élő TV';
 	@override String get player => 'Lejátszó';
 	@override String get videoAndDisplay => 'Videó és kijelző';
 	@override String get audio => 'Hang';
@@ -995,13 +981,11 @@ class _Translations$profiles$hu extends Translations$profiles$en {
 	@override String get switchingProfile => 'Profilváltás…';
 	@override String get active => 'Aktív';
 	@override String get manage => 'Kezelés';
-	@override String get delete => 'Törlés';
 	@override String get signOut => 'Kijelentkezés';
 	@override String get signOutFailed => 'A kijelentkezés nem sikerült.';
 	@override String get sectionTitle => 'Profilok';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} profil · aktív: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} profil';
-	@override String get add => 'Hozzáadás';
 	@override String get noConnections => 'Nincsenek kapcsolatok';
 	@override String get incorrectPinTryAgain => 'Helytelen PIN-kód. Próbáld újra.';
 }
@@ -1020,22 +1004,6 @@ class _Translations$connections$hu extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => '${count} szerver megtagadta a hozzáférést ettől a fióktól';
 }
 
-// Path: accountPreferences
-class _Translations$accountPreferences$hu extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Fiókbeállítások';
-	@override String get unavailable => 'Ez a fiók nem érhető el';
-	@override String get autoSelectAudio => 'Hangsáv kiválasztása nyelv alapján';
-	@override String get subtitleMode => 'Feliratok bekapcsolása';
-	@override late final _Translations$accountPreferences$subtitleModes$hu subtitleModes = _Translations$accountPreferences$subtitleModes$hu._(_root);
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$hu forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$hu._(_root);
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$hu watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$hu._(_root);
-}
-
 // Path: discover
 class _Translations$discover$hu extends Translations$discover$en {
 	_Translations$discover$hu._(TranslationsHu root) : this._root = root, super.internal(root);
@@ -1047,7 +1015,6 @@ class _Translations$discover$hu extends Translations$discover$en {
 	@override String get noContentAvailable => 'Nincs elérhető tartalom';
 	@override String get addMediaToLibraries => 'Adj hozzá médiát a könyvtáraidhoz';
 	@override String get continueWatching => 'Folytatás';
-	@override String get nextUp => 'Következik';
 	@override String playEpisode({required Object season, required Object episode}) => '${season}. évad, ${episode}. epizód';
 	@override String get overview => 'Áttekintés';
 	@override String get cast => 'Szereplők';
@@ -1226,7 +1193,6 @@ class _Translations$navigation$hu extends Translations$navigation$en {
 	// Translations
 	@override String get libraries => 'Könyvtárak';
 	@override String get downloads => 'Letöltések';
-	@override String get liveTv => 'Élő TV';
 	@override String get explore => 'Böngészés';
 }
 
@@ -1289,16 +1255,8 @@ class _Translations$liveTv$hu extends Translations$liveTv$en {
 	final TranslationsHu _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Élő TV';
-	@override String get serverUnavailable => 'Az Élő TV szerver nem érhető el.';
-	@override String get live => 'ÉLŐ';
-	@override String get searchHint => 'Csatornák és műsorok keresése';
-	@override String get now => 'Most';
 	@override String get today => 'Ma';
 	@override String get tomorrow => 'Holnap';
-	@override String get joinSession => 'Csatlakozás a folyamatban lévő adáshoz';
-	@override String get record => 'Felvétel';
-	@override String invalidPlaybackData({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza';
 }
 
 // Path: collections
@@ -1748,63 +1706,6 @@ class _Translations$externalPlayer$hu extends Translations$externalPlayer$en {
 	@override String get playInExternalPlayer => 'Lejátszás külső lejátszóban';
 }
 
-// Path: metadataEdit
-class _Translations$metadataEdit$hu extends Translations$metadataEdit$en {
-	_Translations$metadataEdit$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get artwork => 'Borítók és képek';
-	@override String get title => 'Cím';
-	@override String get sortTitle => 'Rendezési cím';
-	@override String get originalTitle => 'Eredeti cím';
-	@override String get releaseDate => 'Bemutató dátuma';
-	@override String get contentRating => 'Korhatár-besorolás';
-	@override String get studio => 'Stúdió';
-	@override String get tagline => 'Jelmondat';
-	@override String get summary => 'Összefoglaló';
-	@override String get poster => 'Poszter';
-	@override String get background => 'Háttér';
-	@override String get logo => 'Logó';
-	@override String get imageUrl => 'Kép URL-címe';
-	@override String get allEpisodes => 'Minden epizód';
-	@override String get never => 'Soha';
-	@override String get seasons => 'Évadok';
-	@override String get show => 'Megjelenítés';
-	@override String get hide => 'Elrejtés';
-	@override String get subtitleMode => 'Automatikus feliratválasztási mód';
-	@override String get tags => 'Címkék';
-	@override String get genre => 'Műfaj';
-	@override String get director => 'Rendező';
-	@override String get writer => 'Író';
-	@override String get producer => 'Producer';
-	@override String get country => 'Ország';
-	@override String get collection => 'Gyűjtemény';
-	@override String get label => 'Kiadó';
-}
-
-// Path: matchScreen
-class _Translations$matchScreen$hu extends Translations$matchScreen$en {
-	_Translations$matchScreen$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get match => 'Párosítás...';
-	@override String get search => 'Keresés';
-}
-
-// Path: serverTasks
-class _Translations$serverTasks$hu extends Translations$serverTasks$en {
-	_Translations$serverTasks$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Szerverfeladatok';
-}
-
 // Path: trakt
 class _Translations$trakt$hu extends Translations$trakt$en {
 	_Translations$trakt$hu._(TranslationsHu root) : this._root = root, super.internal(root);
@@ -1835,7 +1736,6 @@ class _Translations$seerr$hu extends Translations$seerr$en {
 	@override String get serverUrl => 'Szerver URL-címe';
 	@override String get serverUrlHelper => 'A Seerr példányod címe';
 	@override String get checkServer => 'Folytatás';
-	@override String get signInWithLocal => 'Helyi fiók használata';
 	@override String get email => 'E-mail';
 	@override String get noSignInMethods => 'Ez a Seerr példány nem kínál olyan bejelentkezési módot, amit a TBD támogat.';
 	@override String get instance => 'Példány';
@@ -1885,10 +1785,6 @@ class _Translations$services$hu extends Translations$services$en {
 	final TranslationsHu _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Szolgáltatások';
-	@override String get hubSubtitle => 'Megtekintési haladás szinkronizálása és új tartalmak igénylése.';
-	@override String get integrations => 'Integrációk';
-	@override String get notConnected => 'Nincs csatlakoztatva';
 	@override String connectedAs({required Object username}) => '@${username} néven csatlakoztatva';
 	@override String get scrobble => 'Haladás automatikus követése';
 	@override String get scrobbleDescription => 'Lista frissítése, amikor befejezel egy epizódot vagy filmet.';
@@ -1909,14 +1805,12 @@ class _Translations$addServer$hu extends Translations$addServer$en {
 	final TranslationsHu _root; // ignore: unused_field
 
 	// Translations
-	@override String get username => 'Felhasználónév';
 	@override String get password => 'Jelszó';
 	@override String get signIn => 'Bejelentkezés';
 	@override String get change => 'Módosítás';
 	@override String get required => 'Kötelező';
 	@override String couldNotReachServer({required Object error}) => 'Nem sikerült elérni a szervert: ${error}';
 	@override String get addConnectionTitle => 'Kapcsolat hozzáadása';
-	@override String get invalidCredentials => 'Érvénytelen felhasználónév vagy jelszó';
 }
 
 // Path: common.ratingSource
@@ -2011,42 +1905,6 @@ class _Translations$videoControls$pipErrors$hu extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Hiba történt: ${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$hu extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Kézzel kiválasztva';
-	@override String get defaultMode => 'A sáv jelzőinek követése';
-	@override String get always => 'Mindig engedélyezve';
-	@override String get onlyForced => 'Csak kényszerített feliratok';
-	@override String get smart => 'Idegen nyelvű hang esetén megjelenítve';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$hu extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get onlyForced => 'Csak kényszerített feliratok';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$hu extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Soha';
-	@override String get movies => 'Csak filmek';
-	@override String get shows => 'Csak TV-sorozatok';
-}
-
 // Path: libraries.tabs
 class _Translations$libraries$tabs$hu extends Translations$libraries$tabs$en {
 	_Translations$libraries$tabs$hu._(TranslationsHu root) : this._root = root, super.internal(root);
@@ -2089,7 +1947,6 @@ class _Translations$libraries$filterCategories$hu extends Translations$libraries
 	@override String get genre => 'Műfaj';
 	@override String get year => 'Év';
 	@override String get contentRating => 'Korhatár-besorolás';
-	@override String get tag => 'Címke';
 	@override String get unwatched => 'Nem látott';
 }
 
@@ -2104,11 +1961,8 @@ class _Translations$libraries$sortLabels$hu extends Translations$libraries$sortL
 	@override String get dateAdded => 'Hozzáadás dátuma';
 	@override String get releaseDate => 'Bemutató dátuma';
 	@override String get rating => 'Értékelés';
-	@override String get userRating => 'Saját értékelés';
 	@override String get productionYear => 'Gyártási év';
 	@override String get runtime => 'Játékidő';
-	@override String get startDate => 'Kezdés dátuma';
-	@override String get studio => 'Stúdió';
 	@override String get dateDownloaded => 'Letöltés dátuma';
 	@override String get size => 'Méret';
 	@override String get library => 'Könyvtár';
@@ -2505,7 +2359,6 @@ class _Translations$services$names$hu extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2668,7 +2521,6 @@ extension on TranslationsHu {
 			'settings.theme' => 'Téma',
 			'settings.appearance' => 'Megjelenés',
 			'settings.videoPlayback' => 'Videólejátszás',
-			'settings.videoPlaybackDescription' => 'Lejátszási viselkedés beállítása',
 			'settings.advanced' => 'Haladó',
 			'settings.episodePosterMode' => 'Epizódborító stílusa',
 			'settings.seriesPoster' => 'Sorozatborító',
@@ -2680,9 +2532,6 @@ extension on TranslationsHu {
 			'settings.secondsShort' => 'mp',
 			'settings.minutesShort' => 'p',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Add meg az időtartamot (${min}-${max})',
-			'settings.systemTheme' => 'Rendszer',
-			'settings.lightTheme' => 'Világos',
-			'settings.darkTheme' => 'Sötét',
 			'settings.oledTheme' => 'OLED',
 			'settings.slateTheme' => 'Pala',
 			'settings.libraryDensity' => 'Könyvtársűrűség',
@@ -2806,7 +2655,6 @@ extension on TranslationsHu {
 			'settings.importSettingsNoUser' => 'Jelentkezz be a beállítások importálása előtt',
 			'settings.shortcutsReset' => 'A billentyűparancsok visszaálltak az alapértelmezettekre',
 			'settings.about' => 'Névjegy',
-			'settings.aboutDescription' => 'Alkalmazásadatok és licencek',
 			'settings.updates' => 'Frissítések',
 			'settings.updateAvailable' => 'Frissítés érhető el',
 			'settings.checkForUpdates' => 'Frissítések keresése',
@@ -2863,9 +2711,6 @@ extension on TranslationsHu {
 			'settings.maxVolume' => 'Maximális hangerő',
 			'settings.maxVolumeDescription' => 'A hangerő 100% fölé emelésének engedélyezése halk tartalmak esetén',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.discordRichPresence' => 'Discord Rich Presence',
-			'settings.discordRichPresenceDescription' => 'Megjeleníti a Discordon, hogy éppen mit nézel',
-			'settings.manageLibrariesDescription' => 'Könyvtárak sorrendjének módosítása és elrejtése',
 			'settings.companionRemoteServer' => 'Kísérőtávirányító szervere',
 			'settings.companionRemoteServerDescription' => 'Lehetővé teszi, hogy a hálózaton lévő mobileszközökről vezéreld az alkalmazást',
 			'settings.companionRemoteServerStartFailed' => 'Nem sikerült elindítani a kísérőtávirányító szerverét',
@@ -2930,7 +2775,6 @@ extension on TranslationsHu {
 			'settings.startupSection' => 'Indítási oldal',
 			'settings.showExploreTab' => 'Felfedezés lap megjelenítése',
 			'settings.general' => 'Általános',
-			'settings.generalDescription' => 'Nyelv, indítás és ablakviselkedés',
 			'settings.languageAndRegion' => 'Nyelv és régió',
 			'settings.startup' => 'Indítás',
 			'settings.display' => 'Kijelző',
@@ -2938,7 +2782,6 @@ extension on TranslationsHu {
 			'settings.homeScreen' => 'Kezdőképernyő',
 			'settings.navigation' => 'Navigáció',
 			'settings.window' => 'Ablak',
-			'settings.liveTv' => 'Élő TV',
 			'settings.player' => 'Lejátszó',
 			'settings.videoAndDisplay' => 'Videó és kijelző',
 			'settings.audio' => 'Hang',
@@ -3088,8 +2931,6 @@ extension on TranslationsHu {
 			'fileInfo.packetLength' => 'Csomaghossz',
 			'fileInfo.filePresent' => 'Fájl jelen van',
 			'fileInfo.fileReadable' => 'A szerver számára olvasható',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamPath' => 'Adatfolyam útvonala',
 			'fileInfo.optimizedForStreaming' => 'Adatfolyam-továbbításra optimalizálva',
 			'fileInfo.has64bitOffsets' => '64 bites eltolások',
@@ -3100,6 +2941,8 @@ extension on TranslationsHu {
 			'fileInfo.optimizationTarget' => 'Optimalizálási cél',
 			'fileInfo.deletedAt' => 'Törölve',
 			'fileInfo.remoteSource' => 'Távoli forrás',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.infiniteStream' => 'Végtelen adatfolyam',
 			'fileInfo.directPlay' => 'Közvetlen lejátszás',
 			'fileInfo.directStream' => 'Közvetlen adatfolyam',
@@ -3363,13 +3206,11 @@ extension on TranslationsHu {
 			'profiles.switchingProfile' => 'Profilváltás…',
 			'profiles.active' => 'Aktív',
 			'profiles.manage' => 'Kezelés',
-			'profiles.delete' => 'Törlés',
 			'profiles.signOut' => 'Kijelentkezés',
 			'profiles.signOutFailed' => 'A kijelentkezés nem sikerült.',
 			'profiles.sectionTitle' => 'Profilok',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profil · aktív: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profil',
-			'profiles.add' => 'Hozzáadás',
 			'profiles.noConnections' => 'Nincsenek kapcsolatok',
 			'profiles.incorrectPinTryAgain' => 'Helytelen PIN-kód. Próbáld újra.',
 			'connections.sectionTitle' => 'Kapcsolatok',
@@ -3377,24 +3218,10 @@ extension on TranslationsHu {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'A(z) ${name} munkamenete lejárt',
 			'connections.accessDeniedOne' => ({required Object name}) => 'A(z) ${name} megtagadta a hozzáférést ettől a fióktól',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} szerver megtagadta a hozzáférést ettől a fióktól',
-			'accountPreferences.sectionTitle' => 'Fiókbeállítások',
-			'accountPreferences.unavailable' => 'Ez a fiók nem érhető el',
-			'accountPreferences.autoSelectAudio' => 'Hangsáv kiválasztása nyelv alapján',
-			'accountPreferences.subtitleMode' => 'Feliratok bekapcsolása',
-			'accountPreferences.subtitleModes.none' => 'Kézzel kiválasztva',
-			'accountPreferences.subtitleModes.defaultMode' => 'A sáv jelzőinek követése',
-			'accountPreferences.subtitleModes.always' => 'Mindig engedélyezve',
-			'accountPreferences.subtitleModes.onlyForced' => 'Csak kényszerített feliratok',
-			'accountPreferences.subtitleModes.smart' => 'Idegen nyelvű hang esetén megjelenítve',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Csak kényszerített feliratok',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Soha',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Csak filmek',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Csak TV-sorozatok',
 			'discover.title' => 'Felfedezés',
 			'discover.noContentAvailable' => 'Nincs elérhető tartalom',
 			'discover.addMediaToLibraries' => 'Adj hozzá médiát a könyvtáraidhoz',
 			'discover.continueWatching' => 'Folytatás',
-			'discover.nextUp' => 'Következik',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => '${season}. évad, ${episode}. epizód',
 			'discover.overview' => 'Áttekintés',
 			'discover.cast' => 'Szereplők',
@@ -3463,17 +3290,13 @@ extension on TranslationsHu {
 			'libraries.filterCategories.genre' => 'Műfaj',
 			'libraries.filterCategories.year' => 'Év',
 			'libraries.filterCategories.contentRating' => 'Korhatár-besorolás',
-			'libraries.filterCategories.tag' => 'Címke',
 			'libraries.filterCategories.unwatched' => 'Nem látott',
 			'libraries.sortLabels.title' => 'Cím',
 			'libraries.sortLabels.dateAdded' => 'Hozzáadás dátuma',
 			'libraries.sortLabels.releaseDate' => 'Bemutató dátuma',
 			'libraries.sortLabels.rating' => 'Értékelés',
-			'libraries.sortLabels.userRating' => 'Saját értékelés',
 			'libraries.sortLabels.productionYear' => 'Gyártási év',
 			'libraries.sortLabels.runtime' => 'Játékidő',
-			'libraries.sortLabels.startDate' => 'Kezdés dátuma',
-			'libraries.sortLabels.studio' => 'Stúdió',
 			'libraries.sortLabels.dateDownloaded' => 'Letöltés dátuma',
 			'libraries.sortLabels.size' => 'Méret',
 			'libraries.sortLabels.library' => 'Könyvtár',
@@ -3525,7 +3348,6 @@ extension on TranslationsHu {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenc',
 			'navigation.libraries' => 'Könyvtárak',
 			'navigation.downloads' => 'Letöltések',
-			'navigation.liveTv' => 'Élő TV',
 			'navigation.explore' => 'Böngészés',
 			'explore.title' => 'Böngészés',
 			'explore.selectSource' => 'Forrás kiválasztása',
@@ -3602,8 +3424,6 @@ extension on TranslationsHu {
 			'explore.stats.completed' => ({required Object n}) => '${n} befejezte',
 			'explore.stats.onHold' => ({required Object n}) => '${n} szünetelteti',
 			'explore.stats.dropped' => ({required Object n}) => '${n} felhagyott vele',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Tél',
 			'explore.season.spring' => 'Tavasz',
 			'explore.season.summer' => 'Nyár',
@@ -3635,6 +3455,8 @@ extension on TranslationsHu {
 			'explore.relation.sequel' => 'Folytatás',
 			'explore.relation.sideStory' => 'Melléktörténet',
 			'explore.relation.spinOff' => 'Spin-off',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => 'Alternatív verzió',
 			'explore.relation.summary' => 'Összefoglaló',
 			'explore.relation.parentStory' => 'Fő történet',
@@ -3672,16 +3494,8 @@ extension on TranslationsHu {
 			'explore.detail.relatedTitles' => 'Kapcsolódó címek',
 			'explore.detail.background' => 'Háttér',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${n} találat', other: '${n} találat', ), 
-			'liveTv.title' => 'Élő TV',
-			'liveTv.serverUnavailable' => 'Az Élő TV szerver nem érhető el.',
-			'liveTv.live' => 'ÉLŐ',
-			'liveTv.searchHint' => 'Csatornák és műsorok keresése',
-			'liveTv.now' => 'Most',
 			'liveTv.today' => 'Ma',
 			'liveTv.tomorrow' => 'Holnap',
-			'liveTv.joinSession' => 'Csatlakozás a folyamatban lévő adáshoz',
-			'liveTv.record' => 'Felvétel',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza',
 			'collections.title' => 'Gyűjtemények',
 			'collections.collection' => 'Gyűjtemény',
 			'collections.empty' => 'A gyűjtemény üres',
@@ -4116,44 +3930,12 @@ extension on TranslationsHu {
 			'externalPlayer.playerName' => 'Lejátszó neve',
 			'externalPlayer.playerNameHint' => 'Saját lejátszó',
 			'externalPlayer.playerCommand' => 'Parancs',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerPackage' => 'Csomagnév',
 			'externalPlayer.playerUrlScheme' => 'URL-séma',
 			'externalPlayer.off' => 'Ki',
 			'externalPlayer.launchFailed' => 'Nem sikerült megnyitni a külső lejátszót',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => 'A(z) ${name} nincs telepítve',
 			'externalPlayer.playInExternalPlayer' => 'Lejátszás külső lejátszóban',
-			'metadataEdit.artwork' => 'Borítók és képek',
-			'metadataEdit.title' => 'Cím',
-			'metadataEdit.sortTitle' => 'Rendezési cím',
-			'metadataEdit.originalTitle' => 'Eredeti cím',
-			'metadataEdit.releaseDate' => 'Bemutató dátuma',
-			'metadataEdit.contentRating' => 'Korhatár-besorolás',
-			'metadataEdit.studio' => 'Stúdió',
-			'metadataEdit.tagline' => 'Jelmondat',
-			'metadataEdit.summary' => 'Összefoglaló',
-			'metadataEdit.poster' => 'Poszter',
-			'metadataEdit.background' => 'Háttér',
-			'metadataEdit.logo' => 'Logó',
-			'metadataEdit.imageUrl' => 'Kép URL-címe',
-			'metadataEdit.allEpisodes' => 'Minden epizód',
-			'metadataEdit.never' => 'Soha',
-			'metadataEdit.seasons' => 'Évadok',
-			'metadataEdit.show' => 'Megjelenítés',
-			'metadataEdit.hide' => 'Elrejtés',
-			'metadataEdit.subtitleMode' => 'Automatikus feliratválasztási mód',
-			'metadataEdit.tags' => 'Címkék',
-			'metadataEdit.genre' => 'Műfaj',
-			'metadataEdit.director' => 'Rendező',
-			'metadataEdit.writer' => 'Író',
-			'metadataEdit.producer' => 'Producer',
-			'metadataEdit.country' => 'Ország',
-			'metadataEdit.collection' => 'Gyűjtemény',
-			'metadataEdit.label' => 'Kiadó',
-			'matchScreen.match' => 'Párosítás...',
-			'matchScreen.search' => 'Keresés',
-			'serverTasks.title' => 'Szerverfeladatok',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Csatlakoztatva',
 			'trakt.connectedAs' => ({required Object username}) => '@${username} néven csatlakoztatva',
@@ -4168,7 +3950,6 @@ extension on TranslationsHu {
 			'seerr.serverUrl' => 'Szerver URL-címe',
 			'seerr.serverUrlHelper' => 'A Seerr példányod címe',
 			'seerr.checkServer' => 'Folytatás',
-			'seerr.signInWithLocal' => 'Helyi fiók használata',
 			'seerr.email' => 'E-mail',
 			'seerr.noSignInMethods' => 'Ez a Seerr példány nem kínál olyan bejelentkezési módot, amit a TBD támogat.',
 			'seerr.instance' => 'Példány',
@@ -4188,6 +3969,8 @@ extension on TranslationsHu {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (alapértelmezett)',
 			'seerr.animeNote' => 'Ez a sorozat anime.',
 			'seerr.requestSubmitted' => 'Igénylés elküldve',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => 'Az igénylés nem sikerült: ${error}',
 			'seerr.requestsLoadFailed' => 'Nem sikerült betölteni az igénylési opciókat',
 			'seerr.nothingToRequest' => 'Minden elem már elérhető vagy igényelve van.',
@@ -4209,10 +3992,6 @@ extension on TranslationsHu {
 			'seerr.sessionRejectedAfterReauth' => 'A munkamenetet az újbóli bejelentkezés után elutasították',
 			'seerr.permissionDenied' => 'A Seerr elutasította ezt a műveletet: a fiókod már nem rendelkezik a szükséges jogosultsággal',
 			'seerr.permissionRevoked' => 'Már nincs jogosultságod ennek az igényléséhez',
-			'services.title' => 'Szolgáltatások',
-			'services.hubSubtitle' => 'Megtekintési haladás szinkronizálása és új tartalmak igénylése.',
-			'services.integrations' => 'Integrációk',
-			'services.notConnected' => 'Nincs csatlakoztatva',
 			'services.connectedAs' => ({required Object username}) => '@${username} néven csatlakoztatva',
 			'services.scrobble' => 'Haladás automatikus követése',
 			'services.scrobbleDescription' => 'Lista frissítése, amikor befejezel egy epizódot vagy filmet.',
@@ -4222,7 +4001,6 @@ extension on TranslationsHu {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'TBD aktiválása a következőn: ${service}',
 			'services.deviceCode.instructions' => 'Olvasd be a QR-kódot, vagy nyisd meg az alábbi címet, és írd be ezt a kódot:',
@@ -4247,14 +4025,12 @@ extension on TranslationsHu {
 			'services.libraryFilter.modeHintWhitelist' => 'Csak az alább bejelölt könyvtárak szinkronizálása.',
 			'services.libraryFilter.libraries' => 'Könyvtárak',
 			'services.libraryFilter.noLibraries' => 'Nincsenek elérhető könyvtárak',
-			'addServer.username' => 'Felhasználónév',
 			'addServer.password' => 'Jelszó',
 			'addServer.signIn' => 'Bejelentkezés',
 			'addServer.change' => 'Módosítás',
 			'addServer.required' => 'Kötelező',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nem sikerült elérni a szervert: ${error}',
 			'addServer.addConnectionTitle' => 'Kapcsolat hozzáadása',
-			'addServer.invalidCredentials' => 'Érvénytelen felhasználónév vagy jelszó',
 			_ => null,
 		};
 	}

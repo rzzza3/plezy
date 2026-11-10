@@ -1,0 +1,136 @@
+name: Build Android release APKs
+description: >-
+  Set up the toolchain, build the split-per-ABI release APKs and upload them as a
+  workflow artifact. Shared by android-apk.yml (signed with the repository
+  keystore) and android-apk-pr.yml (no secrets, throwaway key). The caller checks
+  the repository out first.
+
+inputs:
+  flutter-version:
+    description: Flutter SDK version to build with
+    required: true
+  release-tag:
+    description: Tag being released; empty for ordinary push and pull-request builds
+    default: ""
+  keystore-base64:
+    description: Base64 of the release keystore; empty signs with a throwaway key
+    default: ""
+  store-password:
+    description: Keystore password
+    default: ""
+  key-password:
+    description: Key password
+    default: ""
+  key-alias:
+    description: Key alias
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    # The in-app update check compares the release tag with the version baked into
+    # the app, so a tag that disagrees with pubspec.yaml would prompt forever.
+    - name: Require the tag to match pubspec.yaml
+      if: inputs.release-tag != ''
+      shell: bash
+      env:
+        RELEASE_TAG: ${{ inputs.release-tag }}
+      run: |
+        version="$(python3 scripts/pubspec_version.py | cut -d+ -f1)"
+        if [[ "${RELEASE_TAG#v}" != "$version" ]]; then
+          echo "::error::Tag $RELEASE_TAG does not match pubspec.yaml version $version."
+          exit 1
+        fi
+
+    - name: Setup Java
+      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+      with:
+        distribution: "temurin"
+        java-version: "21"
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      with:
+        channel: "stable"
+        flutter-version: ${{ inputs.flutter-version }}
+        cache: true
+        pub-cache: false
+
+    - name: Cache Pub dependencies
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: |
+          ~/.pub-cache
+        key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+
+    - name: Cache Gradle
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Install dependencies
+      shell: bash
+      run: flutter pub get --enforce-lockfile --no-example
+
+    # android/app/build.gradle.kts leaves release unsigned (and so uninstallable)
+    # unless key.properties exists. Use the keystore when the caller passes one;
+    # otherwise sign with a throwaway key so the APK still installs. A
+    # throwaway-signed APK cannot be installed over a build signed with another key.
+    - name: Configure Android signing
+      shell: bash
+      env:
+        RELEASE_TAG: ${{ inputs.release-tag }}
+        ANDROID_KEYSTORE_BASE64: ${{ inputs.keystore-base64 }}
+        ANDROID_STORE_PASSWORD: ${{ inputs.store-password }}
+        ANDROID_KEY_PASSWORD: ${{ inputs.key-password }}
+        ANDROID_KEY_ALIAS: ${{ inputs.key-alias }}
+      run: |
+        if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
+          echo "Signing with the repository keystore."
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/ci-keystore.jks
+        elif [[ -n "$RELEASE_TAG" ]]; then
+          echo "::error::Refusing to publish a release signed with a throwaway key; set the ANDROID_* signing secrets."
+          exit 1
+        else
+          echo "::notice::No keystore provided; signing with a throwaway key."
+          ANDROID_STORE_PASSWORD=throwaway
+          ANDROID_KEY_PASSWORD=throwaway
+          ANDROID_KEY_ALIAS=ci
+          keytool -genkeypair -keystore android/app/ci-keystore.jks -storetype PKCS12 \
+            -storepass "$ANDROID_STORE_PASSWORD" -keypass "$ANDROID_KEY_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=CI throwaway"
+        fi
+        {
+          printf 'storePassword=%s\n' "$ANDROID_STORE_PASSWORD"
+          printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+          printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+          printf 'storeFile=ci-keystore.jks\n'
+        } > android/key.properties
+
+    - name: Build APKs
+      shell: bash
+      env:
+        RELEASE_TAG: ${{ inputs.release-tag }}
+      run: |
+        flutter build apk --release --split-per-abi \
+          --dart-define=GIT_COMMIT="$(git rev-parse HEAD)" \
+          ${RELEASE_TAG:+--dart-define=ENABLE_UPDATE_CHECK=true}
+
+    - name: Clean up keystore
+      if: always()
+      shell: bash
+      run: rm -f android/app/ci-keystore.jks android/key.properties
+
+    - name: Upload APKs
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      with:
+        name: plezy-android-apk-${{ github.sha }}
+        path: build/app/outputs/flutter-apk/app-*-release.apk
+        if-no-files-found: error
+        retention-days: 14
