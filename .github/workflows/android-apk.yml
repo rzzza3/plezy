@@ -1,0 +1,165 @@
+name: Android APK
+
+# Builds release APKs for every push to main and every pull request, and attaches
+# them to the workflow run. Pushing a version tag (v2.22.0 or 2.22.0) additionally
+# publishes them as a GitHub release. Nothing goes to any store.
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v[0-9]*"
+      - "[0-9]*"
+  # Keep untrusted code on the read-only pull_request event. Never use pull_request_target here.
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  # Keep in sync with ci.yml and build.yml.
+  FLUTTER_VERSION: "3.47.1"
+
+jobs:
+  build:
+    name: Build release APKs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # The in-app update check compares the release tag with the version baked into
+      # the app, so a tag that disagrees with pubspec.yaml would prompt forever.
+      - name: Require the tag to match pubspec.yaml
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="$(python3 scripts/pubspec_version.py | cut -d+ -f1)"
+          if [[ "${GITHUB_REF_NAME#v}" != "$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pubspec.yaml version $version."
+            exit 1
+          fi
+
+      - name: Setup Java
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          pub-cache: false
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+
+      - name: Cache Gradle
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile --no-example
+
+      # android/app/build.gradle.kts leaves release unsigned (and so uninstallable)
+      # unless key.properties exists. Use the repository keystore when its secrets are
+      # set; otherwise (including pull requests from forks, which get no secrets) sign
+      # with a throwaway key so the APK still installs. A throwaway-signed APK cannot
+      # be installed over a build signed with a different key.
+      - name: Configure Android signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "Signing with the repository keystore."
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/ci-keystore.jks
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "::error::Refusing to publish a release signed with a throwaway key; set the ANDROID_* signing secrets."
+            exit 1
+          else
+            echo "::notice::No ANDROID_KEYSTORE_BASE64 secret; signing with a throwaway key."
+            ANDROID_STORE_PASSWORD=throwaway
+            ANDROID_KEY_PASSWORD=throwaway
+            ANDROID_KEY_ALIAS=ci
+            keytool -genkeypair -keystore android/app/ci-keystore.jks -storetype PKCS12 \
+              -storepass "$ANDROID_STORE_PASSWORD" -keypass "$ANDROID_KEY_PASSWORD" \
+              -alias "$ANDROID_KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=CI throwaway"
+          fi
+          {
+            printf 'storePassword=%s\n' "$ANDROID_STORE_PASSWORD"
+            printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'storeFile=ci-keystore.jks\n'
+          } > android/key.properties
+
+      - name: Build APKs
+        run: >-
+          flutter build apk --release --split-per-abi
+          --dart-define=GIT_COMMIT=${{ github.sha }}
+          ${{ startsWith(github.ref, 'refs/tags/') && '--dart-define=ENABLE_UPDATE_CHECK=true' || '' }}
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f android/app/ci-keystore.jks android/key.properties
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: plezy-android-apk-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-*-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download APKs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: plezy-android-apk-${{ github.sha }}
+          path: apk
+
+      - name: Rename APKs
+        run: |
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            mv "apk/app-$abi-release.apk" "plezy-android-$abi.apk"
+          done
+
+      - name: Create release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
+        with:
+          files: plezy-android-*.apk
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
