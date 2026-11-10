@@ -59,7 +59,6 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$mpvConfig$ko mpvConfig = _Translations$mpvConfig$ko._(_root);
 	@override late final _Translations$profiles$ko profiles = _Translations$profiles$ko._(_root);
 	@override late final _Translations$connections$ko connections = _Translations$connections$ko._(_root);
-	@override late final _Translations$accountPreferences$ko accountPreferences = _Translations$accountPreferences$ko._(_root);
 	@override late final _Translations$discover$ko discover = _Translations$discover$ko._(_root);
 	@override late final _Translations$errors$ko errors = _Translations$errors$ko._(_root);
 	@override late final _Translations$libraries$ko libraries = _Translations$libraries$ko._(_root);
@@ -81,9 +80,6 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$videoSettings$ko videoSettings = _Translations$videoSettings$ko._(_root);
 	@override late final _Translations$performanceOverlay$ko performanceOverlay = _Translations$performanceOverlay$ko._(_root);
 	@override late final _Translations$externalPlayer$ko externalPlayer = _Translations$externalPlayer$ko._(_root);
-	@override late final _Translations$metadataEdit$ko metadataEdit = _Translations$metadataEdit$ko._(_root);
-	@override late final _Translations$matchScreen$ko matchScreen = _Translations$matchScreen$ko._(_root);
-	@override late final _Translations$serverTasks$ko serverTasks = _Translations$serverTasks$ko._(_root);
 	@override late final _Translations$trakt$ko trakt = _Translations$trakt$ko._(_root);
 	@override late final _Translations$seerr$ko seerr = _Translations$seerr$ko._(_root);
 	@override late final _Translations$services$ko services = _Translations$services$ko._(_root);
@@ -213,7 +209,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get theme => '테마';
 	@override String get appearance => '디자인';
 	@override String get videoPlayback => '비디오 재생';
-	@override String get videoPlaybackDescription => '재생 동작 설정';
 	@override String get advanced => '고급';
 	@override String get episodePosterMode => '에피소드 포스터 스타일';
 	@override String get seriesPoster => '시리즈 포스터';
@@ -225,9 +220,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get secondsShort => '초';
 	@override String get minutesShort => '분';
 	@override String durationHint({required Object min, required Object max}) => '기간 입력 (${min}-${max})';
-	@override String get systemTheme => '시스템';
-	@override String get lightTheme => '라이트';
-	@override String get darkTheme => '다크';
 	@override String get oledTheme => 'OLED';
 	@override String get slateTheme => '슬레이트';
 	@override String get libraryDensity => '라이브러리 표시 밀도';
@@ -351,7 +343,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get importSettingsNoUser => '설정을 가져오기 전에 로그인하세요';
 	@override String get shortcutsReset => '단축키가 기본값으로 재설정되었습니다';
 	@override String get about => '정보';
-	@override String get aboutDescription => '앱 정보 및 라이선스';
 	@override String get updates => '업데이트';
 	@override String get updateAvailable => '사용 가능한 업데이트 있음';
 	@override String get checkForUpdates => '업데이트 확인';
@@ -408,9 +399,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get maxVolume => '최대 볼륨';
 	@override String get maxVolumeDescription => '음량이 작은 콘텐츠를 위해 100% 이상의 볼륨을 허용합니다';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get discordRichPresence => 'Discord Rich Presence';
-	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
-	@override String get manageLibrariesDescription => '라이브러리 순서를 변경하거나 숨깁니다';
 	@override String get companionRemoteServer => '컴패니언 리모트 서버';
 	@override String get companionRemoteServerDescription => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용';
 	@override String get companionRemoteServerStartFailed => '컴패니언 리모트 서버를 시작할 수 없습니다';
@@ -475,7 +463,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get startupSection => '시작 섹션';
 	@override String get showExploreTab => '둘러보기 탭 표시';
 	@override String get general => '일반';
-	@override String get generalDescription => '언어, 시작 및 창 동작';
 	@override String get languageAndRegion => '언어 및 지역';
 	@override String get startup => '시작';
 	@override String get display => '디스플레이';
@@ -483,7 +470,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get homeScreen => '홈 화면';
 	@override String get navigation => '탐색';
 	@override String get window => '창';
-	@override String get liveTv => '라이브 TV';
 	@override String get player => '플레이어';
 	@override String get videoAndDisplay => '비디오 및 디스플레이';
 	@override String get audio => '오디오';
@@ -994,13 +980,11 @@ class _Translations$profiles$ko extends Translations$profiles$en {
 	@override String get switchingProfile => '프로필 전환 중…';
 	@override String get active => '활성';
 	@override String get manage => '관리';
-	@override String get delete => '삭제';
 	@override String get signOut => '로그아웃';
 	@override String get signOutFailed => '로그아웃에 실패했습니다.';
 	@override String get sectionTitle => '프로필';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count}개 프로필';
-	@override String get add => '추가';
 	@override String get noConnections => '연결 없음';
 	@override String get incorrectPinTryAgain => 'PIN이 올바르지 않습니다. 다시 시도하세요.';
 }
@@ -1019,22 +1003,6 @@ class _Translations$connections$ko extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => '${count}개 서버에서 이 계정의 접근을 거부했습니다';
 }
 
-// Path: accountPreferences
-class _Translations$accountPreferences$ko extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => '계정 기본 설정';
-	@override String get unavailable => '이 계정에 연결할 수 없습니다';
-	@override String get autoSelectAudio => '언어별로 오디오 선택';
-	@override String get subtitleMode => '자막 자동 켜기';
-	@override late final _Translations$accountPreferences$subtitleModes$ko subtitleModes = _Translations$accountPreferences$subtitleModes$ko._(_root);
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$ko forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$ko._(_root);
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$ko watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$ko._(_root);
-}
-
 // Path: discover
 class _Translations$discover$ko extends Translations$discover$en {
 	_Translations$discover$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -1046,7 +1014,6 @@ class _Translations$discover$ko extends Translations$discover$en {
 	@override String get noContentAvailable => '사용 가능한 콘텐츠가 없습니다';
 	@override String get addMediaToLibraries => '미디어 라이브러리에 미디어를 추가해 주세요';
 	@override String get continueWatching => '계속 시청';
-	@override String get nextUp => '다음 에피소드';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '개요';
 	@override String get cast => '출연진';
@@ -1224,7 +1191,6 @@ class _Translations$navigation$ko extends Translations$navigation$en {
 	// Translations
 	@override String get libraries => '미디어 라이브러리';
 	@override String get downloads => '다운로드';
-	@override String get liveTv => '실시간 TV';
 	@override String get explore => '탐색';
 }
 
@@ -1284,16 +1250,8 @@ class _Translations$liveTv$ko extends Translations$liveTv$en {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => '실시간 TV';
-	@override String get serverUnavailable => '라이브 TV 서버를 사용할 수 없습니다.';
-	@override String get live => '실시간';
-	@override String get searchHint => '채널 및 프로그램 검색';
-	@override String get now => '지금';
 	@override String get today => '오늘';
 	@override String get tomorrow => '내일';
-	@override String get joinSession => '진행 중인 세션 참여';
-	@override String get record => '녹화';
-	@override String invalidPlaybackData({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다';
 }
 
 // Path: collections
@@ -1742,63 +1700,6 @@ class _Translations$externalPlayer$ko extends Translations$externalPlayer$en {
 	@override String get playInExternalPlayer => '외부 플레이어에서 재생';
 }
 
-// Path: metadataEdit
-class _Translations$metadataEdit$ko extends Translations$metadataEdit$en {
-	_Translations$metadataEdit$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get artwork => '아트워크';
-	@override String get title => '제목';
-	@override String get sortTitle => '정렬 제목';
-	@override String get originalTitle => '원제';
-	@override String get releaseDate => '출시일';
-	@override String get contentRating => '콘텐츠 등급';
-	@override String get studio => '스튜디오';
-	@override String get tagline => '태그라인';
-	@override String get summary => '줄거리';
-	@override String get poster => '포스터';
-	@override String get background => '배경';
-	@override String get logo => '로고';
-	@override String get imageUrl => '이미지 URL';
-	@override String get allEpisodes => '모든 에피소드';
-	@override String get never => '안 함';
-	@override String get seasons => '시즌';
-	@override String get show => '표시';
-	@override String get hide => '숨기기';
-	@override String get subtitleMode => '자막 자동 선택 모드';
-	@override String get tags => '태그';
-	@override String get genre => '장르';
-	@override String get director => '감독';
-	@override String get writer => '작가';
-	@override String get producer => '프로듀서';
-	@override String get country => '국가';
-	@override String get collection => '컬렉션';
-	@override String get label => '라벨';
-}
-
-// Path: matchScreen
-class _Translations$matchScreen$ko extends Translations$matchScreen$en {
-	_Translations$matchScreen$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get match => '일치...';
-	@override String get search => '검색';
-}
-
-// Path: serverTasks
-class _Translations$serverTasks$ko extends Translations$serverTasks$en {
-	_Translations$serverTasks$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '서버 작업';
-}
-
 // Path: trakt
 class _Translations$trakt$ko extends Translations$trakt$en {
 	_Translations$trakt$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -1829,7 +1730,6 @@ class _Translations$seerr$ko extends Translations$seerr$en {
 	@override String get serverUrl => '서버 URL';
 	@override String get serverUrlHelper => 'Seerr 인스턴스의 주소';
 	@override String get checkServer => '계속';
-	@override String get signInWithLocal => '로컬 계정 사용';
 	@override String get email => '이메일';
 	@override String get noSignInMethods => '이 Seerr 인스턴스에는 TBD가 지원하는 로그인 방법이 없습니다.';
 	@override String get instance => '인스턴스';
@@ -1879,10 +1779,6 @@ class _Translations$services$ko extends Translations$services$en {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => '서비스';
-	@override String get hubSubtitle => '시청 진행률을 동기화하고 새 작품을 요청하세요.';
-	@override String get integrations => '연동';
-	@override String get notConnected => '연결되지 않음';
 	@override String connectedAs({required Object username}) => '@${username}(으)로 연결됨';
 	@override String get scrobble => '진행률 자동 추적';
 	@override String get scrobbleDescription => '에피소드나 영화를 시청하면 목록을 업데이트합니다.';
@@ -1903,14 +1799,12 @@ class _Translations$addServer$ko extends Translations$addServer$en {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get username => '사용자 이름';
 	@override String get password => '비밀번호';
 	@override String get signIn => '로그인';
 	@override String get change => '변경';
 	@override String get required => '필수';
 	@override String couldNotReachServer({required Object error}) => '서버에 연결할 수 없습니다: ${error}';
 	@override String get addConnectionTitle => '연결 추가';
-	@override String get invalidCredentials => '사용자 이름 또는 비밀번호가 올바르지 않습니다';
 }
 
 // Path: common.ratingSource
@@ -2005,42 +1899,6 @@ class _Translations$videoControls$pipErrors$ko extends Translations$videoControl
 	@override String unknown({required Object error}) => '오류가 발생했습니다: ${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$ko extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => '수동 선택';
-	@override String get defaultMode => '트랙 플래그 따르기';
-	@override String get always => '항상 활성화';
-	@override String get onlyForced => '강제 자막만';
-	@override String get smart => '외국어 오디오 시 표시';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$ko extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get onlyForced => '강제 자막만';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$ko extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => '안 함';
-	@override String get movies => '영화만';
-	@override String get shows => 'TV 프로그램만';
-}
-
 // Path: libraries.tabs
 class _Translations$libraries$tabs$ko extends Translations$libraries$tabs$en {
 	_Translations$libraries$tabs$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -2083,7 +1941,6 @@ class _Translations$libraries$filterCategories$ko extends Translations$libraries
 	@override String get genre => '장르';
 	@override String get year => '연도';
 	@override String get contentRating => '시청 등급';
-	@override String get tag => '태그';
 	@override String get unwatched => '미시청';
 }
 
@@ -2098,11 +1955,8 @@ class _Translations$libraries$sortLabels$ko extends Translations$libraries$sortL
 	@override String get dateAdded => '추가된 날짜';
 	@override String get releaseDate => '출시일';
 	@override String get rating => '평점';
-	@override String get userRating => '사용자 평점';
 	@override String get productionYear => '제작 연도';
 	@override String get runtime => '재생 시간';
-	@override String get startDate => '시작일';
-	@override String get studio => '스튜디오';
 	@override String get dateDownloaded => '다운로드된 날짜';
 	@override String get size => '크기';
 	@override String get library => '라이브러리';
@@ -2497,7 +2351,6 @@ class _Translations$services$names$ko extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2660,7 +2513,6 @@ extension on TranslationsKo {
 			'settings.theme' => '테마',
 			'settings.appearance' => '디자인',
 			'settings.videoPlayback' => '비디오 재생',
-			'settings.videoPlaybackDescription' => '재생 동작 설정',
 			'settings.advanced' => '고급',
 			'settings.episodePosterMode' => '에피소드 포스터 스타일',
 			'settings.seriesPoster' => '시리즈 포스터',
@@ -2672,9 +2524,6 @@ extension on TranslationsKo {
 			'settings.secondsShort' => '초',
 			'settings.minutesShort' => '분',
 			'settings.durationHint' => ({required Object min, required Object max}) => '기간 입력 (${min}-${max})',
-			'settings.systemTheme' => '시스템',
-			'settings.lightTheme' => '라이트',
-			'settings.darkTheme' => '다크',
 			'settings.oledTheme' => 'OLED',
 			'settings.slateTheme' => '슬레이트',
 			'settings.libraryDensity' => '라이브러리 표시 밀도',
@@ -2798,7 +2647,6 @@ extension on TranslationsKo {
 			'settings.importSettingsNoUser' => '설정을 가져오기 전에 로그인하세요',
 			'settings.shortcutsReset' => '단축키가 기본값으로 재설정되었습니다',
 			'settings.about' => '정보',
-			'settings.aboutDescription' => '앱 정보 및 라이선스',
 			'settings.updates' => '업데이트',
 			'settings.updateAvailable' => '사용 가능한 업데이트 있음',
 			'settings.checkForUpdates' => '업데이트 확인',
@@ -2855,9 +2703,6 @@ extension on TranslationsKo {
 			'settings.maxVolume' => '최대 볼륨',
 			'settings.maxVolumeDescription' => '음량이 작은 콘텐츠를 위해 100% 이상의 볼륨을 허용합니다',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.discordRichPresence' => 'Discord Rich Presence',
-			'settings.discordRichPresenceDescription' => 'Discord에서 시청 중인 콘텐츠 표시',
-			'settings.manageLibrariesDescription' => '라이브러리 순서를 변경하거나 숨깁니다',
 			'settings.companionRemoteServer' => '컴패니언 리모트 서버',
 			'settings.companionRemoteServerDescription' => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용',
 			'settings.companionRemoteServerStartFailed' => '컴패니언 리모트 서버를 시작할 수 없습니다',
@@ -2922,7 +2767,6 @@ extension on TranslationsKo {
 			'settings.startupSection' => '시작 섹션',
 			'settings.showExploreTab' => '둘러보기 탭 표시',
 			'settings.general' => '일반',
-			'settings.generalDescription' => '언어, 시작 및 창 동작',
 			'settings.languageAndRegion' => '언어 및 지역',
 			'settings.startup' => '시작',
 			'settings.display' => '디스플레이',
@@ -2930,7 +2774,6 @@ extension on TranslationsKo {
 			'settings.homeScreen' => '홈 화면',
 			'settings.navigation' => '탐색',
 			'settings.window' => '창',
-			'settings.liveTv' => '라이브 TV',
 			'settings.player' => '플레이어',
 			'settings.videoAndDisplay' => '비디오 및 디스플레이',
 			'settings.audio' => '오디오',
@@ -3080,8 +2923,6 @@ extension on TranslationsKo {
 			'fileInfo.packetLength' => '패킷 길이',
 			'fileInfo.filePresent' => '파일 있음',
 			'fileInfo.fileReadable' => '서버에서 읽기 가능',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamPath' => '스트림 경로',
 			'fileInfo.optimizedForStreaming' => '스트리밍 최적화',
 			'fileInfo.has64bitOffsets' => '64비트 오프셋',
@@ -3092,6 +2933,8 @@ extension on TranslationsKo {
 			'fileInfo.optimizationTarget' => '최적화 대상',
 			'fileInfo.deletedAt' => '삭제됨',
 			'fileInfo.remoteSource' => '원격 소스',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.infiniteStream' => '무한 스트림',
 			'fileInfo.directPlay' => 'Direct Play',
 			'fileInfo.directStream' => 'Direct Stream',
@@ -3355,13 +3198,11 @@ extension on TranslationsKo {
 			'profiles.switchingProfile' => '프로필 전환 중…',
 			'profiles.active' => '활성',
 			'profiles.manage' => '관리',
-			'profiles.delete' => '삭제',
 			'profiles.signOut' => '로그아웃',
 			'profiles.signOutFailed' => '로그아웃에 실패했습니다.',
 			'profiles.sectionTitle' => '프로필',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count}개 프로필',
-			'profiles.add' => '추가',
 			'profiles.noConnections' => '연결 없음',
 			'profiles.incorrectPinTryAgain' => 'PIN이 올바르지 않습니다. 다시 시도하세요.',
 			'connections.sectionTitle' => '연결',
@@ -3369,24 +3210,10 @@ extension on TranslationsKo {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name}의 세션이 만료되었습니다',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name}에서 이 계정의 접근을 거부했습니다',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count}개 서버에서 이 계정의 접근을 거부했습니다',
-			'accountPreferences.sectionTitle' => '계정 기본 설정',
-			'accountPreferences.unavailable' => '이 계정에 연결할 수 없습니다',
-			'accountPreferences.autoSelectAudio' => '언어별로 오디오 선택',
-			'accountPreferences.subtitleMode' => '자막 자동 켜기',
-			'accountPreferences.subtitleModes.none' => '수동 선택',
-			'accountPreferences.subtitleModes.defaultMode' => '트랙 플래그 따르기',
-			'accountPreferences.subtitleModes.always' => '항상 활성화',
-			'accountPreferences.subtitleModes.onlyForced' => '강제 자막만',
-			'accountPreferences.subtitleModes.smart' => '외국어 오디오 시 표시',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => '강제 자막만',
-			'accountPreferences.watchedIndicatorOptions.none' => '안 함',
-			'accountPreferences.watchedIndicatorOptions.movies' => '영화만',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'TV 프로그램만',
 			'discover.title' => '둘러보기',
 			'discover.noContentAvailable' => '사용 가능한 콘텐츠가 없습니다',
 			'discover.addMediaToLibraries' => '미디어 라이브러리에 미디어를 추가해 주세요',
 			'discover.continueWatching' => '계속 시청',
-			'discover.nextUp' => '다음 에피소드',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '개요',
 			'discover.cast' => '출연진',
@@ -3455,17 +3282,13 @@ extension on TranslationsKo {
 			'libraries.filterCategories.genre' => '장르',
 			'libraries.filterCategories.year' => '연도',
 			'libraries.filterCategories.contentRating' => '시청 등급',
-			'libraries.filterCategories.tag' => '태그',
 			'libraries.filterCategories.unwatched' => '미시청',
 			'libraries.sortLabels.title' => '제목',
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
 			'libraries.sortLabels.releaseDate' => '출시일',
 			'libraries.sortLabels.rating' => '평점',
-			'libraries.sortLabels.userRating' => '사용자 평점',
 			'libraries.sortLabels.productionYear' => '제작 연도',
 			'libraries.sortLabels.runtime' => '재생 시간',
-			'libraries.sortLabels.startDate' => '시작일',
-			'libraries.sortLabels.studio' => '스튜디오',
 			'libraries.sortLabels.dateDownloaded' => '다운로드된 날짜',
 			'libraries.sortLabels.size' => '크기',
 			'libraries.sortLabels.library' => '라이브러리',
@@ -3517,7 +3340,6 @@ extension on TranslationsKo {
 			'licenses.licensesCount' => ({required Object count}) => '${count}개의 라이선스',
 			'navigation.libraries' => '미디어 라이브러리',
 			'navigation.downloads' => '다운로드',
-			'navigation.liveTv' => '실시간 TV',
 			'navigation.explore' => '탐색',
 			'explore.title' => '탐색',
 			'explore.selectSource' => '소스 선택',
@@ -3594,8 +3416,6 @@ extension on TranslationsKo {
 			'explore.stats.completed' => ({required Object n}) => '완료 ${n}명',
 			'explore.stats.onHold' => ({required Object n}) => '보류 ${n}명',
 			'explore.stats.dropped' => ({required Object n}) => '하차 ${n}명',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => '겨울',
 			'explore.season.spring' => '봄',
 			'explore.season.summer' => '여름',
@@ -3627,6 +3447,8 @@ extension on TranslationsKo {
 			'explore.relation.sequel' => '시퀄',
 			'explore.relation.sideStory' => '사이드 스토리',
 			'explore.relation.spinOff' => '스핀오프',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => '대체 버전',
 			'explore.relation.summary' => '요약',
 			'explore.relation.parentStory' => '원작',
@@ -3664,16 +3486,8 @@ extension on TranslationsKo {
 			'explore.detail.relatedTitles' => '관련 작품',
 			'explore.detail.background' => '배경',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '결과 ${n}개', ), 
-			'liveTv.title' => '실시간 TV',
-			'liveTv.serverUnavailable' => '라이브 TV 서버를 사용할 수 없습니다.',
-			'liveTv.live' => '실시간',
-			'liveTv.searchHint' => '채널 및 프로그램 검색',
-			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.tomorrow' => '내일',
-			'liveTv.joinSession' => '진행 중인 세션 참여',
-			'liveTv.record' => '녹화',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',
@@ -4108,44 +3922,12 @@ extension on TranslationsKo {
 			'externalPlayer.playerName' => '플레이어 이름',
 			'externalPlayer.playerNameHint' => '내 플레이어',
 			'externalPlayer.playerCommand' => '명령어',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerPackage' => '패키지 이름',
 			'externalPlayer.playerUrlScheme' => 'URL 스킴',
 			'externalPlayer.off' => '꺼짐',
 			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',
 			'externalPlayer.playInExternalPlayer' => '외부 플레이어에서 재생',
-			'metadataEdit.artwork' => '아트워크',
-			'metadataEdit.title' => '제목',
-			'metadataEdit.sortTitle' => '정렬 제목',
-			'metadataEdit.originalTitle' => '원제',
-			'metadataEdit.releaseDate' => '출시일',
-			'metadataEdit.contentRating' => '콘텐츠 등급',
-			'metadataEdit.studio' => '스튜디오',
-			'metadataEdit.tagline' => '태그라인',
-			'metadataEdit.summary' => '줄거리',
-			'metadataEdit.poster' => '포스터',
-			'metadataEdit.background' => '배경',
-			'metadataEdit.logo' => '로고',
-			'metadataEdit.imageUrl' => '이미지 URL',
-			'metadataEdit.allEpisodes' => '모든 에피소드',
-			'metadataEdit.never' => '안 함',
-			'metadataEdit.seasons' => '시즌',
-			'metadataEdit.show' => '표시',
-			'metadataEdit.hide' => '숨기기',
-			'metadataEdit.subtitleMode' => '자막 자동 선택 모드',
-			'metadataEdit.tags' => '태그',
-			'metadataEdit.genre' => '장르',
-			'metadataEdit.director' => '감독',
-			'metadataEdit.writer' => '작가',
-			'metadataEdit.producer' => '프로듀서',
-			'metadataEdit.country' => '국가',
-			'metadataEdit.collection' => '컬렉션',
-			'metadataEdit.label' => '라벨',
-			'matchScreen.match' => '일치...',
-			'matchScreen.search' => '검색',
-			'serverTasks.title' => '서버 작업',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => '연결됨',
 			'trakt.connectedAs' => ({required Object username}) => '@${username}(으)로 연결됨',
@@ -4160,7 +3942,6 @@ extension on TranslationsKo {
 			'seerr.serverUrl' => '서버 URL',
 			'seerr.serverUrlHelper' => 'Seerr 인스턴스의 주소',
 			'seerr.checkServer' => '계속',
-			'seerr.signInWithLocal' => '로컬 계정 사용',
 			'seerr.email' => '이메일',
 			'seerr.noSignInMethods' => '이 Seerr 인스턴스에는 TBD가 지원하는 로그인 방법이 없습니다.',
 			'seerr.instance' => '인스턴스',
@@ -4180,6 +3961,8 @@ extension on TranslationsKo {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (기본값)',
 			'seerr.animeNote' => '이 시리즈는 애니메이션입니다.',
 			'seerr.requestSubmitted' => '요청을 제출했습니다',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => '요청 실패: ${error}',
 			'seerr.requestsLoadFailed' => '요청 옵션을 불러올 수 없습니다',
 			'seerr.nothingToRequest' => '모두 이미 사용 가능하거나 요청되었습니다.',
@@ -4201,10 +3984,6 @@ extension on TranslationsKo {
 			'seerr.sessionRejectedAfterReauth' => '다시 로그인한 후 세션이 거부되었습니다',
 			'seerr.permissionDenied' => 'Seerr가 이 작업을 거부했습니다: 계정에 필요한 권한이 더 이상 없습니다',
 			'seerr.permissionRevoked' => '이 항목을 요청할 권한이 더 이상 없습니다',
-			'services.title' => '서비스',
-			'services.hubSubtitle' => '시청 진행률을 동기화하고 새 작품을 요청하세요.',
-			'services.integrations' => '연동',
-			'services.notConnected' => '연결되지 않음',
 			'services.connectedAs' => ({required Object username}) => '@${username}(으)로 연결됨',
 			'services.scrobble' => '진행률 자동 추적',
 			'services.scrobbleDescription' => '에피소드나 영화를 시청하면 목록을 업데이트합니다.',
@@ -4214,7 +3993,6 @@ extension on TranslationsKo {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => '${service}에서 TBD 활성화',
 			'services.deviceCode.instructions' => 'QR 코드를 스캔하거나 아래 주소로 이동하여 이 코드를 입력하세요:',
@@ -4239,14 +4017,12 @@ extension on TranslationsKo {
 			'services.libraryFilter.modeHintWhitelist' => '아래에 선택한 라이브러리만 동기화합니다.',
 			'services.libraryFilter.libraries' => '라이브러리',
 			'services.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
-			'addServer.username' => '사용자 이름',
 			'addServer.password' => '비밀번호',
 			'addServer.signIn' => '로그인',
 			'addServer.change' => '변경',
 			'addServer.required' => '필수',
 			'addServer.couldNotReachServer' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
 			'addServer.addConnectionTitle' => '연결 추가',
-			'addServer.invalidCredentials' => '사용자 이름 또는 비밀번호가 올바르지 않습니다',
 			_ => null,
 		};
 	}

@@ -375,12 +375,17 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
 
   String _greeting(String? name) {
     final hour = DateTime.now().hour;
-    final s = t.libraryHome;
     final hasName = name != null && name.trim().isNotEmpty;
-    if (hour >= 5 && hour < 12) return hasName ? s.greetingMorningNamed(name: name) : s.greetingMorning;
-    if (hour >= 12 && hour < 17) return hasName ? s.greetingAfternoonNamed(name: name) : s.greetingAfternoon;
-    if (hour >= 17 && hour < 22) return hasName ? s.greetingEveningNamed(name: name) : s.greetingEvening;
-    return hasName ? s.greetingNightNamed(name: name) : s.greetingNight;
+    if (hour >= 5 && hour < 12) {
+      return hasName ? t.libraryHome.greetingMorningNamed(name: name) : t.libraryHome.greetingMorning;
+    }
+    if (hour >= 12 && hour < 17) {
+      return hasName ? t.libraryHome.greetingAfternoonNamed(name: name) : t.libraryHome.greetingAfternoon;
+    }
+    if (hour >= 17 && hour < 22) {
+      return hasName ? t.libraryHome.greetingEveningNamed(name: name) : t.libraryHome.greetingEvening;
+    }
+    return hasName ? t.libraryHome.greetingNightNamed(name: name) : t.libraryHome.greetingNight;
   }
 
   static String _filterLabel(LibraryHomeFilter filter) => switch (filter) {

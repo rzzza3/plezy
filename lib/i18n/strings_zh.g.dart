@@ -59,7 +59,6 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$mpvConfig$zh mpvConfig = Translations$mpvConfig$zh.internal(_root);
 	@override late final Translations$profiles$zh profiles = Translations$profiles$zh.internal(_root);
 	@override late final Translations$connections$zh connections = Translations$connections$zh.internal(_root);
-	@override late final Translations$accountPreferences$zh accountPreferences = Translations$accountPreferences$zh.internal(_root);
 	@override late final Translations$discover$zh discover = Translations$discover$zh.internal(_root);
 	@override late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
 	@override late final Translations$libraries$zh libraries = Translations$libraries$zh.internal(_root);
@@ -81,9 +80,6 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$videoSettings$zh videoSettings = Translations$videoSettings$zh.internal(_root);
 	@override late final Translations$performanceOverlay$zh performanceOverlay = Translations$performanceOverlay$zh.internal(_root);
 	@override late final Translations$externalPlayer$zh externalPlayer = Translations$externalPlayer$zh.internal(_root);
-	@override late final Translations$metadataEdit$zh metadataEdit = Translations$metadataEdit$zh.internal(_root);
-	@override late final Translations$matchScreen$zh matchScreen = Translations$matchScreen$zh.internal(_root);
-	@override late final Translations$serverTasks$zh serverTasks = Translations$serverTasks$zh.internal(_root);
 	@override late final Translations$trakt$zh trakt = Translations$trakt$zh.internal(_root);
 	@override late final Translations$seerr$zh seerr = Translations$seerr$zh.internal(_root);
 	@override late final Translations$services$zh services = Translations$services$zh.internal(_root);
@@ -213,7 +209,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get theme => '主题';
 	@override String get appearance => '外观';
 	@override String get videoPlayback => '视频播放';
-	@override String get videoPlaybackDescription => '配置播放行为';
 	@override String get advanced => '高级';
 	@override String get episodePosterMode => '剧集海报样式';
 	@override String get seriesPoster => '剧集海报';
@@ -225,9 +220,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get secondsShort => 's';
 	@override String get minutesShort => 'm';
 	@override String durationHint({required Object min, required Object max}) => '输入时长（${min}–${max}）';
-	@override String get systemTheme => '系统';
-	@override String get lightTheme => '浅色';
-	@override String get darkTheme => '深色';
 	@override String get oledTheme => 'OLED';
 	@override String get slateTheme => '石板灰';
 	@override String get libraryDensity => '媒体库密度';
@@ -351,7 +343,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get importSettingsNoUser => '导入设置前请先登录';
 	@override String get shortcutsReset => '快捷键已重置为默认值';
 	@override String get about => '关于';
-	@override String get aboutDescription => '应用程序信息和许可证';
 	@override String get updates => '更新';
 	@override String get updateAvailable => '有可用更新';
 	@override String get checkForUpdates => '检查更新';
@@ -408,9 +399,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get maxVolume => '最大音量';
 	@override String get maxVolumeDescription => '允许音量超过 100%，以便播放音量较低的内容';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get discordRichPresence => 'Discord 动态状态';
-	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
-	@override String get manageLibrariesDescription => '重新排序和隐藏媒体库';
 	@override String get companionRemoteServer => '远程控制服务器';
 	@override String get companionRemoteServerDescription => '允许同一网络中的移动设备控制此应用';
 	@override String get companionRemoteServerStartFailed => '无法启动远程控制服务器';
@@ -475,7 +463,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get startupSection => '启动页面';
 	@override String get showExploreTab => '显示“探索”标签页';
 	@override String get general => '通用';
-	@override String get generalDescription => '语言、启动和窗口行为';
 	@override String get languageAndRegion => '语言与地区';
 	@override String get startup => '启动';
 	@override String get display => '显示';
@@ -483,7 +470,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get homeScreen => '主屏幕';
 	@override String get navigation => '导航';
 	@override String get window => '窗口';
-	@override String get liveTv => '直播电视';
 	@override String get player => '播放器';
 	@override String get videoAndDisplay => '视频与显示';
 	@override String get audio => '音频';
@@ -994,13 +980,11 @@ class Translations$profiles$zh extends Translations$profiles$en {
 	@override String get switchingProfile => '正在切换用户资料…';
 	@override String get active => '当前使用';
 	@override String get manage => '管理';
-	@override String get delete => '删除';
 	@override String get signOut => '退出登录';
 	@override String get signOutFailed => '退出登录失败。';
 	@override String get sectionTitle => '用户资料';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} 个用户资料 · 当前：${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} 个用户资料';
-	@override String get add => '添加';
 	@override String get noConnections => '没有连接';
 	@override String get incorrectPinTryAgain => 'PIN 不正确。请重试。';
 }
@@ -1019,22 +1003,6 @@ class Translations$connections$zh extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => '${count} 台服务器拒绝此账户访问';
 }
 
-// Path: accountPreferences
-class Translations$accountPreferences$zh extends Translations$accountPreferences$en {
-	Translations$accountPreferences$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => '账户偏好';
-	@override String get unavailable => '无法访问此账户';
-	@override String get autoSelectAudio => '按语言选择音频';
-	@override String get subtitleMode => '开启字幕';
-	@override late final Translations$accountPreferences$subtitleModes$zh subtitleModes = Translations$accountPreferences$subtitleModes$zh.internal(_root);
-	@override late final Translations$accountPreferences$forcedSubtitleOptions$zh forcedSubtitleOptions = Translations$accountPreferences$forcedSubtitleOptions$zh.internal(_root);
-	@override late final Translations$accountPreferences$watchedIndicatorOptions$zh watchedIndicatorOptions = Translations$accountPreferences$watchedIndicatorOptions$zh.internal(_root);
-}
-
 // Path: discover
 class Translations$discover$zh extends Translations$discover$en {
 	Translations$discover$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
@@ -1046,7 +1014,6 @@ class Translations$discover$zh extends Translations$discover$en {
 	@override String get noContentAvailable => '没有可用内容';
 	@override String get addMediaToLibraries => '请向你的媒体库添加一些媒体';
 	@override String get continueWatching => '继续观看';
-	@override String get nextUp => '接下来';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '概述';
 	@override String get cast => '演员表';
@@ -1224,7 +1191,6 @@ class Translations$navigation$zh extends Translations$navigation$en {
 	// Translations
 	@override String get libraries => '媒体库';
 	@override String get downloads => '下载';
-	@override String get liveTv => '直播电视';
 	@override String get explore => '探索';
 }
 
@@ -1284,16 +1250,8 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => '直播电视';
-	@override String get serverUnavailable => '直播电视服务器不可用。';
-	@override String get live => '直播';
-	@override String get searchHint => '搜索频道和节目';
-	@override String get now => '现在';
 	@override String get today => '今天';
 	@override String get tomorrow => '明天';
-	@override String get joinSession => '加入正在进行的会话';
-	@override String get record => '录制';
-	@override String invalidPlaybackData({required Object product}) => '${product} 返回了无效的直播电视播放数据';
 }
 
 // Path: collections
@@ -1742,63 +1700,6 @@ class Translations$externalPlayer$zh extends Translations$externalPlayer$en {
 	@override String get playInExternalPlayer => '在外部播放器中播放';
 }
 
-// Path: metadataEdit
-class Translations$metadataEdit$zh extends Translations$metadataEdit$en {
-	Translations$metadataEdit$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get artwork => '封面图片';
-	@override String get title => '标题';
-	@override String get sortTitle => '排序标题';
-	@override String get originalTitle => '原始标题';
-	@override String get releaseDate => '上映日期';
-	@override String get contentRating => '内容分级';
-	@override String get studio => '制片厂';
-	@override String get tagline => '标语';
-	@override String get summary => '简介';
-	@override String get poster => '海报';
-	@override String get background => '背景';
-	@override String get logo => '标志';
-	@override String get imageUrl => '图片 URL';
-	@override String get allEpisodes => '所有剧集';
-	@override String get never => '从不';
-	@override String get seasons => '季';
-	@override String get show => '显示';
-	@override String get hide => '隐藏';
-	@override String get subtitleMode => '自动选择字幕模式';
-	@override String get tags => '标签';
-	@override String get genre => '类型';
-	@override String get director => '导演';
-	@override String get writer => '编剧';
-	@override String get producer => '制片人';
-	@override String get country => '国家';
-	@override String get collection => '合集';
-	@override String get label => '标记';
-}
-
-// Path: matchScreen
-class Translations$matchScreen$zh extends Translations$matchScreen$en {
-	Translations$matchScreen$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get match => '匹配…';
-	@override String get search => '搜索';
-}
-
-// Path: serverTasks
-class Translations$serverTasks$zh extends Translations$serverTasks$en {
-	Translations$serverTasks$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '服务器任务';
-}
-
 // Path: trakt
 class Translations$trakt$zh extends Translations$trakt$en {
 	Translations$trakt$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
@@ -1829,7 +1730,6 @@ class Translations$seerr$zh extends Translations$seerr$en {
 	@override String get serverUrl => '服务器 URL';
 	@override String get serverUrlHelper => '你的 Seerr 实例的地址';
 	@override String get checkServer => '继续';
-	@override String get signInWithLocal => '使用本地账户';
 	@override String get email => '邮箱';
 	@override String get noSignInMethods => '此 Seerr 实例未提供 TBD 支持的登录方式。';
 	@override String get instance => '实例';
@@ -1879,10 +1779,6 @@ class Translations$services$zh extends Translations$services$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => '服务';
-	@override String get hubSubtitle => '同步观看进度并请求新内容。';
-	@override String get integrations => '集成';
-	@override String get notConnected => '未连接';
 	@override String connectedAs({required Object username}) => '已以 @${username} 身份连接';
 	@override String get scrobble => '自动记录进度';
 	@override String get scrobbleDescription => '观看完一集或一部电影后更新你的列表。';
@@ -1903,14 +1799,12 @@ class Translations$addServer$zh extends Translations$addServer$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get username => '用户名';
 	@override String get password => '密码';
 	@override String get signIn => '登录';
 	@override String get change => '更改';
 	@override String get required => '必填';
 	@override String couldNotReachServer({required Object error}) => '无法连接到服务器：${error}';
 	@override String get addConnectionTitle => '添加连接';
-	@override String get invalidCredentials => '用户名或密码无效';
 }
 
 // Path: common.ratingSource
@@ -2005,42 +1899,6 @@ class Translations$videoControls$pipErrors$zh extends Translations$videoControls
 	@override String unknown({required Object error}) => '发生错误：${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class Translations$accountPreferences$subtitleModes$zh extends Translations$accountPreferences$subtitleModes$en {
-	Translations$accountPreferences$subtitleModes$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => '手动选择';
-	@override String get defaultMode => '遵循轨道标记';
-	@override String get always => '始终启用';
-	@override String get onlyForced => '仅强制字幕';
-	@override String get smart => '外语音频时显示';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class Translations$accountPreferences$forcedSubtitleOptions$zh extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	Translations$accountPreferences$forcedSubtitleOptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get onlyForced => '仅强制字幕';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class Translations$accountPreferences$watchedIndicatorOptions$zh extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	Translations$accountPreferences$watchedIndicatorOptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => '从不';
-	@override String get movies => '仅电影';
-	@override String get shows => '仅电视剧';
-}
-
 // Path: libraries.tabs
 class Translations$libraries$tabs$zh extends Translations$libraries$tabs$en {
 	Translations$libraries$tabs$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
@@ -2083,7 +1941,6 @@ class Translations$libraries$filterCategories$zh extends Translations$libraries$
 	@override String get genre => '类型';
 	@override String get year => '年份';
 	@override String get contentRating => '内容分级';
-	@override String get tag => '标签';
 	@override String get unwatched => '未观看';
 }
 
@@ -2098,11 +1955,8 @@ class Translations$libraries$sortLabels$zh extends Translations$libraries$sortLa
 	@override String get dateAdded => '添加日期';
 	@override String get releaseDate => '发行日期';
 	@override String get rating => '评分';
-	@override String get userRating => '用户评分';
 	@override String get productionYear => '制作年份';
 	@override String get runtime => '时长';
-	@override String get startDate => '开始日期';
-	@override String get studio => '制片公司';
 	@override String get dateDownloaded => '下载日期';
 	@override String get size => '大小';
 	@override String get library => '媒体库';
@@ -2497,7 +2351,6 @@ class Translations$services$names$zh extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2660,7 +2513,6 @@ extension on TranslationsZh {
 			'settings.theme' => '主题',
 			'settings.appearance' => '外观',
 			'settings.videoPlayback' => '视频播放',
-			'settings.videoPlaybackDescription' => '配置播放行为',
 			'settings.advanced' => '高级',
 			'settings.episodePosterMode' => '剧集海报样式',
 			'settings.seriesPoster' => '剧集海报',
@@ -2672,9 +2524,6 @@ extension on TranslationsZh {
 			'settings.secondsShort' => 's',
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => '输入时长（${min}–${max}）',
-			'settings.systemTheme' => '系统',
-			'settings.lightTheme' => '浅色',
-			'settings.darkTheme' => '深色',
 			'settings.oledTheme' => 'OLED',
 			'settings.slateTheme' => '石板灰',
 			'settings.libraryDensity' => '媒体库密度',
@@ -2798,7 +2647,6 @@ extension on TranslationsZh {
 			'settings.importSettingsNoUser' => '导入设置前请先登录',
 			'settings.shortcutsReset' => '快捷键已重置为默认值',
 			'settings.about' => '关于',
-			'settings.aboutDescription' => '应用程序信息和许可证',
 			'settings.updates' => '更新',
 			'settings.updateAvailable' => '有可用更新',
 			'settings.checkForUpdates' => '检查更新',
@@ -2855,9 +2703,6 @@ extension on TranslationsZh {
 			'settings.maxVolume' => '最大音量',
 			'settings.maxVolumeDescription' => '允许音量超过 100%，以便播放音量较低的内容',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.discordRichPresence' => 'Discord 动态状态',
-			'settings.discordRichPresenceDescription' => '在 Discord 上显示您正在观看的内容',
-			'settings.manageLibrariesDescription' => '重新排序和隐藏媒体库',
 			'settings.companionRemoteServer' => '远程控制服务器',
 			'settings.companionRemoteServerDescription' => '允许同一网络中的移动设备控制此应用',
 			'settings.companionRemoteServerStartFailed' => '无法启动远程控制服务器',
@@ -2922,7 +2767,6 @@ extension on TranslationsZh {
 			'settings.startupSection' => '启动页面',
 			'settings.showExploreTab' => '显示“探索”标签页',
 			'settings.general' => '通用',
-			'settings.generalDescription' => '语言、启动和窗口行为',
 			'settings.languageAndRegion' => '语言与地区',
 			'settings.startup' => '启动',
 			'settings.display' => '显示',
@@ -2930,7 +2774,6 @@ extension on TranslationsZh {
 			'settings.homeScreen' => '主屏幕',
 			'settings.navigation' => '导航',
 			'settings.window' => '窗口',
-			'settings.liveTv' => '直播电视',
 			'settings.player' => '播放器',
 			'settings.videoAndDisplay' => '视频与显示',
 			'settings.audio' => '音频',
@@ -3080,8 +2923,6 @@ extension on TranslationsZh {
 			'fileInfo.packetLength' => '数据包长度',
 			'fileInfo.filePresent' => '文件存在',
 			'fileInfo.fileReadable' => '服务器可读',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamPath' => '流路径',
 			'fileInfo.optimizedForStreaming' => '已针对流式传输优化',
 			'fileInfo.has64bitOffsets' => '64 位偏移量',
@@ -3092,6 +2933,8 @@ extension on TranslationsZh {
 			'fileInfo.optimizationTarget' => '优化目标',
 			'fileInfo.deletedAt' => '已删除',
 			'fileInfo.remoteSource' => '远程来源',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.infiniteStream' => '无限流',
 			'fileInfo.directPlay' => '直接播放',
 			'fileInfo.directStream' => '直接串流',
@@ -3355,13 +3198,11 @@ extension on TranslationsZh {
 			'profiles.switchingProfile' => '正在切换用户资料…',
 			'profiles.active' => '当前使用',
 			'profiles.manage' => '管理',
-			'profiles.delete' => '删除',
 			'profiles.signOut' => '退出登录',
 			'profiles.signOutFailed' => '退出登录失败。',
 			'profiles.sectionTitle' => '用户资料',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} 个用户资料 · 当前：${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} 个用户资料',
-			'profiles.add' => '添加',
 			'profiles.noConnections' => '没有连接',
 			'profiles.incorrectPinTryAgain' => 'PIN 不正确。请重试。',
 			'connections.sectionTitle' => '连接',
@@ -3369,24 +3210,10 @@ extension on TranslationsZh {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的会话已过期',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} 拒绝此账户访问',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} 台服务器拒绝此账户访问',
-			'accountPreferences.sectionTitle' => '账户偏好',
-			'accountPreferences.unavailable' => '无法访问此账户',
-			'accountPreferences.autoSelectAudio' => '按语言选择音频',
-			'accountPreferences.subtitleMode' => '开启字幕',
-			'accountPreferences.subtitleModes.none' => '手动选择',
-			'accountPreferences.subtitleModes.defaultMode' => '遵循轨道标记',
-			'accountPreferences.subtitleModes.always' => '始终启用',
-			'accountPreferences.subtitleModes.onlyForced' => '仅强制字幕',
-			'accountPreferences.subtitleModes.smart' => '外语音频时显示',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => '仅强制字幕',
-			'accountPreferences.watchedIndicatorOptions.none' => '从不',
-			'accountPreferences.watchedIndicatorOptions.movies' => '仅电影',
-			'accountPreferences.watchedIndicatorOptions.shows' => '仅电视剧',
 			'discover.title' => '发现',
 			'discover.noContentAvailable' => '没有可用内容',
 			'discover.addMediaToLibraries' => '请向你的媒体库添加一些媒体',
 			'discover.continueWatching' => '继续观看',
-			'discover.nextUp' => '接下来',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '概述',
 			'discover.cast' => '演员表',
@@ -3455,17 +3282,13 @@ extension on TranslationsZh {
 			'libraries.filterCategories.genre' => '类型',
 			'libraries.filterCategories.year' => '年份',
 			'libraries.filterCategories.contentRating' => '内容分级',
-			'libraries.filterCategories.tag' => '标签',
 			'libraries.filterCategories.unwatched' => '未观看',
 			'libraries.sortLabels.title' => '标题',
 			'libraries.sortLabels.dateAdded' => '添加日期',
 			'libraries.sortLabels.releaseDate' => '发行日期',
 			'libraries.sortLabels.rating' => '评分',
-			'libraries.sortLabels.userRating' => '用户评分',
 			'libraries.sortLabels.productionYear' => '制作年份',
 			'libraries.sortLabels.runtime' => '时长',
-			'libraries.sortLabels.startDate' => '开始日期',
-			'libraries.sortLabels.studio' => '制片公司',
 			'libraries.sortLabels.dateDownloaded' => '下载日期',
 			'libraries.sortLabels.size' => '大小',
 			'libraries.sortLabels.library' => '媒体库',
@@ -3517,7 +3340,6 @@ extension on TranslationsZh {
 			'licenses.licensesCount' => ({required Object count}) => '${count} 个许可证',
 			'navigation.libraries' => '媒体库',
 			'navigation.downloads' => '下载',
-			'navigation.liveTv' => '直播电视',
 			'navigation.explore' => '探索',
 			'explore.title' => '探索',
 			'explore.selectSource' => '选择来源',
@@ -3594,8 +3416,6 @@ extension on TranslationsZh {
 			'explore.stats.completed' => ({required Object n}) => '${n} 人已看完',
 			'explore.stats.onHold' => ({required Object n}) => '${n} 人搁置',
 			'explore.stats.dropped' => ({required Object n}) => '${n} 人弃番',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => '冬季',
 			'explore.season.spring' => '春季',
 			'explore.season.summer' => '夏季',
@@ -3627,6 +3447,8 @@ extension on TranslationsZh {
 			'explore.relation.sequel' => '续集',
 			'explore.relation.sideStory' => '番外篇',
 			'explore.relation.spinOff' => '衍生作品',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => '另一版本',
 			'explore.relation.summary' => '总集篇',
 			'explore.relation.parentStory' => '原作',
@@ -3664,16 +3486,8 @@ extension on TranslationsZh {
 			'explore.detail.relatedTitles' => '相关作品',
 			'explore.detail.background' => '背景',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '${n} 条结果', ), 
-			'liveTv.title' => '直播电视',
-			'liveTv.serverUnavailable' => '直播电视服务器不可用。',
-			'liveTv.live' => '直播',
-			'liveTv.searchHint' => '搜索频道和节目',
-			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.tomorrow' => '明天',
-			'liveTv.joinSession' => '加入正在进行的会话',
-			'liveTv.record' => '录制',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 返回了无效的直播电视播放数据',
 			'collections.title' => '合集',
 			'collections.collection' => '合集',
 			'collections.empty' => '合集为空',
@@ -4108,44 +3922,12 @@ extension on TranslationsZh {
 			'externalPlayer.playerName' => '播放器名称',
 			'externalPlayer.playerNameHint' => '我的播放器',
 			'externalPlayer.playerCommand' => '命令',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerPackage' => '包名',
 			'externalPlayer.playerUrlScheme' => 'URL 方案',
 			'externalPlayer.off' => '关闭',
 			'externalPlayer.launchFailed' => '无法打开外部播放器',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
 			'externalPlayer.playInExternalPlayer' => '在外部播放器中播放',
-			'metadataEdit.artwork' => '封面图片',
-			'metadataEdit.title' => '标题',
-			'metadataEdit.sortTitle' => '排序标题',
-			'metadataEdit.originalTitle' => '原始标题',
-			'metadataEdit.releaseDate' => '上映日期',
-			'metadataEdit.contentRating' => '内容分级',
-			'metadataEdit.studio' => '制片厂',
-			'metadataEdit.tagline' => '标语',
-			'metadataEdit.summary' => '简介',
-			'metadataEdit.poster' => '海报',
-			'metadataEdit.background' => '背景',
-			'metadataEdit.logo' => '标志',
-			'metadataEdit.imageUrl' => '图片 URL',
-			'metadataEdit.allEpisodes' => '所有剧集',
-			'metadataEdit.never' => '从不',
-			'metadataEdit.seasons' => '季',
-			'metadataEdit.show' => '显示',
-			'metadataEdit.hide' => '隐藏',
-			'metadataEdit.subtitleMode' => '自动选择字幕模式',
-			'metadataEdit.tags' => '标签',
-			'metadataEdit.genre' => '类型',
-			'metadataEdit.director' => '导演',
-			'metadataEdit.writer' => '编剧',
-			'metadataEdit.producer' => '制片人',
-			'metadataEdit.country' => '国家',
-			'metadataEdit.collection' => '合集',
-			'metadataEdit.label' => '标记',
-			'matchScreen.match' => '匹配…',
-			'matchScreen.search' => '搜索',
-			'serverTasks.title' => '服务器任务',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => '已连接',
 			'trakt.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
@@ -4160,7 +3942,6 @@ extension on TranslationsZh {
 			'seerr.serverUrl' => '服务器 URL',
 			'seerr.serverUrlHelper' => '你的 Seerr 实例的地址',
 			'seerr.checkServer' => '继续',
-			'seerr.signInWithLocal' => '使用本地账户',
 			'seerr.email' => '邮箱',
 			'seerr.noSignInMethods' => '此 Seerr 实例未提供 TBD 支持的登录方式。',
 			'seerr.instance' => '实例',
@@ -4180,6 +3961,8 @@ extension on TranslationsZh {
 			'seerr.defaultOption' => ({required Object name}) => '${name}（默认）',
 			'seerr.animeNote' => '此剧集为动画。',
 			'seerr.requestSubmitted' => '请求已提交',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => '请求失败：${error}',
 			'seerr.requestsLoadFailed' => '无法加载请求选项',
 			'seerr.nothingToRequest' => '所有内容都已可用或已请求。',
@@ -4201,10 +3984,6 @@ extension on TranslationsZh {
 			'seerr.sessionRejectedAfterReauth' => '重新登录后会话被拒绝',
 			'seerr.permissionDenied' => 'Seerr 拒绝了此操作：你的账户不再拥有所需权限',
 			'seerr.permissionRevoked' => '你不再拥有请求此内容的权限',
-			'services.title' => '服务',
-			'services.hubSubtitle' => '同步观看进度并请求新内容。',
-			'services.integrations' => '集成',
-			'services.notConnected' => '未连接',
 			'services.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
 			'services.scrobble' => '自动记录进度',
 			'services.scrobbleDescription' => '观看完一集或一部电影后更新你的列表。',
@@ -4214,7 +3993,6 @@ extension on TranslationsZh {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => '在 ${service} 上激活 TBD',
 			'services.deviceCode.instructions' => '扫描二维码，或访问下方地址并输入此代码：',
@@ -4239,14 +4017,12 @@ extension on TranslationsZh {
 			'services.libraryFilter.modeHintWhitelist' => '仅同步下方勾选的媒体库。',
 			'services.libraryFilter.libraries' => '媒体库',
 			'services.libraryFilter.noLibraries' => '没有可用的媒体库',
-			'addServer.username' => '用户名',
 			'addServer.password' => '密码',
 			'addServer.signIn' => '登录',
 			'addServer.change' => '更改',
 			'addServer.required' => '必填',
 			'addServer.couldNotReachServer' => ({required Object error}) => '无法连接到服务器：${error}',
 			'addServer.addConnectionTitle' => '添加连接',
-			'addServer.invalidCredentials' => '用户名或密码无效',
 			_ => null,
 		};
 	}

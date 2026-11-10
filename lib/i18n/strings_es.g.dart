@@ -59,7 +59,6 @@ class TranslationsEs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$mpvConfig$es mpvConfig = _Translations$mpvConfig$es._(_root);
 	@override late final _Translations$profiles$es profiles = _Translations$profiles$es._(_root);
 	@override late final _Translations$connections$es connections = _Translations$connections$es._(_root);
-	@override late final _Translations$accountPreferences$es accountPreferences = _Translations$accountPreferences$es._(_root);
 	@override late final _Translations$discover$es discover = _Translations$discover$es._(_root);
 	@override late final _Translations$errors$es errors = _Translations$errors$es._(_root);
 	@override late final _Translations$libraries$es libraries = _Translations$libraries$es._(_root);
@@ -81,9 +80,6 @@ class TranslationsEs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$videoSettings$es videoSettings = _Translations$videoSettings$es._(_root);
 	@override late final _Translations$performanceOverlay$es performanceOverlay = _Translations$performanceOverlay$es._(_root);
 	@override late final _Translations$externalPlayer$es externalPlayer = _Translations$externalPlayer$es._(_root);
-	@override late final _Translations$metadataEdit$es metadataEdit = _Translations$metadataEdit$es._(_root);
-	@override late final _Translations$matchScreen$es matchScreen = _Translations$matchScreen$es._(_root);
-	@override late final _Translations$serverTasks$es serverTasks = _Translations$serverTasks$es._(_root);
 	@override late final _Translations$trakt$es trakt = _Translations$trakt$es._(_root);
 	@override late final _Translations$seerr$es seerr = _Translations$seerr$es._(_root);
 	@override late final _Translations$services$es services = _Translations$services$es._(_root);
@@ -213,7 +209,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Apariencia';
 	@override String get videoPlayback => 'Reproducción de video';
-	@override String get videoPlaybackDescription => 'Configurar el comportamiento de reproducción';
 	@override String get advanced => 'Avanzado';
 	@override String get episodePosterMode => 'Estilo del póster de episodio';
 	@override String get seriesPoster => 'Póster de la serie';
@@ -225,9 +220,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get secondsShort => 's';
 	@override String get minutesShort => 'm';
 	@override String durationHint({required Object min, required Object max}) => 'Introduce la duración (${min}-${max})';
-	@override String get systemTheme => 'Sistema';
-	@override String get lightTheme => 'Claro';
-	@override String get darkTheme => 'Oscuro';
 	@override String get oledTheme => 'OLED';
 	@override String get slateTheme => 'Pizarra';
 	@override String get libraryDensity => 'Densidad de la biblioteca';
@@ -351,7 +343,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get importSettingsNoUser => 'Inicia sesión antes de importar la configuración';
 	@override String get shortcutsReset => 'Atajos restablecidos a los valores predeterminados';
 	@override String get about => 'Acerca de';
-	@override String get aboutDescription => 'Información de la aplicación y licencias';
 	@override String get updates => 'Actualizaciones';
 	@override String get updateAvailable => 'Actualización disponible';
 	@override String get checkForUpdates => 'Buscar actualizaciones';
@@ -408,9 +399,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get maxVolume => 'Volumen máximo';
 	@override String get maxVolumeDescription => 'Permitir aumento de volumen por encima del 100% para medios con sonido bajo';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get discordRichPresence => 'Presencia de Discord';
-	@override String get discordRichPresenceDescription => 'Mostrar lo que estás viendo en Discord';
-	@override String get manageLibrariesDescription => 'Reordena y oculta bibliotecas';
 	@override String get companionRemoteServer => 'Servidor de control remoto';
 	@override String get companionRemoteServerDescription => 'Permitir que dispositivos móviles en tu red controlen esta aplicación';
 	@override String get companionRemoteServerStartFailed => 'No se pudo iniciar el servidor de control remoto';
@@ -475,7 +463,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get startupSection => 'Sección de inicio';
 	@override String get showExploreTab => 'Mostrar pestaña Explorar';
 	@override String get general => 'General';
-	@override String get generalDescription => 'Idioma, inicio y comportamiento de la ventana';
 	@override String get languageAndRegion => 'Idioma y región';
 	@override String get startup => 'Inicio';
 	@override String get display => 'Pantalla';
@@ -483,7 +470,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get homeScreen => 'Pantalla de inicio';
 	@override String get navigation => 'Navegación';
 	@override String get window => 'Ventana';
-	@override String get liveTv => 'TV en vivo';
 	@override String get player => 'Reproductor';
 	@override String get videoAndDisplay => 'Video y pantalla';
 	@override String get audio => 'Audio';
@@ -995,13 +981,11 @@ class _Translations$profiles$es extends Translations$profiles$en {
 	@override String get switchingProfile => 'Cambiando de perfil…';
 	@override String get active => 'Activo';
 	@override String get manage => 'Administrar';
-	@override String get delete => 'Eliminar';
 	@override String get signOut => 'Cerrar sesión';
 	@override String get signOutFailed => 'Error al cerrar sesión.';
 	@override String get sectionTitle => 'Perfiles';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} perfiles · activo: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} perfiles';
-	@override String get add => 'Añadir';
 	@override String get noConnections => 'Sin conexiones';
 	@override String get incorrectPinTryAgain => 'PIN incorrecto. Inténtalo de nuevo.';
 }
@@ -1020,22 +1004,6 @@ class _Translations$connections$es extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => '${count} servidores denegaron el acceso a esta cuenta';
 }
 
-// Path: accountPreferences
-class _Translations$accountPreferences$es extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$es._(TranslationsEs root) : this._root = root, super.internal(root);
-
-	final TranslationsEs _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Preferencias de cuenta';
-	@override String get unavailable => 'No se puede acceder a esta cuenta';
-	@override String get autoSelectAudio => 'Elegir audio por idioma';
-	@override String get subtitleMode => 'Activar subtítulos';
-	@override late final _Translations$accountPreferences$subtitleModes$es subtitleModes = _Translations$accountPreferences$subtitleModes$es._(_root);
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$es forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$es._(_root);
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$es watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$es._(_root);
-}
-
 // Path: discover
 class _Translations$discover$es extends Translations$discover$en {
 	_Translations$discover$es._(TranslationsEs root) : this._root = root, super.internal(root);
@@ -1047,7 +1015,6 @@ class _Translations$discover$es extends Translations$discover$en {
 	@override String get noContentAvailable => 'No hay contenido disponible';
 	@override String get addMediaToLibraries => 'Añade contenido a tus bibliotecas';
 	@override String get continueWatching => 'Seguir viendo';
-	@override String get nextUp => 'A continuación';
 	@override String playEpisode({required Object season, required Object episode}) => 'T${season}E${episode}';
 	@override String get overview => 'Resumen';
 	@override String get cast => 'Reparto';
@@ -1226,7 +1193,6 @@ class _Translations$navigation$es extends Translations$navigation$en {
 	// Translations
 	@override String get libraries => 'Bibliotecas';
 	@override String get downloads => 'Descargas';
-	@override String get liveTv => 'TV en vivo';
 	@override String get explore => 'Explorar';
 }
 
@@ -1289,16 +1255,8 @@ class _Translations$liveTv$es extends Translations$liveTv$en {
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'TV en vivo';
-	@override String get serverUnavailable => 'El servidor de TV en vivo no está disponible.';
-	@override String get live => 'EN VIVO';
-	@override String get searchHint => 'Buscar canales y programas';
-	@override String get now => 'Ahora';
 	@override String get today => 'Hoy';
 	@override String get tomorrow => 'Mañana';
-	@override String get joinSession => 'Unirse a sesión en curso';
-	@override String get record => 'Grabar';
-	@override String invalidPlaybackData({required Object product}) => '${product} devolvió datos de reproducción de TV en vivo no válidos';
 }
 
 // Path: collections
@@ -1748,63 +1706,6 @@ class _Translations$externalPlayer$es extends Translations$externalPlayer$en {
 	@override String get playInExternalPlayer => 'Reproducir en reproductor externo';
 }
 
-// Path: metadataEdit
-class _Translations$metadataEdit$es extends Translations$metadataEdit$en {
-	_Translations$metadataEdit$es._(TranslationsEs root) : this._root = root, super.internal(root);
-
-	final TranslationsEs _root; // ignore: unused_field
-
-	// Translations
-	@override String get artwork => 'Imágenes';
-	@override String get title => 'Título';
-	@override String get sortTitle => 'Título de ordenación';
-	@override String get originalTitle => 'Título original';
-	@override String get releaseDate => 'Fecha de estreno';
-	@override String get contentRating => 'Clasificación de contenido';
-	@override String get studio => 'Estudio';
-	@override String get tagline => 'Eslogan';
-	@override String get summary => 'Resumen';
-	@override String get poster => 'Póster';
-	@override String get background => 'Fondo';
-	@override String get logo => 'Logo';
-	@override String get imageUrl => 'URL de imagen';
-	@override String get allEpisodes => 'Todos los episodios';
-	@override String get never => 'Nunca';
-	@override String get seasons => 'Temporadas';
-	@override String get show => 'Mostrar';
-	@override String get hide => 'Ocultar';
-	@override String get subtitleMode => 'Selección automática de subtítulos';
-	@override String get tags => 'Etiquetas';
-	@override String get genre => 'Género';
-	@override String get director => 'Director';
-	@override String get writer => 'Guionista';
-	@override String get producer => 'Productor';
-	@override String get country => 'País';
-	@override String get collection => 'Colección';
-	@override String get label => 'Etiqueta';
-}
-
-// Path: matchScreen
-class _Translations$matchScreen$es extends Translations$matchScreen$en {
-	_Translations$matchScreen$es._(TranslationsEs root) : this._root = root, super.internal(root);
-
-	final TranslationsEs _root; // ignore: unused_field
-
-	// Translations
-	@override String get match => 'Asociar...';
-	@override String get search => 'Buscar';
-}
-
-// Path: serverTasks
-class _Translations$serverTasks$es extends Translations$serverTasks$en {
-	_Translations$serverTasks$es._(TranslationsEs root) : this._root = root, super.internal(root);
-
-	final TranslationsEs _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Tareas del servidor';
-}
-
 // Path: trakt
 class _Translations$trakt$es extends Translations$trakt$en {
 	_Translations$trakt$es._(TranslationsEs root) : this._root = root, super.internal(root);
@@ -1835,7 +1736,6 @@ class _Translations$seerr$es extends Translations$seerr$en {
 	@override String get serverUrl => 'URL del servidor';
 	@override String get serverUrlHelper => 'La dirección de tu instancia de Seerr';
 	@override String get checkServer => 'Continuar';
-	@override String get signInWithLocal => 'Usar una cuenta local';
 	@override String get email => 'Correo electrónico';
 	@override String get noSignInMethods => 'Esta instancia de Seerr no ofrece ningún método de inicio de sesión compatible con TBD.';
 	@override String get instance => 'Instancia';
@@ -1885,10 +1785,6 @@ class _Translations$services$es extends Translations$services$en {
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Servicios';
-	@override String get hubSubtitle => 'Sincroniza tu progreso de visualización y solicita nuevos títulos.';
-	@override String get integrations => 'Integraciones';
-	@override String get notConnected => 'No conectado';
 	@override String connectedAs({required Object username}) => 'Conectado como @${username}';
 	@override String get scrobble => 'Registrar progreso automáticamente';
 	@override String get scrobbleDescription => 'Actualiza tu lista cuando termines un episodio o película.';
@@ -1909,14 +1805,12 @@ class _Translations$addServer$es extends Translations$addServer$en {
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get username => 'Usuario';
 	@override String get password => 'Contraseña';
 	@override String get signIn => 'Iniciar sesión';
 	@override String get change => 'Cambiar';
 	@override String get required => 'Obligatorio';
 	@override String couldNotReachServer({required Object error}) => 'No se pudo conectar con el servidor: ${error}';
 	@override String get addConnectionTitle => 'Añadir conexión';
-	@override String get invalidCredentials => 'Usuario o contraseña no válidos';
 }
 
 // Path: common.ratingSource
@@ -2011,42 +1905,6 @@ class _Translations$videoControls$pipErrors$es extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Ocurrió un error: ${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$es extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$es._(TranslationsEs root) : this._root = root, super.internal(root);
-
-	final TranslationsEs _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Seleccionado manualmente';
-	@override String get defaultMode => 'Seguir las marcas de la pista';
-	@override String get always => 'Siempre activado';
-	@override String get onlyForced => 'Solo subtítulos forzados';
-	@override String get smart => 'Mostrar con audio extranjero';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$es extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$es._(TranslationsEs root) : this._root = root, super.internal(root);
-
-	final TranslationsEs _root; // ignore: unused_field
-
-	// Translations
-	@override String get onlyForced => 'Solo subtítulos forzados';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$es extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$es._(TranslationsEs root) : this._root = root, super.internal(root);
-
-	final TranslationsEs _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Nunca';
-	@override String get movies => 'Solo películas';
-	@override String get shows => 'Solo series de TV';
-}
-
 // Path: libraries.tabs
 class _Translations$libraries$tabs$es extends Translations$libraries$tabs$en {
 	_Translations$libraries$tabs$es._(TranslationsEs root) : this._root = root, super.internal(root);
@@ -2089,7 +1947,6 @@ class _Translations$libraries$filterCategories$es extends Translations$libraries
 	@override String get genre => 'Género';
 	@override String get year => 'Año';
 	@override String get contentRating => 'Clasificación por edad';
-	@override String get tag => 'Etiqueta';
 	@override String get unwatched => 'No vistos';
 }
 
@@ -2104,11 +1961,8 @@ class _Translations$libraries$sortLabels$es extends Translations$libraries$sortL
 	@override String get dateAdded => 'Fecha de adición';
 	@override String get releaseDate => 'Fecha de estreno';
 	@override String get rating => 'Valoración';
-	@override String get userRating => 'Valoración del usuario';
 	@override String get productionYear => 'Año de producción';
 	@override String get runtime => 'Duración';
-	@override String get startDate => 'Fecha de inicio';
-	@override String get studio => 'Estudio';
 	@override String get dateDownloaded => 'Fecha de descarga';
 	@override String get size => 'Tamaño';
 	@override String get library => 'Biblioteca';
@@ -2505,7 +2359,6 @@ class _Translations$services$names$es extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2668,7 +2521,6 @@ extension on TranslationsEs {
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Apariencia',
 			'settings.videoPlayback' => 'Reproducción de video',
-			'settings.videoPlaybackDescription' => 'Configurar el comportamiento de reproducción',
 			'settings.advanced' => 'Avanzado',
 			'settings.episodePosterMode' => 'Estilo del póster de episodio',
 			'settings.seriesPoster' => 'Póster de la serie',
@@ -2680,9 +2532,6 @@ extension on TranslationsEs {
 			'settings.secondsShort' => 's',
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Introduce la duración (${min}-${max})',
-			'settings.systemTheme' => 'Sistema',
-			'settings.lightTheme' => 'Claro',
-			'settings.darkTheme' => 'Oscuro',
 			'settings.oledTheme' => 'OLED',
 			'settings.slateTheme' => 'Pizarra',
 			'settings.libraryDensity' => 'Densidad de la biblioteca',
@@ -2806,7 +2655,6 @@ extension on TranslationsEs {
 			'settings.importSettingsNoUser' => 'Inicia sesión antes de importar la configuración',
 			'settings.shortcutsReset' => 'Atajos restablecidos a los valores predeterminados',
 			'settings.about' => 'Acerca de',
-			'settings.aboutDescription' => 'Información de la aplicación y licencias',
 			'settings.updates' => 'Actualizaciones',
 			'settings.updateAvailable' => 'Actualización disponible',
 			'settings.checkForUpdates' => 'Buscar actualizaciones',
@@ -2863,9 +2711,6 @@ extension on TranslationsEs {
 			'settings.maxVolume' => 'Volumen máximo',
 			'settings.maxVolumeDescription' => 'Permitir aumento de volumen por encima del 100% para medios con sonido bajo',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.discordRichPresence' => 'Presencia de Discord',
-			'settings.discordRichPresenceDescription' => 'Mostrar lo que estás viendo en Discord',
-			'settings.manageLibrariesDescription' => 'Reordena y oculta bibliotecas',
 			'settings.companionRemoteServer' => 'Servidor de control remoto',
 			'settings.companionRemoteServerDescription' => 'Permitir que dispositivos móviles en tu red controlen esta aplicación',
 			'settings.companionRemoteServerStartFailed' => 'No se pudo iniciar el servidor de control remoto',
@@ -2930,7 +2775,6 @@ extension on TranslationsEs {
 			'settings.startupSection' => 'Sección de inicio',
 			'settings.showExploreTab' => 'Mostrar pestaña Explorar',
 			'settings.general' => 'General',
-			'settings.generalDescription' => 'Idioma, inicio y comportamiento de la ventana',
 			'settings.languageAndRegion' => 'Idioma y región',
 			'settings.startup' => 'Inicio',
 			'settings.display' => 'Pantalla',
@@ -2938,7 +2782,6 @@ extension on TranslationsEs {
 			'settings.homeScreen' => 'Pantalla de inicio',
 			'settings.navigation' => 'Navegación',
 			'settings.window' => 'Ventana',
-			'settings.liveTv' => 'TV en vivo',
 			'settings.player' => 'Reproductor',
 			'settings.videoAndDisplay' => 'Video y pantalla',
 			'settings.audio' => 'Audio',
@@ -3088,8 +2931,6 @@ extension on TranslationsEs {
 			'fileInfo.packetLength' => 'Longitud del paquete',
 			'fileInfo.filePresent' => 'Archivo presente',
 			'fileInfo.fileReadable' => 'Legible por el servidor',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamPath' => 'Ruta del flujo',
 			'fileInfo.optimizedForStreaming' => 'Optimizado para transmisión',
 			'fileInfo.has64bitOffsets' => 'Desplazamientos de 64 bits',
@@ -3100,6 +2941,8 @@ extension on TranslationsEs {
 			'fileInfo.optimizationTarget' => 'Destino de optimización',
 			'fileInfo.deletedAt' => 'Eliminado',
 			'fileInfo.remoteSource' => 'Origen remoto',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.infiniteStream' => 'Flujo infinito',
 			'fileInfo.directPlay' => 'Reproducción directa',
 			'fileInfo.directStream' => 'Flujo directo',
@@ -3363,13 +3206,11 @@ extension on TranslationsEs {
 			'profiles.switchingProfile' => 'Cambiando de perfil…',
 			'profiles.active' => 'Activo',
 			'profiles.manage' => 'Administrar',
-			'profiles.delete' => 'Eliminar',
 			'profiles.signOut' => 'Cerrar sesión',
 			'profiles.signOutFailed' => 'Error al cerrar sesión.',
 			'profiles.sectionTitle' => 'Perfiles',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} perfiles · activo: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} perfiles',
-			'profiles.add' => 'Añadir',
 			'profiles.noConnections' => 'Sin conexiones',
 			'profiles.incorrectPinTryAgain' => 'PIN incorrecto. Inténtalo de nuevo.',
 			'connections.sectionTitle' => 'Conexiones',
@@ -3377,24 +3218,10 @@ extension on TranslationsEs {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sesión caducada para ${name}',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} denegó el acceso a esta cuenta',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servidores denegaron el acceso a esta cuenta',
-			'accountPreferences.sectionTitle' => 'Preferencias de cuenta',
-			'accountPreferences.unavailable' => 'No se puede acceder a esta cuenta',
-			'accountPreferences.autoSelectAudio' => 'Elegir audio por idioma',
-			'accountPreferences.subtitleMode' => 'Activar subtítulos',
-			'accountPreferences.subtitleModes.none' => 'Seleccionado manualmente',
-			'accountPreferences.subtitleModes.defaultMode' => 'Seguir las marcas de la pista',
-			'accountPreferences.subtitleModes.always' => 'Siempre activado',
-			'accountPreferences.subtitleModes.onlyForced' => 'Solo subtítulos forzados',
-			'accountPreferences.subtitleModes.smart' => 'Mostrar con audio extranjero',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Solo subtítulos forzados',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Nunca',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Solo películas',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Solo series de TV',
 			'discover.title' => 'Descubrir',
 			'discover.noContentAvailable' => 'No hay contenido disponible',
 			'discover.addMediaToLibraries' => 'Añade contenido a tus bibliotecas',
 			'discover.continueWatching' => 'Seguir viendo',
-			'discover.nextUp' => 'A continuación',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'T${season}E${episode}',
 			'discover.overview' => 'Resumen',
 			'discover.cast' => 'Reparto',
@@ -3463,17 +3290,13 @@ extension on TranslationsEs {
 			'libraries.filterCategories.genre' => 'Género',
 			'libraries.filterCategories.year' => 'Año',
 			'libraries.filterCategories.contentRating' => 'Clasificación por edad',
-			'libraries.filterCategories.tag' => 'Etiqueta',
 			'libraries.filterCategories.unwatched' => 'No vistos',
 			'libraries.sortLabels.title' => 'Título',
 			'libraries.sortLabels.dateAdded' => 'Fecha de adición',
 			'libraries.sortLabels.releaseDate' => 'Fecha de estreno',
 			'libraries.sortLabels.rating' => 'Valoración',
-			'libraries.sortLabels.userRating' => 'Valoración del usuario',
 			'libraries.sortLabels.productionYear' => 'Año de producción',
 			'libraries.sortLabels.runtime' => 'Duración',
-			'libraries.sortLabels.startDate' => 'Fecha de inicio',
-			'libraries.sortLabels.studio' => 'Estudio',
 			'libraries.sortLabels.dateDownloaded' => 'Fecha de descarga',
 			'libraries.sortLabels.size' => 'Tamaño',
 			'libraries.sortLabels.library' => 'Biblioteca',
@@ -3525,7 +3348,6 @@ extension on TranslationsEs {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licencias',
 			'navigation.libraries' => 'Bibliotecas',
 			'navigation.downloads' => 'Descargas',
-			'navigation.liveTv' => 'TV en vivo',
 			'navigation.explore' => 'Explorar',
 			'explore.title' => 'Explorar',
 			'explore.selectSource' => 'Seleccionar fuente',
@@ -3602,8 +3424,6 @@ extension on TranslationsEs {
 			'explore.stats.completed' => ({required Object n}) => '${n} lo completaron',
 			'explore.stats.onHold' => ({required Object n}) => '${n} en pausa',
 			'explore.stats.dropped' => ({required Object n}) => '${n} lo abandonaron',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Invierno',
 			'explore.season.spring' => 'Primavera',
 			'explore.season.summer' => 'Verano',
@@ -3635,6 +3455,8 @@ extension on TranslationsEs {
 			'explore.relation.sequel' => 'Secuela',
 			'explore.relation.sideStory' => 'Historia paralela',
 			'explore.relation.spinOff' => 'Spin-off',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => 'Versión alternativa',
 			'explore.relation.summary' => 'Resumen',
 			'explore.relation.parentStory' => 'Historia principal',
@@ -3672,16 +3494,8 @@ extension on TranslationsEs {
 			'explore.detail.relatedTitles' => 'Títulos relacionados',
 			'explore.detail.background' => 'Antecedentes',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n, one: '${n} resultado', other: '${n} resultados', ), 
-			'liveTv.title' => 'TV en vivo',
-			'liveTv.serverUnavailable' => 'El servidor de TV en vivo no está disponible.',
-			'liveTv.live' => 'EN VIVO',
-			'liveTv.searchHint' => 'Buscar canales y programas',
-			'liveTv.now' => 'Ahora',
 			'liveTv.today' => 'Hoy',
 			'liveTv.tomorrow' => 'Mañana',
-			'liveTv.joinSession' => 'Unirse a sesión en curso',
-			'liveTv.record' => 'Grabar',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} devolvió datos de reproducción de TV en vivo no válidos',
 			'collections.title' => 'Colecciones',
 			'collections.collection' => 'Colección',
 			'collections.empty' => 'La colección está vacía',
@@ -4116,44 +3930,12 @@ extension on TranslationsEs {
 			'externalPlayer.playerName' => 'Nombre del reproductor',
 			'externalPlayer.playerNameHint' => 'Mi reproductor',
 			'externalPlayer.playerCommand' => 'Comando',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerPackage' => 'Nombre del paquete',
 			'externalPlayer.playerUrlScheme' => 'Esquema URL',
 			'externalPlayer.off' => 'Desactivado',
 			'externalPlayer.launchFailed' => 'No se pudo abrir el reproductor externo',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} no está instalado',
 			'externalPlayer.playInExternalPlayer' => 'Reproducir en reproductor externo',
-			'metadataEdit.artwork' => 'Imágenes',
-			'metadataEdit.title' => 'Título',
-			'metadataEdit.sortTitle' => 'Título de ordenación',
-			'metadataEdit.originalTitle' => 'Título original',
-			'metadataEdit.releaseDate' => 'Fecha de estreno',
-			'metadataEdit.contentRating' => 'Clasificación de contenido',
-			'metadataEdit.studio' => 'Estudio',
-			'metadataEdit.tagline' => 'Eslogan',
-			'metadataEdit.summary' => 'Resumen',
-			'metadataEdit.poster' => 'Póster',
-			'metadataEdit.background' => 'Fondo',
-			'metadataEdit.logo' => 'Logo',
-			'metadataEdit.imageUrl' => 'URL de imagen',
-			'metadataEdit.allEpisodes' => 'Todos los episodios',
-			'metadataEdit.never' => 'Nunca',
-			'metadataEdit.seasons' => 'Temporadas',
-			'metadataEdit.show' => 'Mostrar',
-			'metadataEdit.hide' => 'Ocultar',
-			'metadataEdit.subtitleMode' => 'Selección automática de subtítulos',
-			'metadataEdit.tags' => 'Etiquetas',
-			'metadataEdit.genre' => 'Género',
-			'metadataEdit.director' => 'Director',
-			'metadataEdit.writer' => 'Guionista',
-			'metadataEdit.producer' => 'Productor',
-			'metadataEdit.country' => 'País',
-			'metadataEdit.collection' => 'Colección',
-			'metadataEdit.label' => 'Etiqueta',
-			'matchScreen.match' => 'Asociar...',
-			'matchScreen.search' => 'Buscar',
-			'serverTasks.title' => 'Tareas del servidor',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Conectado',
 			'trakt.connectedAs' => ({required Object username}) => 'Conectado como @${username}',
@@ -4168,7 +3950,6 @@ extension on TranslationsEs {
 			'seerr.serverUrl' => 'URL del servidor',
 			'seerr.serverUrlHelper' => 'La dirección de tu instancia de Seerr',
 			'seerr.checkServer' => 'Continuar',
-			'seerr.signInWithLocal' => 'Usar una cuenta local',
 			'seerr.email' => 'Correo electrónico',
 			'seerr.noSignInMethods' => 'Esta instancia de Seerr no ofrece ningún método de inicio de sesión compatible con TBD.',
 			'seerr.instance' => 'Instancia',
@@ -4188,6 +3969,8 @@ extension on TranslationsEs {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (predeterminado)',
 			'seerr.animeNote' => 'Esta serie es un anime.',
 			'seerr.requestSubmitted' => 'Solicitud enviada',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => 'La solicitud falló: ${error}',
 			'seerr.requestsLoadFailed' => 'No se pudieron cargar las opciones de solicitud',
 			'seerr.nothingToRequest' => 'Todo ya está disponible o solicitado.',
@@ -4209,10 +3992,6 @@ extension on TranslationsEs {
 			'seerr.sessionRejectedAfterReauth' => 'La sesión fue rechazada después de volver a iniciar sesión',
 			'seerr.permissionDenied' => 'Seerr denegó esta acción: tu cuenta ya no tiene el permiso necesario',
 			'seerr.permissionRevoked' => 'Ya no tienes permiso para solicitar esto',
-			'services.title' => 'Servicios',
-			'services.hubSubtitle' => 'Sincroniza tu progreso de visualización y solicita nuevos títulos.',
-			'services.integrations' => 'Integraciones',
-			'services.notConnected' => 'No conectado',
 			'services.connectedAs' => ({required Object username}) => 'Conectado como @${username}',
 			'services.scrobble' => 'Registrar progreso automáticamente',
 			'services.scrobbleDescription' => 'Actualiza tu lista cuando termines un episodio o película.',
@@ -4222,7 +4001,6 @@ extension on TranslationsEs {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Activar TBD en ${service}',
 			'services.deviceCode.instructions' => 'Escanea el código QR o visita la dirección que aparece a continuación e introduce este código:',
@@ -4247,14 +4025,12 @@ extension on TranslationsEs {
 			'services.libraryFilter.modeHintWhitelist' => 'Sincronizar solo las bibliotecas seleccionadas abajo.',
 			'services.libraryFilter.libraries' => 'Bibliotecas',
 			'services.libraryFilter.noLibraries' => 'No hay bibliotecas disponibles',
-			'addServer.username' => 'Usuario',
 			'addServer.password' => 'Contraseña',
 			'addServer.signIn' => 'Iniciar sesión',
 			'addServer.change' => 'Cambiar',
 			'addServer.required' => 'Obligatorio',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'No se pudo conectar con el servidor: ${error}',
 			'addServer.addConnectionTitle' => 'Añadir conexión',
-			'addServer.invalidCredentials' => 'Usuario o contraseña no válidos',
 			_ => null,
 		};
 	}

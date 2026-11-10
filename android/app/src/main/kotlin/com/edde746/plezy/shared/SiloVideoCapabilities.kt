@@ -57,28 +57,32 @@ internal object SiloVideoCapabilities {
         when (codec) {
           "hevc" -> {
             hevcMultiInstance = hevcMultiInstance || multiInstance
-            for (pl in caps.profileLevels) when (pl.profile) {
-              CodecProfileLevel.HEVCProfileMain10HDR10 -> {
-                hevcHdr = true
-                hdr10 = true
-              }
-              CodecProfileLevel.HEVCProfileMain10HDR10Plus -> {
-                hevcHdr = true
-                hdr10 = true
-                hdr10Plus = true
+            for (pl in caps.profileLevels) {
+              when (pl.profile) {
+                CodecProfileLevel.HEVCProfileMain10HDR10 -> {
+                  hevcHdr = true
+                  hdr10 = true
+                }
+                CodecProfileLevel.HEVCProfileMain10HDR10Plus -> {
+                  hevcHdr = true
+                  hdr10 = true
+                  hdr10Plus = true
+                }
               }
             }
           }
           "av1" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            for (pl in caps.profileLevels) when (pl.profile) {
-              CodecProfileLevel.AV1ProfileMain10HDR10 -> {
-                av1Hdr = true
-                hdr10 = true
-              }
-              CodecProfileLevel.AV1ProfileMain10HDR10Plus -> {
-                av1Hdr = true
-                hdr10 = true
-                hdr10Plus = true
+            for (pl in caps.profileLevels) {
+              when (pl.profile) {
+                CodecProfileLevel.AV1ProfileMain10HDR10 -> {
+                  av1Hdr = true
+                  hdr10 = true
+                }
+                CodecProfileLevel.AV1ProfileMain10HDR10Plus -> {
+                  av1Hdr = true
+                  hdr10 = true
+                  hdr10Plus = true
+                }
               }
             }
           }
@@ -211,17 +215,19 @@ internal object SiloVideoCapabilities {
     } else {
       emptyList()
     }
-    val pointBounded = if (points.isEmpty()) {
-      null
-    } else {
+    // The version check repeats the one above so lint can see that the
+    // PerformancePoint calls only run on API 29+.
+    val pointBounded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && points.isNotEmpty()) {
       STANDARD_VIDEO_SIZES.firstOrNull { size ->
         supported(size) && points.any { it.covers(MediaCodecInfo.VideoCapabilities.PerformancePoint(size.first, size.second, 24)) }
       }
+    } else {
+      null
     }
     val rateSize = pointBounded ?: largest
     val rangeUpper = rateSize?.let { (w, h) -> runCatching { video.getSupportedFrameRatesFor(w, h).upper }.getOrNull() }
       ?: video.supportedFrameRates?.upper?.toDouble() ?: 0.0
-    val pointRate = if (points.isNotEmpty() && rateSize != null) {
+    val pointRate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && points.isNotEmpty() && rateSize != null) {
       STANDARD_FRAME_RATES.firstOrNull { rate ->
         val wanted = MediaCodecInfo.VideoCapabilities.PerformancePoint(rateSize.first, rateSize.second, rate)
         points.any { it.covers(wanted) }

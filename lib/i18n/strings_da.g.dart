@@ -59,7 +59,6 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$mpvConfig$da mpvConfig = _Translations$mpvConfig$da._(_root);
 	@override late final _Translations$profiles$da profiles = _Translations$profiles$da._(_root);
 	@override late final _Translations$connections$da connections = _Translations$connections$da._(_root);
-	@override late final _Translations$accountPreferences$da accountPreferences = _Translations$accountPreferences$da._(_root);
 	@override late final _Translations$discover$da discover = _Translations$discover$da._(_root);
 	@override late final _Translations$errors$da errors = _Translations$errors$da._(_root);
 	@override late final _Translations$libraries$da libraries = _Translations$libraries$da._(_root);
@@ -81,9 +80,6 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$videoSettings$da videoSettings = _Translations$videoSettings$da._(_root);
 	@override late final _Translations$performanceOverlay$da performanceOverlay = _Translations$performanceOverlay$da._(_root);
 	@override late final _Translations$externalPlayer$da externalPlayer = _Translations$externalPlayer$da._(_root);
-	@override late final _Translations$metadataEdit$da metadataEdit = _Translations$metadataEdit$da._(_root);
-	@override late final _Translations$matchScreen$da matchScreen = _Translations$matchScreen$da._(_root);
-	@override late final _Translations$serverTasks$da serverTasks = _Translations$serverTasks$da._(_root);
 	@override late final _Translations$trakt$da trakt = _Translations$trakt$da._(_root);
 	@override late final _Translations$seerr$da seerr = _Translations$seerr$da._(_root);
 	@override late final _Translations$services$da services = _Translations$services$da._(_root);
@@ -213,7 +209,6 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Udseende';
 	@override String get videoPlayback => 'Videoafspilning';
-	@override String get videoPlaybackDescription => 'Konfigurer afspilningsadfærd';
 	@override String get advanced => 'Avanceret';
 	@override String get episodePosterMode => 'Episodeplakatstil';
 	@override String get seriesPoster => 'Serieplakat';
@@ -225,9 +220,6 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get secondsShort => 's';
 	@override String get minutesShort => 'm';
 	@override String durationHint({required Object min, required Object max}) => 'Indtast varighed (${min}-${max})';
-	@override String get systemTheme => 'System';
-	@override String get lightTheme => 'Lys';
-	@override String get darkTheme => 'Mørk';
 	@override String get oledTheme => 'OLED';
 	@override String get slateTheme => 'Skifer';
 	@override String get libraryDensity => 'Bibliotekstæthed';
@@ -351,7 +343,6 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get importSettingsNoUser => 'Log ind før import af indstillinger';
 	@override String get shortcutsReset => 'Genveje nulstillet til standard';
 	@override String get about => 'Om';
-	@override String get aboutDescription => 'App-information og licenser';
 	@override String get updates => 'Opdateringer';
 	@override String get updateAvailable => 'Opdatering tilgængelig';
 	@override String get checkForUpdates => 'Søg efter opdateringer';
@@ -408,9 +399,6 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get maxVolume => 'Maksimal lydstyrke';
 	@override String get maxVolumeDescription => 'Tillad lydstyrkeforstærkning over 100 % for stille medier';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get discordRichPresence => 'Discord Rich Presence';
-	@override String get discordRichPresenceDescription => 'Vis på Discord, hvad du ser';
-	@override String get manageLibrariesDescription => 'Omarranger og skjul biblioteker';
 	@override String get companionRemoteServer => 'Fjernbetjeningsserver';
 	@override String get companionRemoteServerDescription => 'Tillad mobilenheder på dit netværk at styre denne app';
 	@override String get companionRemoteServerStartFailed => 'Fjernbetjeningsserveren kunne ikke startes';
@@ -475,7 +463,6 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get startupSection => 'Startsektion';
 	@override String get showExploreTab => 'Vis fanen Opdag';
 	@override String get general => 'Generelt';
-	@override String get generalDescription => 'Sprog, opstart og vinduesadfærd';
 	@override String get languageAndRegion => 'Sprog og region';
 	@override String get startup => 'Opstart';
 	@override String get display => 'Skærm';
@@ -483,7 +470,6 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get homeScreen => 'Startskærm';
 	@override String get navigation => 'Navigation';
 	@override String get window => 'Vindue';
-	@override String get liveTv => 'Live TV';
 	@override String get player => 'Afspiller';
 	@override String get videoAndDisplay => 'Video og skærm';
 	@override String get audio => 'Lyd';
@@ -995,13 +981,11 @@ class _Translations$profiles$da extends Translations$profiles$en {
 	@override String get switchingProfile => 'Skifter profil…';
 	@override String get active => 'Aktiv';
 	@override String get manage => 'Administrer';
-	@override String get delete => 'Slet';
 	@override String get signOut => 'Log ud';
 	@override String get signOutFailed => 'Kunne ikke logge ud.';
 	@override String get sectionTitle => 'Profiler';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} profiler';
-	@override String get add => 'Tilføj';
 	@override String get noConnections => 'Ingen forbindelser';
 	@override String get incorrectPinTryAgain => 'Forkert PIN. Prøv igen.';
 }
@@ -1020,22 +1004,6 @@ class _Translations$connections$da extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => '${count} servere nægtede adgang for denne konto';
 }
 
-// Path: accountPreferences
-class _Translations$accountPreferences$da extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Kontopræferencer';
-	@override String get unavailable => 'Kan ikke nå denne konto';
-	@override String get autoSelectAudio => 'Vælg lyd ud fra sprog';
-	@override String get subtitleMode => 'Slå undertekster til';
-	@override late final _Translations$accountPreferences$subtitleModes$da subtitleModes = _Translations$accountPreferences$subtitleModes$da._(_root);
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$da forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$da._(_root);
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$da watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$da._(_root);
-}
-
 // Path: discover
 class _Translations$discover$da extends Translations$discover$en {
 	_Translations$discover$da._(TranslationsDa root) : this._root = root, super.internal(root);
@@ -1047,7 +1015,6 @@ class _Translations$discover$da extends Translations$discover$en {
 	@override String get noContentAvailable => 'Intet indhold tilgængeligt';
 	@override String get addMediaToLibraries => 'Tilføj medier til dine biblioteker';
 	@override String get continueWatching => 'Fortsæt med at se';
-	@override String get nextUp => 'Næste afsnit';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Oversigt';
 	@override String get cast => 'Rollebesætning';
@@ -1226,7 +1193,6 @@ class _Translations$navigation$da extends Translations$navigation$en {
 	// Translations
 	@override String get libraries => 'Biblioteker';
 	@override String get downloads => 'Downloads';
-	@override String get liveTv => 'Live TV';
 	@override String get explore => 'Udforsk';
 }
 
@@ -1289,16 +1255,8 @@ class _Translations$liveTv$da extends Translations$liveTv$en {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Live TV';
-	@override String get serverUnavailable => 'Live-tv-serveren er ikke tilgængelig.';
-	@override String get live => 'LIVE';
-	@override String get searchHint => 'Søg efter kanaler og programmer';
-	@override String get now => 'Nu';
 	@override String get today => 'I dag';
 	@override String get tomorrow => 'I morgen';
-	@override String get joinSession => 'Deltag i igangværende session';
-	@override String get record => 'Optag';
-	@override String invalidPlaybackData({required Object product}) => '${product} returnerede ugyldige afspilningsdata for Live TV';
 }
 
 // Path: collections
@@ -1748,63 +1706,6 @@ class _Translations$externalPlayer$da extends Translations$externalPlayer$en {
 	@override String get playInExternalPlayer => 'Afspil i ekstern afspiller';
 }
 
-// Path: metadataEdit
-class _Translations$metadataEdit$da extends Translations$metadataEdit$en {
-	_Translations$metadataEdit$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get artwork => 'Grafik';
-	@override String get title => 'Titel';
-	@override String get sortTitle => 'Sorteringstitel';
-	@override String get originalTitle => 'Originaltitel';
-	@override String get releaseDate => 'Udgivelsesdato';
-	@override String get contentRating => 'Aldersgrænse';
-	@override String get studio => 'Studie';
-	@override String get tagline => 'Slogan';
-	@override String get summary => 'Resumé';
-	@override String get poster => 'Plakat';
-	@override String get background => 'Baggrund';
-	@override String get logo => 'Logo';
-	@override String get imageUrl => 'Billed-URL';
-	@override String get allEpisodes => 'Alle episoder';
-	@override String get never => 'Aldrig';
-	@override String get seasons => 'Sæsoner';
-	@override String get show => 'Vis';
-	@override String get hide => 'Skjul';
-	@override String get subtitleMode => 'Automatisk valg af undertekster';
-	@override String get tags => 'Tags';
-	@override String get genre => 'Genre';
-	@override String get director => 'Instruktør';
-	@override String get writer => 'Forfatter';
-	@override String get producer => 'Producer';
-	@override String get country => 'Land';
-	@override String get collection => 'Samling';
-	@override String get label => 'Etiket';
-}
-
-// Path: matchScreen
-class _Translations$matchScreen$da extends Translations$matchScreen$en {
-	_Translations$matchScreen$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get match => 'Match...';
-	@override String get search => 'Søg';
-}
-
-// Path: serverTasks
-class _Translations$serverTasks$da extends Translations$serverTasks$en {
-	_Translations$serverTasks$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Serveropgaver';
-}
-
 // Path: trakt
 class _Translations$trakt$da extends Translations$trakt$en {
 	_Translations$trakt$da._(TranslationsDa root) : this._root = root, super.internal(root);
@@ -1835,7 +1736,6 @@ class _Translations$seerr$da extends Translations$seerr$en {
 	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrlHelper => 'Adressen på din Seerr-instans';
 	@override String get checkServer => 'Fortsæt';
-	@override String get signInWithLocal => 'Brug en lokal konto';
 	@override String get email => 'E-mail';
 	@override String get noSignInMethods => 'Denne Seerr-instans tilbyder ingen loginmetode, som TBD understøtter.';
 	@override String get instance => 'Instans';
@@ -1885,10 +1785,6 @@ class _Translations$services$da extends Translations$services$en {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Tjenester';
-	@override String get hubSubtitle => 'Synkroniser dit visningsfremskridt, og anmod om nye titler.';
-	@override String get integrations => 'Integrationer';
-	@override String get notConnected => 'Ikke forbundet';
 	@override String connectedAs({required Object username}) => 'Forbundet som @${username}';
 	@override String get scrobble => 'Registrer fremgang automatisk';
 	@override String get scrobbleDescription => 'Opdater din liste, når du er færdig med et afsnit eller en film.';
@@ -1909,14 +1805,12 @@ class _Translations$addServer$da extends Translations$addServer$en {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get username => 'Brugernavn';
 	@override String get password => 'Adgangskode';
 	@override String get signIn => 'Log ind';
 	@override String get change => 'Ændr';
 	@override String get required => 'Påkrævet';
 	@override String couldNotReachServer({required Object error}) => 'Kunne ikke nå serveren: ${error}';
 	@override String get addConnectionTitle => 'Tilføj forbindelse';
-	@override String get invalidCredentials => 'Ugyldigt brugernavn eller ugyldig adgangskode';
 }
 
 // Path: common.ratingSource
@@ -2011,42 +1905,6 @@ class _Translations$videoControls$pipErrors$da extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Der opstod en fejl: ${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$da extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Manuelt valgt';
-	@override String get defaultMode => 'Følg sporets flag';
-	@override String get always => 'Altid aktiveret';
-	@override String get onlyForced => 'Kun tvungne undertekster';
-	@override String get smart => 'Vis ved fremmedsproget lyd';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$da extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get onlyForced => 'Kun tvungne undertekster';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$da extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Aldrig';
-	@override String get movies => 'Kun film';
-	@override String get shows => 'Kun TV-serier';
-}
-
 // Path: libraries.tabs
 class _Translations$libraries$tabs$da extends Translations$libraries$tabs$en {
 	_Translations$libraries$tabs$da._(TranslationsDa root) : this._root = root, super.internal(root);
@@ -2089,7 +1947,6 @@ class _Translations$libraries$filterCategories$da extends Translations$libraries
 	@override String get genre => 'Genre';
 	@override String get year => 'År';
 	@override String get contentRating => 'Aldersvurdering';
-	@override String get tag => 'Tag';
 	@override String get unwatched => 'Usete';
 }
 
@@ -2104,11 +1961,8 @@ class _Translations$libraries$sortLabels$da extends Translations$libraries$sortL
 	@override String get dateAdded => 'Tilføjet dato';
 	@override String get releaseDate => 'Udgivelsesdato';
 	@override String get rating => 'Vurdering';
-	@override String get userRating => 'Brugerbedømmelse';
 	@override String get productionYear => 'Produktionsår';
 	@override String get runtime => 'Spilletid';
-	@override String get startDate => 'Startdato';
-	@override String get studio => 'Studie';
 	@override String get dateDownloaded => 'Downloadet dato';
 	@override String get size => 'Størrelse';
 	@override String get library => 'Bibliotek';
@@ -2505,7 +2359,6 @@ class _Translations$services$names$da extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2668,7 +2521,6 @@ extension on TranslationsDa {
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Udseende',
 			'settings.videoPlayback' => 'Videoafspilning',
-			'settings.videoPlaybackDescription' => 'Konfigurer afspilningsadfærd',
 			'settings.advanced' => 'Avanceret',
 			'settings.episodePosterMode' => 'Episodeplakatstil',
 			'settings.seriesPoster' => 'Serieplakat',
@@ -2680,9 +2532,6 @@ extension on TranslationsDa {
 			'settings.secondsShort' => 's',
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Indtast varighed (${min}-${max})',
-			'settings.systemTheme' => 'System',
-			'settings.lightTheme' => 'Lys',
-			'settings.darkTheme' => 'Mørk',
 			'settings.oledTheme' => 'OLED',
 			'settings.slateTheme' => 'Skifer',
 			'settings.libraryDensity' => 'Bibliotekstæthed',
@@ -2806,7 +2655,6 @@ extension on TranslationsDa {
 			'settings.importSettingsNoUser' => 'Log ind før import af indstillinger',
 			'settings.shortcutsReset' => 'Genveje nulstillet til standard',
 			'settings.about' => 'Om',
-			'settings.aboutDescription' => 'App-information og licenser',
 			'settings.updates' => 'Opdateringer',
 			'settings.updateAvailable' => 'Opdatering tilgængelig',
 			'settings.checkForUpdates' => 'Søg efter opdateringer',
@@ -2863,9 +2711,6 @@ extension on TranslationsDa {
 			'settings.maxVolume' => 'Maksimal lydstyrke',
 			'settings.maxVolumeDescription' => 'Tillad lydstyrkeforstærkning over 100 % for stille medier',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.discordRichPresence' => 'Discord Rich Presence',
-			'settings.discordRichPresenceDescription' => 'Vis på Discord, hvad du ser',
-			'settings.manageLibrariesDescription' => 'Omarranger og skjul biblioteker',
 			'settings.companionRemoteServer' => 'Fjernbetjeningsserver',
 			'settings.companionRemoteServerDescription' => 'Tillad mobilenheder på dit netværk at styre denne app',
 			'settings.companionRemoteServerStartFailed' => 'Fjernbetjeningsserveren kunne ikke startes',
@@ -2930,7 +2775,6 @@ extension on TranslationsDa {
 			'settings.startupSection' => 'Startsektion',
 			'settings.showExploreTab' => 'Vis fanen Opdag',
 			'settings.general' => 'Generelt',
-			'settings.generalDescription' => 'Sprog, opstart og vinduesadfærd',
 			'settings.languageAndRegion' => 'Sprog og region',
 			'settings.startup' => 'Opstart',
 			'settings.display' => 'Skærm',
@@ -2938,7 +2782,6 @@ extension on TranslationsDa {
 			'settings.homeScreen' => 'Startskærm',
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Vindue',
-			'settings.liveTv' => 'Live TV',
 			'settings.player' => 'Afspiller',
 			'settings.videoAndDisplay' => 'Video og skærm',
 			'settings.audio' => 'Lyd',
@@ -3088,8 +2931,6 @@ extension on TranslationsDa {
 			'fileInfo.packetLength' => 'Pakkelængde',
 			'fileInfo.filePresent' => 'Fil til stede',
 			'fileInfo.fileReadable' => 'Læsbar af serveren',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamPath' => 'Strømsti',
 			'fileInfo.optimizedForStreaming' => 'Optimeret til streaming',
 			'fileInfo.has64bitOffsets' => '64-bit-forskydninger',
@@ -3100,6 +2941,8 @@ extension on TranslationsDa {
 			'fileInfo.optimizationTarget' => 'Optimeringsmål',
 			'fileInfo.deletedAt' => 'Slettet',
 			'fileInfo.remoteSource' => 'Fjernkilde',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.infiniteStream' => 'Uendelig strøm',
 			'fileInfo.directPlay' => 'Direkte afspilning',
 			'fileInfo.directStream' => 'Direkte strømning',
@@ -3363,13 +3206,11 @@ extension on TranslationsDa {
 			'profiles.switchingProfile' => 'Skifter profil…',
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Administrer',
-			'profiles.delete' => 'Slet',
 			'profiles.signOut' => 'Log ud',
 			'profiles.signOutFailed' => 'Kunne ikke logge ud.',
 			'profiles.sectionTitle' => 'Profiler',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
-			'profiles.add' => 'Tilføj',
 			'profiles.noConnections' => 'Ingen forbindelser',
 			'profiles.incorrectPinTryAgain' => 'Forkert PIN. Prøv igen.',
 			'connections.sectionTitle' => 'Forbindelser',
@@ -3377,24 +3218,10 @@ extension on TranslationsDa {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen er udløbet for ${name}',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} nægtede adgang for denne konto',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servere nægtede adgang for denne konto',
-			'accountPreferences.sectionTitle' => 'Kontopræferencer',
-			'accountPreferences.unavailable' => 'Kan ikke nå denne konto',
-			'accountPreferences.autoSelectAudio' => 'Vælg lyd ud fra sprog',
-			'accountPreferences.subtitleMode' => 'Slå undertekster til',
-			'accountPreferences.subtitleModes.none' => 'Manuelt valgt',
-			'accountPreferences.subtitleModes.defaultMode' => 'Følg sporets flag',
-			'accountPreferences.subtitleModes.always' => 'Altid aktiveret',
-			'accountPreferences.subtitleModes.onlyForced' => 'Kun tvungne undertekster',
-			'accountPreferences.subtitleModes.smart' => 'Vis ved fremmedsproget lyd',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Kun tvungne undertekster',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Aldrig',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Kun film',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Kun TV-serier',
 			'discover.title' => 'Opdag',
 			'discover.noContentAvailable' => 'Intet indhold tilgængeligt',
 			'discover.addMediaToLibraries' => 'Tilføj medier til dine biblioteker',
 			'discover.continueWatching' => 'Fortsæt med at se',
-			'discover.nextUp' => 'Næste afsnit',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Oversigt',
 			'discover.cast' => 'Rollebesætning',
@@ -3463,17 +3290,13 @@ extension on TranslationsDa {
 			'libraries.filterCategories.genre' => 'Genre',
 			'libraries.filterCategories.year' => 'År',
 			'libraries.filterCategories.contentRating' => 'Aldersvurdering',
-			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Usete',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tilføjet dato',
 			'libraries.sortLabels.releaseDate' => 'Udgivelsesdato',
 			'libraries.sortLabels.rating' => 'Vurdering',
-			'libraries.sortLabels.userRating' => 'Brugerbedømmelse',
 			'libraries.sortLabels.productionYear' => 'Produktionsår',
 			'libraries.sortLabels.runtime' => 'Spilletid',
-			'libraries.sortLabels.startDate' => 'Startdato',
-			'libraries.sortLabels.studio' => 'Studie',
 			'libraries.sortLabels.dateDownloaded' => 'Downloadet dato',
 			'libraries.sortLabels.size' => 'Størrelse',
 			'libraries.sortLabels.library' => 'Bibliotek',
@@ -3525,7 +3348,6 @@ extension on TranslationsDa {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenser',
 			'navigation.libraries' => 'Biblioteker',
 			'navigation.downloads' => 'Downloads',
-			'navigation.liveTv' => 'Live TV',
 			'navigation.explore' => 'Udforsk',
 			'explore.title' => 'Udforsk',
 			'explore.selectSource' => 'Vælg kilde',
@@ -3602,8 +3424,6 @@ extension on TranslationsDa {
 			'explore.stats.completed' => ({required Object n}) => '${n} færdigset',
 			'explore.stats.onHold' => ({required Object n}) => '${n} på pause',
 			'explore.stats.dropped' => ({required Object n}) => '${n} droppede',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Vinter',
 			'explore.season.spring' => 'Forår',
 			'explore.season.summer' => 'Sommer',
@@ -3635,6 +3455,8 @@ extension on TranslationsDa {
 			'explore.relation.sequel' => 'Sequel',
 			'explore.relation.sideStory' => 'Bihistorie',
 			'explore.relation.spinOff' => 'Spin-off',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => 'Alternativ version',
 			'explore.relation.summary' => 'Resumé',
 			'explore.relation.parentStory' => 'Hovedhistorie',
@@ -3672,16 +3494,8 @@ extension on TranslationsDa {
 			'explore.detail.relatedTitles' => 'Relaterede titler',
 			'explore.detail.background' => 'Baggrund',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '${n} resultat', other: '${n} resultater', ), 
-			'liveTv.title' => 'Live TV',
-			'liveTv.serverUnavailable' => 'Live-tv-serveren er ikke tilgængelig.',
-			'liveTv.live' => 'LIVE',
-			'liveTv.searchHint' => 'Søg efter kanaler og programmer',
-			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'I dag',
 			'liveTv.tomorrow' => 'I morgen',
-			'liveTv.joinSession' => 'Deltag i igangværende session',
-			'liveTv.record' => 'Optag',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerede ugyldige afspilningsdata for Live TV',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',
@@ -4116,44 +3930,12 @@ extension on TranslationsDa {
 			'externalPlayer.playerName' => 'Afspillernavn',
 			'externalPlayer.playerNameHint' => 'Min afspiller',
 			'externalPlayer.playerCommand' => 'Kommando',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerPackage' => 'Pakkenavn',
 			'externalPlayer.playerUrlScheme' => 'URL-skema',
 			'externalPlayer.off' => 'Fra',
 			'externalPlayer.launchFailed' => 'Kunne ikke åbne ekstern afspiller',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} er ikke installeret',
 			'externalPlayer.playInExternalPlayer' => 'Afspil i ekstern afspiller',
-			'metadataEdit.artwork' => 'Grafik',
-			'metadataEdit.title' => 'Titel',
-			'metadataEdit.sortTitle' => 'Sorteringstitel',
-			'metadataEdit.originalTitle' => 'Originaltitel',
-			'metadataEdit.releaseDate' => 'Udgivelsesdato',
-			'metadataEdit.contentRating' => 'Aldersgrænse',
-			'metadataEdit.studio' => 'Studie',
-			'metadataEdit.tagline' => 'Slogan',
-			'metadataEdit.summary' => 'Resumé',
-			'metadataEdit.poster' => 'Plakat',
-			'metadataEdit.background' => 'Baggrund',
-			'metadataEdit.logo' => 'Logo',
-			'metadataEdit.imageUrl' => 'Billed-URL',
-			'metadataEdit.allEpisodes' => 'Alle episoder',
-			'metadataEdit.never' => 'Aldrig',
-			'metadataEdit.seasons' => 'Sæsoner',
-			'metadataEdit.show' => 'Vis',
-			'metadataEdit.hide' => 'Skjul',
-			'metadataEdit.subtitleMode' => 'Automatisk valg af undertekster',
-			'metadataEdit.tags' => 'Tags',
-			'metadataEdit.genre' => 'Genre',
-			'metadataEdit.director' => 'Instruktør',
-			'metadataEdit.writer' => 'Forfatter',
-			'metadataEdit.producer' => 'Producer',
-			'metadataEdit.country' => 'Land',
-			'metadataEdit.collection' => 'Samling',
-			'metadataEdit.label' => 'Etiket',
-			'matchScreen.match' => 'Match...',
-			'matchScreen.search' => 'Søg',
-			'serverTasks.title' => 'Serveropgaver',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Forbundet',
 			'trakt.connectedAs' => ({required Object username}) => 'Forbundet som @${username}',
@@ -4168,7 +3950,6 @@ extension on TranslationsDa {
 			'seerr.serverUrl' => 'Server-URL',
 			'seerr.serverUrlHelper' => 'Adressen på din Seerr-instans',
 			'seerr.checkServer' => 'Fortsæt',
-			'seerr.signInWithLocal' => 'Brug en lokal konto',
 			'seerr.email' => 'E-mail',
 			'seerr.noSignInMethods' => 'Denne Seerr-instans tilbyder ingen loginmetode, som TBD understøtter.',
 			'seerr.instance' => 'Instans',
@@ -4188,6 +3969,8 @@ extension on TranslationsDa {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (standard)',
 			'seerr.animeNote' => 'Denne serie er en anime.',
 			'seerr.requestSubmitted' => 'Anmodning sendt',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => 'Anmodning mislykkedes: ${error}',
 			'seerr.requestsLoadFailed' => 'Kunne ikke indlæse anmodningsmuligheder',
 			'seerr.nothingToRequest' => 'Alt er allerede tilgængeligt eller anmodet.',
@@ -4209,10 +3992,6 @@ extension on TranslationsDa {
 			'seerr.sessionRejectedAfterReauth' => 'Sessionen blev afvist efter at være logget ind igen',
 			'seerr.permissionDenied' => 'Seerr afviste denne handling: din konto har ikke længere den nødvendige tilladelse',
 			'seerr.permissionRevoked' => 'Du har ikke længere tilladelse til at anmode om dette',
-			'services.title' => 'Tjenester',
-			'services.hubSubtitle' => 'Synkroniser dit visningsfremskridt, og anmod om nye titler.',
-			'services.integrations' => 'Integrationer',
-			'services.notConnected' => 'Ikke forbundet',
 			'services.connectedAs' => ({required Object username}) => 'Forbundet som @${username}',
 			'services.scrobble' => 'Registrer fremgang automatisk',
 			'services.scrobbleDescription' => 'Opdater din liste, når du er færdig med et afsnit eller en film.',
@@ -4222,7 +4001,6 @@ extension on TranslationsDa {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Aktiver TBD på ${service}',
 			'services.deviceCode.instructions' => 'Scan QR-koden, eller gå til adressen nedenfor, og indtast denne kode:',
@@ -4247,14 +4025,12 @@ extension on TranslationsDa {
 			'services.libraryFilter.modeHintWhitelist' => 'Synkroniser kun de biblioteker, du markerer nedenfor.',
 			'services.libraryFilter.libraries' => 'Biblioteker',
 			'services.libraryFilter.noLibraries' => 'Ingen biblioteker tilgængelige',
-			'addServer.username' => 'Brugernavn',
 			'addServer.password' => 'Adgangskode',
 			'addServer.signIn' => 'Log ind',
 			'addServer.change' => 'Ændr',
 			'addServer.required' => 'Påkrævet',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
 			'addServer.addConnectionTitle' => 'Tilføj forbindelse',
-			'addServer.invalidCredentials' => 'Ugyldigt brugernavn eller ugyldig adgangskode',
 			_ => null,
 		};
 	}

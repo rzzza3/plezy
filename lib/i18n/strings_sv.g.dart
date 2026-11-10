@@ -59,7 +59,6 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$mpvConfig$sv mpvConfig = _Translations$mpvConfig$sv._(_root);
 	@override late final _Translations$profiles$sv profiles = _Translations$profiles$sv._(_root);
 	@override late final _Translations$connections$sv connections = _Translations$connections$sv._(_root);
-	@override late final _Translations$accountPreferences$sv accountPreferences = _Translations$accountPreferences$sv._(_root);
 	@override late final _Translations$discover$sv discover = _Translations$discover$sv._(_root);
 	@override late final _Translations$errors$sv errors = _Translations$errors$sv._(_root);
 	@override late final _Translations$libraries$sv libraries = _Translations$libraries$sv._(_root);
@@ -81,9 +80,6 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$videoSettings$sv videoSettings = _Translations$videoSettings$sv._(_root);
 	@override late final _Translations$performanceOverlay$sv performanceOverlay = _Translations$performanceOverlay$sv._(_root);
 	@override late final _Translations$externalPlayer$sv externalPlayer = _Translations$externalPlayer$sv._(_root);
-	@override late final _Translations$metadataEdit$sv metadataEdit = _Translations$metadataEdit$sv._(_root);
-	@override late final _Translations$matchScreen$sv matchScreen = _Translations$matchScreen$sv._(_root);
-	@override late final _Translations$serverTasks$sv serverTasks = _Translations$serverTasks$sv._(_root);
 	@override late final _Translations$trakt$sv trakt = _Translations$trakt$sv._(_root);
 	@override late final _Translations$seerr$sv seerr = _Translations$seerr$sv._(_root);
 	@override late final _Translations$services$sv services = _Translations$services$sv._(_root);
@@ -213,7 +209,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Utseende';
 	@override String get videoPlayback => 'Videouppspelning';
-	@override String get videoPlaybackDescription => 'Konfigurera uppspelningsbeteende';
 	@override String get advanced => 'Avancerat';
 	@override String get episodePosterMode => 'Stil för avsnittsaffisch';
 	@override String get seriesPoster => 'Serieaffisch';
@@ -225,9 +220,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get secondsShort => 's';
 	@override String get minutesShort => 'm';
 	@override String durationHint({required Object min, required Object max}) => 'Ange tid (${min}-${max})';
-	@override String get systemTheme => 'System';
-	@override String get lightTheme => 'Ljust';
-	@override String get darkTheme => 'Mörkt';
 	@override String get oledTheme => 'OLED';
 	@override String get slateTheme => 'Skiffer';
 	@override String get libraryDensity => 'Biblioteksdensitet';
@@ -351,7 +343,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get importSettingsNoUser => 'Logga in innan du importerar inställningar';
 	@override String get shortcutsReset => 'Genvägarna har återställts till standard';
 	@override String get about => 'Om';
-	@override String get aboutDescription => 'Appinformation och licenser';
 	@override String get updates => 'Uppdateringar';
 	@override String get updateAvailable => 'Uppdatering tillgänglig';
 	@override String get checkForUpdates => 'Kontrollera uppdateringar';
@@ -408,9 +399,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get maxVolume => 'Maxvolym';
 	@override String get maxVolumeDescription => 'Tillåt att volymen höjs över 100 % för innehåll med låg ljudnivå';
 	@override String maxVolumePercent({required Object percent}) => '${percent} %';
-	@override String get discordRichPresence => 'Discord Rich Presence';
-	@override String get discordRichPresenceDescription => 'Visa vad du tittar på i Discord';
-	@override String get manageLibrariesDescription => 'Ordna om och dölj bibliotek';
 	@override String get companionRemoteServer => 'Server för fjärrkontroll';
 	@override String get companionRemoteServerDescription => 'Tillåt att mobila enheter i nätverket styr appen';
 	@override String get companionRemoteServerStartFailed => 'Kunde inte starta servern för fjärrkontroll';
@@ -475,7 +463,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get startupSection => 'Startsida';
 	@override String get showExploreTab => 'Visa fliken Utforska';
 	@override String get general => 'Allmänt';
-	@override String get generalDescription => 'Språk, start och fönsterbeteende';
 	@override String get languageAndRegion => 'Språk och region';
 	@override String get startup => 'Start';
 	@override String get display => 'Skärm';
@@ -483,7 +470,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get homeScreen => 'Hemskärm';
 	@override String get navigation => 'Navigering';
 	@override String get window => 'Fönster';
-	@override String get liveTv => 'Live-TV';
 	@override String get player => 'Spelare';
 	@override String get videoAndDisplay => 'Video och skärm';
 	@override String get audio => 'Ljud';
@@ -995,13 +981,11 @@ class _Translations$profiles$sv extends Translations$profiles$en {
 	@override String get switchingProfile => 'Byter profil…';
 	@override String get active => 'Aktiv';
 	@override String get manage => 'Hantera';
-	@override String get delete => 'Ta bort';
 	@override String get signOut => 'Logga ut';
 	@override String get signOutFailed => 'Utloggningen misslyckades.';
 	@override String get sectionTitle => 'Profiler';
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} profiler';
-	@override String get add => 'Lägg till';
 	@override String get noConnections => 'Inga anslutningar';
 	@override String get incorrectPinTryAgain => 'Fel PIN. Försök igen.';
 }
@@ -1020,22 +1004,6 @@ class _Translations$connections$sv extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => '${count} servrar nekade åtkomst för det här kontot';
 }
 
-// Path: accountPreferences
-class _Translations$accountPreferences$sv extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Kontoinställningar';
-	@override String get unavailable => 'Det går inte att nå detta konto';
-	@override String get autoSelectAudio => 'Välj ljud efter språk';
-	@override String get subtitleMode => 'Aktivera undertexter';
-	@override late final _Translations$accountPreferences$subtitleModes$sv subtitleModes = _Translations$accountPreferences$subtitleModes$sv._(_root);
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$sv forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$sv._(_root);
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$sv watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$sv._(_root);
-}
-
 // Path: discover
 class _Translations$discover$sv extends Translations$discover$en {
 	_Translations$discover$sv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -1047,7 +1015,6 @@ class _Translations$discover$sv extends Translations$discover$en {
 	@override String get noContentAvailable => 'Inget innehåll tillgängligt';
 	@override String get addMediaToLibraries => 'Lägg till medieinnehåll i dina bibliotek';
 	@override String get continueWatching => 'Fortsätt titta';
-	@override String get nextUp => 'Nästa';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Översikt';
 	@override String get cast => 'Rollbesättning';
@@ -1226,7 +1193,6 @@ class _Translations$navigation$sv extends Translations$navigation$en {
 	// Translations
 	@override String get libraries => 'Bibliotek';
 	@override String get downloads => 'Nedladdningar';
-	@override String get liveTv => 'Live-TV';
 	@override String get explore => 'Utforska';
 }
 
@@ -1289,16 +1255,8 @@ class _Translations$liveTv$sv extends Translations$liveTv$en {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Live-TV';
-	@override String get serverUnavailable => 'Live-TV-servern är inte tillgänglig.';
-	@override String get live => 'LIVE';
-	@override String get searchHint => 'Sök kanaler och program';
-	@override String get now => 'Nu';
 	@override String get today => 'Idag';
 	@override String get tomorrow => 'I morgon';
-	@override String get joinSession => 'Gå med i pågående session';
-	@override String get record => 'Spela in';
-	@override String invalidPlaybackData({required Object product}) => '${product} returnerade ogiltiga uppspelningsdata för Live-TV';
 }
 
 // Path: collections
@@ -1748,63 +1706,6 @@ class _Translations$externalPlayer$sv extends Translations$externalPlayer$en {
 	@override String get playInExternalPlayer => 'Spela i extern spelare';
 }
 
-// Path: metadataEdit
-class _Translations$metadataEdit$sv extends Translations$metadataEdit$en {
-	_Translations$metadataEdit$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get artwork => 'Bildmaterial';
-	@override String get title => 'Titel';
-	@override String get sortTitle => 'Sorteringstitel';
-	@override String get originalTitle => 'Originaltitel';
-	@override String get releaseDate => 'Utgivningsdatum';
-	@override String get contentRating => 'Åldersgräns';
-	@override String get studio => 'Studio';
-	@override String get tagline => 'Slogan';
-	@override String get summary => 'Sammanfattning';
-	@override String get poster => 'Affisch';
-	@override String get background => 'Bakgrund';
-	@override String get logo => 'Logotyp';
-	@override String get imageUrl => 'Bild-URL';
-	@override String get allEpisodes => 'Alla avsnitt';
-	@override String get never => 'Aldrig';
-	@override String get seasons => 'Säsonger';
-	@override String get show => 'Visa';
-	@override String get hide => 'Dölj';
-	@override String get subtitleMode => 'Läge för automatiskt undertextval';
-	@override String get tags => 'Taggar';
-	@override String get genre => 'Genre';
-	@override String get director => 'Regissör';
-	@override String get writer => 'Manusförfattare';
-	@override String get producer => 'Producent';
-	@override String get country => 'Land';
-	@override String get collection => 'Samling';
-	@override String get label => 'Etikett';
-}
-
-// Path: matchScreen
-class _Translations$matchScreen$sv extends Translations$matchScreen$en {
-	_Translations$matchScreen$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get match => 'Matcha...';
-	@override String get search => 'Sök';
-}
-
-// Path: serverTasks
-class _Translations$serverTasks$sv extends Translations$serverTasks$en {
-	_Translations$serverTasks$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Serveruppgifter';
-}
-
 // Path: trakt
 class _Translations$trakt$sv extends Translations$trakt$en {
 	_Translations$trakt$sv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -1835,7 +1736,6 @@ class _Translations$seerr$sv extends Translations$seerr$en {
 	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrlHelper => 'Adressen till din Seerr-instans';
 	@override String get checkServer => 'Fortsätt';
-	@override String get signInWithLocal => 'Använd ett lokalt konto';
 	@override String get email => 'E-post';
 	@override String get noSignInMethods => 'Den här Seerr-instansen erbjuder ingen inloggningsmetod som TBD stöder.';
 	@override String get instance => 'Instans';
@@ -1885,10 +1785,6 @@ class _Translations$services$sv extends Translations$services$en {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Tjänster';
-	@override String get hubSubtitle => 'Synkronisera visningsstatus och begär nya titlar.';
-	@override String get integrations => 'Integrationer';
-	@override String get notConnected => 'Inte ansluten';
 	@override String connectedAs({required Object username}) => 'Ansluten som @${username}';
 	@override String get scrobble => 'Spåra uppspelningen automatiskt';
 	@override String get scrobbleDescription => 'Uppdatera din lista när du har sett klart ett avsnitt eller en film.';
@@ -1909,14 +1805,12 @@ class _Translations$addServer$sv extends Translations$addServer$en {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get username => 'Användarnamn';
 	@override String get password => 'Lösenord';
 	@override String get signIn => 'Logga in';
 	@override String get change => 'Ändra';
 	@override String get required => 'Krävs';
 	@override String couldNotReachServer({required Object error}) => 'Kunde inte nå servern: ${error}';
 	@override String get addConnectionTitle => 'Lägg till anslutning';
-	@override String get invalidCredentials => 'Ogiltigt användarnamn eller lösenord';
 }
 
 // Path: common.ratingSource
@@ -2011,42 +1905,6 @@ class _Translations$videoControls$pipErrors$sv extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Ett fel uppstod: ${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$sv extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Manuellt vald';
-	@override String get defaultMode => 'Följ spårens flaggor';
-	@override String get always => 'Alltid aktiverad';
-	@override String get onlyForced => 'Endast forcerade undertexter';
-	@override String get smart => 'Visas med ljud på främmande språk';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$sv extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get onlyForced => 'Endast forcerade undertexter';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$sv extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Aldrig';
-	@override String get movies => 'Endast filmer';
-	@override String get shows => 'Endast TV-serier';
-}
-
 // Path: libraries.tabs
 class _Translations$libraries$tabs$sv extends Translations$libraries$tabs$en {
 	_Translations$libraries$tabs$sv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -2089,7 +1947,6 @@ class _Translations$libraries$filterCategories$sv extends Translations$libraries
 	@override String get genre => 'Genre';
 	@override String get year => 'År';
 	@override String get contentRating => 'Åldersgräns';
-	@override String get tag => 'Tagg';
 	@override String get unwatched => 'Osedda';
 }
 
@@ -2104,11 +1961,8 @@ class _Translations$libraries$sortLabels$sv extends Translations$libraries$sortL
 	@override String get dateAdded => 'Tillagd';
 	@override String get releaseDate => 'Releasedatum';
 	@override String get rating => 'Betyg';
-	@override String get userRating => 'Användarbetyg';
 	@override String get productionYear => 'Produktionsår';
 	@override String get runtime => 'Speltid';
-	@override String get startDate => 'Startdatum';
-	@override String get studio => 'Studio';
 	@override String get dateDownloaded => 'Nedladdningsdatum';
 	@override String get size => 'Storlek';
 	@override String get library => 'Bibliotek';
@@ -2505,7 +2359,6 @@ class _Translations$services$names$sv extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2668,7 +2521,6 @@ extension on TranslationsSv {
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Utseende',
 			'settings.videoPlayback' => 'Videouppspelning',
-			'settings.videoPlaybackDescription' => 'Konfigurera uppspelningsbeteende',
 			'settings.advanced' => 'Avancerat',
 			'settings.episodePosterMode' => 'Stil för avsnittsaffisch',
 			'settings.seriesPoster' => 'Serieaffisch',
@@ -2680,9 +2532,6 @@ extension on TranslationsSv {
 			'settings.secondsShort' => 's',
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Ange tid (${min}-${max})',
-			'settings.systemTheme' => 'System',
-			'settings.lightTheme' => 'Ljust',
-			'settings.darkTheme' => 'Mörkt',
 			'settings.oledTheme' => 'OLED',
 			'settings.slateTheme' => 'Skiffer',
 			'settings.libraryDensity' => 'Biblioteksdensitet',
@@ -2806,7 +2655,6 @@ extension on TranslationsSv {
 			'settings.importSettingsNoUser' => 'Logga in innan du importerar inställningar',
 			'settings.shortcutsReset' => 'Genvägarna har återställts till standard',
 			'settings.about' => 'Om',
-			'settings.aboutDescription' => 'Appinformation och licenser',
 			'settings.updates' => 'Uppdateringar',
 			'settings.updateAvailable' => 'Uppdatering tillgänglig',
 			'settings.checkForUpdates' => 'Kontrollera uppdateringar',
@@ -2863,9 +2711,6 @@ extension on TranslationsSv {
 			'settings.maxVolume' => 'Maxvolym',
 			'settings.maxVolumeDescription' => 'Tillåt att volymen höjs över 100 % för innehåll med låg ljudnivå',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent} %',
-			'settings.discordRichPresence' => 'Discord Rich Presence',
-			'settings.discordRichPresenceDescription' => 'Visa vad du tittar på i Discord',
-			'settings.manageLibrariesDescription' => 'Ordna om och dölj bibliotek',
 			'settings.companionRemoteServer' => 'Server för fjärrkontroll',
 			'settings.companionRemoteServerDescription' => 'Tillåt att mobila enheter i nätverket styr appen',
 			'settings.companionRemoteServerStartFailed' => 'Kunde inte starta servern för fjärrkontroll',
@@ -2930,7 +2775,6 @@ extension on TranslationsSv {
 			'settings.startupSection' => 'Startsida',
 			'settings.showExploreTab' => 'Visa fliken Utforska',
 			'settings.general' => 'Allmänt',
-			'settings.generalDescription' => 'Språk, start och fönsterbeteende',
 			'settings.languageAndRegion' => 'Språk och region',
 			'settings.startup' => 'Start',
 			'settings.display' => 'Skärm',
@@ -2938,7 +2782,6 @@ extension on TranslationsSv {
 			'settings.homeScreen' => 'Hemskärm',
 			'settings.navigation' => 'Navigering',
 			'settings.window' => 'Fönster',
-			'settings.liveTv' => 'Live-TV',
 			'settings.player' => 'Spelare',
 			'settings.videoAndDisplay' => 'Video och skärm',
 			'settings.audio' => 'Ljud',
@@ -3088,8 +2931,6 @@ extension on TranslationsSv {
 			'fileInfo.packetLength' => 'Paketlängd',
 			'fileInfo.filePresent' => 'Fil finns',
 			'fileInfo.fileReadable' => 'Läsbar av servern',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamPath' => 'Strömsökväg',
 			'fileInfo.optimizedForStreaming' => 'Optimerad för streaming',
 			'fileInfo.has64bitOffsets' => '64-bitars offsetvärden',
@@ -3100,6 +2941,8 @@ extension on TranslationsSv {
 			'fileInfo.optimizationTarget' => 'Optimeringsmål',
 			'fileInfo.deletedAt' => 'Raderad',
 			'fileInfo.remoteSource' => 'Fjärrkälla',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.infiniteStream' => 'Oändlig ström',
 			'fileInfo.directPlay' => 'Direktuppspelning',
 			'fileInfo.directStream' => 'Direktströmning',
@@ -3363,13 +3206,11 @@ extension on TranslationsSv {
 			'profiles.switchingProfile' => 'Byter profil…',
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Hantera',
-			'profiles.delete' => 'Ta bort',
 			'profiles.signOut' => 'Logga ut',
 			'profiles.signOutFailed' => 'Utloggningen misslyckades.',
 			'profiles.sectionTitle' => 'Profiler',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
-			'profiles.add' => 'Lägg till',
 			'profiles.noConnections' => 'Inga anslutningar',
 			'profiles.incorrectPinTryAgain' => 'Fel PIN. Försök igen.',
 			'connections.sectionTitle' => 'Anslutningar',
@@ -3377,24 +3218,10 @@ extension on TranslationsSv {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen har gått ut för ${name}',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} nekade åtkomst för det här kontot',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servrar nekade åtkomst för det här kontot',
-			'accountPreferences.sectionTitle' => 'Kontoinställningar',
-			'accountPreferences.unavailable' => 'Det går inte att nå detta konto',
-			'accountPreferences.autoSelectAudio' => 'Välj ljud efter språk',
-			'accountPreferences.subtitleMode' => 'Aktivera undertexter',
-			'accountPreferences.subtitleModes.none' => 'Manuellt vald',
-			'accountPreferences.subtitleModes.defaultMode' => 'Följ spårens flaggor',
-			'accountPreferences.subtitleModes.always' => 'Alltid aktiverad',
-			'accountPreferences.subtitleModes.onlyForced' => 'Endast forcerade undertexter',
-			'accountPreferences.subtitleModes.smart' => 'Visas med ljud på främmande språk',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Endast forcerade undertexter',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Aldrig',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Endast filmer',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Endast TV-serier',
 			'discover.title' => 'Upptäck',
 			'discover.noContentAvailable' => 'Inget innehåll tillgängligt',
 			'discover.addMediaToLibraries' => 'Lägg till medieinnehåll i dina bibliotek',
 			'discover.continueWatching' => 'Fortsätt titta',
-			'discover.nextUp' => 'Nästa',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Översikt',
 			'discover.cast' => 'Rollbesättning',
@@ -3463,17 +3290,13 @@ extension on TranslationsSv {
 			'libraries.filterCategories.genre' => 'Genre',
 			'libraries.filterCategories.year' => 'År',
 			'libraries.filterCategories.contentRating' => 'Åldersgräns',
-			'libraries.filterCategories.tag' => 'Tagg',
 			'libraries.filterCategories.unwatched' => 'Osedda',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tillagd',
 			'libraries.sortLabels.releaseDate' => 'Releasedatum',
 			'libraries.sortLabels.rating' => 'Betyg',
-			'libraries.sortLabels.userRating' => 'Användarbetyg',
 			'libraries.sortLabels.productionYear' => 'Produktionsår',
 			'libraries.sortLabels.runtime' => 'Speltid',
-			'libraries.sortLabels.startDate' => 'Startdatum',
-			'libraries.sortLabels.studio' => 'Studio',
 			'libraries.sortLabels.dateDownloaded' => 'Nedladdningsdatum',
 			'libraries.sortLabels.size' => 'Storlek',
 			'libraries.sortLabels.library' => 'Bibliotek',
@@ -3525,7 +3348,6 @@ extension on TranslationsSv {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenser',
 			'navigation.libraries' => 'Bibliotek',
 			'navigation.downloads' => 'Nedladdningar',
-			'navigation.liveTv' => 'Live-TV',
 			'navigation.explore' => 'Utforska',
 			'explore.title' => 'Utforska',
 			'explore.selectSource' => 'Välj källa',
@@ -3602,8 +3424,6 @@ extension on TranslationsSv {
 			'explore.stats.completed' => ({required Object n}) => '${n} avslutade',
 			'explore.stats.onHold' => ({required Object n}) => '${n} på paus',
 			'explore.stats.dropped' => ({required Object n}) => '${n} hoppade av',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Vinter',
 			'explore.season.spring' => 'Vår',
 			'explore.season.summer' => 'Sommar',
@@ -3635,6 +3455,8 @@ extension on TranslationsSv {
 			'explore.relation.sequel' => 'Uppföljare',
 			'explore.relation.sideStory' => 'Bihistoria',
 			'explore.relation.spinOff' => 'Spin-off',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => 'Alternativ version',
 			'explore.relation.summary' => 'Sammanfattning',
 			'explore.relation.parentStory' => 'Huvudberättelse',
@@ -3672,16 +3494,8 @@ extension on TranslationsSv {
 			'explore.detail.relatedTitles' => 'Relaterade titlar',
 			'explore.detail.background' => 'Bakgrund',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: '${n} resultat', other: '${n} resultat', ), 
-			'liveTv.title' => 'Live-TV',
-			'liveTv.serverUnavailable' => 'Live-TV-servern är inte tillgänglig.',
-			'liveTv.live' => 'LIVE',
-			'liveTv.searchHint' => 'Sök kanaler och program',
-			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
 			'liveTv.tomorrow' => 'I morgon',
-			'liveTv.joinSession' => 'Gå med i pågående session',
-			'liveTv.record' => 'Spela in',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerade ogiltiga uppspelningsdata för Live-TV',
 			'collections.title' => 'Samlingar',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen är tom',
@@ -4116,44 +3930,12 @@ extension on TranslationsSv {
 			'externalPlayer.playerName' => 'Spelarnamn',
 			'externalPlayer.playerNameHint' => 'Min spelare',
 			'externalPlayer.playerCommand' => 'Kommando',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerPackage' => 'Paketnamn',
 			'externalPlayer.playerUrlScheme' => 'URL-schema',
 			'externalPlayer.off' => 'Av',
 			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
 			'externalPlayer.playInExternalPlayer' => 'Spela i extern spelare',
-			'metadataEdit.artwork' => 'Bildmaterial',
-			'metadataEdit.title' => 'Titel',
-			'metadataEdit.sortTitle' => 'Sorteringstitel',
-			'metadataEdit.originalTitle' => 'Originaltitel',
-			'metadataEdit.releaseDate' => 'Utgivningsdatum',
-			'metadataEdit.contentRating' => 'Åldersgräns',
-			'metadataEdit.studio' => 'Studio',
-			'metadataEdit.tagline' => 'Slogan',
-			'metadataEdit.summary' => 'Sammanfattning',
-			'metadataEdit.poster' => 'Affisch',
-			'metadataEdit.background' => 'Bakgrund',
-			'metadataEdit.logo' => 'Logotyp',
-			'metadataEdit.imageUrl' => 'Bild-URL',
-			'metadataEdit.allEpisodes' => 'Alla avsnitt',
-			'metadataEdit.never' => 'Aldrig',
-			'metadataEdit.seasons' => 'Säsonger',
-			'metadataEdit.show' => 'Visa',
-			'metadataEdit.hide' => 'Dölj',
-			'metadataEdit.subtitleMode' => 'Läge för automatiskt undertextval',
-			'metadataEdit.tags' => 'Taggar',
-			'metadataEdit.genre' => 'Genre',
-			'metadataEdit.director' => 'Regissör',
-			'metadataEdit.writer' => 'Manusförfattare',
-			'metadataEdit.producer' => 'Producent',
-			'metadataEdit.country' => 'Land',
-			'metadataEdit.collection' => 'Samling',
-			'metadataEdit.label' => 'Etikett',
-			'matchScreen.match' => 'Matcha...',
-			'matchScreen.search' => 'Sök',
-			'serverTasks.title' => 'Serveruppgifter',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Ansluten',
 			'trakt.connectedAs' => ({required Object username}) => 'Ansluten som @${username}',
@@ -4168,7 +3950,6 @@ extension on TranslationsSv {
 			'seerr.serverUrl' => 'Server-URL',
 			'seerr.serverUrlHelper' => 'Adressen till din Seerr-instans',
 			'seerr.checkServer' => 'Fortsätt',
-			'seerr.signInWithLocal' => 'Använd ett lokalt konto',
 			'seerr.email' => 'E-post',
 			'seerr.noSignInMethods' => 'Den här Seerr-instansen erbjuder ingen inloggningsmetod som TBD stöder.',
 			'seerr.instance' => 'Instans',
@@ -4188,6 +3969,8 @@ extension on TranslationsSv {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (standard)',
 			'seerr.animeNote' => 'Den här serien är en anime.',
 			'seerr.requestSubmitted' => 'Begäran skickad',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => 'Begäran kunde inte genomföras: ${error}',
 			'seerr.requestsLoadFailed' => 'Det gick inte att läsa in alternativ för begäran',
 			'seerr.nothingToRequest' => 'Allt är redan tillgängligt eller begärt.',
@@ -4209,10 +3992,6 @@ extension on TranslationsSv {
 			'seerr.sessionRejectedAfterReauth' => 'Sessionen avvisades efter den nya inloggningen',
 			'seerr.permissionDenied' => 'Seerr nekade åtgärden: ditt konto har inte längre den behörighet som krävs',
 			'seerr.permissionRevoked' => 'Du har inte längre behörighet att begära detta',
-			'services.title' => 'Tjänster',
-			'services.hubSubtitle' => 'Synkronisera visningsstatus och begär nya titlar.',
-			'services.integrations' => 'Integrationer',
-			'services.notConnected' => 'Inte ansluten',
 			'services.connectedAs' => ({required Object username}) => 'Ansluten som @${username}',
 			'services.scrobble' => 'Spåra uppspelningen automatiskt',
 			'services.scrobbleDescription' => 'Uppdatera din lista när du har sett klart ett avsnitt eller en film.',
@@ -4222,7 +4001,6 @@ extension on TranslationsSv {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Aktivera TBD på ${service}',
 			'services.deviceCode.instructions' => 'Skanna QR-koden eller gå till adressen nedan och ange den här koden:',
@@ -4247,14 +4025,12 @@ extension on TranslationsSv {
 			'services.libraryFilter.modeHintWhitelist' => 'Synkronisera endast de bibliotek som markeras nedan.',
 			'services.libraryFilter.libraries' => 'Bibliotek',
 			'services.libraryFilter.noLibraries' => 'Inga bibliotek tillgängliga',
-			'addServer.username' => 'Användarnamn',
 			'addServer.password' => 'Lösenord',
 			'addServer.signIn' => 'Logga in',
 			'addServer.change' => 'Ändra',
 			'addServer.required' => 'Krävs',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunde inte nå servern: ${error}',
 			'addServer.addConnectionTitle' => 'Lägg till anslutning',
-			'addServer.invalidCredentials' => 'Ogiltigt användarnamn eller lösenord',
 			_ => null,
 		};
 	}

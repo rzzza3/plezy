@@ -60,7 +60,6 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$mpvConfig$en mpvConfig = Translations$mpvConfig$en.internal(_root);
 	late final Translations$profiles$en profiles = Translations$profiles$en.internal(_root);
 	late final Translations$connections$en connections = Translations$connections$en.internal(_root);
-	late final Translations$accountPreferences$en accountPreferences = Translations$accountPreferences$en.internal(_root);
 	late final Translations$discover$en discover = Translations$discover$en.internal(_root);
 	late final Translations$errors$en errors = Translations$errors$en.internal(_root);
 	late final Translations$libraries$en libraries = Translations$libraries$en.internal(_root);
@@ -84,9 +83,6 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$videoSettings$en videoSettings = Translations$videoSettings$en.internal(_root);
 	late final Translations$performanceOverlay$en performanceOverlay = Translations$performanceOverlay$en.internal(_root);
 	late final Translations$externalPlayer$en externalPlayer = Translations$externalPlayer$en.internal(_root);
-	late final Translations$metadataEdit$en metadataEdit = Translations$metadataEdit$en.internal(_root);
-	late final Translations$matchScreen$en matchScreen = Translations$matchScreen$en.internal(_root);
-	late final Translations$serverTasks$en serverTasks = Translations$serverTasks$en.internal(_root);
 	late final Translations$trakt$en trakt = Translations$trakt$en.internal(_root);
 	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
 	late final Translations$services$en services = Translations$services$en.internal(_root);
@@ -358,9 +354,6 @@ class Translations$settings$en {
 	/// en: 'Video Playback'
 	String get videoPlayback => 'Video Playback';
 
-	/// en: 'Configure playback behavior'
-	String get videoPlaybackDescription => 'Configure playback behavior';
-
 	/// en: 'Advanced'
 	String get advanced => 'Advanced';
 
@@ -393,15 +386,6 @@ class Translations$settings$en {
 
 	/// en: 'Enter duration (${min}-${max})'
 	String durationHint({required Object min, required Object max}) => 'Enter duration (${min}-${max})';
-
-	/// en: 'System'
-	String get systemTheme => 'System';
-
-	/// en: 'Light'
-	String get lightTheme => 'Light';
-
-	/// en: 'Dark'
-	String get darkTheme => 'Dark';
 
 	/// en: 'OLED'
 	String get oledTheme => 'OLED';
@@ -775,9 +759,6 @@ class Translations$settings$en {
 	/// en: 'About'
 	String get about => 'About';
 
-	/// en: 'App information and licenses'
-	String get aboutDescription => 'App information and licenses';
-
 	/// en: 'Updates'
 	String get updates => 'Updates';
 
@@ -948,15 +929,6 @@ class Translations$settings$en {
 
 	/// en: '${percent}%'
 	String maxVolumePercent({required Object percent}) => '${percent}%';
-
-	/// en: 'Discord Rich Presence'
-	String get discordRichPresence => 'Discord Rich Presence';
-
-	/// en: 'Show what you're watching on Discord'
-	String get discordRichPresenceDescription => 'Show what you\'re watching on Discord';
-
-	/// en: 'Reorder and hide libraries'
-	String get manageLibrariesDescription => 'Reorder and hide libraries';
 
 	/// en: 'Companion Remote Server'
 	String get companionRemoteServer => 'Companion Remote Server';
@@ -1177,9 +1149,6 @@ class Translations$settings$en {
 	/// en: 'General'
 	String get general => 'General';
 
-	/// en: 'Language, startup, and window behavior'
-	String get generalDescription => 'Language, startup, and window behavior';
-
 	/// en: 'Language & Region'
 	String get languageAndRegion => 'Language & Region';
 
@@ -1200,9 +1169,6 @@ class Translations$settings$en {
 
 	/// en: 'Window'
 	String get window => 'Window';
-
-	/// en: 'Live TV'
-	String get liveTv => 'Live TV';
 
 	/// en: 'Player'
 	String get player => 'Player';
@@ -2501,9 +2467,6 @@ class Translations$profiles$en {
 	/// en: 'Manage'
 	String get manage => 'Manage';
 
-	/// en: 'Delete'
-	String get delete => 'Delete';
-
 	/// en: 'Sign out'
 	String get signOut => 'Sign out';
 
@@ -2536,9 +2499,6 @@ class Translations$profiles$en {
 
 	/// en: '${count} profiles'
 	String summaryMultiple({required Object count}) => '${count} profiles';
-
-	/// en: 'Add'
-	String get add => 'Add';
 
 	/// en: 'No connections'
 	String get noConnections => 'No connections';
@@ -2574,31 +2534,6 @@ class Translations$connections$en {
 	String accessDeniedMany({required Object count}) => '${count} servers refused access for this account';
 }
 
-// Path: accountPreferences
-class Translations$accountPreferences$en {
-	Translations$accountPreferences$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Account preferences'
-	String get sectionTitle => 'Account preferences';
-
-	/// en: 'Can't reach this account'
-	String get unavailable => 'Can\'t reach this account';
-
-	/// en: 'Choose audio by language'
-	String get autoSelectAudio => 'Choose audio by language';
-
-	/// en: 'Turn subtitles on'
-	String get subtitleMode => 'Turn subtitles on';
-
-	late final Translations$accountPreferences$subtitleModes$en subtitleModes = Translations$accountPreferences$subtitleModes$en.internal(_root);
-	late final Translations$accountPreferences$forcedSubtitleOptions$en forcedSubtitleOptions = Translations$accountPreferences$forcedSubtitleOptions$en.internal(_root);
-	late final Translations$accountPreferences$watchedIndicatorOptions$en watchedIndicatorOptions = Translations$accountPreferences$watchedIndicatorOptions$en.internal(_root);
-}
-
 // Path: discover
 class Translations$discover$en {
 	Translations$discover$en.internal(this._root);
@@ -2618,9 +2553,6 @@ class Translations$discover$en {
 
 	/// en: 'Continue Watching'
 	String get continueWatching => 'Continue Watching';
-
-	/// en: 'Next Up'
-	String get nextUp => 'Next Up';
 
 	/// en: 'S${season}E${episode}'
 	String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
@@ -3018,9 +2950,6 @@ class Translations$navigation$en {
 	/// en: 'Downloads'
 	String get downloads => 'Downloads';
 
-	/// en: 'Live TV'
-	String get liveTv => 'Live TV';
-
 	/// en: 'Explore'
 	String get explore => 'Explore';
 
@@ -3056,9 +2985,6 @@ class Translations$watchlistPage$en {
 
 	/// en: 'Unwatched'
 	String get unwatched => 'Unwatched';
-
-	/// en: 'Watched'
-	String get watched => 'Watched';
 
 	/// en: 'Everything on your Watchlist'
 	String get allWatchlist => 'Everything on your Watchlist';
@@ -3222,17 +3148,11 @@ class Translations$libraryHome$en {
 	/// en: 'Networks'
 	String get networks => 'Networks';
 
-	/// en: 'Trending on ${name}'
-	String networkTrending({required Object name}) => 'Trending on ${name}';
-
 	/// en: 'Top Movies'
 	String get networkTopMovies => 'Top Movies';
 
 	/// en: 'Top TV'
 	String get networkTopShows => 'Top TV';
-
-	/// en: 'All Content'
-	String get networkAllContent => 'All Content';
 
 	/// en: 'Popularity'
 	String get networkPopularity => 'Popularity';
@@ -3311,9 +3231,6 @@ class Translations$libraryHome$en {
 
 	/// en: 'Genres'
 	String get genres => 'Genres';
-
-	/// en: 'Trending in ${name}'
-	String genreTrending({required Object name}) => 'Trending in ${name}';
 
 	/// en: '(one) {${n} title in your library} (other) {${n} titles in your library}'
 	String networkTitleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
@@ -3445,35 +3362,11 @@ class Translations$liveTv$en {
 
 	// Translations
 
-	/// en: 'Live TV'
-	String get title => 'Live TV';
-
-	/// en: 'Live TV server is not available.'
-	String get serverUnavailable => 'Live TV server is not available.';
-
-	/// en: 'LIVE'
-	String get live => 'LIVE';
-
-	/// en: 'Search channels & programs'
-	String get searchHint => 'Search channels & programs';
-
-	/// en: 'Now'
-	String get now => 'Now';
-
 	/// en: 'Today'
 	String get today => 'Today';
 
 	/// en: 'Tomorrow'
 	String get tomorrow => 'Tomorrow';
-
-	/// en: 'Join Session in Progress'
-	String get joinSession => 'Join Session in Progress';
-
-	/// en: 'Record'
-	String get record => 'Record';
-
-	/// en: '${product} returned invalid Live TV playback data'
-	String invalidPlaybackData({required Object product}) => '${product} returned invalid Live TV playback data';
 }
 
 // Path: collections
@@ -4656,123 +4549,6 @@ class Translations$externalPlayer$en {
 	String get playInExternalPlayer => 'Play in External Player';
 }
 
-// Path: metadataEdit
-class Translations$metadataEdit$en {
-	Translations$metadataEdit$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Artwork'
-	String get artwork => 'Artwork';
-
-	/// en: 'Title'
-	String get title => 'Title';
-
-	/// en: 'Sort Title'
-	String get sortTitle => 'Sort Title';
-
-	/// en: 'Original Title'
-	String get originalTitle => 'Original Title';
-
-	/// en: 'Release Date'
-	String get releaseDate => 'Release Date';
-
-	/// en: 'Content Rating'
-	String get contentRating => 'Content Rating';
-
-	/// en: 'Studio'
-	String get studio => 'Studio';
-
-	/// en: 'Tagline'
-	String get tagline => 'Tagline';
-
-	/// en: 'Summary'
-	String get summary => 'Summary';
-
-	/// en: 'Poster'
-	String get poster => 'Poster';
-
-	/// en: 'Background'
-	String get background => 'Background';
-
-	/// en: 'Logo'
-	String get logo => 'Logo';
-
-	/// en: 'Image URL'
-	String get imageUrl => 'Image URL';
-
-	/// en: 'All episodes'
-	String get allEpisodes => 'All episodes';
-
-	/// en: 'Never'
-	String get never => 'Never';
-
-	/// en: 'Seasons'
-	String get seasons => 'Seasons';
-
-	/// en: 'Show'
-	String get show => 'Show';
-
-	/// en: 'Hide'
-	String get hide => 'Hide';
-
-	/// en: 'Auto-Select Subtitle Mode'
-	String get subtitleMode => 'Auto-Select Subtitle Mode';
-
-	/// en: 'Tags'
-	String get tags => 'Tags';
-
-	/// en: 'Genre'
-	String get genre => 'Genre';
-
-	/// en: 'Director'
-	String get director => 'Director';
-
-	/// en: 'Writer'
-	String get writer => 'Writer';
-
-	/// en: 'Producer'
-	String get producer => 'Producer';
-
-	/// en: 'Country'
-	String get country => 'Country';
-
-	/// en: 'Collection'
-	String get collection => 'Collection';
-
-	/// en: 'Label'
-	String get label => 'Label';
-}
-
-// Path: matchScreen
-class Translations$matchScreen$en {
-	Translations$matchScreen$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Match...'
-	String get match => 'Match...';
-
-	/// en: 'Search'
-	String get search => 'Search';
-}
-
-// Path: serverTasks
-class Translations$serverTasks$en {
-	Translations$serverTasks$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Server Tasks'
-	String get title => 'Server Tasks';
-}
-
 // Path: trakt
 class Translations$trakt$en {
 	Translations$trakt$en.internal(this._root);
@@ -4831,9 +4607,6 @@ class Translations$seerr$en {
 
 	/// en: 'Continue'
 	String get checkServer => 'Continue';
-
-	/// en: 'Use a local account'
-	String get signInWithLocal => 'Use a local account';
 
 	/// en: 'Email'
 	String get email => 'Email';
@@ -4964,18 +4737,6 @@ class Translations$services$en {
 
 	// Translations
 
-	/// en: 'Services'
-	String get title => 'Services';
-
-	/// en: 'Sync watch progress and request new titles.'
-	String get hubSubtitle => 'Sync watch progress and request new titles.';
-
-	/// en: 'Integrations'
-	String get integrations => 'Integrations';
-
-	/// en: 'Not connected'
-	String get notConnected => 'Not connected';
-
 	/// en: 'Connected as @${username}'
 	String connectedAs({required Object username}) => 'Connected as @${username}';
 
@@ -5010,9 +4771,6 @@ class Translations$addServer$en {
 
 	// Translations
 
-	/// en: 'Username'
-	String get username => 'Username';
-
 	/// en: 'Password'
 	String get password => 'Password';
 
@@ -5030,9 +4788,6 @@ class Translations$addServer$en {
 
 	/// en: 'Add connection'
 	String get addConnectionTitle => 'Add connection';
-
-	/// en: 'Invalid username or password'
-	String get invalidCredentials => 'Invalid username or password';
 }
 
 // Path: silo
@@ -5367,60 +5122,6 @@ class Translations$videoControls$pipErrors$en {
 	String unknown({required Object error}) => 'An error occurred: ${error}';
 }
 
-// Path: accountPreferences.subtitleModes
-class Translations$accountPreferences$subtitleModes$en {
-	Translations$accountPreferences$subtitleModes$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Manually selected'
-	String get none => 'Manually selected';
-
-	/// en: 'Follow the track flags'
-	String get defaultMode => 'Follow the track flags';
-
-	/// en: 'Always enabled'
-	String get always => 'Always enabled';
-
-	/// en: 'Only forced subtitles'
-	String get onlyForced => 'Only forced subtitles';
-
-	/// en: 'Shown with foreign audio'
-	String get smart => 'Shown with foreign audio';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class Translations$accountPreferences$forcedSubtitleOptions$en {
-	Translations$accountPreferences$forcedSubtitleOptions$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Only forced subtitles'
-	String get onlyForced => 'Only forced subtitles';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class Translations$accountPreferences$watchedIndicatorOptions$en {
-	Translations$accountPreferences$watchedIndicatorOptions$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Never'
-	String get none => 'Never';
-
-	/// en: 'Movies only'
-	String get movies => 'Movies only';
-
-	/// en: 'TV shows only'
-	String get shows => 'TV shows only';
-}
-
 // Path: libraries.tabs
 class Translations$libraries$tabs$en {
 	Translations$libraries$tabs$en.internal(this._root);
@@ -5498,14 +5199,8 @@ class Translations$libraries$filterCategories$en {
 	/// en: 'Content Rating'
 	String get contentRating => 'Content Rating';
 
-	/// en: 'Tag'
-	String get tag => 'Tag';
-
 	/// en: 'Unwatched'
 	String get unwatched => 'Unwatched';
-
-	/// en: 'File Path'
-	String get filePath => 'File Path';
 }
 
 // Path: libraries.sortLabels
@@ -5528,20 +5223,11 @@ class Translations$libraries$sortLabels$en {
 	/// en: 'Rating'
 	String get rating => 'Rating';
 
-	/// en: 'User Rating'
-	String get userRating => 'User Rating';
-
 	/// en: 'Production Year'
 	String get productionYear => 'Production Year';
 
 	/// en: 'Runtime'
 	String get runtime => 'Runtime';
-
-	/// en: 'Start Date'
-	String get startDate => 'Start Date';
-
-	/// en: 'Studio'
-	String get studio => 'Studio';
 
 	/// en: 'Date Downloaded'
 	String get dateDownloaded => 'Date Downloaded';
@@ -6479,9 +6165,6 @@ class Translations$services$names$en {
 	/// en: 'Simkl'
 	String get simkl => 'Simkl';
 
-	/// en: 'Seerr'
-	String get seerr => 'Seerr';
-
 	/// en: 'MDBList'
 	String get mdblist => 'MDBList';
 }
@@ -6757,7 +6440,6 @@ extension on Translations {
 			'settings.theme' => 'Theme',
 			'settings.appearance' => 'Appearance',
 			'settings.videoPlayback' => 'Video Playback',
-			'settings.videoPlaybackDescription' => 'Configure playback behavior',
 			'settings.advanced' => 'Advanced',
 			'settings.episodePosterMode' => 'Episode Poster Style',
 			'settings.seriesPoster' => 'Series Poster',
@@ -6769,9 +6451,6 @@ extension on Translations {
 			'settings.secondsShort' => 's',
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Enter duration (${min}-${max})',
-			'settings.systemTheme' => 'System',
-			'settings.lightTheme' => 'Light',
-			'settings.darkTheme' => 'Dark',
 			'settings.oledTheme' => 'OLED',
 			'settings.slateTheme' => 'Slate',
 			'settings.libraryDensity' => 'Library Density',
@@ -6896,7 +6575,6 @@ extension on Translations {
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
 			'settings.resetShortcutsConfirm' => 'This will replace your custom shortcuts with the defaults. Continue?',
 			'settings.about' => 'About',
-			'settings.aboutDescription' => 'App information and licenses',
 			'settings.updates' => 'Updates',
 			'settings.updateAvailable' => 'Update Available',
 			'settings.checkForUpdates' => 'Check for Updates',
@@ -6954,9 +6632,6 @@ extension on Translations {
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.discordRichPresence' => 'Discord Rich Presence',
-			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
-			'settings.manageLibrariesDescription' => 'Reorder and hide libraries',
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
 			'settings.companionRemoteServerStartFailed' => 'Couldn\'t start the companion server',
@@ -7030,7 +6705,6 @@ extension on Translations {
 			'settings.showExploreTab' => 'Show Explore Tab',
 			'settings.showExploreTabDescription' => 'Display the Explore tab with content from connected trackers',
 			'settings.general' => 'General',
-			'settings.generalDescription' => 'Language, startup, and window behavior',
 			'settings.languageAndRegion' => 'Language & Region',
 			'settings.startup' => 'Startup',
 			'settings.display' => 'Display',
@@ -7038,7 +6712,6 @@ extension on Translations {
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Window',
-			'settings.liveTv' => 'Live TV',
 			'settings.player' => 'Player',
 			'settings.videoAndDisplay' => 'Video & Display',
 			'settings.audio' => 'Audio',
@@ -7177,8 +6850,6 @@ extension on Translations {
 			'fileInfo.sourceStream' => 'Copied From',
 			'fileInfo.temporary' => 'Temporary',
 			'fileInfo.timeBase' => 'Time Base',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
 			'fileInfo.fileName' => 'File Name',
@@ -7189,6 +6860,8 @@ extension on Translations {
 			'fileInfo.previewThumbnails' => 'Preview Thumbnails',
 			'fileInfo.previewIndex' => 'Preview Index',
 			'fileInfo.packetLength' => 'Packet Length',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.filePresent' => 'File Present',
 			'fileInfo.fileReadable' => 'Readable by Server',
 			'fileInfo.streamPath' => 'Stream Path',
@@ -7465,7 +7138,6 @@ extension on Translations {
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
-			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
 			'profiles.signOutServerTitle' => ({required Object serverName}) => 'Sign out of ${serverName}?',
 			'profiles.signOutServerMessage' => ({required Object serverName}) => 'Remove ${serverName} and its profiles from this device? Sign back in anytime.',
@@ -7477,7 +7149,6 @@ extension on Translations {
 			'profiles.summarySingle' => 'Profiles come from your Silo server',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiles',
-			'profiles.add' => 'Add',
 			'profiles.noConnections' => 'No connections',
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'connections.sectionTitle' => 'Connections',
@@ -7486,24 +7157,10 @@ extension on Translations {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servers refused access for this account',
-			'accountPreferences.sectionTitle' => 'Account preferences',
-			'accountPreferences.unavailable' => 'Can\'t reach this account',
-			'accountPreferences.autoSelectAudio' => 'Choose audio by language',
-			'accountPreferences.subtitleMode' => 'Turn subtitles on',
-			'accountPreferences.subtitleModes.none' => 'Manually selected',
-			'accountPreferences.subtitleModes.defaultMode' => 'Follow the track flags',
-			'accountPreferences.subtitleModes.always' => 'Always enabled',
-			'accountPreferences.subtitleModes.onlyForced' => 'Only forced subtitles',
-			'accountPreferences.subtitleModes.smart' => 'Shown with foreign audio',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Only forced subtitles',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Never',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Movies only',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'TV shows only',
 			'discover.title' => 'Discover',
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
 			'discover.continueWatching' => 'Continue Watching',
-			'discover.nextUp' => 'Next Up',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overview',
 			'discover.cast' => 'Cast',
@@ -7576,18 +7233,13 @@ extension on Translations {
 			'libraries.filterCategories.genre' => 'Genre',
 			'libraries.filterCategories.year' => 'Year',
 			'libraries.filterCategories.contentRating' => 'Content Rating',
-			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Unwatched',
-			'libraries.filterCategories.filePath' => 'File Path',
 			'libraries.sortLabels.title' => 'Title',
 			'libraries.sortLabels.dateAdded' => 'Date Added',
 			'libraries.sortLabels.releaseDate' => 'Release Date',
 			'libraries.sortLabels.rating' => 'Rating',
-			'libraries.sortLabels.userRating' => 'User Rating',
 			'libraries.sortLabels.productionYear' => 'Production Year',
 			'libraries.sortLabels.runtime' => 'Runtime',
-			'libraries.sortLabels.startDate' => 'Start Date',
-			'libraries.sortLabels.studio' => 'Studio',
 			'libraries.sortLabels.dateDownloaded' => 'Date Downloaded',
 			'libraries.sortLabels.size' => 'Size',
 			'libraries.sortLabels.library' => 'Library',
@@ -7667,7 +7319,6 @@ extension on Translations {
 			'navigation.library' => 'Library',
 			'navigation.libraries' => 'Libraries',
 			'navigation.downloads' => 'Downloads',
-			'navigation.liveTv' => 'Live TV',
 			'navigation.explore' => 'Explore',
 			'navigation.watchlist' => 'Watchlist',
 			'watchlistPage.watchlist' => 'Watchlist',
@@ -7677,7 +7328,6 @@ extension on Translations {
 			'watchlistPage.inProgress' => 'In Progress',
 			'watchlistPage.notStarted' => 'Not Started',
 			'watchlistPage.unwatched' => 'Unwatched',
-			'watchlistPage.watched' => 'Watched',
 			'watchlistPage.allWatchlist' => 'Everything on your Watchlist',
 			'watchlistPage.allFavorites' => 'All your Favorites',
 			'watchlistPage.watchAgain' => 'Watch again',
@@ -7691,8 +7341,6 @@ extension on Translations {
 			'watchlistPage.removeFromFavorites' => 'Remove from Favorites',
 			'watchlistPage.removedFromFavorites' => 'Removed from Favorites',
 			'watchlistPage.updateFailed' => 'Couldn\'t update the list',
-			_ => null,
-		} ?? switch (path) {
 			'watchlistPage.loadFailed' => 'Couldn\'t load your lists',
 			'watchlistPage.emptyWatchlist' => 'Nothing on your Watchlist yet',
 			'watchlistPage.emptyFavorites' => 'No Favorites yet',
@@ -7726,14 +7374,14 @@ extension on Translations {
 			'libraryHome.runtimeUnder60' => 'Under 60 Minutes',
 			'libraryHome.runtimeUnder150' => 'Under 150 Minutes',
 			'libraryHome.runtimeAllNight' => 'All Night',
+			_ => null,
+		} ?? switch (path) {
 			'libraryHome.runtimeEmpty' => 'No movies of this length',
 			'libraryHome.runtimeFailed' => 'Couldn\'t load movies',
 			'libraryHome.forYouTitle' => 'For You',
 			'libraryHome.networks' => 'Networks',
-			'libraryHome.networkTrending' => ({required Object name}) => 'Trending on ${name}',
 			'libraryHome.networkTopMovies' => 'Top Movies',
 			'libraryHome.networkTopShows' => 'Top TV',
-			'libraryHome.networkAllContent' => 'All Content',
 			'libraryHome.networkPopularity' => 'Popularity',
 			'libraryHome.networkType' => 'Type',
 			'libraryHome.networkNoMatches' => 'No titles match these filters',
@@ -7760,7 +7408,6 @@ extension on Translations {
 			'libraryHome.seasonalPicks' => 'Seasonal Picks',
 			'libraryHome.seasonalPicksDetail' => 'When the season has a collection',
 			'libraryHome.genres' => 'Genres',
-			'libraryHome.genreTrending' => ({required Object name}) => 'Trending in ${name}',
 			'libraryHome.networkTitleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} title in your library', other: '${n} titles in your library', ), 
 			'libraryHome.networkInProgress' => ({required Object count}) => '${count} in progress',
 			'libraryHome.networkBrowseAll' => ({required Object count}) => 'Browse all ${count}',
@@ -7910,16 +7557,8 @@ extension on Translations {
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
-			'liveTv.title' => 'Live TV',
-			'liveTv.serverUnavailable' => 'Live TV server is not available.',
-			'liveTv.live' => 'LIVE',
-			'liveTv.searchHint' => 'Search channels & programs',
-			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
 			'liveTv.tomorrow' => 'Tomorrow',
-			'liveTv.joinSession' => 'Join Session in Progress',
-			'liveTv.record' => 'Record',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
@@ -8205,8 +7844,6 @@ extension on Translations {
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
 			'shaders.artcnnVariantNeutral' => 'Neutral',
-			_ => null,
-		} ?? switch (path) {
 			'shaders.artcnnVariantDenoise' => 'Denoise',
 			'shaders.artcnnVariantDenoiseSharpen' => 'Denoise + Sharpen',
 			'shaders.qualityFast' => 'Fast',
@@ -8251,6 +7888,8 @@ extension on Translations {
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Retry Now',
 			'companionRemote.remote.tabRemote' => 'Remote',
 			'companionRemote.remote.tabPlay' => 'Play',
@@ -8378,36 +8017,6 @@ extension on Translations {
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
-			'metadataEdit.artwork' => 'Artwork',
-			'metadataEdit.title' => 'Title',
-			'metadataEdit.sortTitle' => 'Sort Title',
-			'metadataEdit.originalTitle' => 'Original Title',
-			'metadataEdit.releaseDate' => 'Release Date',
-			'metadataEdit.contentRating' => 'Content Rating',
-			'metadataEdit.studio' => 'Studio',
-			'metadataEdit.tagline' => 'Tagline',
-			'metadataEdit.summary' => 'Summary',
-			'metadataEdit.poster' => 'Poster',
-			'metadataEdit.background' => 'Background',
-			'metadataEdit.logo' => 'Logo',
-			'metadataEdit.imageUrl' => 'Image URL',
-			'metadataEdit.allEpisodes' => 'All episodes',
-			'metadataEdit.never' => 'Never',
-			'metadataEdit.seasons' => 'Seasons',
-			'metadataEdit.show' => 'Show',
-			'metadataEdit.hide' => 'Hide',
-			'metadataEdit.subtitleMode' => 'Auto-Select Subtitle Mode',
-			'metadataEdit.tags' => 'Tags',
-			'metadataEdit.genre' => 'Genre',
-			'metadataEdit.director' => 'Director',
-			'metadataEdit.writer' => 'Writer',
-			'metadataEdit.producer' => 'Producer',
-			'metadataEdit.country' => 'Country',
-			'metadataEdit.collection' => 'Collection',
-			'metadataEdit.label' => 'Label',
-			'matchScreen.match' => 'Match...',
-			'matchScreen.search' => 'Search',
-			'serverTasks.title' => 'Server Tasks',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Connected',
 			'trakt.connectedAs' => ({required Object username}) => 'Connected as @${username}',
@@ -8422,7 +8031,6 @@ extension on Translations {
 			'seerr.serverUrl' => 'Server URL',
 			'seerr.serverUrlHelper' => 'The address of your Seerr instance',
 			'seerr.checkServer' => 'Continue',
-			'seerr.signInWithLocal' => 'Use a local account',
 			'seerr.email' => 'Email',
 			'seerr.noSignInMethods' => 'This Seerr instance offers no sign-in method TBD supports.',
 			'seerr.instance' => 'Instance',
@@ -8463,10 +8071,6 @@ extension on Translations {
 			'seerr.sessionRejectedAfterReauth' => 'The session was rejected after signing in again',
 			'seerr.permissionDenied' => 'Seerr denied this action: your account no longer has the required permission',
 			'seerr.permissionRevoked' => 'You no longer have permission to request this',
-			'services.title' => 'Services',
-			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
-			'services.integrations' => 'Integrations',
-			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',
 			'services.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
@@ -8476,7 +8080,6 @@ extension on Translations {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Reconnect Simkl',
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve TBD — TBD never sees your password. Your watch history stays on Simkl.',
@@ -8503,14 +8106,12 @@ extension on Translations {
 			'services.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
 			'services.libraryFilter.libraries' => 'Libraries',
 			'services.libraryFilter.noLibraries' => 'No libraries available',
-			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',
 			'addServer.change' => 'Change',
 			'addServer.required' => 'Required',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
 			'addServer.addConnectionTitle' => 'Add connection',
-			'addServer.invalidCredentials' => 'Invalid username or password',
 			'silo.connectCard' => 'Connect to Silo',
 			'silo.connectCardSubtitle' => 'Sign in with a code or your password',
 			'silo.serverTitle' => 'Connect to Silo',

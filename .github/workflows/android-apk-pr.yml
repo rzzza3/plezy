@@ -1,0 +1,37 @@
+name: Android APK (PR)
+
+# Builds release APKs for every pull request and attaches them to the workflow run.
+# This workflow runs code from the pull request, so it must never see the signing
+# keystore or hold write permissions: the APKs are signed with a throwaway key and
+# cannot be installed over a build from main or a release.
+
+on:
+  # Keep untrusted code on the read-only pull_request event. Never use pull_request_target here.
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: android-apk-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep in sync with android-apk.yml, ci.yml and build.yml.
+  FLUTTER_VERSION: "3.47.1"
+
+jobs:
+  build:
+    name: Build release APKs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Build APKs
+        uses: ./.github/actions/build-android-apk
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
