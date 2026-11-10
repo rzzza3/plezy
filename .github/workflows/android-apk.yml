@@ -1,8 +1,9 @@
 name: Android APK
 
 # Builds release APKs for every push to main and every pull request, and attaches
-# them to the workflow run. Pushing a version tag (v2.22.0 or 2.22.0) additionally
-# publishes them as a GitHub release. Nothing goes to any store.
+# them to the workflow run. A version tag (v2.22.0 or 2.22.0) additionally publishes
+# them as a GitHub release: either pushed by hand, or created by release.yml, which
+# calls this workflow with the tag it just made. Nothing goes to any store.
 
 on:
   push:
@@ -16,12 +17,31 @@ on:
     branches:
       - main
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Existing tag to build and publish as a GitHub release
+        required: true
+        type: string
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: true
+      ANDROID_STORE_PASSWORD:
+        required: true
+      ANDROID_KEY_PASSWORD:
+        required: true
+      ANDROID_KEY_ALIAS:
+        required: true
 
 concurrency:
-  group: android-apk-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  group: android-apk-${{ inputs.release_tag || github.ref }}
+  cancel-in-progress: ${{ inputs.release_tag == '' && !startsWith(github.ref, 'refs/tags/') }}
 
 env:
+  # Set for release builds only: the tag handed over by release.yml, or the pushed tag.
+  # When called from release.yml the github context is the caller's (main), so every
+  # step below reads this instead of github.ref.
+  RELEASE_TAG: ${{ inputs.release_tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}
   # Keep in sync with ci.yml and build.yml.
   FLUTTER_VERSION: "3.47.1"
 
@@ -35,16 +55,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.release_tag && format('refs/tags/{0}', inputs.release_tag) || '' }}
           persist-credentials: false
 
       # The in-app update check compares the release tag with the version baked into
       # the app, so a tag that disagrees with pubspec.yaml would prompt forever.
       - name: Require the tag to match pubspec.yaml
-        if: startsWith(github.ref, 'refs/tags/')
+        if: env.RELEASE_TAG != ''
         run: |
           version="$(python3 scripts/pubspec_version.py | cut -d+ -f1)"
-          if [[ "${GITHUB_REF_NAME#v}" != "$version" ]]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match pubspec.yaml version $version."
+          if [[ "${RELEASE_TAG#v}" != "$version" ]]; then
+            echo "::error::Tag $RELEASE_TAG does not match pubspec.yaml version $version."
             exit 1
           fi
 
@@ -97,7 +118,7 @@ jobs:
           if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
             echo "Signing with the repository keystore."
             printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/ci-keystore.jks
-          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+          elif [[ -n "$RELEASE_TAG" ]]; then
             echo "::error::Refusing to publish a release signed with a throwaway key; set the ANDROID_* signing secrets."
             exit 1
           else
@@ -118,10 +139,10 @@ jobs:
           } > android/key.properties
 
       - name: Build APKs
-        run: >-
-          flutter build apk --release --split-per-abi
-          --dart-define=GIT_COMMIT=${{ github.sha }}
-          ${{ startsWith(github.ref, 'refs/tags/') && '--dart-define=ENABLE_UPDATE_CHECK=true' || '' }}
+        run: |
+          flutter build apk --release --split-per-abi \
+            --dart-define=GIT_COMMIT="$(git rev-parse HEAD)" \
+            ${RELEASE_TAG:+--dart-define=ENABLE_UPDATE_CHECK=true}
 
       - name: Clean up keystore
         if: always()
@@ -138,7 +159,7 @@ jobs:
   release:
     name: Publish GitHub release
     needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    if: inputs.release_tag || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -158,6 +179,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
           files: plezy-android-*.apk
           fail_on_unmatched_files: true
           generate_release_notes: true

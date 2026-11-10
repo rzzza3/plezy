@@ -1,0 +1,99 @@
+name: Release
+
+# One-click release: bumps the version in pubspec.yaml, commits and tags it on main,
+# then builds the signed APKs and publishes them as a GitHub release.
+#
+# The build is called directly rather than left to android-apk.yml's tag trigger,
+# because a tag pushed with GITHUB_TOKEN does not start other workflows.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to increase
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    name: Bump version and tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.bump.outputs.tag }}
+    steps:
+      - name: Require the main branch
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Releases may only be cut from main."
+            exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-tags: true
+
+      - name: Bump pubspec.yaml
+        id: bump
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          current="$(python3 scripts/pubspec_version.py)"
+          IFS=. read -r major minor patch <<< "${current%%+*}"
+          build="${current##*+}"
+          case "$BUMP" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+            *) echo "::error::Unknown bump '$BUMP'."; exit 1 ;;
+          esac
+          # Android refuses to install over a higher build number, so it always goes up.
+          next="$major.$minor.$patch+$((build + 1))"
+          tag="v$major.$minor.$patch"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+            echo "::error::Tag $tag already exists."
+            exit 1
+          fi
+          sed -i -E "s/^version: .*/version: $next/" pubspec.yaml
+          # Fails the job if the rewritten version is not what was intended.
+          [[ "$(python3 scripts/pubspec_version.py)" == "$next" ]]
+          echo "Releasing $current -> $next as $tag" >> "$GITHUB_STEP_SUMMARY"
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, tag and push
+        env:
+          NEXT: ${{ steps.bump.outputs.next }}
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(release): $NEXT" pubspec.yaml
+          git tag "$TAG"
+          # Atomic, so a rejected branch push cannot leave a tag behind.
+          git push --atomic origin HEAD:main "refs/tags/$TAG"
+
+  build:
+    name: Build and publish
+    needs: bump
+    permissions:
+      contents: write
+    uses: ./.github/workflows/android-apk.yml
+    with:
+      release_tag: ${{ needs.bump.outputs.tag }}
+    secrets:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
