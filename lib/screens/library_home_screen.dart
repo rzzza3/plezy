@@ -12,25 +12,26 @@ import '../focus/locked_hub_controller.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/main_screen_scope.dart';
 import '../navigation/navigation_tabs.dart';
-import '../profiles/active_profile_provider.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/library_rows.dart';
 import '../services/settings_service.dart';
-import '../utils/formatters.dart';
 import '../utils/hub_icons.dart';
+import '../utils/formatters.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/app_menu.dart';
 import '../widgets/clickable_cursor.dart';
 import '../widgets/hub_section.dart';
-import '../widgets/poster_wall_hero.dart';
+import '../widgets/library_resume_hero.dart';
+import '../widgets/poster_wall_hero.dart' show PosterWall;
 import '../widgets/tv_browse_rail.dart';
 import 'library_calendar_section.dart';
 import 'library_for_you_section.dart';
@@ -40,7 +41,7 @@ import 'library_runtime_section.dart';
 import 'library_seasonal_section.dart';
 import 'settings/library_networks_screen.dart';
 
-/// Which kinds of media the hero's poster wall draws from.
+/// Which kinds of media the Library tab shows: the hero's tabs set it.
 enum LibraryHomeFilter {
   moviesAndShows,
   movies,
@@ -57,9 +58,9 @@ enum LibraryHomeFilter {
   }
 }
 
-/// The Library tab: a hero (a time-of-day greeting over a tilted wall of
-/// posters, with a media-type filter and a Browse All shortcut) above the
-/// [LibraryRow]s: Home's Continue Watching row, the [LibraryCalendarSection],
+/// The Library tab: a hero (what is in progress, fanned over a wall of the
+/// library's posters, with Resume, Browse All, the media-type filter and
+/// Edit) above the [LibraryRow]s: Home's Continue Watching row, the [LibraryCalendarSection],
 /// Seasonal Picks, the [LibraryRuntimeSection], [LibraryForYouSection],
 /// [LibraryNetworksSection] and [LibraryGenresSection]. The user picks which
 /// rows show and in what order on the Edit Library page.
@@ -74,6 +75,7 @@ class LibraryHomeScreen extends StatefulWidget {
 }
 
 class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilityAware, FocusableTab {
+  /// The hero's buttons: Resume, Browse All, the filter and Edit.
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
   final _filterMenuKey = GlobalKey<AppMenuButtonState<LibraryHomeFilter>>();
   LibraryHomeFilter _filter = LibraryHomeFilter.moviesAndShows;
@@ -104,6 +106,14 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
   // list and it keeps its scroll and focus position.
   List<MediaHub>? _continueWatchingHubs;
   (List<MediaItem>, bool, String, LibraryHomeFilter)? _continueWatchingHubsKey;
+
+  /// The first title in Continue Watching, which the hero offers to resume
+  /// and the row below leaves out. Set with [_continueWatchingHubs].
+  MediaItem? _resumeItem;
+
+  /// Every title in Continue Watching that passes the filter, [_resumeItem]
+  /// first, for the hero's fan and count. Set with [_continueWatchingHubs].
+  List<MediaItem> _inProgress = const [];
 
   // Memoized like Continue Watching, so the seasonal row keeps its position.
   MediaHub? _seasonalHub;
@@ -153,7 +163,7 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
     if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
     final focus = FocusManager.instance.primaryFocus;
     if (focus != null && focus is! FocusScopeNode) return;
-    _actionBarKey.currentState?.requestFocusOnFirst();
+    _focusActions();
     // Focus changes apply after this callback; read the result next frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _initialFocus = FocusManager.instance.primaryFocus;
@@ -167,9 +177,7 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
     if (held == null) return;
     _initialFocus = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && identical(FocusManager.instance.primaryFocus, held)) {
-        _actionBarKey.currentState?.requestFocusOnFirst();
-      }
+      if (mounted && identical(FocusManager.instance.primaryFocus, held)) _focusActions();
     });
   }
 
@@ -182,11 +190,10 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
   }
 
   @override
-  void onTabShown() {
-    // The greeting follows the clock; pick up a period change since last visit.
-    setState(() {});
-    _retryUnavailable();
-  }
+  void onTabShown() => _retryUnavailable();
+
+  @override
+  void onTabHidden() {}
 
   void _onOnlineServersChanged(Set<String> _) {
     if (mounted) _retryUnavailable();
@@ -202,15 +209,11 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
   }
 
   @override
-  void onTabHidden() {}
-
-  @override
-  void focusActiveTabIfReady() {
-    _actionBarKey.currentState?.requestFocusOnFirst();
-  }
+  void focusActiveTabIfReady() => _focusActions();
 
   void _focusSidebar() => MainScreenFocusScope.focusSidebarOf(context);
 
+  /// The hero's first button: Resume, or Browse All with nothing in progress.
   void _focusActions() => _actionBarKey.currentState?.requestFocusOnFirst();
 
   /// Whether [row] is on screen to take focus. Rows that pass focus along
@@ -348,7 +351,9 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
   }
 
   /// The same synthesized row Home renders, narrowed to the header's filter,
-  /// as a one-hub list (empty when nothing matching is in progress).
+  /// as a one-hub list (empty when nothing matching is in progress). Its
+  /// first title goes to the hero as [_resumeItem], so the row starts at the
+  /// second.
   List<MediaHub> _continueWatching(DiscoverProvider discover) {
     final key = (discover.onDeck, discover.hasMoreContinueWatching, t.discover.continueWatching, _filter);
     if (_continueWatchingHubs != null && key == _continueWatchingHubsKey) return _continueWatchingHubs!;
@@ -358,9 +363,12 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
       for (final item in hub.items)
         if (_accepts(_filter, item.kind)) item,
     ];
-    return _continueWatchingHubs = items.isEmpty
+    _inProgress = items;
+    _resumeItem = items.firstOrNull;
+    final rest = items.skip(1).toList();
+    return _continueWatchingHubs = rest.isEmpty
         ? const []
-        : [hub.copyWith(items: items, size: items.length + (hub.more ? 1 : 0))];
+        : [hub.copyWith(items: rest, size: rest.length + (hub.more ? 1 : 0))];
   }
 
   /// View All for the row: the full Continue Watching list, same filter.
@@ -371,21 +379,6 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
       for (final item in items)
         if (_accepts(filter, item.kind)) item,
     ];
-  }
-
-  String _greeting(String? name) {
-    final hour = DateTime.now().hour;
-    final hasName = name != null && name.trim().isNotEmpty;
-    if (hour >= 5 && hour < 12) {
-      return hasName ? t.libraryHome.greetingMorningNamed(name: name) : t.libraryHome.greetingMorning;
-    }
-    if (hour >= 12 && hour < 17) {
-      return hasName ? t.libraryHome.greetingAfternoonNamed(name: name) : t.libraryHome.greetingAfternoon;
-    }
-    if (hour >= 17 && hour < 22) {
-      return hasName ? t.libraryHome.greetingEveningNamed(name: name) : t.libraryHome.greetingEvening;
-    }
-    return hasName ? t.libraryHome.greetingNightNamed(name: name) : t.libraryHome.greetingNight;
   }
 
   static String _filterLabel(LibraryHomeFilter filter) => switch (filter) {
@@ -411,28 +404,17 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
 
   static bool _accepts(LibraryHomeFilter filter, MediaKind kind) => filter.accepts(kind);
 
-  // Memoized on the Continue Watching list, which is memoized itself.
-  Map<String, double>? _wallHighlights;
-  List<MediaHub>? _wallHighlightsKey;
+  // Memoized on what it reads, so rebuilds hand the wall the same list.
+  List<MediaItem>? _wallPosters;
+  (List<MediaItem>, List<MediaHub>, LibraryHomeFilter)? _wallPostersKey;
 
-  /// Watch progress by poster path for what is part-watched in Continue
-  /// Watching, in its order, for the wall to light up. An episode lights its
-  /// show's poster; the most recent episode of a show wins.
-  Map<String, double> _highlights(List<MediaHub> continueWatching) {
-    if (_wallHighlights != null && identical(continueWatching, _wallHighlightsKey)) return _wallHighlights!;
-    _wallHighlightsKey = continueWatching;
-    final highlights = <String, double>{};
-    for (final item in continueWatching.firstOrNull?.items ?? const <MediaItem>[]) {
-      final path = item.posterThumb();
-      if (path == null || !item.hasActiveProgress) continue;
-      highlights.putIfAbsent(path, () => item.viewOffsetMs! / item.durationMs!);
-    }
-    return _wallHighlights = highlights;
-  }
-
-  /// One poster per title across Continue Watching and every hub. Episodes and
-  /// seasons resolve to their show's poster, so the dedupe is by poster path.
+  /// One poster per title across Continue Watching and Home's sections, for
+  /// the hero's wall. Episodes and seasons resolve to their show's poster, so
+  /// the dedupe is by poster path.
   List<MediaItem> _wallItems(DiscoverProvider discover) {
+    final key = (discover.onDeck, discover.hubs, _filter);
+    if (_wallPosters != null && key == _wallPostersKey) return _wallPosters!;
+    _wallPostersKey = key;
     final seen = <String>{};
     final items = <MediaItem>[];
     for (final item in [...discover.onDeck, for (final hub in discover.hubs) ...hub.items]) {
@@ -442,7 +424,47 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
       items.add(item);
       if (items.length >= PosterWall.maxPosters) break;
     }
-    return items;
+    return _wallPosters = items;
+  }
+
+  /// The posters the hero fans out: what is in progress, one per show, or
+  /// with nothing in progress, the first titles on the wall.
+  List<LibraryHeroPoster> _heroPosters(List<MediaItem> wall) {
+    if (_inProgress.isEmpty) return [for (final item in wall.take(3)) (item: item, progress: null)];
+    final seen = <String>{};
+    return [
+      for (final item in _inProgress)
+        if (seen.add(item.posterThumb() ?? item.globalKey))
+          (item: item, progress: item.hasActiveProgress ? item.viewOffsetMs! / item.durationMs! : null),
+    ].take(3).toList();
+  }
+
+  /// The title to name in the hero: a show's for an episode.
+  static String _heroTitle(MediaItem item) =>
+      item.isEpisode ? (item.grandparentTitle ?? item.displayTitle) : item.displayTitle;
+
+  /// Under the headline: how many titles are in progress and how long the
+  /// first has to go, its title in the accent.
+  InlineSpan _heroSubtitle(MediaItem? resume) {
+    if (resume == null) return TextSpan(text: t.libraryHome.heroNothingInProgress);
+    final title = TextSpan(
+      text: _heroTitle(resume),
+      style: const TextStyle(color: libraryHeroAccent, fontWeight: FontWeight.w600),
+    );
+    final next = resume.hasActiveProgress
+        ? t.libraryHome.heroTimeToGo(
+            title: title,
+            duration: TextSpan(
+              text: formatDurationTextual(resume.durationMs! - resume.viewOffsetMs!, abbreviated: false, spacer: ' '),
+            ),
+          )
+        : t.libraryHome.heroUpNext(title: title);
+    return TextSpan(
+      children: [
+        TextSpan(text: '${t.libraryHome.heroWaiting(n: _inProgress.length)} '),
+        next,
+      ],
+    );
   }
 
   @override
@@ -452,18 +474,19 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
     final isTv = PlatformDetector.isTV();
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
     final topInset = MediaQuery.paddingOf(context).top;
+    // About half the first screen on wide layouts, so the first row shows
+    // under it; phones stack the fan over the copy and need more.
     final heroHeight = isTv
-        ? size.height * 0.56
+        ? size.height * 0.62
         : useSideNav
-        ? math.max(size.height * 0.62, 360.0)
-        : 420 + topInset;
+        ? (size.height * 0.56).clamp(400.0, 560.0)
+        : 540 + topInset;
 
-    final name = context.watch<ActiveProfileProvider>().active?.displayName;
     final discover = context.watch<DiscoverProvider>();
-    final posters = _wallItems(discover);
     final continueWatching = _continueWatching(discover);
-    final resumeItem = continueWatching.firstOrNull?.items.firstOrNull;
+    final resumeItem = _resumeItem;
     if (resumeItem != null) _handInitialFocusToResume();
+    final wall = _wallItems(discover);
     final seasonalHub = _seasonal(discover);
     // The shown rows with something to build: Continue Watching and Seasonal
     // Picks go when they have nothing in them.
@@ -476,13 +499,16 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
         })
           row,
     ];
-    final hero = PosterWallHero(
-      title: _greeting(name),
-      posters: posters,
-      highlights: _highlights(continueWatching),
-      actions: _buildActions(context, resume: resumeItem),
+    final hero = LibraryResumeHero(
+      eyebrow: t.libraryHome.heroEyebrow,
+      headline: resumeItem != null ? t.libraryHome.heroResumeHeadline : t.libraryHome.heroBrowseHeadline,
+      subtitle: _heroSubtitle(resumeItem),
+      actions: _buildActions(resumeItem),
+      wallItems: wall,
+      posters: _heroPosters(wall),
+      onPosterTap: (item) => resumeItem != null ? _resume(item) : _openDetails(item),
       // Extra room above a row that is not Continue Watching's rail.
-      bottomPadding: isTv && built.firstOrNull != LibraryRow.continueWatching ? 64 : 40,
+      bottomPadding: isTv && built.firstOrNull != LibraryRow.continueWatching ? 56 : 32,
     );
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
@@ -648,12 +674,12 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
     );
   }
 
-  /// The hero's buttons: Resume (the first title in Continue Watching, and
-  /// so where focus lands), Browse All, the media-type filter and Edit.
-  Widget _buildActions(BuildContext context, {required MediaItem? resume}) {
+  /// The hero's buttons: Resume (the first title in Continue Watching, and so
+  /// where focus lands), Browse All, the media-type filter and Edit.
+  Widget _buildActions(MediaItem? resume) {
     return FocusableActionBar(
       key: _actionBarKey,
-      spacing: 16,
+      spacing: 12,
       onNavigateLeft: _focusSidebar,
       onNavigateDown: () => _focusBelow(null),
       onBack: _focusSidebar,
@@ -666,11 +692,12 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
             debugLabel: 'library_home_resume',
             onPressed: () => _resume(resume),
             builder: (context, state) => _HeroPillButton(
-              label: t.libraryHome.resumeTitle(title: resume.displayTitle),
+              label: t.libraryHome.resumeTitle(title: _heroTitle(resume)),
               detail: resume.hasActiveProgress
                   ? t.libraryHome.timeLeft(duration: formatDurationTextual(resume.durationMs! - resume.viewOffsetMs!))
                   : null,
               leadingIcon: Symbols.play_arrow_rounded,
+              style: _HeroPillStyle.primary,
               focused: state.showFocus,
               duration: state.animationDuration,
               onTap: () => _resume(resume),
@@ -681,7 +708,7 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
           onPressed: _browseAll,
           builder: (context, state) => _HeroPillButton(
             label: t.libraryHome.browseAll,
-            leadingIcon: Symbols.grid_view_rounded,
+            style: resume == null ? _HeroPillStyle.primary : _HeroPillStyle.secondary,
             focused: state.showFocus,
             duration: state.animationDuration,
             onTap: _browseAll,
@@ -692,14 +719,14 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
           onPressed: () => _filterMenuKey.currentState?.showButtonMenu(focusFirstItem: true),
           builder: (context, state) => AppMenuButton<LibraryHomeFilter>(
             key: _filterMenuKey,
-            onSelected: (filter) => setState(() => _filter = filter),
+            onSelected: _selectFilter,
             entriesBuilder: (context) => [
               for (final filter in LibraryHomeFilter.values)
                 AppMenuItem(value: filter, label: _filterLabel(filter), selected: filter == _filter),
             ],
             child: _HeroPillButton(
               label: _filterLabel(_filter),
-              trailingIcon: Symbols.unfold_more_rounded,
+              style: _HeroPillStyle.secondary,
               focused: state.showFocus,
               duration: state.animationDuration,
             ),
@@ -710,7 +737,7 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
           onPressed: _editRows,
           builder: (context, state) => _HeroPillButton(
             label: t.common.edit,
-            leadingIcon: Symbols.tune_rounded,
+            style: _HeroPillStyle.quiet,
             focused: state.showFocus,
             duration: state.animationDuration,
             onTap: _editRows,
@@ -719,6 +746,13 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
       ],
     );
   }
+
+  void _selectFilter(LibraryHomeFilter filter) {
+    if (filter != _filter) setState(() => _filter = filter);
+  }
+
+  void _openDetails(MediaItem item) =>
+      unawaited(navigateToMediaItem(context, item, onRefresh: context.read<DiscoverProvider>().updateItem));
 
   /// Play [item] from where it was left, as its Continue Watching card does.
   void _resume(MediaItem item) => unawaited(
@@ -731,14 +765,26 @@ class _LibraryHomeScreenState extends State<LibraryHomeScreen> with TabVisibilit
       unawaited(Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const LibraryNetworksScreen())));
 }
 
-/// Translucent pill used for the hero actions; turns solid white on D-pad focus.
+enum _HeroPillStyle {
+  /// Solid: the hero's main action.
+  primary,
+
+  /// Translucent: a second action beside it.
+  secondary,
+
+  /// Text only until focused: Edit.
+  quiet,
+}
+
+/// A hero button, pill-shaped. On D-pad focus it turns solid in the
+/// foreground color; the primary one, already solid, grows and lifts instead.
 class _HeroPillButton extends StatelessWidget {
   final String label;
   final IconData? leadingIcon;
-  final IconData? trailingIcon;
 
   /// Quieter text after [label], such as the time left.
   final String? detail;
+  final _HeroPillStyle style;
   final bool focused;
   final Duration duration;
 
@@ -748,8 +794,8 @@ class _HeroPillButton extends StatelessWidget {
   const _HeroPillButton({
     required this.label,
     this.leadingIcon,
-    this.trailingIcon,
     this.detail,
+    required this.style,
     required this.focused,
     required this.duration,
     this.onTap,
@@ -757,39 +803,64 @@ class _HeroPillButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = focused ? Colors.black : Colors.white;
-    final style = Theme.of(context).textTheme.titleMedium?.copyWith(color: foreground, fontWeight: FontWeight.w600);
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final surface = theme.scaffoldBackgroundColor;
+    final scale = LibraryHeroScale.of(context);
+    final solid = style == _HeroPillStyle.primary || focused;
+    final foreground = solid ? surface : (style == _HeroPillStyle.quiet ? onSurface.withValues(alpha: 0.7) : onSurface);
+    final fill = switch (style) {
+      _ when solid => onSurface,
+      _HeroPillStyle.secondary => onSurface.withValues(alpha: 0.14),
+      _ => onSurface.withValues(alpha: 0),
+    };
+    final textStyle = theme.textTheme.titleSmall?.copyWith(
+      color: foreground,
+      fontSize: math.max(13.0, 14 * scale),
+      fontWeight: FontWeight.w600,
+    );
 
-    final pill = AnimatedContainer(
+    Widget pill = AnimatedContainer(
       duration: duration,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.symmetric(
+        horizontal: (style == _HeroPillStyle.quiet ? 12 : 18) * scale,
+        vertical: 11 * scale,
+      ),
       decoration: BoxDecoration(
-        color: focused ? Colors.white : Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: focused ? 0 : 0.12)),
+        color: fill,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: style == _HeroPillStyle.primary && focused
+            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.45), blurRadius: 18, offset: const Offset(0, 6))]
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (leadingIcon != null) ...[AppIcon(leadingIcon!, size: 20, color: foreground), const SizedBox(width: 10)],
-          // A long title gives way before the time left does. A cap, not a
-          // Flexible: the action bar lays the pills out unbounded.
+          if (leadingIcon != null) ...[
+            AppIcon(leadingIcon!, size: 20 * scale, color: foreground, fill: 1),
+            SizedBox(width: 8 * scale),
+          ],
+          // A cap, not a Flexible: the action bar lays the pills out unbounded.
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
+            constraints: BoxConstraints(maxWidth: 180 * scale),
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: textStyle),
           ),
           if (detail != null) ...[
             const SizedBox(width: 10),
             Text(
               detail!,
               maxLines: 1,
-              style: style?.copyWith(fontWeight: FontWeight.w500, color: foreground.withValues(alpha: 0.62)),
+              style: textStyle?.copyWith(fontWeight: FontWeight.w500, color: foreground.withValues(alpha: 0.6)),
             ),
           ],
-          if (trailingIcon != null) ...[const SizedBox(width: 8), AppIcon(trailingIcon!, size: 20, color: foreground)],
         ],
       ),
     );
+    if (style == _HeroPillStyle.primary) {
+      pill = AnimatedScale(scale: focused ? 1.06 : 1, duration: duration, curve: Curves.easeOutCubic, child: pill);
+    }
+    pill = Semantics(button: true, child: pill);
     if (onTap == null) return pill;
     return ClickableCursor(
       child: GestureDetector(onTap: onTap, child: pill),

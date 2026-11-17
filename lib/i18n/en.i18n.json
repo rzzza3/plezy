@@ -1092,18 +1092,20 @@
     }
   },
   "libraryHome": {
-    "greetingMorning": "Ready for a morning pick-me-up?",
-    "greetingMorningNamed": "Ready for a morning pick-me-up, ${name}?",
-    "greetingAfternoon": "Ready for an afternoon break?",
-    "greetingAfternoonNamed": "Ready for an afternoon break, ${name}?",
-    "greetingEvening": "Settling in for the evening?",
-    "greetingEveningNamed": "Settling in for the evening, ${name}?",
-    "greetingNight": "One more before bed?",
-    "greetingNightNamed": "One more before bed, ${name}?",
     "moviesAndShows": "Movies & Shows",
     "movies": "Movies",
     "shows": "Shows",
     "browseAll": "Browse All",
+    "heroEyebrow": "Your Library",
+    "heroResumeHeadline": "Pick up where you left off.",
+    "heroBrowseHeadline": "Find something to watch.",
+    "heroWaiting": {
+      "one": "One story is waiting.",
+      "other": "${n} stories are waiting."
+    },
+    "heroTimeToGo(rich)": "${title} has ${duration} to go.",
+    "heroUpNext(rich)": "${title} is up next.",
+    "heroNothingInProgress": "Nothing in progress. Here's some of what's in your library.",
     "resumeTitle": "Resume ${title}",
     "timeLeft": "${duration} left",
     "calendar": "Calendar",
