@@ -511,6 +511,7 @@ class _Translations$search$nl extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Probeer een andere zoekterm';
 	@override String get searchYourMedia => 'Zoek in je media';
 	@override String get enterTitleActorOrKeyword => 'Voer een titel, acteur of trefwoord in';
+	@override String get castAndCrew => 'Cast & crew';
 }
 
 // Path: hotkeys
@@ -2814,6 +2815,7 @@ extension on TranslationsNl {
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
 			'search.enterTitleActorOrKeyword' => 'Voer een titel, acteur of trefwoord in',
+			'search.castAndCrew' => 'Cast & crew',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Stel sneltoets in voor ${actionName}',
 			'hotkeys.clearShortcut' => 'Wis sneltoets',
 			'hotkeys.noShortcutSet' => 'Geen sneltoets ingesteld',
@@ -2940,9 +2942,9 @@ extension on TranslationsNl {
 			'fileInfo.optimizedVersion' => 'Geoptimaliseerde versie',
 			'fileInfo.optimizationTarget' => 'Optimalisatiedoel',
 			'fileInfo.deletedAt' => 'Verwijderd',
-			'fileInfo.remoteSource' => 'Externe bron',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'Externe bron',
 			'fileInfo.infiniteStream' => 'Oneindige stream',
 			'fileInfo.directPlay' => 'Direct Play',
 			'fileInfo.directStream' => 'Direct Stream',
@@ -3454,9 +3456,9 @@ extension on TranslationsNl {
 			'explore.relation.prequel' => 'Prequel',
 			'explore.relation.sequel' => 'Sequel',
 			'explore.relation.sideStory' => 'Side story',
-			'explore.relation.spinOff' => 'Spin-off',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'Spin-off',
 			'explore.relation.alternativeVersion' => 'Alternatieve versie',
 			'explore.relation.summary' => 'Samenvatting',
 			'explore.relation.parentStory' => 'Hoofdverhaal',
@@ -3968,9 +3970,9 @@ extension on TranslationsNl {
 			'seerr.noTags' => 'Geen tags',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (standaard)',
 			'seerr.animeNote' => 'Deze serie is een anime.',
-			'seerr.requestSubmitted' => 'Aanvraag verzonden',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'Aanvraag verzonden',
 			'seerr.requestFailed' => ({required Object error}) => 'Aanvraag mislukt: ${error}',
 			'seerr.requestsLoadFailed' => 'Aanvraagopties konden niet worden geladen',
 			'seerr.nothingToRequest' => 'Alles is al beschikbaar of aangevraagd.',

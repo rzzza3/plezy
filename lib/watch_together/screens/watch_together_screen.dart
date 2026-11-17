@@ -101,7 +101,11 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
       SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl),
     );
     _recentRooms = _loadRecentRooms();
-    _checkHealth();
+    if (_relayEndpoint.isConfigured) {
+      _checkHealth();
+    } else {
+      _healthOk = false;
+    }
   }
 
   bool get _isBusy => _isCreating || _isJoining || _enteringRoomCode != null;

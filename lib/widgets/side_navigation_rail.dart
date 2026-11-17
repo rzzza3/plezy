@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui' show lerpDouble;
+import 'dart:ui' show ImageFilter, lerpDouble;
 import '../media/ids.dart';
 import 'dart:io' show Platform;
 
@@ -16,6 +16,7 @@ import '../media/media_item.dart';
 import '../media/media_library.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../navigation/navigation_tabs.dart';
+import '../navigation/sidebar_style.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_avatar.dart';
@@ -89,6 +90,52 @@ abstract final class TvSidebarTokens {
   static const Duration labelFadeIn = Duration(milliseconds: 200);
   static const Duration labelFadeOut = Duration(milliseconds: 90);
   static const Duration dimDuration = Duration(milliseconds: 200);
+}
+
+/// Geometry and chrome of the floating TV sidebar: an icon-only pill inset
+/// from the screen edge, beside (never over) the content. The focused item's
+/// label floats in a chip to the pill's right.
+abstract final class FloatingSidebarTokens {
+  static const double edgeInset = 20;
+  static const double pillWidth = 52;
+  static const double contentGap = 14;
+
+  /// Horizontal space the shell reserves for the pill.
+  static const double reservedWidth = edgeInset + pillWidth + contentGap;
+
+  static const double screenVerticalInset = 32;
+  static const double pillVerticalPadding = 12;
+  static const double itemSize = 38;
+  static const double itemGap = 5;
+  static const double iconSize = 19;
+  static const double indicatorSize = 4;
+  static const double dividerInset = 14;
+  static const double labelGap = 5;
+  static const double blurSigma = 24;
+
+  /// Open panel width; the pill widens to this over the content.
+  static const double expandedWidth = 212;
+  static const double itemInset = (pillWidth - itemSize) / 2;
+  static const double collapsedRadius = pillWidth / 2;
+  static const double expandedRadius = 20;
+  static const double labelSize = 14;
+  static const double subtitleSize = 11;
+
+  static const Color pillFill = Color.fromRGBO(24, 26, 32, 0.62);
+  static const Color pillBorder = Color.fromRGBO(255, 255, 255, 0.08);
+  static const Color onSurface = Color(0xFFEDEDED);
+  static const double restingContentAlpha = 0.72;
+  static const Color focusedFill = Color(0xFFEDEDED);
+  static const Color focusedContent = Colors.black;
+  static const Color selectedFill = Color.fromRGBO(255, 255, 255, 0.10);
+  static const Color indicator = Color(0xFF3D8BFF);
+  static const Color divider = Color.fromRGBO(255, 255, 255, 0.12);
+
+  /// Fully opaque: the open panel is the top layer and nothing reads through.
+  static const Color expandedFill = Color(0xFF181A20);
+  static const Color hoverFill = Color.fromRGBO(255, 255, 255, 0.06);
+
+  static const Duration focusDuration = Duration(milliseconds: 160);
 }
 
 enum _LibraryNavSection { visible, hidden }
@@ -509,11 +556,21 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   static Duration get expandDuration => DevicePerformance.reducedDuration(const Duration(milliseconds: 250));
   static const Curve expandCurve = Curves.easeInOutCubicEmphasized;
 
-  static double collapsedWidthForContext(BuildContext _) =>
-      PlatformDetector.isTV() ? TvSidebarTokens.railWidth : collapsedWidth;
+  /// Whether the TV shell renders the floating pill instead of the classic
+  /// expanding strip. Desktop always uses the classic rail.
+  static bool get usesFloatingTvSidebar =>
+      PlatformDetector.isTV() && SettingsService.instance.read(SettingsService.sidebarStyle) == SidebarStyle.floating;
 
-  static double expandedWidthForContext(BuildContext _) =>
-      PlatformDetector.isTV() ? TvSidebarTokens.expandedWidth : expandedWidth;
+  static double collapsedWidthForContext(BuildContext _) {
+    if (usesFloatingTvSidebar) return FloatingSidebarTokens.reservedWidth;
+    return PlatformDetector.isTV() ? TvSidebarTokens.railWidth : collapsedWidth;
+  }
+
+  /// The floating pill never widens, so always-open reserves the same width.
+  static double expandedWidthForContext(BuildContext _) {
+    if (usesFloatingTvSidebar) return FloatingSidebarTokens.reservedWidth;
+    return PlatformDetector.isTV() ? TvSidebarTokens.expandedWidth : expandedWidth;
+  }
 
   /// Edge padding around the item column; collapsed rails center their items
   /// (72px in the 80px desktop strip, 40px in the 48px TV strip).
@@ -560,7 +617,14 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   /// focus-expanded — displaces content instead and stays transparent on TV.
   /// The TV rail always overlays content and paints its own scrim, so it
   /// never reports a floating panel.
-  bool get _isFloatingPanel => !PlatformDetector.isTV() && _interactionExpanded && !widget.alwaysExpanded;
+  /// The floating TV pill opens over the content (and asks the shell to dim
+  /// it) whenever it is hovered, touched or holds D-pad focus.
+  bool get _isFloatingPanel => usesFloatingTvSidebar
+      ? _floatingExpanded
+      : !PlatformDetector.isTV() && _interactionExpanded && !widget.alwaysExpanded;
+
+  /// Always-open is ignored here: a permanently open panel would cover content.
+  bool get _floatingExpanded => _interactionExpanded || widget.isSidebarFocused;
 
   /// The TV rail lists libraries directly, without the collapsible header.
   bool get _librariesShown => PlatformDetector.isTV() || _librariesExpanded;
@@ -833,6 +897,22 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool isCollapsed,
     required bool hasProfile,
   }) {
+    if (usesFloatingTvSidebar) {
+      return [
+        if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
+        if (!widget.isOfflineMode) ...[
+          _kHome,
+          _kLibrary,
+          _kWatchlist,
+          if (hasNowPlaying) _kNowPlaying,
+          if (hasExplore) _kExplore,
+          _kSearch,
+        ],
+        if (_showDownloads) _kDownloads,
+        if (!widget.isOfflineMode) ..._focusKeysForLibraryRows(visibleRows),
+        _kSettings,
+      ];
+    }
     if (PlatformDetector.isTV()) {
       return [
         if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
@@ -999,12 +1079,15 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         SettingsService.instance.listenable(SettingsService.groupLibrariesByServer),
         SettingsService.instance.listenable(SettingsService.showExploreTab),
         SettingsService.instance.listenable(SettingsService.librariesSectionExpanded),
+        SettingsService.instance.listenable(SettingsService.sidebarStyle),
       ]),
       builder: (context, _) {
+        final floating = usesFloatingTvSidebar;
         final hasExplore = hasExploreSource && SettingsService.instance.read(SettingsService.showExploreTab);
         // Server grouping: only when multi-server AND the user-facing toggle is on.
+        // The icon-only floating pill lists libraries flat.
         final groupByServerSetting = SettingsService.instance.read(SettingsService.groupLibrariesByServer);
-        final showServerHeaders = serverIds.length > 1 && groupByServerSetting;
+        final showServerHeaders = !floating && serverIds.length > 1 && groupByServerSetting;
         _collapsedServerGroupKeys.retainAll(
           _buildServerGroupStateKeys(visibleLibraries, hiddenLibraries, showServerHeaders: showServerHeaders),
         );
@@ -1038,6 +1121,20 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           hasProfile: activeProfile != null,
         );
         _debugAssertUniqueFocusOrder(focusOrder);
+        // Focus-driven expansion changes the panel state without a hover
+        // event; report it after the frame like the other paths.
+        if (_isFloatingPanel != _lastReportedFloatingPanel) _scheduleFloatingPanelNotification();
+        if (floating) {
+          _syncTvExpansion(_floatingExpanded);
+          return _buildFloatingTvRail(
+            isExpanded: _floatingExpanded,
+            focusOrder: focusOrder,
+            nowPlayingTrack: nowPlayingTrack,
+            musicService: musicService,
+            hasExplore: hasExplore,
+            visibleRows: visibleRows,
+          );
+        }
         if (PlatformDetector.isTV()) {
           _syncTvExpansion(!isCollapsed);
           return _buildTvRail(
@@ -1468,6 +1565,202 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           ),
           Positioned(top: 0, bottom: 0, left: 0, child: rail),
         ],
+      ),
+    );
+  }
+
+  /// The floating TV sidebar. At rest it is an icon-only pill, vertically
+  /// centered and inset from the left edge; hovered or focused, it widens
+  /// into a labelled panel over the content. The destinations and libraries
+  /// scroll; Settings is pinned at the foot.
+  Widget _buildFloatingTvRail({
+    required bool isExpanded,
+    required List<String> focusOrder,
+    required MediaItem? nowPlayingTrack,
+    required MusicPlaybackService? musicService,
+    required bool hasExplore,
+    required List<_LibraryNavRow> visibleRows,
+  }) {
+    final strings = Translations.of(context);
+    final offline = widget.isOfflineMode;
+
+    Widget item({
+      IconData? icon,
+      Widget Function(bool focused)? leadingBuilder,
+      required String label,
+      String? subtitle,
+      bool isSelected = false,
+      required String key,
+      required VoidCallback onTap,
+    }) => _FloatingSidebarItem(
+      icon: icon,
+      leadingBuilder: leadingBuilder,
+      label: label,
+      subtitle: subtitle,
+      isSelected: isSelected,
+      focusNode: _focusTracker.get(key),
+      expansion: _tvExpand,
+      labelOpacity: _tvLabels,
+      onTap: onTap,
+      onNavigateRight: widget.onNavigateToContent,
+    );
+
+    Widget destination(NavigationTabId tab, String key, IconData icon, String label) => item(
+      icon: icon,
+      label: label,
+      isSelected: widget.selectedTab == tab,
+      key: key,
+      onTap: () => widget.onDestinationSelected(tab),
+    );
+
+    final items = <Widget>[
+      if (offline && widget.onReconnect != null)
+        item(
+          icon: widget.isReconnecting ? Symbols.sync_rounded : Symbols.wifi_rounded,
+          label: strings.common.reconnect,
+          key: _kReconnect,
+          // ignore: no-empty-block - no-op tap handler while reconnecting
+          onTap: widget.isReconnecting ? () {} : () => widget.onReconnect?.call(),
+        ),
+      if (!offline) ...[
+        destination(NavigationTabId.discover, _kHome, Symbols.home_rounded, strings.common.home),
+        destination(NavigationTabId.library, _kLibrary, Symbols.subscriptions_rounded, strings.navigation.library),
+        destination(NavigationTabId.watchlist, _kWatchlist, Symbols.bookmark_rounded, strings.navigation.watchlist),
+        if (nowPlayingTrack != null && musicService != null)
+          item(
+            label: strings.music.nowPlaying,
+            subtitle: nowPlayingTrack.title,
+            leadingBuilder: (focused) => EqualizerIcon(
+              animate: musicService.isPlaying,
+              color: focused ? FloatingSidebarTokens.focusedContent : FloatingSidebarTokens.onSurface,
+            ),
+            key: _kNowPlaying,
+            onTap: () => unawaited(openNowPlaying(context)),
+          ),
+        if (hasExplore)
+          destination(NavigationTabId.explore, _kExplore, Symbols.explore_rounded, strings.navigation.explore),
+        destination(NavigationTabId.search, _kSearch, Symbols.search_rounded, strings.common.search),
+      ],
+      if (_showDownloads)
+        destination(NavigationTabId.downloads, _kDownloads, Symbols.download_rounded, strings.navigation.downloads),
+      if (!offline && visibleRows.isNotEmpty) ...[
+        const _FloatingSidebarDivider(),
+        for (final row in visibleRows)
+          if (row case _LibraryItemRow(:final section, :final library, :final showServerName))
+            item(
+              icon: ContentTypeHelper.getLibraryIcon(library.kind.id),
+              label: library.title,
+              subtitle: showServerName ? library.serverName : null,
+              isSelected:
+                  widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == library.globalKey,
+              key: _libraryItemFocusKey(section, library),
+              onTap: () => widget.onLibrarySelected(library.globalKey),
+            ),
+      ],
+    ];
+
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(vertical: FloatingSidebarTokens.pillVerticalPadding),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: ListView(shrinkWrap: true, padding: EdgeInsets.zero, children: items),
+          ),
+          // Settings takes the foot of the pill, pinned however many
+          // libraries scroll above it.
+          if (items.isNotEmpty) const _FloatingSidebarDivider(),
+          destination(NavigationTabId.settings, _kSettings, Symbols.settings_rounded, strings.common.settings),
+        ],
+      ),
+    );
+
+    final reduced = DevicePerformance.isReduced;
+    final panel = AnimatedBuilder(
+      animation: _tvExpand,
+      builder: (context, child) {
+        final f = _tvExpand.value;
+        final width = lerpDouble(FloatingSidebarTokens.pillWidth, FloatingSidebarTokens.expandedWidth, f)!;
+        final shape = RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            lerpDouble(FloatingSidebarTokens.collapsedRadius, FloatingSidebarTokens.expandedRadius, f)!,
+          ),
+          side: const BorderSide(color: FloatingSidebarTokens.pillBorder),
+        );
+        // Without the blur, a denser fill keeps glyphs legible over artwork;
+        // open, the panel is nearly opaque so it reads as the top layer.
+        final restFill = reduced
+            ? FloatingSidebarTokens.pillFill.withValues(alpha: 0.88)
+            : FloatingSidebarTokens.pillFill;
+        return SizedBox(
+          width: width,
+          child: Stack(
+            children: [
+              // The frosted backdrop only serves the translucent resting pill.
+              if (!reduced && f < 1)
+                Positioned.fill(
+                  child: ClipPath(
+                    clipper: ShapeBorderClipper(shape: shape),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(
+                        sigmaX: FloatingSidebarTokens.blurSigma,
+                        sigmaY: FloatingSidebarTokens.blurSigma,
+                      ),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
+              DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: Color.lerp(restFill, FloatingSidebarTokens.expandedFill, f),
+                  shape: shape,
+                  shadows: [BoxShadow(color: Colors.black.withValues(alpha: 0.45 * f), blurRadius: 32)],
+                ),
+                child: child,
+              ),
+            ],
+          ),
+        );
+      },
+      child: content,
+    );
+
+    return AnimatedBuilder(
+      animation: _tvExpand,
+      builder: (context, child) => SizedBox(
+        // The rail grows over the content (which stays at the reserved
+        // offset) so the open panel is hit-testable across its full width.
+        width:
+            FloatingSidebarTokens.reservedWidth +
+            (FloatingSidebarTokens.expandedWidth - FloatingSidebarTokens.pillWidth) * _tvExpand.value,
+        child: child,
+      ),
+      child: TapRegion(
+        onTapOutside: (_) => collapse(),
+        child: Focus(
+          canRequestFocus: false,
+          skipTraversal: true,
+          onKeyEvent: (node, event) => _handleVerticalNavigation(node, event, focusOrder),
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: FloatingSidebarTokens.edgeInset,
+              top: FloatingSidebarTokens.screenVerticalInset,
+              bottom: FloatingSidebarTokens.screenVerticalInset,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: MouseRegion(
+                onEnter: (_) => _onHoverEnter(),
+                onExit: (_) => _onHoverExit(),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: isExpanded ? null : _expandForTouch,
+                  child: panel,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2184,4 +2477,209 @@ class _TvSidebarScrimPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_TvSidebarScrimPainter oldDelegate) => oldDelegate.expand != expand || oldDelegate.base != base;
+}
+
+/// One floating-sidebar row. Collapsed it is a circular, icon-only target
+/// centered in the pill; as the panel opens it widens into a stadium row with
+/// the label beside the glyph, which never moves. Focused fills white with
+/// black content; selected carries a low-alpha fill and an accent dot (under
+/// the glyph at rest, at the row's leading edge when open).
+class _FloatingSidebarItem extends StatefulWidget {
+  final IconData? icon;
+  final Widget Function(bool focused)? leadingBuilder;
+  final String label;
+  final String? subtitle;
+  final bool isSelected;
+  final FocusNode focusNode;
+  final Animation<double> expansion;
+  final Animation<double> labelOpacity;
+  final VoidCallback onTap;
+  final VoidCallback? onNavigateRight;
+
+  const _FloatingSidebarItem({
+    this.icon,
+    this.leadingBuilder,
+    required this.label,
+    this.subtitle,
+    required this.isSelected,
+    required this.focusNode,
+    required this.expansion,
+    required this.labelOpacity,
+    required this.onTap,
+    this.onNavigateRight,
+  });
+
+  @override
+  State<_FloatingSidebarItem> createState() => _FloatingSidebarItemState();
+}
+
+class _FloatingSidebarItemState extends State<_FloatingSidebarItem> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: widget.focusNode,
+      builder: (context, _) {
+        final focused = widget.focusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
+        final isSelected = widget.isSelected;
+        final lit = focused || isSelected || _hovered;
+        final contentColor = focused
+            ? FloatingSidebarTokens.focusedContent
+            : lit
+            ? FloatingSidebarTokens.onSurface
+            : FloatingSidebarTokens.onSurface.withValues(alpha: FloatingSidebarTokens.restingContentAlpha);
+        final duration = DevicePerformance.reducedDuration(FloatingSidebarTokens.focusDuration);
+        final fill = focused
+            ? FloatingSidebarTokens.focusedFill
+            : isSelected
+            ? FloatingSidebarTokens.selectedFill
+            : _hovered
+            ? FloatingSidebarTokens.hoverFill
+            : Colors.transparent;
+        final subtitle = widget.subtitle;
+
+        return Focus(
+          focusNode: widget.focusNode,
+          onKeyEvent: (node, event) =>
+              _handleRailItemKey(event, onSelect: widget.onTap, onNavigateRight: widget.onNavigateRight),
+          child: Semantics(
+            button: true,
+            selected: isSelected,
+            label: widget.label,
+            excludeSemantics: true,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              onEnter: (_) => setState(() => _hovered = true),
+              onExit: (_) => setState(() => _hovered = false),
+              child: GestureDetector(
+                onTap: widget.onTap,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: FloatingSidebarTokens.itemInset,
+                    vertical: FloatingSidebarTokens.itemGap / 2,
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AnimatedContainer(
+                        duration: duration,
+                        curve: Curves.easeOutCubic,
+                        height: FloatingSidebarTokens.itemSize,
+                        clipBehavior: Clip.hardEdge,
+                        decoration: ShapeDecoration(color: fill, shape: const StadiumBorder()),
+                        child: OverflowBox(
+                          alignment: Alignment.centerLeft,
+                          minWidth: 0,
+                          maxWidth: FloatingSidebarTokens.expandedWidth - 2 * FloatingSidebarTokens.itemInset,
+                          child: Row(
+                            children: [
+                              SizedBox.square(
+                                dimension: FloatingSidebarTokens.itemSize,
+                                child: Center(
+                                  child:
+                                      widget.leadingBuilder?.call(focused) ??
+                                      AppIcon(
+                                        widget.icon!,
+                                        fill: lit ? 1 : 0,
+                                        size: FloatingSidebarTokens.iconSize,
+                                        color: contentColor,
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: FloatingSidebarTokens.labelGap),
+                              Expanded(
+                                child: FadeTransition(
+                                  opacity: widget.labelOpacity,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 14),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          widget.label,
+                                          maxLines: 1,
+                                          softWrap: false,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: FloatingSidebarTokens.labelSize,
+                                            height: subtitle == null ? null : 1.15,
+                                            fontWeight: lit ? FontWeight.w600 : FontWeight.w500,
+                                            color: contentColor,
+                                          ),
+                                        ),
+                                        if (subtitle != null)
+                                          Text(
+                                            subtitle,
+                                            maxLines: 1,
+                                            softWrap: false,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: FloatingSidebarTokens.subtitleSize,
+                                              height: 1.2,
+                                              color: contentColor.withValues(alpha: contentColor.a * 0.7),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (isSelected)
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          child: AnimatedBuilder(
+                            animation: widget.expansion,
+                            builder: (context, child) {
+                              const size = FloatingSidebarTokens.indicatorSize;
+                              const half = FloatingSidebarTokens.itemSize / 2;
+                              final f = widget.expansion.value;
+                              return Transform.translate(
+                                offset: Offset(
+                                  lerpDouble(half - size / 2, 4, f)!,
+                                  lerpDouble(FloatingSidebarTokens.itemSize - size - 4, half - size / 2, f)!,
+                                ),
+                                child: child,
+                              );
+                            },
+                            child: Container(
+                              width: FloatingSidebarTokens.indicatorSize,
+                              height: FloatingSidebarTokens.indicatorSize,
+                              decoration: const BoxDecoration(
+                                color: FloatingSidebarTokens.indicator,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// A short hairline between groups inside the floating pill.
+class _FloatingSidebarDivider extends StatelessWidget {
+  const _FloatingSidebarDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: FloatingSidebarTokens.dividerInset, vertical: 6),
+      child: SizedBox(height: 1, child: ColoredBox(color: FloatingSidebarTokens.divider)),
+    );
+  }
 }

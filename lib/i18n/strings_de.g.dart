@@ -511,6 +511,7 @@ class _Translations$search$de extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Anderen Suchbegriff versuchen';
 	@override String get searchYourMedia => 'In den eigenen Medien suchen';
 	@override String get enterTitleActorOrKeyword => 'Titel, Schauspieler oder Stichwort eingeben';
+	@override String get castAndCrew => 'Besetzung & Crew';
 }
 
 // Path: hotkeys
@@ -2814,6 +2815,7 @@ extension on TranslationsDe {
 			'search.tryDifferentTerm' => 'Anderen Suchbegriff versuchen',
 			'search.searchYourMedia' => 'In den eigenen Medien suchen',
 			'search.enterTitleActorOrKeyword' => 'Titel, Schauspieler oder Stichwort eingeben',
+			'search.castAndCrew' => 'Besetzung & Crew',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Tastenkürzel festlegen für ${actionName}',
 			'hotkeys.clearShortcut' => 'Kürzel löschen',
 			'hotkeys.noShortcutSet' => 'Kein Tastenkürzel festgelegt',
@@ -2940,9 +2942,9 @@ extension on TranslationsDe {
 			'fileInfo.optimizedVersion' => 'Optimierte Version',
 			'fileInfo.optimizationTarget' => 'Optimierungsziel',
 			'fileInfo.deletedAt' => 'Gelöscht',
-			'fileInfo.remoteSource' => 'Remote-Quelle',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'Remote-Quelle',
 			'fileInfo.infiniteStream' => 'Endlos-Stream',
 			'fileInfo.directPlay' => 'Direct Play',
 			'fileInfo.directStream' => 'Direct Stream',
@@ -3454,9 +3456,9 @@ extension on TranslationsDe {
 			'explore.relation.prequel' => 'Prequel',
 			'explore.relation.sequel' => 'Fortsetzung',
 			'explore.relation.sideStory' => 'Nebengeschichte',
-			'explore.relation.spinOff' => 'Spin-off',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'Spin-off',
 			'explore.relation.alternativeVersion' => 'Alternative Version',
 			'explore.relation.summary' => 'Zusammenfassung',
 			'explore.relation.parentStory' => 'Hauptgeschichte',
@@ -3968,9 +3970,9 @@ extension on TranslationsDe {
 			'seerr.noTags' => 'Keine Tags',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (Standard)',
 			'seerr.animeNote' => 'Diese Serie ist ein Anime.',
-			'seerr.requestSubmitted' => 'Anfrage gesendet',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'Anfrage gesendet',
 			'seerr.requestFailed' => ({required Object error}) => 'Anfrage fehlgeschlagen: ${error}',
 			'seerr.requestsLoadFailed' => 'Anfrageoptionen konnten nicht geladen werden',
 			'seerr.nothingToRequest' => 'Alles ist bereits verfügbar oder angefragt.',

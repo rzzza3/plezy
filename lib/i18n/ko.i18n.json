@@ -412,7 +412,7 @@
     "tryDifferentTerm": "다른 검색어를 시도해 보세요",
     "searchYourMedia": "미디어 검색",
     "enterTitleActorOrKeyword": "제목, 배우 또는 키워드를 입력하세요",
-    "people": ""
+    "castAndCrew": "출연진 및 제작진"
   },
   "hotkeys": {
     "setShortcutFor": "${actionName}에 대한 단축키 설정",

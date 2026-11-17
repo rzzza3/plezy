@@ -412,7 +412,7 @@
     "tryDifferentTerm": "別の検索語をお試しください",
     "searchYourMedia": "メディアを検索",
     "enterTitleActorOrKeyword": "タイトル、俳優、またはキーワードを入力",
-    "people": ""
+    "castAndCrew": "キャスト・スタッフ"
   },
   "hotkeys": {
     "setShortcutFor": "${actionName}のショートカットを設定",

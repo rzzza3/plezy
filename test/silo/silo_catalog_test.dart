@@ -493,26 +493,33 @@ void main() {
       expect(await client.fetchItem('gone'), isNull);
     });
 
-    test('search reads one 40-item page (TvSearchViewModel.kt:240-300)', () async {
-      final (client, fake) = await _client(
-        (_) => jsonResponse({
-          'items': [_card('m1'), _card('b1', type: 'ebook')],
+    test('search reads one 40-item page per type, movies first (TvSearchViewModel.kt:240-300)', () async {
+      final (client, fake) = await _client((request) {
+        final items = switch (request.url.queryParameters['type']) {
+          'movie' => [_card('m1'), _card('b1', type: 'ebook')],
+          'series' => [_card('s1', type: 'series')],
+          _ => [_card('e1', type: 'episode'), _card('m1')],
+        };
+        return jsonResponse({
+          'items': items,
           'page': {'has_more': false},
-          'total': 2,
+          'total': items.length,
           'total_exact': true,
           'window_cursor': 'w',
-        }, 200),
-      );
+        }, 200);
+      });
 
       final items = await client.searchItems('alpha');
 
-      expect(fake.requests.single.url.queryParameters, {
-        'source': 'query',
-        'q': 'alpha',
-        'skip_total': 'false',
-        'limit': '40',
-      });
-      expect(items.map((i) => i.id), ['m1']);
+      expect(
+        [for (final request in fake.requests) request.url.queryParameters],
+        [
+          for (final type in ['movie', 'series', 'episode'])
+            {'source': 'query', 'type': type, 'q': 'alpha', 'skip_total': 'false', 'limit': '40'},
+        ],
+      );
+      // Hidden types drop and a card two pages repeat shows once.
+      expect(items.map((i) => i.id), ['m1', 's1', 'e1']);
     });
 
     test('people search runs only on a server that scopes it (SearchPeople.kt:23-36)', () async {

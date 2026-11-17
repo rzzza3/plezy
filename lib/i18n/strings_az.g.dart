@@ -510,6 +510,7 @@ class _Translations$search$az extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Fərqli axtarış sözü cəhd edin';
 	@override String get searchYourMedia => 'Mediyanızda axtarın';
 	@override String get enterTitleActorOrKeyword => 'Ad, aktyor və ya açar söz daxil edin';
+	@override String get castAndCrew => 'Aktyorlar və heyət';
 }
 
 // Path: hotkeys
@@ -2812,6 +2813,7 @@ extension on TranslationsAz {
 			'search.tryDifferentTerm' => 'Fərqli axtarış sözü cəhd edin',
 			'search.searchYourMedia' => 'Mediyanızda axtarın',
 			'search.enterTitleActorOrKeyword' => 'Ad, aktyor və ya açar söz daxil edin',
+			'search.castAndCrew' => 'Aktyorlar və heyət',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} üçün qısayol təyin et',
 			'hotkeys.clearShortcut' => 'Qısayolu təmizlə',
 			'hotkeys.noShortcutSet' => 'Qısayol təyin edilməyib',
@@ -2939,9 +2941,9 @@ extension on TranslationsAz {
 			'fileInfo.optimizationTarget' => 'Optimallaşdırma hədəfi',
 			'fileInfo.deletedAt' => 'Silinib',
 			'fileInfo.remoteSource' => 'Uzaq mənbə',
-			'fileInfo.infiniteStream' => 'Sonsuz axın',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.infiniteStream' => 'Sonsuz axın',
 			'fileInfo.directPlay' => 'Birbaşa oynatma',
 			'fileInfo.directStream' => 'Birbaşa axın',
 			'fileInfo.transcoding' => 'Yenidən kodlaşdırma',
@@ -3453,9 +3455,9 @@ extension on TranslationsAz {
 			'explore.relation.sequel' => 'Sikvel',
 			'explore.relation.sideStory' => 'Yan hekayə',
 			'explore.relation.spinOff' => 'Spin-off',
-			'explore.relation.alternativeVersion' => 'Alternativ versiya',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.alternativeVersion' => 'Alternativ versiya',
 			'explore.relation.summary' => 'Xülasə',
 			'explore.relation.parentStory' => 'Əsas hekayə',
 			'explore.relation.adaptation' => 'Adaptasiya',
@@ -3967,9 +3969,9 @@ extension on TranslationsAz {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (Defolt)',
 			'seerr.animeNote' => 'Bu serial animedir.',
 			'seerr.requestSubmitted' => 'Sorğu göndərildi',
-			'seerr.requestFailed' => ({required Object error}) => 'Sorğu uğursuz oldu: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestFailed' => ({required Object error}) => 'Sorğu uğursuz oldu: ${error}',
 			'seerr.requestsLoadFailed' => 'Seçimlər yüklənə bilmədi',
 			'seerr.nothingToRequest' => 'Hər şey artıq var və ya sorğu göndərilib.',
 			'seerr.statusAvailable' => 'Əlçatandır',

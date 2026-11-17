@@ -32,6 +32,7 @@ import '../mixins/refreshable.dart';
 import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
+import '../navigation/sidebar_style.dart';
 import '../navigation/profile_navigation_scope.dart';
 import '../navigation/settings_shortcut.dart';
 import '../profiles/active_profile_binder.dart';
@@ -1463,7 +1464,11 @@ class _MainScreenState extends State<MainScreen>
     final value = await showAdaptiveAppMenu<String>(
       context,
       entries: profileMenuEntries(context, context.read<ActiveProfileProvider>()),
-      position: const Offset(TvSidebarTokens.expandedWidth, TvSidebarTokens.verticalPadding),
+      // The floating pill keeps its avatar at the foot, so open beside it
+      // (the menu clamps to the screen's bottom edge).
+      position: SideNavigationRailState.usesFloatingTvSidebar
+          ? Offset(FloatingSidebarTokens.reservedWidth + 140, MediaQuery.sizeOf(context).height)
+          : const Offset(TvSidebarTokens.expandedWidth, TvSidebarTokens.verticalPadding),
       focusFirstItem: true,
     );
     if (value == null || !mounted || _switchingProfile) return;
@@ -2045,147 +2050,158 @@ class _MainScreenState extends State<MainScreen>
 
   Widget _buildContent(BuildContext context, bool useSideNav) {
     if (useSideNav) {
-      return SettingValueBuilder<bool>(
-        pref: SettingsService.alwaysKeepSidebarOpen,
-        builder: (context, alwaysExpanded, _) {
-          final targetContentOffset = _sideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
-          final reservedContentOffset = _reservedSideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
-
-          return OverlaySheetHost(
-            onOpenChanged: _handleOverlaySheetOpenChanged,
-            // canPop:false blocks the system route-pop (matching the old inert
-            // PopScope). The dpad/key back chain (content → top tabs → sidebar →
-            // home) is owned entirely by the key path below; there is NO
-            // onSystemBack because a pure popRoute must not short-circuit that
-            // chain to home. The host still closes an open sheet on system back.
-            canPop: false,
-            child: Focus(
-              onKeyEvent: (node, event) {
-                final rootEscapeResult = _handleDesktopRootEscape(event);
-                if (rootEscapeResult == KeyEventResult.handled) return rootEscapeResult;
-                final fullscreenResult = _handleFullscreenShortcut(event);
-                if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
-                final refreshResult = _handlePageRefreshShortcut(event);
-                if (refreshResult == KeyEventResult.handled) return refreshResult;
-                final searchResult = _handleSearchShortcut(event);
-                if (searchResult == KeyEventResult.handled) return searchResult;
-                final settingsResult = _handleSettingsShortcut(event);
-                if (settingsResult == KeyEventResult.handled) return settingsResult;
-                return _handleBackKey(event);
-              },
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final viewportWidth = constraints.maxWidth;
-                  // Layout from the tween END value: deriving it from the
-                  // animated value changed MainScreenFocusScope every tick
-                  // of the sidebar expansion, rebuilding every dependent
-                  // (the whole TV content tree) per frame. The slide is a
-                  // paint-only translate on the content below instead.
-                  final contentLayout = mainScreenSideNavigationContentLayout(
-                    viewportWidth: viewportWidth,
-                    currentSideNavigationWidth: targetContentOffset,
-                    reservedSideNavigationWidth: reservedContentOffset,
-                  );
-                  return MainScreenFocusScope(
-                    focusSidebar: _focusSidebar,
-                    sideNavigationWidth: targetContentOffset,
-                    reservedSideNavigationWidth: reservedContentOffset,
-                    foregroundLeft: contentLayout.left,
-                    foregroundWidth: contentLayout.width,
-                    viewportWidth: viewportWidth,
-                    selectLibrary: _selectLibrary,
-                    openSettings: _openSettings,
-                    selectTab: _selectTab,
-                    child: SideNavigationScope(
-                      child: Stack(
-                        clipBehavior: Clip.hardEdge,
-                        children: [
-                          Positioned.fill(child: ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)),
-                          Positioned(
-                            top: 0,
-                            bottom: 0,
-                            left: contentLayout.left,
-                            width: contentLayout.width,
-                            child: TweenAnimationBuilder<double>(
-                              duration: SideNavigationRailState.expandDuration,
-                              curve: SideNavigationRailState.expandCurve,
-                              tween: Tween<double>(end: targetContentOffset),
-                              child: FocusScope(
-                                node: _contentFocusScope,
-                                // No autofocus - we control focus programmatically to prevent
-                                // autofocus from stealing focus back after setState() rebuilds
-                                child: _buildTickerAwareStack(),
-                              ),
-                              // Duration/curve must stay in sync with
-                              // SideNavigationBleedBuilder and the rail's width
-                              // animation so all three track tick for tick.
-                              builder: (context, contentLeftPadding, contentChild) {
-                                return Transform.translate(
-                                  offset: Offset(contentLeftPadding - targetContentOffset, 0),
-                                  child: contentChild!,
-                                );
-                              },
-                            ),
-                          ),
-                          // Scrim behind the modal (hover/touch) rail
-                          // overlay; purely visual so content stays
-                          // interactive and hover-out still collapses.
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: AnimatedOpacity(
-                                opacity: _isSidebarFloatingPanel ? 1.0 : 0.0,
-                                duration: SideNavigationRailState.expandDuration,
-                                curve: SideNavigationRailState.expandCurve,
-                                child: const ColoredBox(color: Color(0x66000000)),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 0,
-                            bottom: 0,
-                            left: 0,
-                            child: FocusScope(
-                              node: _sidebarFocusScope,
-                              child: SideNavigationRail(
-                                key: _sideNavKey,
-                                selectedTab: _currentTab,
-                                selectedLibraryKey: _selectedLibraryGlobalKey,
-                                isOfflineMode: _isOffline,
-                                isSidebarFocused: _isSidebarFocused,
-                                alwaysExpanded: alwaysExpanded,
-                                isReconnecting: _isReconnecting,
-                                onDestinationSelected: (tab) {
-                                  final restorePreviousFocus = tab == _currentTab;
-                                  _selectTab(tab);
-                                  _focusContent(restorePreviousFocus: restorePreviousFocus);
-                                },
-                                onLibrarySelected: (key) {
-                                  _selectLibrary(key);
-                                  _focusContent(restorePreviousFocus: false);
-                                },
-                                onNavigateToContent: _focusContent,
-                                onFloatingPanelChanged: (floating) {
-                                  if (_isSidebarFloatingPanel == floating) return;
-                                  setState(() => _isSidebarFloatingPanel = floating);
-                                },
-                                onReconnect: _triggerReconnect,
-                                onProfileSelected: () => unawaited(_openProfileMenu()),
-                              ),
-                            ),
-                          ),
-                          if (_switchingProfile) const ProfileSwitchingOverlay(),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        },
+      // The sidebar style changes the reserved rail width on TV.
+      return SettingValueBuilder<SidebarStyle>(
+        pref: SettingsService.sidebarStyle,
+        builder: (context, _, _) => _buildSideNavContent(context),
       );
     }
+    return _buildBottomNavContent(context);
+  }
 
+  Widget _buildSideNavContent(BuildContext context) {
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.alwaysKeepSidebarOpen,
+      builder: (context, alwaysExpanded, _) {
+        final targetContentOffset = _sideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
+        final reservedContentOffset = _reservedSideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
+
+        return OverlaySheetHost(
+          onOpenChanged: _handleOverlaySheetOpenChanged,
+          // canPop:false blocks the system route-pop (matching the old inert
+          // PopScope). The dpad/key back chain (content → top tabs → sidebar →
+          // home) is owned entirely by the key path below; there is NO
+          // onSystemBack because a pure popRoute must not short-circuit that
+          // chain to home. The host still closes an open sheet on system back.
+          canPop: false,
+          child: Focus(
+            onKeyEvent: (node, event) {
+              final rootEscapeResult = _handleDesktopRootEscape(event);
+              if (rootEscapeResult == KeyEventResult.handled) return rootEscapeResult;
+              final fullscreenResult = _handleFullscreenShortcut(event);
+              if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
+              final refreshResult = _handlePageRefreshShortcut(event);
+              if (refreshResult == KeyEventResult.handled) return refreshResult;
+              final searchResult = _handleSearchShortcut(event);
+              if (searchResult == KeyEventResult.handled) return searchResult;
+              final settingsResult = _handleSettingsShortcut(event);
+              if (settingsResult == KeyEventResult.handled) return settingsResult;
+              return _handleBackKey(event);
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final viewportWidth = constraints.maxWidth;
+                // Layout from the tween END value: deriving it from the
+                // animated value changed MainScreenFocusScope every tick
+                // of the sidebar expansion, rebuilding every dependent
+                // (the whole TV content tree) per frame. The slide is a
+                // paint-only translate on the content below instead.
+                final contentLayout = mainScreenSideNavigationContentLayout(
+                  viewportWidth: viewportWidth,
+                  currentSideNavigationWidth: targetContentOffset,
+                  reservedSideNavigationWidth: reservedContentOffset,
+                );
+                return MainScreenFocusScope(
+                  focusSidebar: _focusSidebar,
+                  sideNavigationWidth: targetContentOffset,
+                  reservedSideNavigationWidth: reservedContentOffset,
+                  foregroundLeft: contentLayout.left,
+                  foregroundWidth: contentLayout.width,
+                  viewportWidth: viewportWidth,
+                  selectLibrary: _selectLibrary,
+                  openSettings: _openSettings,
+                  selectTab: _selectTab,
+                  child: SideNavigationScope(
+                    child: Stack(
+                      clipBehavior: Clip.hardEdge,
+                      children: [
+                        Positioned.fill(child: ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)),
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: contentLayout.left,
+                          width: contentLayout.width,
+                          child: TweenAnimationBuilder<double>(
+                            duration: SideNavigationRailState.expandDuration,
+                            curve: SideNavigationRailState.expandCurve,
+                            tween: Tween<double>(end: targetContentOffset),
+                            child: FocusScope(
+                              node: _contentFocusScope,
+                              // No autofocus - we control focus programmatically to prevent
+                              // autofocus from stealing focus back after setState() rebuilds
+                              child: _buildTickerAwareStack(),
+                            ),
+                            // Duration/curve must stay in sync with
+                            // SideNavigationBleedBuilder and the rail's width
+                            // animation so all three track tick for tick.
+                            builder: (context, contentLeftPadding, contentChild) {
+                              return Transform.translate(
+                                offset: Offset(contentLeftPadding - targetContentOffset, 0),
+                                child: contentChild!,
+                              );
+                            },
+                          ),
+                        ),
+                        // Scrim behind the modal (hover/touch) rail
+                        // overlay; purely visual so content stays
+                        // interactive and hover-out still collapses.
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: AnimatedOpacity(
+                              opacity: _isSidebarFloatingPanel ? 1.0 : 0.0,
+                              duration: SideNavigationRailState.expandDuration,
+                              curve: SideNavigationRailState.expandCurve,
+                              child: const ColoredBox(color: Color(0x66000000)),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: 0,
+                          child: FocusScope(
+                            node: _sidebarFocusScope,
+                            child: SideNavigationRail(
+                              key: _sideNavKey,
+                              selectedTab: _currentTab,
+                              selectedLibraryKey: _selectedLibraryGlobalKey,
+                              isOfflineMode: _isOffline,
+                              isSidebarFocused: _isSidebarFocused,
+                              alwaysExpanded: alwaysExpanded,
+                              isReconnecting: _isReconnecting,
+                              onDestinationSelected: (tab) {
+                                final restorePreviousFocus = tab == _currentTab;
+                                _selectTab(tab);
+                                _focusContent(restorePreviousFocus: restorePreviousFocus);
+                              },
+                              onLibrarySelected: (key) {
+                                _selectLibrary(key);
+                                _focusContent(restorePreviousFocus: false);
+                              },
+                              onNavigateToContent: _focusContent,
+                              onFloatingPanelChanged: (floating) {
+                                if (_isSidebarFloatingPanel == floating) return;
+                                setState(() => _isSidebarFloatingPanel = floating);
+                              },
+                              onReconnect: _triggerReconnect,
+                              onProfileSelected: () => unawaited(_openProfileMenu()),
+                            ),
+                          ),
+                        ),
+                        if (_switchingProfile) const ProfileSwitchingOverlay(),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomNavContent(BuildContext context) {
     return OverlaySheetHost(
       onOpenChanged: _handleOverlaySheetOpenChanged,
       // Host owns sheet + system back; onSystemBack mirrors the old PopScope

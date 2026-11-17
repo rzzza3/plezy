@@ -511,6 +511,7 @@ class _Translations$search$ko extends Translations$search$en {
 	@override String get tryDifferentTerm => '다른 검색어를 시도해 보세요';
 	@override String get searchYourMedia => '미디어 검색';
 	@override String get enterTitleActorOrKeyword => '제목, 배우 또는 키워드를 입력하세요';
+	@override String get castAndCrew => '출연진 및 제작진';
 }
 
 // Path: hotkeys
@@ -2806,6 +2807,7 @@ extension on TranslationsKo {
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
 			'search.enterTitleActorOrKeyword' => '제목, 배우 또는 키워드를 입력하세요',
+			'search.castAndCrew' => '출연진 및 제작진',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName}에 대한 단축키 설정',
 			'hotkeys.clearShortcut' => '단축키 삭제',
 			'hotkeys.noShortcutSet' => '설정된 단축키 없음',
@@ -2932,9 +2934,9 @@ extension on TranslationsKo {
 			'fileInfo.optimizedVersion' => '최적화 버전',
 			'fileInfo.optimizationTarget' => '최적화 대상',
 			'fileInfo.deletedAt' => '삭제됨',
-			'fileInfo.remoteSource' => '원격 소스',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => '원격 소스',
 			'fileInfo.infiniteStream' => '무한 스트림',
 			'fileInfo.directPlay' => 'Direct Play',
 			'fileInfo.directStream' => 'Direct Stream',
@@ -3446,9 +3448,9 @@ extension on TranslationsKo {
 			'explore.relation.prequel' => '프리퀄',
 			'explore.relation.sequel' => '시퀄',
 			'explore.relation.sideStory' => '사이드 스토리',
-			'explore.relation.spinOff' => '스핀오프',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => '스핀오프',
 			'explore.relation.alternativeVersion' => '대체 버전',
 			'explore.relation.summary' => '요약',
 			'explore.relation.parentStory' => '원작',
@@ -3960,9 +3962,9 @@ extension on TranslationsKo {
 			'seerr.noTags' => '태그 없음',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (기본값)',
 			'seerr.animeNote' => '이 시리즈는 애니메이션입니다.',
-			'seerr.requestSubmitted' => '요청을 제출했습니다',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => '요청을 제출했습니다',
 			'seerr.requestFailed' => ({required Object error}) => '요청 실패: ${error}',
 			'seerr.requestsLoadFailed' => '요청 옵션을 불러올 수 없습니다',
 			'seerr.nothingToRequest' => '모두 이미 사용 가능하거나 요청되었습니다.',

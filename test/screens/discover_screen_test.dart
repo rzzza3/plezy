@@ -64,7 +64,7 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
   });
 
-  testWidgets('TV tab focus returns to discover browse rail instead of reload action', (tester) async {
+  testWidgets('TV tab focus returns to discover browse rail; the toolbar shows only the clock', (tester) async {
     final settings = await SettingsService.getInstance();
     await settings.write(SettingsService.libraryDensity, LibraryDensity.max);
     tester.view.devicePixelRatio = 1.0;
@@ -204,26 +204,12 @@ void main() {
     expect(backgroundPosition.left, -currentForegroundLeft);
     expect(backgroundPosition.width, 1280);
 
-    tester.state<FocusableActionBarState>(find.byType(FocusableActionBar)).requestFocusOnFirst();
-    await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+    // TV keeps only the clock up top, so there is no reload action to land on.
+    expect(find.byType(FocusableActionBar), findsNothing);
+    expect(find.byType(SystemClock), findsOneWidget);
 
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pump();
-
-    tester.state<FocusableActionBarState>(find.byType(FocusableActionBar)).requestFocusOnFirst();
-    await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
-
-    (discoverKey.currentState! as FocusableTab).focusActiveTabIfReady();
     (discoverKey.currentState! as TabVisibilityAware).onTabHidden();
     await tester.pump();
-    await tester.pump();
-
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
-
     (discoverKey.currentState! as TabVisibilityAware).onTabShown();
     (discoverKey.currentState! as FocusableTab).focusActiveTabIfReady();
     await tester.pump();

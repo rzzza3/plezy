@@ -32,6 +32,7 @@ void main() {
 
   tearDown(() {
     MemoryLogOutput.clearLogs();
+    debugLogUploadEndpoint = null;
   });
   test('log upload payload preserves the header and newest complete lines', () {
     const header = 'Plezy test device\n---\n';
@@ -54,6 +55,7 @@ void main() {
 
   testWidgets('long upload capability displays and copies at narrow width', (tester) async {
     const capability = 'abcdefghijklmnopqrstuvwxy';
+    debugLogUploadEndpoint = 'https://logs.example.test/logs';
     String? uploadedBody;
     http.Request? uploadedRequest;
     String? clipboardText;
@@ -141,7 +143,7 @@ void main() {
     expect(find.text(capability, findRichText: true), findsOneWidget);
     expect(utf8.encode(uploadedBody!).length, lessThanOrEqualTo(maxLogUploadBytes));
     expect(uploadedRequest!.method, 'POST');
-    expect(uploadedRequest!.url, Uri.parse('https://ice.plezy.app/logs'));
+    expect(uploadedRequest!.url, Uri.parse('https://logs.example.test/logs'));
     final contentType = uploadedRequest!.headers.entries
         .singleWhere((entry) => entry.key.toLowerCase() == 'content-type')
         .value;
@@ -216,7 +218,18 @@ void main() {
       expect(find.textContaining('Phase: database'), findsOneWidget);
     });
 
+    testWidgets('offers no upload action when the build names no endpoint', (tester) async {
+      StartupDiagnosticsStore.setPendingForTesting(record);
+
+      await pumpLogs(tester);
+
+      final bar = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar));
+      expect(bar.actions.map((action) => action.tooltip), isNot(contains(t.logs.uploadLogs)));
+      expect(bar.actions.map((action) => action.tooltip), contains(t.logs.copyLogs));
+    });
+
     testWidgets('enables upload and copy with a record but an empty log buffer', (tester) async {
+      debugLogUploadEndpoint = 'https://logs.example.test/logs';
       MemoryLogOutput.clearLogs();
       StartupDiagnosticsStore.setPendingForTesting(record);
 

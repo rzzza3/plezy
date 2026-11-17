@@ -719,9 +719,13 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) => fetchPlayableDescendants(seriesId);
 
-  /// One page of `source=query&q=…&limit=40`, as the TV search screen reads
-  /// (`T/ui/screens/search/TvSearchViewModel.kt:240-300`). [excludedLibraryIds]
-  /// cannot apply: Silo search cards carry no library id.
+  /// One `source=query&q=…&type=…&limit=40` page per searchable type, as the
+  /// TV search screen asks with a type chip selected
+  /// (`T/ui/screens/search/TvSearchViewModel.kt:240-300`). A single untyped
+  /// page lets one type crowd out the rest: "John" fills all 40 slots with
+  /// episodes and returns no movie or series at all. Results come back movies,
+  /// then series, then episodes, each in the server's order.
+  /// [excludedLibraryIds] cannot apply: Silo search cards carry no library id.
   @override
   Future<List<MediaItem>> searchItems(
     String query, {
@@ -729,13 +733,20 @@ class SiloClient extends MediaServerClient implements ScopedMediaServerClient {
     AbortController? abort,
     Set<String> excludedLibraryIds = const {},
   }) async {
-    final page = await catalog.browse(SiloCatalogQuery(q: query, limit: limit.clamp(1, 40)));
+    final pageLimit = limit.clamp(1, 40);
+    final pages = await Future.wait([
+      for (final type in _searchTypes) catalog.browse(SiloCatalogQuery(q: query, type: type, limit: pageLimit)),
+    ]);
     abort?.throwIfAborted();
+    final seen = <String>{};
     return [
-      for (final card in page.items)
-        if (!isSiloHiddenType(card.type)) siloCardToItem(card, _origin),
+      for (final page in pages)
+        for (final card in page.items)
+          if (!isSiloHiddenType(card.type) && seen.add(card.contentId)) siloCardToItem(card, _origin),
     ];
   }
+
+  static const _searchTypes = ['movie', 'series', 'episode'];
 
   /// A failed lookup yields no people, and a server that does not scope people
   /// search is never asked (`S/repository/SearchPeople.kt:9-36`).

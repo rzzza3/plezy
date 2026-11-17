@@ -511,6 +511,7 @@ class _Translations$search$it extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Prova altri termini di ricerca';
 	@override String get searchYourMedia => 'Cerca nei tuoi media';
 	@override String get enterTitleActorOrKeyword => 'Inserisci un titolo, attore o parola chiave';
+	@override String get castAndCrew => 'Cast e troupe';
 }
 
 // Path: hotkeys
@@ -2814,6 +2815,7 @@ extension on TranslationsIt {
 			'search.tryDifferentTerm' => 'Prova altri termini di ricerca',
 			'search.searchYourMedia' => 'Cerca nei tuoi media',
 			'search.enterTitleActorOrKeyword' => 'Inserisci un titolo, attore o parola chiave',
+			'search.castAndCrew' => 'Cast e troupe',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Imposta una scorciatoia per ${actionName}',
 			'hotkeys.clearShortcut' => 'Elimina scorciatoia',
 			'hotkeys.noShortcutSet' => 'Nessuna scorciatoia impostata',
@@ -2940,9 +2942,9 @@ extension on TranslationsIt {
 			'fileInfo.optimizedVersion' => 'Versione ottimizzata',
 			'fileInfo.optimizationTarget' => 'Obiettivo ottimizzazione',
 			'fileInfo.deletedAt' => 'Eliminato',
-			'fileInfo.remoteSource' => 'Origine remota',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'Origine remota',
 			'fileInfo.infiniteStream' => 'Flusso infinito',
 			'fileInfo.directPlay' => 'Riproduzione diretta',
 			'fileInfo.directStream' => 'Streaming diretto',
@@ -3454,9 +3456,9 @@ extension on TranslationsIt {
 			'explore.relation.prequel' => 'Prequel',
 			'explore.relation.sequel' => 'Sequel',
 			'explore.relation.sideStory' => 'Storia secondaria',
-			'explore.relation.spinOff' => 'Spin-off',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'Spin-off',
 			'explore.relation.alternativeVersion' => 'Versione alternativa',
 			'explore.relation.summary' => 'Riepilogo',
 			'explore.relation.parentStory' => 'Storia originale',
@@ -3968,9 +3970,9 @@ extension on TranslationsIt {
 			'seerr.noTags' => 'Nessun tag',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (predefinito)',
 			'seerr.animeNote' => 'Questa serie è un anime.',
-			'seerr.requestSubmitted' => 'Richiesta inviata',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'Richiesta inviata',
 			'seerr.requestFailed' => ({required Object error}) => 'Richiesta non riuscita: ${error}',
 			'seerr.requestsLoadFailed' => 'Impossibile caricare le opzioni di richiesta',
 			'seerr.nothingToRequest' => 'Tutto è già disponibile o richiesto.',

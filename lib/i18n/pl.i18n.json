@@ -412,7 +412,7 @@
     "tryDifferentTerm": "Spróbuj innego wyszukiwania",
     "searchYourMedia": "Przeszukaj swoje media",
     "enterTitleActorOrKeyword": "Wprowadź tytuł, aktora lub słowo kluczowe",
-    "people": ""
+    "castAndCrew": "Obsada i ekipa"
   },
   "hotkeys": {
     "setShortcutFor": "Ustaw skrót dla ${actionName}",

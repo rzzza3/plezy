@@ -248,6 +248,9 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get showServerNameOnHubsDescription => 'Mostrar siempre el nombre del servidor en los títulos de las secciones.';
 	@override String get groupLibrariesByServer => 'Agrupar bibliotecas por servidor';
 	@override String get groupLibrariesByServerDescription => 'Agrupar bibliotecas de la barra lateral por servidor multimedia.';
+	@override String get sidebarStyle => 'Estilo de la barra lateral';
+	@override String get sidebarStyleClassic => 'Clásico';
+	@override String get sidebarStyleFloating => 'Flotante';
 	@override String get alwaysKeepSidebarOpen => 'Mantener siempre la barra lateral abierta';
 	@override String get alwaysKeepSidebarOpenDescription => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse';
 	@override String get showUnwatchedCount => 'Mostrar el número de elementos no vistos';
@@ -511,6 +514,7 @@ class _Translations$search$es extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Prueba con un término de búsqueda diferente';
 	@override String get searchYourMedia => 'Busca en tu contenido';
 	@override String get enterTitleActorOrKeyword => 'Introduce un título, actor o palabra clave';
+	@override String get castAndCrew => 'Reparto y equipo';
 }
 
 // Path: hotkeys
@@ -2560,6 +2564,9 @@ extension on TranslationsEs {
 			'settings.showServerNameOnHubsDescription' => 'Mostrar siempre el nombre del servidor en los títulos de las secciones.',
 			'settings.groupLibrariesByServer' => 'Agrupar bibliotecas por servidor',
 			'settings.groupLibrariesByServerDescription' => 'Agrupar bibliotecas de la barra lateral por servidor multimedia.',
+			'settings.sidebarStyle' => 'Estilo de la barra lateral',
+			'settings.sidebarStyleClassic' => 'Clásico',
+			'settings.sidebarStyleFloating' => 'Flotante',
 			'settings.alwaysKeepSidebarOpen' => 'Mantener siempre la barra lateral abierta',
 			'settings.alwaysKeepSidebarOpenDescription' => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse',
 			'settings.showUnwatchedCount' => 'Mostrar el número de elementos no vistos',
@@ -2814,6 +2821,7 @@ extension on TranslationsEs {
 			'search.tryDifferentTerm' => 'Prueba con un término de búsqueda diferente',
 			'search.searchYourMedia' => 'Busca en tu contenido',
 			'search.enterTitleActorOrKeyword' => 'Introduce un título, actor o palabra clave',
+			'search.castAndCrew' => 'Reparto y equipo',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Establecer atajo para ${actionName}',
 			'hotkeys.clearShortcut' => 'Borrar atajo',
 			'hotkeys.noShortcutSet' => 'Sin atajo asignado',
@@ -2937,12 +2945,12 @@ extension on TranslationsEs {
 			'fileInfo.protocol' => 'Protocolo',
 			'fileInfo.mediaType' => 'Tipo de medio',
 			'fileInfo.sourceKind' => 'Tipo de origen',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedVersion' => 'Versión optimizada',
 			'fileInfo.optimizationTarget' => 'Destino de optimización',
 			'fileInfo.deletedAt' => 'Eliminado',
 			'fileInfo.remoteSource' => 'Origen remoto',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.infiniteStream' => 'Flujo infinito',
 			'fileInfo.directPlay' => 'Reproducción directa',
 			'fileInfo.directStream' => 'Flujo directo',
@@ -3451,12 +3459,12 @@ extension on TranslationsEs {
 			'explore.creditRole.producer' => 'Productor',
 			'explore.creditRole.creator' => 'Creador',
 			'explore.creditRole.composer' => 'Compositor',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.prequel' => 'Precuela',
 			'explore.relation.sequel' => 'Secuela',
 			'explore.relation.sideStory' => 'Historia paralela',
 			'explore.relation.spinOff' => 'Spin-off',
-			_ => null,
-		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => 'Versión alternativa',
 			'explore.relation.summary' => 'Resumen',
 			'explore.relation.parentStory' => 'Historia principal',
@@ -3965,12 +3973,12 @@ extension on TranslationsEs {
 			'seerr.rootFolder' => 'Carpeta raíz',
 			'seerr.languageProfile' => 'Perfil de idioma',
 			'seerr.tags' => 'Etiquetas',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.noTags' => 'Sin etiquetas',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (predeterminado)',
 			'seerr.animeNote' => 'Esta serie es un anime.',
 			'seerr.requestSubmitted' => 'Solicitud enviada',
-			_ => null,
-		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => 'La solicitud falló: ${error}',
 			'seerr.requestsLoadFailed' => 'No se pudieron cargar las opciones de solicitud',
 			'seerr.nothingToRequest' => 'Todo ya está disponible o solicitado.',

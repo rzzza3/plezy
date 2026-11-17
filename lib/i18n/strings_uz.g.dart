@@ -510,6 +510,7 @@ class _Translations$search$uz extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Boshqa qidiruv soʻzini kiriting';
 	@override String get searchYourMedia => 'Medialaringizdan qidiring';
 	@override String get enterTitleActorOrKeyword => 'Nomini, aktyorni yoki kalit soʻzni kiriting';
+	@override String get castAndCrew => 'Aktyorlar va jamoa';
 }
 
 // Path: hotkeys
@@ -2812,6 +2813,7 @@ extension on TranslationsUz {
 			'search.tryDifferentTerm' => 'Boshqa qidiruv soʻzini kiriting',
 			'search.searchYourMedia' => 'Medialaringizdan qidiring',
 			'search.enterTitleActorOrKeyword' => 'Nomini, aktyorni yoki kalit soʻzni kiriting',
+			'search.castAndCrew' => 'Aktyorlar va jamoa',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} uchun tugmalar birlashmasini oʻrnatish',
 			'hotkeys.clearShortcut' => 'Birlashmani tozalash',
 			'hotkeys.noShortcutSet' => 'Tugmalar birlashmasi oʻrnatilmagan',
@@ -2939,9 +2941,9 @@ extension on TranslationsUz {
 			'fileInfo.optimizationTarget' => 'Optimallashtirish maqsadi',
 			'fileInfo.deletedAt' => 'Oʻchirilgan',
 			'fileInfo.remoteSource' => 'Masofaviy manba',
-			'fileInfo.infiniteStream' => 'Cheksiz oqim',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.infiniteStream' => 'Cheksiz oqim',
 			'fileInfo.directPlay' => 'Toʻgʻridan-toʻgʻri ijro',
 			'fileInfo.directStream' => 'Toʻgʻridan-toʻgʻri oqim',
 			'fileInfo.transcoding' => 'Qayta kodlash',
@@ -3453,9 +3455,9 @@ extension on TranslationsUz {
 			'explore.relation.sequel' => 'Sikvel',
 			'explore.relation.sideStory' => 'Yon hikoya',
 			'explore.relation.spinOff' => 'Spin-off',
-			'explore.relation.alternativeVersion' => 'Muqobil versiya',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.alternativeVersion' => 'Muqobil versiya',
 			'explore.relation.summary' => 'Xulosa',
 			'explore.relation.parentStory' => 'Asosiy hikoya',
 			'explore.relation.adaptation' => 'Adaptatsiya',
@@ -3967,9 +3969,9 @@ extension on TranslationsUz {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (Standart)',
 			'seerr.animeNote' => 'Bu serial anime.',
 			'seerr.requestSubmitted' => 'Soʻrov yuborildi',
-			'seerr.requestFailed' => ({required Object error}) => 'Soʻrov xatoligi: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestFailed' => ({required Object error}) => 'Soʻrov xatoligi: ${error}',
 			'seerr.requestsLoadFailed' => 'Parametrlarni yuklab boʻlmadi',
 			'seerr.nothingToRequest' => 'Barchasi avvaldan bor yoki soʻralgan.',
 			'seerr.statusAvailable' => 'Mavjud',

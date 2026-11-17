@@ -175,11 +175,21 @@ void main() {
 
   group('WatchTogetherRelayEndpoint', () {
     test('resolves defaults and canonical endpoint paths', () {
+      // No relay is built in: without a build or user relay nothing is contactable.
       for (final value in <String?>[null, '', '   ']) {
         final endpoint = WatchTogetherRelayEndpoint.resolve(value);
-        expect(endpoint.canonicalBaseUrl, 'https://ice.plezy.app');
-        expect(endpoint.healthUri.toString(), 'https://ice.plezy.app/health');
-        expect(endpoint.webSocketUri.toString(), 'wss://ice.plezy.app/relay');
+        expect(endpoint.isConfigured, isFalse);
+        expect(endpoint, WatchTogetherRelayEndpoint.unconfigured);
+      }
+
+      WatchTogetherRelayEndpoint.debugDefaultBaseUrl = 'https://relay.example.test';
+      addTearDown(() => WatchTogetherRelayEndpoint.debugDefaultBaseUrl = null);
+      for (final value in <String?>[null, '', '   ']) {
+        final endpoint = WatchTogetherRelayEndpoint.resolve(value);
+        expect(endpoint.isConfigured, isTrue);
+        expect(endpoint.canonicalBaseUrl, 'https://relay.example.test');
+        expect(endpoint.healthUri.toString(), 'https://relay.example.test/health');
+        expect(endpoint.webSocketUri.toString(), 'wss://relay.example.test/relay');
       }
 
       final endpoint = WatchTogetherRelayEndpoint.resolve('  HTTP://Example.COM:8080/old/../prefix///  ');

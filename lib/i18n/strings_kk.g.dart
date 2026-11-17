@@ -510,6 +510,7 @@ class _Translations$search$kk extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Басқа іздеу сөзін байқап көріңіз';
 	@override String get searchYourMedia => 'Медиафайлдардан іздеу';
 	@override String get enterTitleActorOrKeyword => 'Атауын, актерді немесе кілт сөзді енгізіңіз';
+	@override String get castAndCrew => 'Актерлер мен түсірілім тобы';
 }
 
 // Path: hotkeys
@@ -2812,6 +2813,7 @@ extension on TranslationsKk {
 			'search.tryDifferentTerm' => 'Басқа іздеу сөзін байқап көріңіз',
 			'search.searchYourMedia' => 'Медиафайлдардан іздеу',
 			'search.enterTitleActorOrKeyword' => 'Атауын, актерді немесе кілт сөзді енгізіңіз',
+			'search.castAndCrew' => 'Актерлер мен түсірілім тобы',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} үшін пернелер тіркесін орнату',
 			'hotkeys.clearShortcut' => 'Тіркесті тазалау',
 			'hotkeys.noShortcutSet' => 'Пернелер тіркесі орнатылмаған',
@@ -2939,9 +2941,9 @@ extension on TranslationsKk {
 			'fileInfo.optimizationTarget' => 'Оңтайландыру мақсаты',
 			'fileInfo.deletedAt' => 'Өшірілген',
 			'fileInfo.remoteSource' => 'Қашықтағы дереккөз',
-			'fileInfo.infiniteStream' => 'Шексіз ағын',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.infiniteStream' => 'Шексіз ағын',
 			'fileInfo.directPlay' => 'Тікелей ойнату',
 			'fileInfo.directStream' => 'Тікелей ағын',
 			'fileInfo.transcoding' => 'Транскодтау',
@@ -3453,9 +3455,9 @@ extension on TranslationsKk {
 			'explore.relation.sequel' => 'Сиквел',
 			'explore.relation.sideStory' => 'Жанама оқиға',
 			'explore.relation.spinOff' => 'Спин-офф',
-			'explore.relation.alternativeVersion' => 'Балама нұсқа',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.alternativeVersion' => 'Балама нұсқа',
 			'explore.relation.summary' => 'Қысқаша мазмұны',
 			'explore.relation.parentStory' => 'Негізгі оқиға',
 			'explore.relation.adaptation' => 'Экранизация',
@@ -3967,9 +3969,9 @@ extension on TranslationsKk {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (Әдепкі)',
 			'seerr.animeNote' => 'Бұл сериал — аниме.',
 			'seerr.requestSubmitted' => 'Сұрау жіберілді',
-			'seerr.requestFailed' => ({required Object error}) => 'Сұрау қатесі: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestFailed' => ({required Object error}) => 'Сұрау қатесі: ${error}',
 			'seerr.requestsLoadFailed' => 'Параметрлерді жүктеу мүмкін болмады',
 			'seerr.nothingToRequest' => 'Барлығы бұрыннан бар немесе сұралған.',
 			'seerr.statusAvailable' => 'Қолжетімді',

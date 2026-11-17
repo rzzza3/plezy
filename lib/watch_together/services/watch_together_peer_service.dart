@@ -195,6 +195,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Connect to the relay WebSocket and set up the message listener.
   /// Returns a completer that completes when the expected response arrives.
   Future<WebSocketChannel> _connectToRelay({Duration? timeout, String operation = 'WatchTogether connect'}) async {
+    if (!endpoint.isConfigured) throw StateError('No Watch Together relay is configured');
     final channel = _channelFactory(endpoint.webSocketUri);
 
     try {

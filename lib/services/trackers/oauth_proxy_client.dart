@@ -22,6 +22,14 @@ class OAuthProxyClient {
   /// Public base URL of the Plezy relay; colocated with Watch Together.
   static String get baseUrl => WatchTogetherRelayEndpoint.defaultEndpoint.canonicalBaseUrl;
 
+  /// False when the build names no relay; [start] and [poll] then refuse
+  /// before any request.
+  static bool get isAvailable => WatchTogetherRelayEndpoint.defaultEndpoint.isConfigured;
+
+  static void _requireRelay() {
+    if (!isAvailable) throw const OAuthProxyException('No sign-in relay is configured in this build');
+  }
+
   final http.Client _http;
 
   OAuthProxyClient({http.Client? httpClient}) : _http = httpClient ?? platform.createPlatformClient();
@@ -31,6 +39,7 @@ class OAuthProxyClient {
   /// POST /auth/start — register a new session. Returns a handle including the
   /// URL to display as a QR code for the phone scan.
   Future<OAuthProxyStart> start(String service) async {
+    _requireRelay();
     final res = await sendAbortableHttpRequest(
       _http,
       'POST',
@@ -55,6 +64,7 @@ class OAuthProxyClient {
   /// 50 s; 204 responses are retried transparently, and 429 responses are
   /// retried until the session's own lifetime expires.
   Future<OAuthProxyResult?> poll(String session, {bool Function()? shouldCancel, Future<void>? onCancel}) async {
+    _requireRelay();
     final uri = Uri.parse('$baseUrl/auth/result').replace(queryParameters: {'session': session});
     final deadline = clock.now().add(TrackerConstants.oauthProxySessionTimeout);
     final cancelSentinel = Object();

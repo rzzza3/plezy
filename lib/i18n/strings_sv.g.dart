@@ -511,6 +511,7 @@ class _Translations$search$sv extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Prova en annan sökterm';
 	@override String get searchYourMedia => 'Sök i dina media';
 	@override String get enterTitleActorOrKeyword => 'Ange en titel, skådespelare eller nyckelord';
+	@override String get castAndCrew => 'Rollista och team';
 }
 
 // Path: hotkeys
@@ -2814,6 +2815,7 @@ extension on TranslationsSv {
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
 			'search.enterTitleActorOrKeyword' => 'Ange en titel, skådespelare eller nyckelord',
+			'search.castAndCrew' => 'Rollista och team',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Sätt genväg för ${actionName}',
 			'hotkeys.clearShortcut' => 'Rensa genväg',
 			'hotkeys.noShortcutSet' => 'Ingen genväg angiven',
@@ -2940,9 +2942,9 @@ extension on TranslationsSv {
 			'fileInfo.optimizedVersion' => 'Optimerad version',
 			'fileInfo.optimizationTarget' => 'Optimeringsmål',
 			'fileInfo.deletedAt' => 'Raderad',
-			'fileInfo.remoteSource' => 'Fjärrkälla',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'Fjärrkälla',
 			'fileInfo.infiniteStream' => 'Oändlig ström',
 			'fileInfo.directPlay' => 'Direktuppspelning',
 			'fileInfo.directStream' => 'Direktströmning',
@@ -3454,9 +3456,9 @@ extension on TranslationsSv {
 			'explore.relation.prequel' => 'Prequel',
 			'explore.relation.sequel' => 'Uppföljare',
 			'explore.relation.sideStory' => 'Bihistoria',
-			'explore.relation.spinOff' => 'Spin-off',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'Spin-off',
 			'explore.relation.alternativeVersion' => 'Alternativ version',
 			'explore.relation.summary' => 'Sammanfattning',
 			'explore.relation.parentStory' => 'Huvudberättelse',
@@ -3968,9 +3970,9 @@ extension on TranslationsSv {
 			'seerr.noTags' => 'Inga taggar',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (standard)',
 			'seerr.animeNote' => 'Den här serien är en anime.',
-			'seerr.requestSubmitted' => 'Begäran skickad',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'Begäran skickad',
 			'seerr.requestFailed' => ({required Object error}) => 'Begäran kunde inte genomföras: ${error}',
 			'seerr.requestsLoadFailed' => 'Det gick inte att läsa in alternativ för begäran',
 			'seerr.nothingToRequest' => 'Allt är redan tillgängligt eller begärt.',

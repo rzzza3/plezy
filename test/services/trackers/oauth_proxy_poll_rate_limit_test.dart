@@ -6,12 +6,26 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/services/trackers/oauth_proxy_client.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
+import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
 
 /// Contract: a 429 from /auth/result is rate limiting, not a terminal failure.
 /// The poller must keep the session alive by retrying — honoring Retry-After
 /// when the relay sends one — and may only surface a failure once the
 /// session's own lifetime has expired.
 void main() {
+  setUp(() => WatchTogetherRelayEndpoint.debugDefaultBaseUrl = 'https://relay.example.test');
+  tearDown(() => WatchTogetherRelayEndpoint.debugDefaultBaseUrl = null);
+
+  test('refuses before any request when the build names no relay', () async {
+    WatchTogetherRelayEndpoint.debugDefaultBaseUrl = null;
+    final client = OAuthProxyClient(httpClient: MockClient((_) async => fail('no relay, no request')));
+    addTearDown(client.dispose);
+
+    expect(OAuthProxyClient.isAvailable, isFalse);
+    await expectLater(client.start('mal'), throwsA(isA<OAuthProxyException>()));
+    await expectLater(client.poll('session'), throwsA(isA<OAuthProxyException>()));
+  });
+
   const tokenBody = '{"accessToken":"tok-abc","refreshToken":"ref-xyz","expiresIn":3600}';
 
   group('poll 429 handling', () {

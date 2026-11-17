@@ -412,7 +412,7 @@
     "tryDifferentTerm": "Попробуйте другой запрос",
     "searchYourMedia": "Поиск в вашей медиатеке",
     "enterTitleActorOrKeyword": "Введите название, актёра или ключевое слово",
-    "people": ""
+    "castAndCrew": "Актёры и съёмочная группа"
   },
   "hotkeys": {
     "setShortcutFor": "Назначить клавишу для ${actionName}",

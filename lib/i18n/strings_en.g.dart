@@ -471,6 +471,15 @@ class Translations$settings$en {
 	/// en: 'Group sidebar libraries under each media server.'
 	String get groupLibrariesByServerDescription => 'Group sidebar libraries under each media server.';
 
+	/// en: 'Sidebar Style'
+	String get sidebarStyle => 'Sidebar Style';
+
+	/// en: 'Classic'
+	String get sidebarStyleClassic => 'Classic';
+
+	/// en: 'Floating'
+	String get sidebarStyleFloating => 'Floating';
+
 	/// en: 'Always Keep Sidebar Open'
 	String get alwaysKeepSidebarOpen => 'Always Keep Sidebar Open';
 
@@ -1275,8 +1284,8 @@ class Translations$search$en {
 	/// en: 'Enter a title, actor, or keyword'
 	String get enterTitleActorOrKeyword => 'Enter a title, actor, or keyword';
 
-	/// en: 'People'
-	String get people => 'People';
+	/// en: 'Cast & Crew'
+	String get castAndCrew => 'Cast & Crew';
 }
 
 // Path: hotkeys
@@ -6479,6 +6488,9 @@ extension on Translations {
 			'settings.showServerNameOnHubsDescription' => 'Always show server names in hub titles.',
 			'settings.groupLibrariesByServer' => 'Group Libraries by Server',
 			'settings.groupLibrariesByServerDescription' => 'Group sidebar libraries under each media server.',
+			'settings.sidebarStyle' => 'Sidebar Style',
+			'settings.sidebarStyleClassic' => 'Classic',
+			'settings.sidebarStyleFloating' => 'Floating',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
@@ -6744,7 +6756,7 @@ extension on Translations {
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
 			'search.enterTitleActorOrKeyword' => 'Enter a title, actor, or keyword',
-			'search.people' => 'People',
+			'search.castAndCrew' => 'Cast & Crew',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Set Shortcut for ${actionName}',
 			'hotkeys.clearShortcut' => 'Clear shortcut',
 			'hotkeys.noShortcutSet' => 'No shortcut set',
@@ -6857,11 +6869,11 @@ extension on Translations {
 			'fileInfo.totalSize' => 'Total Size',
 			'fileInfo.container' => 'Container',
 			'fileInfo.duration' => 'Duration',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.previewThumbnails' => 'Preview Thumbnails',
 			'fileInfo.previewIndex' => 'Preview Index',
 			'fileInfo.packetLength' => 'Packet Length',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.filePresent' => 'File Present',
 			'fileInfo.fileReadable' => 'Readable by Server',
 			'fileInfo.streamPath' => 'Stream Path',
@@ -7371,11 +7383,11 @@ extension on Translations {
 			'libraryHome.nothingAiring' => 'Nothing from shows you follow on this day',
 			'libraryHome.calendarFailed' => 'Couldn\'t load the calendar',
 			'libraryHome.runtimeTitle' => 'How much time you got?',
+			_ => null,
+		} ?? switch (path) {
 			'libraryHome.runtimeUnder60' => 'Under 60 Minutes',
 			'libraryHome.runtimeUnder150' => 'Under 150 Minutes',
 			'libraryHome.runtimeAllNight' => 'All Night',
-			_ => null,
-		} ?? switch (path) {
 			'libraryHome.runtimeEmpty' => 'No movies of this length',
 			'libraryHome.runtimeFailed' => 'Couldn\'t load movies',
 			'libraryHome.forYouTitle' => 'For You',
@@ -7885,11 +7897,11 @@ extension on Translations {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure TBD is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Silo account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Retry Now',
 			'companionRemote.remote.tabRemote' => 'Remote',
 			'companionRemote.remote.tabPlay' => 'Play',

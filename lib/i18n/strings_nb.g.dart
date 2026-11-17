@@ -511,6 +511,7 @@ class _Translations$search$nb extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Prøv et annet søkeord';
 	@override String get searchYourMedia => 'Søk i mediene dine';
 	@override String get enterTitleActorOrKeyword => 'Skriv inn tittel, skuespiller eller nøkkelord';
+	@override String get castAndCrew => 'Rollebesetning og stab';
 }
 
 // Path: hotkeys
@@ -2814,6 +2815,7 @@ extension on TranslationsNb {
 			'search.tryDifferentTerm' => 'Prøv et annet søkeord',
 			'search.searchYourMedia' => 'Søk i mediene dine',
 			'search.enterTitleActorOrKeyword' => 'Skriv inn tittel, skuespiller eller nøkkelord',
+			'search.castAndCrew' => 'Rollebesetning og stab',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Angi snarvei for ${actionName}',
 			'hotkeys.clearShortcut' => 'Fjern snarvei',
 			'hotkeys.noShortcutSet' => 'Ingen snarvei satt',
@@ -2940,9 +2942,9 @@ extension on TranslationsNb {
 			'fileInfo.optimizedVersion' => 'Optimalisert versjon',
 			'fileInfo.optimizationTarget' => 'Optimaliseringsmål',
 			'fileInfo.deletedAt' => 'Slettet',
-			'fileInfo.remoteSource' => 'Ekstern kilde',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'Ekstern kilde',
 			'fileInfo.infiniteStream' => 'Uendelig strøm',
 			'fileInfo.directPlay' => 'Direct Play',
 			'fileInfo.directStream' => 'Direct Stream',
@@ -3454,9 +3456,9 @@ extension on TranslationsNb {
 			'explore.relation.prequel' => 'Prequel',
 			'explore.relation.sequel' => 'Sequel',
 			'explore.relation.sideStory' => 'Bihistorie',
-			'explore.relation.spinOff' => 'Spin-off',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'Spin-off',
 			'explore.relation.alternativeVersion' => 'Alternativ versjon',
 			'explore.relation.summary' => 'Sammendrag',
 			'explore.relation.parentStory' => 'Hovedhistorie',
@@ -3968,9 +3970,9 @@ extension on TranslationsNb {
 			'seerr.noTags' => 'Ingen tagger',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (standard)',
 			'seerr.animeNote' => 'Denne serien er en anime.',
-			'seerr.requestSubmitted' => 'Forespørsel sendt',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'Forespørsel sendt',
 			'seerr.requestFailed' => ({required Object error}) => 'Forespørsel mislyktes: ${error}',
 			'seerr.requestsLoadFailed' => 'Kunne ikke laste forespørselsalternativer',
 			'seerr.nothingToRequest' => 'Alt er allerede tilgjengelig eller forespurt.',

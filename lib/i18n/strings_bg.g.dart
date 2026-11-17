@@ -510,6 +510,7 @@ class _Translations$search$bg extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Опитайте с различна дума за търсене';
 	@override String get searchYourMedia => 'Търсете в медийното си съдържание';
 	@override String get enterTitleActorOrKeyword => 'Въведете заглавие, актьор или ключова дума';
+	@override String get castAndCrew => 'Актьори и екип';
 }
 
 // Path: hotkeys
@@ -2812,6 +2813,7 @@ extension on TranslationsBg {
 			'search.tryDifferentTerm' => 'Опитайте с различна дума за търсене',
 			'search.searchYourMedia' => 'Търсете в медийното си съдържание',
 			'search.enterTitleActorOrKeyword' => 'Въведете заглавие, актьор или ключова дума',
+			'search.castAndCrew' => 'Актьори и екип',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Задай клавишна комбинация за ${actionName}',
 			'hotkeys.clearShortcut' => 'Изчисти клавишната комбинация',
 			'hotkeys.noShortcutSet' => 'Няма зададена клавишна комбинация',
@@ -2939,9 +2941,9 @@ extension on TranslationsBg {
 			'fileInfo.optimizationTarget' => 'Цел на оптимизацията',
 			'fileInfo.deletedAt' => 'Изтрит',
 			'fileInfo.remoteSource' => 'Отдалечен източник',
-			'fileInfo.infiniteStream' => 'Безкраен поток',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.infiniteStream' => 'Безкраен поток',
 			'fileInfo.directPlay' => 'Директно възпроизвеждане',
 			'fileInfo.directStream' => 'Директен поток',
 			'fileInfo.transcoding' => 'Транскодиране',
@@ -3453,9 +3455,9 @@ extension on TranslationsBg {
 			'explore.relation.sequel' => 'Сиквел',
 			'explore.relation.sideStory' => 'Странична история',
 			'explore.relation.spinOff' => 'Спин-оф',
-			'explore.relation.alternativeVersion' => 'Алтернативна версия',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.alternativeVersion' => 'Алтернативна версия',
 			'explore.relation.summary' => 'Резюме',
 			'explore.relation.parentStory' => 'Основна история',
 			'explore.relation.adaptation' => 'Адаптация',
@@ -3967,9 +3969,9 @@ extension on TranslationsBg {
 			'seerr.defaultOption' => ({required Object name}) => '${name} (по подразбиране)',
 			'seerr.animeNote' => 'Този сериал е аниме.',
 			'seerr.requestSubmitted' => 'Заявката е изпратена',
-			'seerr.requestFailed' => ({required Object error}) => 'Заявката се провали: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestFailed' => ({required Object error}) => 'Заявката се провали: ${error}',
 			'seerr.requestsLoadFailed' => 'Неуспешно зареждане на опциите за заявка',
 			'seerr.nothingToRequest' => 'Всичко вече е налично или заявено.',
 			'seerr.statusAvailable' => 'Налично',

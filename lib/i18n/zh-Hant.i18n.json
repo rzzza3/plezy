@@ -412,7 +412,7 @@
     "tryDifferentTerm": "嘗試不同的關鍵字",
     "searchYourMedia": "搜尋媒體庫",
     "enterTitleActorOrKeyword": "輸入標題、演員或關鍵字",
-    "people": ""
+    "castAndCrew": "演職人員"
   },
   "hotkeys": {
     "setShortcutFor": "為 ${actionName} 設定快速鍵",

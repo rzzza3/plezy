@@ -1,9 +1,26 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../utils/media_server_http_client.dart';
 
+const String _compiledLogUploadEndpoint = String.fromEnvironment('LOG_UPLOAD_ENDPOINT');
+
+/// Stands in for the build's endpoint so tests can exercise the upload path.
+@visibleForTesting
+String? debugLogUploadEndpoint;
+
 /// Relay endpoint that returns a short, quotable Log ID.
-const String logUploadEndpoint = 'https://ice.plezy.app/logs';
+///
+/// Empty unless the build names one with
+/// `--dart-define=LOG_UPLOAD_ENDPOINT=https://<host>/logs`. No endpoint is
+/// built in, so a build that does not name its own relay sends diagnostics
+/// nowhere and offers no upload action.
+String get logUploadEndpoint => debugLogUploadEndpoint ?? _compiledLogUploadEndpoint;
+
+/// Whether this build has somewhere to upload diagnostics. Gates every upload
+/// action, so no dead affordance ships.
+bool get isLogUploadAvailable => logUploadEndpoint.isNotEmpty;
 
 /// Relay `/logs` accepts 1 MiB. The in-memory buffer intentionally remains
 /// larger for local viewing and copying; uploads retain the device header and
@@ -47,6 +64,7 @@ String constrainLogUploadPayload({required String header, required String logs, 
 /// [payload] must already be redacted and allowlisted by the caller; this
 /// function performs no sanitisation of its own.
 Future<String> uploadDiagnosticText(String payload, {MediaServerHttpClient? client}) async {
+  if (!isLogUploadAvailable) throw StateError('This build has no log upload endpoint');
   final response = await (client ?? httpClient).post(
     logUploadEndpoint,
     body: payload,

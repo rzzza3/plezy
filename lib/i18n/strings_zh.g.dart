@@ -511,6 +511,7 @@ class Translations$search$zh extends Translations$search$en {
 	@override String get tryDifferentTerm => '尝试不同的搜索词';
 	@override String get searchYourMedia => '搜索媒体';
 	@override String get enterTitleActorOrKeyword => '输入标题、演员或关键词';
+	@override String get castAndCrew => '演职人员';
 }
 
 // Path: hotkeys
@@ -2806,6 +2807,7 @@ extension on TranslationsZh {
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
 			'search.enterTitleActorOrKeyword' => '输入标题、演员或关键词',
+			'search.castAndCrew' => '演职人员',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '为 ${actionName} 设置快捷键',
 			'hotkeys.clearShortcut' => '清除快捷键',
 			'hotkeys.noShortcutSet' => '未设置快捷键',
@@ -2932,9 +2934,9 @@ extension on TranslationsZh {
 			'fileInfo.optimizedVersion' => '优化版本',
 			'fileInfo.optimizationTarget' => '优化目标',
 			'fileInfo.deletedAt' => '已删除',
-			'fileInfo.remoteSource' => '远程来源',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => '远程来源',
 			'fileInfo.infiniteStream' => '无限流',
 			'fileInfo.directPlay' => '直接播放',
 			'fileInfo.directStream' => '直接串流',
@@ -3446,9 +3448,9 @@ extension on TranslationsZh {
 			'explore.relation.prequel' => '前传',
 			'explore.relation.sequel' => '续集',
 			'explore.relation.sideStory' => '番外篇',
-			'explore.relation.spinOff' => '衍生作品',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => '衍生作品',
 			'explore.relation.alternativeVersion' => '另一版本',
 			'explore.relation.summary' => '总集篇',
 			'explore.relation.parentStory' => '原作',
@@ -3960,9 +3962,9 @@ extension on TranslationsZh {
 			'seerr.noTags' => '无标签',
 			'seerr.defaultOption' => ({required Object name}) => '${name}（默认）',
 			'seerr.animeNote' => '此剧集为动画。',
-			'seerr.requestSubmitted' => '请求已提交',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => '请求已提交',
 			'seerr.requestFailed' => ({required Object error}) => '请求失败：${error}',
 			'seerr.requestsLoadFailed' => '无法加载请求选项',
 			'seerr.nothingToRequest' => '所有内容都已可用或已请求。',

@@ -512,6 +512,7 @@ class _Translations$search$zh_Hant extends Translations$search$zh {
 	@override String get tryDifferentTerm => '嘗試不同的關鍵字';
 	@override String get searchYourMedia => '搜尋媒體庫';
 	@override String get enterTitleActorOrKeyword => '輸入標題、演員或關鍵字';
+	@override String get castAndCrew => '演職人員';
 }
 
 // Path: hotkeys
@@ -2807,6 +2808,7 @@ extension on TranslationsZhHant {
 			'search.tryDifferentTerm' => '嘗試不同的關鍵字',
 			'search.searchYourMedia' => '搜尋媒體庫',
 			'search.enterTitleActorOrKeyword' => '輸入標題、演員或關鍵字',
+			'search.castAndCrew' => '演職人員',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '為 ${actionName} 設定快速鍵',
 			'hotkeys.clearShortcut' => '清除快速鍵',
 			'hotkeys.noShortcutSet' => '未設定快速鍵',
@@ -2933,9 +2935,9 @@ extension on TranslationsZhHant {
 			'fileInfo.optimizedVersion' => '最佳化版本',
 			'fileInfo.optimizationTarget' => '最佳化目標',
 			'fileInfo.deletedAt' => '已刪除',
-			'fileInfo.remoteSource' => '遠端來源',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => '遠端來源',
 			'fileInfo.infiniteStream' => '無限串流',
 			'fileInfo.directPlay' => '直接播放',
 			'fileInfo.directStream' => '直接串流',
@@ -3447,9 +3449,9 @@ extension on TranslationsZhHant {
 			'explore.relation.prequel' => '前傳',
 			'explore.relation.sequel' => '續集',
 			'explore.relation.sideStory' => '外傳',
-			'explore.relation.spinOff' => '衍生作品',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => '衍生作品',
 			'explore.relation.alternativeVersion' => '其他版本',
 			'explore.relation.summary' => '總集篇',
 			'explore.relation.parentStory' => '原作',
@@ -3961,9 +3963,9 @@ extension on TranslationsZhHant {
 			'seerr.noTags' => '沒有標籤',
 			'seerr.defaultOption' => ({required Object name}) => '${name}（預設）',
 			'seerr.animeNote' => '此影集為動畫。',
-			'seerr.requestSubmitted' => '請求已送出',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => '請求已送出',
 			'seerr.requestFailed' => ({required Object error}) => '請求失敗：${error}',
 			'seerr.requestsLoadFailed' => '無法載入請求選項',
 			'seerr.nothingToRequest' => '所有內容皆已可用或已提出請求。',

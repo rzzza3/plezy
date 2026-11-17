@@ -15,6 +15,7 @@ import 'package:plezy/main.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
+import 'package:plezy/services/log_upload_service.dart';
 import 'package:plezy/services/prefs_recovery.dart';
 import 'package:plezy/services/startup_diagnostics.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -322,6 +323,8 @@ void main() {
   });
 
   testWidgets('the restart state survives and still allows uploading the diagnostic', (tester) async {
+    debugLogUploadEndpoint = 'https://logs.example.test/logs';
+    addTearDown(() => debugLogUploadEndpoint = null);
     await tester.pumpWidget(
       StartupBootstrap<int>(
         initialize: () async => throw CorruptPreferenceStoreException(const FormatException('bad'), StackTrace.current),

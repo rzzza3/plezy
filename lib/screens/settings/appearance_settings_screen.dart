@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../navigation/sidebar_style.dart';
 import '../../providers/catalog_sources_provider.dart';
 import '../../services/settings_service.dart';
 import '../../theme/app_theme.dart';
@@ -131,12 +132,20 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 title: t.settings.showExploreTab,
                 subtitle: t.settings.showExploreTabDescription,
               ),
+            if (PlatformDetector.isTV() && PlatformDetector.shouldUseSideNavigation(context)) _sidebarStyleSelector(),
+            // The floating TV sidebar opens over the content on demand, so
+            // always-open does not apply to it.
             if (PlatformDetector.shouldUseSideNavigation(context))
-              SettingSwitchTile(
-                pref: SettingsService.alwaysKeepSidebarOpen,
-                icon: Symbols.dock_to_left_rounded,
-                title: t.settings.alwaysKeepSidebarOpen,
-                subtitle: t.settings.alwaysKeepSidebarOpenDescription,
+              SettingValueBuilder<SidebarStyle>(
+                pref: SettingsService.sidebarStyle,
+                builder: (context, style, _) => PlatformDetector.isTV() && style == SidebarStyle.floating
+                    ? const SizedBox.shrink()
+                    : SettingSwitchTile(
+                        pref: SettingsService.alwaysKeepSidebarOpen,
+                        icon: Symbols.dock_to_left_rounded,
+                        title: t.settings.alwaysKeepSidebarOpen,
+                        subtitle: t.settings.alwaysKeepSidebarOpenDescription,
+                      ),
               ),
             if (PlatformDetector.shouldUseSideNavigation(context))
               SettingSwitchTile(
@@ -174,6 +183,16 @@ class AppearanceSettingsScreen extends StatelessWidget {
     segments: [
       ButtonSegment(value: AppTheme.oled, label: Text(t.settings.oledTheme)),
       ButtonSegment(value: AppTheme.slate, label: Text(t.settings.slateTheme)),
+    ],
+  );
+
+  Widget _sidebarStyleSelector() => SettingSegmentedTile<SidebarStyle>(
+    pref: SettingsService.sidebarStyle,
+    icon: Symbols.side_navigation_rounded,
+    title: t.settings.sidebarStyle,
+    segments: [
+      ButtonSegment(value: SidebarStyle.classic, label: Text(t.settings.sidebarStyleClassic)),
+      ButtonSegment(value: SidebarStyle.floating, label: Text(t.settings.sidebarStyleFloating)),
     ],
   );
 

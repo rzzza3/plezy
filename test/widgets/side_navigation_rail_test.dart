@@ -14,6 +14,7 @@ import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/navigation/navigation_tabs.dart';
+import 'package:plezy/navigation/sidebar_style.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
@@ -676,6 +677,103 @@ void main() {
         'nav_settings',
         'nav_settings',
       ]);
+    });
+
+    group('floating style', () {
+      Future<void> useFloating() async {
+        await SettingsService.getInstance();
+        await SettingsService.instance.write(SettingsService.sidebarStyle, SidebarStyle.floating);
+      }
+
+      testWidgets('rests as an icon-only pill in the reserved width', (tester) async {
+        await useFloating();
+        final reports = <bool>[];
+        await _pumpBasicRail(tester, onFloatingPanelChanged: reports.add);
+
+        expect(SideNavigationRailState.usesFloatingTvSidebar, isTrue);
+        expect(tester.getSize(find.byType(SideNavigationRail)).width, FloatingSidebarTokens.reservedWidth);
+        final homeLabel = tester.widget<FadeTransition>(
+          find.ancestor(of: find.text('Home'), matching: find.byType(FadeTransition)).first,
+        );
+        expect(homeLabel.opacity.value, 0);
+        expect(reports, isEmpty);
+      });
+
+      testWidgets('focus opens a labelled panel over the content and reports it', (tester) async {
+        await useFloating();
+        final reports = <bool>[];
+        await _pumpBasicRail(tester, isSidebarFocused: true, onFloatingPanelChanged: reports.add);
+
+        expect(
+          tester.getSize(find.byType(SideNavigationRail)).width,
+          FloatingSidebarTokens.reservedWidth + FloatingSidebarTokens.expandedWidth - FloatingSidebarTokens.pillWidth,
+        );
+        final homeLabel = tester.widget<FadeTransition>(
+          find.ancestor(of: find.text('Home'), matching: find.byType(FadeTransition)).first,
+        );
+        expect(homeLabel.opacity.value, 1);
+        expect(reports, [true]);
+      });
+
+      testWidgets('mouse hover opens the panel and leaving closes it', (tester) async {
+        await useFloating();
+        final reports = <bool>[];
+        await _pumpBasicRail(tester, onFloatingPanelChanged: reports.add);
+
+        final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        addTearDown(gesture.removePointer);
+        await gesture.addPointer(location: const Offset(799, 599));
+        await tester.pump();
+        await gesture.moveTo(tester.getCenter(find.byIcon(Symbols.home_rounded)));
+        await tester.pumpAndSettle();
+        expect(reports, [true]);
+
+        await gesture.moveTo(const Offset(799, 300));
+        // Leaving waits out the rail's short collapse delay.
+        await tester.pump(const Duration(milliseconds: 200));
+        await tester.pumpAndSettle();
+        expect(reports, [true, false]);
+        expect(tester.getSize(find.byType(SideNavigationRail)).width, FloatingSidebarTokens.reservedWidth);
+      });
+
+      testWidgets('D-pad walks the destinations, libraries, then Settings, and stays inside', (tester) async {
+        await useFloating();
+        final sideNavKey = GlobalKey<SideNavigationRailState>();
+        final movies = _library(id: '1', title: 'Movies', serverId: ServerId('server-a'), serverName: 'Server A');
+        await _pumpBasicRail(tester, sideNavKey: sideNavKey, isSidebarFocused: true, libraries: [movies]);
+
+        sideNavKey.currentState!.focusActiveItem();
+        await tester.pumpAndSettle();
+        String? focused() => FocusManager.instance.primaryFocus?.debugLabel;
+        expect(focused(), 'nav_home');
+
+        await _press(tester, LogicalKeyboardKey.arrowUp);
+        expect(focused(), 'nav_home');
+
+        final visited = <String?>[];
+        for (var i = 0; i < 7; i++) {
+          await _press(tester, LogicalKeyboardKey.arrowDown);
+          visited.add(focused());
+        }
+        expect(visited, [
+          'nav_library',
+          'nav_watchlist',
+          'nav_search',
+          'nav_downloads',
+          'nav_library:visible:${movies.globalKey}',
+          'nav_settings',
+          'nav_settings',
+        ]);
+      });
+
+      testWidgets('switching back to classic restores the slim strip', (tester) async {
+        await useFloating();
+        await _pumpBasicRail(tester);
+        await SettingsService.instance.write(SettingsService.sidebarStyle, SidebarStyle.classic);
+        await tester.pumpAndSettle();
+
+        expect(tester.getSize(railList()).width, 64);
+      });
     });
   });
 

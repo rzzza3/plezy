@@ -145,6 +145,9 @@
     "showServerNameOnHubsDescription": "Sempre mostrar nomes dos servidores nos títulos dos hubs.",
     "groupLibrariesByServer": "Agrupar Bibliotecas por Servidor",
     "groupLibrariesByServerDescription": "Agrupar bibliotecas da barra lateral por servidor de mídia.",
+    "sidebarStyle": "Estilo da barra lateral",
+    "sidebarStyleClassic": "Clássico",
+    "sidebarStyleFloating": "Flutuante",
     "alwaysKeepSidebarOpen": "Manter Barra Lateral Sempre Aberta",
     "alwaysKeepSidebarOpenDescription": "A barra lateral fica expandida e a área de conteúdo se ajusta",
     "showUnwatchedCount": "Mostrar Contagem de Não Assistidos",
@@ -412,7 +415,7 @@
     "tryDifferentTerm": "Tente um termo de busca diferente",
     "searchYourMedia": "Buscar suas mídias",
     "enterTitleActorOrKeyword": "Insira um título, ator ou palavra-chave",
-    "people": ""
+    "castAndCrew": "Elenco e equipe"
   },
   "hotkeys": {
     "setShortcutFor": "Definir Atalho para ${actionName}",

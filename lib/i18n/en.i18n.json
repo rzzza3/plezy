@@ -145,6 +145,9 @@
     "showServerNameOnHubsDescription": "Always show server names in hub titles.",
     "groupLibrariesByServer": "Group Libraries by Server",
     "groupLibrariesByServerDescription": "Group sidebar libraries under each media server.",
+    "sidebarStyle": "Sidebar Style",
+    "sidebarStyleClassic": "Classic",
+    "sidebarStyleFloating": "Floating",
     "alwaysKeepSidebarOpen": "Always Keep Sidebar Open",
     "alwaysKeepSidebarOpenDescription": "Sidebar stays expanded and content area adjusts to fit",
     "showUnwatchedCount": "Show Unwatched Count",
@@ -412,7 +415,7 @@
     "tryDifferentTerm": "Try a different search term",
     "searchYourMedia": "Search your media",
     "enterTitleActorOrKeyword": "Enter a title, actor, or keyword",
-    "people": "People"
+    "castAndCrew": "Cast & Crew"
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",

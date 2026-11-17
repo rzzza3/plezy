@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 /// Canonical HTTP(S) base endpoint for a Watch Together relay.
 ///
 /// A base may include a reverse-proxy path prefix. The concrete health and
@@ -5,9 +7,27 @@
 final class WatchTogetherRelayEndpoint {
   WatchTogetherRelayEndpoint._(this._baseUri);
 
-  static const String defaultBaseUrl = 'https://ice.plezy.app';
+  static const String _compiledDefaultBaseUrl = String.fromEnvironment('RELAY_BASE_URL');
 
-  static final WatchTogetherRelayEndpoint defaultEndpoint = WatchTogetherRelayEndpoint._(Uri.parse(defaultBaseUrl));
+  /// Stands in for the build's relay so tests can exercise the default path.
+  @visibleForTesting
+  static String? debugDefaultBaseUrl;
+
+  /// What [defaultEndpoint] is when the build names no relay. Its host never
+  /// resolves, and every network caller checks [isConfigured] first, so
+  /// nothing is sent anywhere.
+  static final WatchTogetherRelayEndpoint unconfigured = WatchTogetherRelayEndpoint._(
+    Uri.parse('https://relay.invalid'),
+  );
+
+  /// The relay this build names with
+  /// `--dart-define=RELAY_BASE_URL=https://<host>`, or [unconfigured]. No
+  /// relay is built in.
+  static WatchTogetherRelayEndpoint get defaultEndpoint =>
+      tryParseCustom(debugDefaultBaseUrl ?? _compiledDefaultBaseUrl) ?? unconfigured;
+
+  /// False for [unconfigured], which must never be contacted.
+  bool get isConfigured => this != unconfigured;
 
   final Uri _baseUri;
 

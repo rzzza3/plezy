@@ -18,6 +18,7 @@ import 'package:plezy/services/trackers/trakt/trakt_auth_service.dart';
 import 'package:plezy/services/trackers/trakt/trakt_client.dart';
 import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
+import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
 
 const _canaries = <String>[
   'fint-access-Q7w9',
@@ -289,6 +290,9 @@ void main() {
   });
 
   group('OAuth proxy diagnostics', () {
+    setUp(() => WatchTogetherRelayEndpoint.debugDefaultBaseUrl = 'https://relay.example.test');
+    tearDown(() => WatchTogetherRelayEndpoint.debugDefaultBaseUrl = null);
+
     test('start and poll rejected bodies are status-only through the real connect catch', () async {
       final startClient = OAuthProxyClient(httpClient: MockClient((_) async => http.Response(_rejectedBody, 502)));
       final pollClient = OAuthProxyClient(httpClient: MockClient((_) async => http.Response(_rejectedBody, 503)));

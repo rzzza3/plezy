@@ -412,7 +412,7 @@
     "tryDifferentTerm": "Fərqli axtarış sözü cəhd edin",
     "searchYourMedia": "Mediyanızda axtarın",
     "enterTitleActorOrKeyword": "Ad, aktyor və ya açar söz daxil edin",
-    "people": ""
+    "castAndCrew": "Aktyorlar və heyət"
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} üçün qısayol təyin et",

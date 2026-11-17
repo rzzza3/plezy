@@ -34,6 +34,7 @@ import 'listenable_selector.dart';
 import 'media_card.dart';
 import 'media_context_menu.dart';
 import 'optimized_media_image.dart';
+import 'person_avatar.dart';
 import 'rasterized_gradient.dart';
 import 'settings_builder.dart';
 
@@ -416,6 +417,14 @@ class TvBrowseRail extends StatefulWidget {
   /// ([MediaCard.showTimeLeft]).
   final bool showTimeLeft;
 
+  /// Overrides the user's full-card layout setting for this rail: true always
+  /// renders image-only full-bleed cards, false always captioned cards.
+  final bool? fullCardLayout;
+
+  /// Person hubs draw round photos (or initials) with the name and role
+  /// centered underneath, instead of square photos.
+  final bool circularPersonCards;
+
   const TvBrowseRail({
     super.key,
     required this.hubs,
@@ -454,6 +463,8 @@ class TvBrowseRail extends StatefulWidget {
     this.leadingInset = 0,
     this.dimWhenUnfocused = true,
     this.showTimeLeft = false,
+    this.fullCardLayout,
+    this.circularPersonCards = false,
   });
 
   @override
@@ -1252,7 +1263,8 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
           final railViewportWidth = (availableWidth + interactionExpansion).clamp(1.0, double.infinity).toDouble();
           final density = svc.read(SettingsService.libraryDensity);
           final episodePosterMode = svc.read(SettingsService.episodePosterMode);
-          final fullCardLayout = svc.read(SettingsService.tvFullCardLayout);
+          final settingFullCardLayout = svc.read(SettingsService.tvFullCardLayout);
+          final fullCardLayout = widget.fullCardLayout ?? settingFullCardLayout;
           final gridSpacing = svc.read(SettingsService.gridSpacing);
           final modes = [for (final hub in widget.hubs) widget.episodePosterModeForHub?.call(hub) ?? episodePosterMode];
           final wideScales = [
@@ -1851,6 +1863,53 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   }) {
     final theme = Theme.of(context);
     final characterName = item.parentTitle;
+
+    if (widget.circularPersonCards) {
+      return SizedBox(
+        width: cardWidth,
+        child: Padding(
+          padding: .fromLTRB(3 * scale, 3 * scale, 3 * scale, scale),
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              PersonAvatar(
+                name: item.displayTitle,
+                imagePath: item.thumbPath,
+                serverId: serverIdOrNull(item.serverId),
+                size: imageSize,
+              ),
+              SizedBox(height: 8 * scale),
+              Text(
+                item.displayTitle,
+                maxLines: 1,
+                overflow: .ellipsis,
+                textAlign: .center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: tokens(context).text,
+                  fontSize: 13 * scale,
+                  height: 1.1,
+                  fontWeight: .w600,
+                ),
+              ),
+              if (characterName != null && characterName.isNotEmpty) ...[
+                SizedBox(height: 2 * scale),
+                Text(
+                  characterName,
+                  maxLines: 1,
+                  overflow: .ellipsis,
+                  textAlign: .center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: tokens(context).textMuted,
+                    fontSize: 11 * scale,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
 
     if (fullCardLayout) {
       return SizedBox(

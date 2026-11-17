@@ -412,7 +412,7 @@
     "tryDifferentTerm": "Essayez un autre terme de recherche",
     "searchYourMedia": "Rechercher dans vos médias",
     "enterTitleActorOrKeyword": "Entrez un titre, un acteur ou un mot-clé",
-    "people": ""
+    "castAndCrew": "Distribution et équipe"
   },
   "hotkeys": {
     "setShortcutFor": "Définir un raccourci pour ${actionName}",

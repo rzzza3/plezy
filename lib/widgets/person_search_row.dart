@@ -16,12 +16,15 @@ import '../utils/provider_extensions.dart';
 import 'backend_badge.dart';
 import 'media_card_list_layout.dart';
 import 'optimized_media_image.dart';
+import 'person_avatar.dart';
 import 'settings_builder.dart';
 
-/// A person search result, laid out like the search screen's list-mode media
-/// rows (a `FocusableMediaCard` with `ViewMode.list` and `disableScale`): a
-/// circular avatar centered in the rows' artwork column, name and credit
-/// beside it.
+/// A person search result, laid out to sit among the search screen's media
+/// cards. In [ViewMode.list] it matches the list-mode media rows (a
+/// `FocusableMediaCard` with `ViewMode.list` and `disableScale`): a circular
+/// avatar centered in the rows' artwork column, name and credit beside it.
+/// In [ViewMode.grid] it fills the box it is given: a circular avatar (or
+/// initials) with name and credit centered underneath, for a rail or grid.
 ///
 /// Tap, click, or D-pad/keyboard/gamepad select opens the person's filmography.
 /// A person has no context menu: nothing on it can be played, rated, or marked.
@@ -33,6 +36,8 @@ class PersonSearchRow extends StatelessWidget {
     this.showServerName = false,
     this.onNavigateLeft,
     this.onNavigateUp,
+    this.onNavigateDown,
+    this.viewMode = ViewMode.list,
   });
 
   final MediaPerson person;
@@ -43,6 +48,8 @@ class PersonSearchRow extends StatelessWidget {
   final bool showServerName;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onNavigateUp;
+  final VoidCallback? onNavigateDown;
+  final ViewMode viewMode;
 
   /// Avatar diameter as a share of the media rows' artwork column width.
   static const double _avatarScale = 0.6;
@@ -70,8 +77,10 @@ class PersonSearchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final creditLabel = _creditLabel;
-    // Focus flags mirror FocusableMediaCard with disableScale: the row draws
-    // its own whole-row border through CardFocusBorder.
+    final isGrid = viewMode == ViewMode.grid;
+    // Focus flags mirror FocusableMediaCard: the list row draws its own
+    // whole-row border through CardFocusBorder and doesn't scale; the grid
+    // card scales like its neighbors and borders only the avatar.
     return FocusableWrapper(
       focusNode: focusNode,
       semanticLabel: [person.name, ?creditLabel].join(', '),
@@ -79,13 +88,69 @@ class PersonSearchRow extends StatelessWidget {
       onSelect: () => _open(context),
       onNavigateLeft: onNavigateLeft,
       onNavigateUp: onNavigateUp,
-      disableScale: true,
+      onNavigateDown: onNavigateDown,
+      disableScale: !isGrid,
       delegateFocusBorder: true,
       useComfortableZone: !PlatformDetector.isTV(), // Always center on TV
       scrollAlignment: 0.5,
-      child: SettingValueBuilder<int>(
-        pref: SettingsService.libraryDensity,
-        builder: (context, density, _) => _buildRow(context, density, creditLabel),
+      child: isGrid
+          ? _buildGridCard(context, creditLabel)
+          : SettingValueBuilder<int>(
+              pref: SettingsService.libraryDensity,
+              builder: (context, density, _) => _buildRow(context, density, creditLabel),
+            ),
+    );
+  }
+
+  Widget _buildGridCard(BuildContext context, String? creditLabel) {
+    final textTheme = Theme.of(context).textTheme;
+    final monoTokens = tokens(context);
+    final serverName = showServerName ? person.serverName : null;
+    final metadataStyle = textTheme.bodySmall?.copyWith(
+      color: monoTokens.textMuted.withValues(alpha: 0.9),
+      fontSize: 11,
+      height: 1.2,
+    );
+
+    // MediaCard's grid padding and caption sizes, with the captions centered
+    // under the circle.
+    return _RowTapRegion(
+      onTap: () => _open(context),
+      borderRadius: BorderRadius.circular(monoTokens.radiusSm),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(3, 3, 3, 1),
+        child: Column(
+          children: [
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) => Center(
+                  child: PersonAvatar(
+                    name: person.name,
+                    imagePath: person.thumbPath,
+                    serverId: person.serverId,
+                    size: constraints.biggest.shortestSide,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: context.settingsRead(SettingsService.gridSpacing).posterTitleGap),
+            Text(
+              person.name,
+              maxLines: 1,
+              overflow: .ellipsis,
+              textAlign: .center,
+              style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
+            ),
+            if (creditLabel != null || serverName != null)
+              Text(
+                [?creditLabel, ?serverName].join(' · '),
+                maxLines: 1,
+                overflow: .ellipsis,
+                textAlign: .center,
+                style: metadataStyle,
+              ),
+          ],
+        ),
       ),
     );
   }

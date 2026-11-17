@@ -412,7 +412,7 @@
     "tryDifferentTerm": "Prøv en anden søgning",
     "searchYourMedia": "Søg i dine medier",
     "enterTitleActorOrKeyword": "Indtast titel, skuespiller eller nøgleord",
-    "people": ""
+    "castAndCrew": "Medvirkende og hold"
   },
   "hotkeys": {
     "setShortcutFor": "Indstil genvej for ${actionName}",

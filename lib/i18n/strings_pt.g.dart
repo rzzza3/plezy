@@ -248,6 +248,9 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get showServerNameOnHubsDescription => 'Sempre mostrar nomes dos servidores nos títulos dos hubs.';
 	@override String get groupLibrariesByServer => 'Agrupar Bibliotecas por Servidor';
 	@override String get groupLibrariesByServerDescription => 'Agrupar bibliotecas da barra lateral por servidor de mídia.';
+	@override String get sidebarStyle => 'Estilo da barra lateral';
+	@override String get sidebarStyleClassic => 'Clássico';
+	@override String get sidebarStyleFloating => 'Flutuante';
 	@override String get alwaysKeepSidebarOpen => 'Manter Barra Lateral Sempre Aberta';
 	@override String get alwaysKeepSidebarOpenDescription => 'A barra lateral fica expandida e a área de conteúdo se ajusta';
 	@override String get showUnwatchedCount => 'Mostrar Contagem de Não Assistidos';
@@ -511,6 +514,7 @@ class _Translations$search$pt extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Tente um termo de busca diferente';
 	@override String get searchYourMedia => 'Buscar suas mídias';
 	@override String get enterTitleActorOrKeyword => 'Insira um título, ator ou palavra-chave';
+	@override String get castAndCrew => 'Elenco e equipe';
 }
 
 // Path: hotkeys
@@ -2560,6 +2564,9 @@ extension on TranslationsPt {
 			'settings.showServerNameOnHubsDescription' => 'Sempre mostrar nomes dos servidores nos títulos dos hubs.',
 			'settings.groupLibrariesByServer' => 'Agrupar Bibliotecas por Servidor',
 			'settings.groupLibrariesByServerDescription' => 'Agrupar bibliotecas da barra lateral por servidor de mídia.',
+			'settings.sidebarStyle' => 'Estilo da barra lateral',
+			'settings.sidebarStyleClassic' => 'Clássico',
+			'settings.sidebarStyleFloating' => 'Flutuante',
 			'settings.alwaysKeepSidebarOpen' => 'Manter Barra Lateral Sempre Aberta',
 			'settings.alwaysKeepSidebarOpenDescription' => 'A barra lateral fica expandida e a área de conteúdo se ajusta',
 			'settings.showUnwatchedCount' => 'Mostrar Contagem de Não Assistidos',
@@ -2814,6 +2821,7 @@ extension on TranslationsPt {
 			'search.tryDifferentTerm' => 'Tente um termo de busca diferente',
 			'search.searchYourMedia' => 'Buscar suas mídias',
 			'search.enterTitleActorOrKeyword' => 'Insira um título, ator ou palavra-chave',
+			'search.castAndCrew' => 'Elenco e equipe',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Definir Atalho para ${actionName}',
 			'hotkeys.clearShortcut' => 'Limpar atalho',
 			'hotkeys.noShortcutSet' => 'Nenhum atalho definido',
@@ -2937,12 +2945,12 @@ extension on TranslationsPt {
 			'fileInfo.protocol' => 'Protocolo',
 			'fileInfo.mediaType' => 'Tipo de mídia',
 			'fileInfo.sourceKind' => 'Tipo de origem',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedVersion' => 'Versão otimizada',
 			'fileInfo.optimizationTarget' => 'Alvo de otimização',
 			'fileInfo.deletedAt' => 'Excluído',
 			'fileInfo.remoteSource' => 'Origem remota',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.infiniteStream' => 'Fluxo infinito',
 			'fileInfo.directPlay' => 'Reprodução direta',
 			'fileInfo.directStream' => 'Fluxo direto',
@@ -3451,12 +3459,12 @@ extension on TranslationsPt {
 			'explore.creditRole.producer' => 'Produtor',
 			'explore.creditRole.creator' => 'Criador',
 			'explore.creditRole.composer' => 'Compositor',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.prequel' => 'Prequela',
 			'explore.relation.sequel' => 'Sequela',
 			'explore.relation.sideStory' => 'História paralela',
 			'explore.relation.spinOff' => 'Spin-off',
-			_ => null,
-		} ?? switch (path) {
 			'explore.relation.alternativeVersion' => 'Versão alternativa',
 			'explore.relation.summary' => 'Resumo',
 			'explore.relation.parentStory' => 'História principal',
@@ -3965,12 +3973,12 @@ extension on TranslationsPt {
 			'seerr.rootFolder' => 'Pasta raiz',
 			'seerr.languageProfile' => 'Perfil de idioma',
 			'seerr.tags' => 'Etiquetas',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.noTags' => 'Sem etiquetas',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (padrão)',
 			'seerr.animeNote' => 'Esta série é um anime.',
 			'seerr.requestSubmitted' => 'Solicitação enviada',
-			_ => null,
-		} ?? switch (path) {
 			'seerr.requestFailed' => ({required Object error}) => 'Falha na solicitação: ${error}',
 			'seerr.requestsLoadFailed' => 'Não foi possível carregar as opções de solicitação',
 			'seerr.nothingToRequest' => 'Tudo já está disponível ou solicitado.',

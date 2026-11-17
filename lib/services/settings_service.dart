@@ -34,6 +34,7 @@ import '../models/audio_channel_limit.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../navigation/navigation_tabs.dart';
+import '../navigation/sidebar_style.dart';
 import '../utils/platform_detector.dart';
 import 'tmdb/tmdb_genres.dart';
 import 'tmdb/tmdb_networks.dart';
@@ -787,6 +788,13 @@ class SettingsService extends BaseSharedPreferencesService {
   /// keep working while the tab is hidden.
   static const showExploreTab = BoolPref('show_explore_tab', defaultValue: true);
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
+
+  /// TV sidebar look: the classic expanding strip or the floating pill.
+  static const sidebarStyle = EnumPref<SidebarStyle>(
+    'sidebar_style',
+    values: SidebarStyle.values,
+    defaultValue: SidebarStyle.classic,
+  );
 
   /// Sidebar Libraries section expansion. Persisted so a collapsed section
   /// stays collapsed across launches instead of springing back open (#1896).

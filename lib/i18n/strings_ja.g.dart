@@ -511,6 +511,7 @@ class _Translations$search$ja extends Translations$search$en {
 	@override String get tryDifferentTerm => '別の検索語をお試しください';
 	@override String get searchYourMedia => 'メディアを検索';
 	@override String get enterTitleActorOrKeyword => 'タイトル、俳優、またはキーワードを入力';
+	@override String get castAndCrew => 'キャスト・スタッフ';
 }
 
 // Path: hotkeys
@@ -2806,6 +2807,7 @@ extension on TranslationsJa {
 			'search.tryDifferentTerm' => '別の検索語をお試しください',
 			'search.searchYourMedia' => 'メディアを検索',
 			'search.enterTitleActorOrKeyword' => 'タイトル、俳優、またはキーワードを入力',
+			'search.castAndCrew' => 'キャスト・スタッフ',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName}のショートカットを設定',
 			'hotkeys.clearShortcut' => 'ショートカットをクリア',
 			'hotkeys.noShortcutSet' => 'ショートカット未設定',
@@ -2932,9 +2934,9 @@ extension on TranslationsJa {
 			'fileInfo.optimizedVersion' => '最適化バージョン',
 			'fileInfo.optimizationTarget' => '最適化ターゲット',
 			'fileInfo.deletedAt' => '削除済み',
-			'fileInfo.remoteSource' => 'リモートソース',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'リモートソース',
 			'fileInfo.infiniteStream' => '無限ストリーム',
 			'fileInfo.directPlay' => 'ダイレクト再生',
 			'fileInfo.directStream' => 'ダイレクトストリーム',
@@ -3446,9 +3448,9 @@ extension on TranslationsJa {
 			'explore.relation.prequel' => '前日譚',
 			'explore.relation.sequel' => '続編',
 			'explore.relation.sideStory' => 'サイドストーリー',
-			'explore.relation.spinOff' => 'スピンオフ',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'スピンオフ',
 			'explore.relation.alternativeVersion' => '別バージョン',
 			'explore.relation.summary' => '総集編',
 			'explore.relation.parentStory' => '親作品',
@@ -3960,9 +3962,9 @@ extension on TranslationsJa {
 			'seerr.noTags' => 'タグなし',
 			'seerr.defaultOption' => ({required Object name}) => '${name}（デフォルト）',
 			'seerr.animeNote' => 'このシリーズはアニメです。',
-			'seerr.requestSubmitted' => 'リクエストを送信しました',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'リクエストを送信しました',
 			'seerr.requestFailed' => ({required Object error}) => 'リクエストに失敗しました: ${error}',
 			'seerr.requestsLoadFailed' => 'リクエストオプションを読み込めませんでした',
 			'seerr.nothingToRequest' => 'すべてすでに利用可能またはリクエスト済みです。',

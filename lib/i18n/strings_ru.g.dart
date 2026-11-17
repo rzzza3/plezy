@@ -511,6 +511,7 @@ class _Translations$search$ru extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Попробуйте другой запрос';
 	@override String get searchYourMedia => 'Поиск в вашей медиатеке';
 	@override String get enterTitleActorOrKeyword => 'Введите название, актёра или ключевое слово';
+	@override String get castAndCrew => 'Актёры и съёмочная группа';
 }
 
 // Path: hotkeys
@@ -2830,6 +2831,7 @@ extension on TranslationsRu {
 			'search.tryDifferentTerm' => 'Попробуйте другой запрос',
 			'search.searchYourMedia' => 'Поиск в вашей медиатеке',
 			'search.enterTitleActorOrKeyword' => 'Введите название, актёра или ключевое слово',
+			'search.castAndCrew' => 'Актёры и съёмочная группа',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Назначить клавишу для ${actionName}',
 			'hotkeys.clearShortcut' => 'Очистить клавишу',
 			'hotkeys.noShortcutSet' => 'Сочетание не задано',
@@ -2956,9 +2958,9 @@ extension on TranslationsRu {
 			'fileInfo.optimizedVersion' => 'Оптимизированная версия',
 			'fileInfo.optimizationTarget' => 'Цель оптимизации',
 			'fileInfo.deletedAt' => 'Удалено',
-			'fileInfo.remoteSource' => 'Удалённый источник',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'Удалённый источник',
 			'fileInfo.infiniteStream' => 'Бесконечный поток',
 			'fileInfo.directPlay' => 'Прямое воспроизведение',
 			'fileInfo.directStream' => 'Прямой поток',
@@ -3470,9 +3472,9 @@ extension on TranslationsRu {
 			'explore.relation.prequel' => 'Приквел',
 			'explore.relation.sequel' => 'Сиквел',
 			'explore.relation.sideStory' => 'Побочная история',
-			'explore.relation.spinOff' => 'Спин-офф',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'Спин-офф',
 			'explore.relation.alternativeVersion' => 'Альтернативная версия',
 			'explore.relation.summary' => 'Краткое изложение',
 			'explore.relation.parentStory' => 'Основная история',
@@ -3984,9 +3986,9 @@ extension on TranslationsRu {
 			'seerr.noTags' => 'Нет тегов',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (по умолчанию)',
 			'seerr.animeNote' => 'Этот сериал — аниме.',
-			'seerr.requestSubmitted' => 'Запрос отправлен',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'Запрос отправлен',
 			'seerr.requestFailed' => ({required Object error}) => 'Ошибка запроса: ${error}',
 			'seerr.requestsLoadFailed' => 'Не удалось загрузить параметры запроса',
 			'seerr.nothingToRequest' => 'Всё уже доступно или запрошено.',

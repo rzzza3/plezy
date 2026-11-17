@@ -412,7 +412,7 @@
     "tryDifferentTerm": "Próbálj másik keresési kifejezést",
     "searchYourMedia": "Keresés a saját médiatartalmak között",
     "enterTitleActorOrKeyword": "Adj meg egy címet, színészt vagy kulcsszót",
-    "people": ""
+    "castAndCrew": "Szereplők és stáb"
   },
   "hotkeys": {
     "setShortcutFor": "Billentyűparancs beállítása ehhez: ${actionName}",

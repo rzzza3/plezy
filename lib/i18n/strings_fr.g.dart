@@ -511,6 +511,7 @@ class _Translations$search$fr extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Essayez un autre terme de recherche';
 	@override String get searchYourMedia => 'Rechercher dans vos médias';
 	@override String get enterTitleActorOrKeyword => 'Entrez un titre, un acteur ou un mot-clé';
+	@override String get castAndCrew => 'Distribution et équipe';
 }
 
 // Path: hotkeys
@@ -2814,6 +2815,7 @@ extension on TranslationsFr {
 			'search.tryDifferentTerm' => 'Essayez un autre terme de recherche',
 			'search.searchYourMedia' => 'Rechercher dans vos médias',
 			'search.enterTitleActorOrKeyword' => 'Entrez un titre, un acteur ou un mot-clé',
+			'search.castAndCrew' => 'Distribution et équipe',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Définir un raccourci pour ${actionName}',
 			'hotkeys.clearShortcut' => 'Effacer le raccourci',
 			'hotkeys.noShortcutSet' => 'Aucun raccourci défini',
@@ -2940,9 +2942,9 @@ extension on TranslationsFr {
 			'fileInfo.optimizedVersion' => 'Version optimisée',
 			'fileInfo.optimizationTarget' => 'Cible d\'optimisation',
 			'fileInfo.deletedAt' => 'Supprimé',
-			'fileInfo.remoteSource' => 'Source distante',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'Source distante',
 			'fileInfo.infiniteStream' => 'Flux infini',
 			'fileInfo.directPlay' => 'Lecture directe',
 			'fileInfo.directStream' => 'Flux direct',
@@ -3454,9 +3456,9 @@ extension on TranslationsFr {
 			'explore.relation.prequel' => 'Préquelle',
 			'explore.relation.sequel' => 'Suite',
 			'explore.relation.sideStory' => 'Histoire parallèle',
-			'explore.relation.spinOff' => 'Spin-off',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'Spin-off',
 			'explore.relation.alternativeVersion' => 'Version alternative',
 			'explore.relation.summary' => 'Résumé',
 			'explore.relation.parentStory' => 'Histoire principale',
@@ -3968,9 +3970,9 @@ extension on TranslationsFr {
 			'seerr.noTags' => 'Aucune étiquette',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (par défaut)',
 			'seerr.animeNote' => 'Cette série est un anime.',
-			'seerr.requestSubmitted' => 'Demande envoyée',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'Demande envoyée',
 			'seerr.requestFailed' => ({required Object error}) => 'Échec de la demande : ${error}',
 			'seerr.requestsLoadFailed' => 'Impossible de charger les options de demande',
 			'seerr.nothingToRequest' => 'Tout est déjà disponible ou demandé.',

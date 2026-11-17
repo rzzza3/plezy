@@ -17,7 +17,6 @@ import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../providers/hidden_libraries_provider.dart';
-import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/settings_service.dart';
@@ -29,10 +28,17 @@ import '../utils/search_relevance.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/search_input_field.dart';
-import '../widgets/focusable_media_card.dart';
-import '../widgets/focusable_tab_chip.dart';
+import '../widgets/app_icon.dart';
+import '../widgets/hub_section.dart';
+import '../widgets/media_grid_delegate.dart';
+import '../widgets/settings_builder.dart';
+import '../widgets/tv_browse_rail.dart';
 import '../widgets/person_search_row.dart';
 import '../utils/focus_utils.dart';
+import '../utils/media_navigation_helper.dart';
+import '../focus/hub_vertical_navigation.dart';
+import '../focus/locked_hub_controller.dart';
+import '../media/media_hub.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
 
@@ -57,19 +63,22 @@ class _SearchScreenState extends State<SearchScreen>
   AbortController? _activeSearchAbort;
   ({String query, SearchAggregationResult result})? _pendingSearchOutcome;
 
-  /// Filter over the current results: everything, one media kind, or only
-  /// people. Chips and the filtered views derive from [_searchCandidates] and
-  /// [_searchPeople] — the pre-rank pools behind the ranked [searchResults] —
-  /// so a kind ranked out of the "All" top-N still gets a chip, and selecting
-  /// a chip shows everything the servers returned for it.
-  _SearchFilter _selectedFilter = const _AllResults();
+  /// The pre-rank pools behind the ranked [searchResults]. The rails derive
+  /// from them, so every result a server returned gets a place on screen.
   List<MediaItem> _searchCandidates = const [];
   List<MediaPerson> _searchPeople = const [];
-  List<MediaKind> _candidateKinds = const [];
-  List<SearchHit>? _filteredResults;
-  late final FocusNode _allChipFocusNode = FocusNode(debugLabel: 'SearchKindChipAll');
-  late final FocusNode _peopleChipFocusNode = FocusNode(debugLabel: 'SearchPeopleChip');
-  final Map<MediaKind, FocusNode> _kindChipFocusNodes = {};
+
+  /// Movies, TV Shows, Cast & Crew, then any other kinds found.
+  List<MediaHub> _rails = const [];
+
+  /// The person behind each Cast & Crew rail item, by [MediaItem.id].
+  Map<String, MediaPerson> _railPeople = const {};
+
+  final _focusMemory = HubFocusMemory();
+  final Map<String, GlobalKey<TvBrowseRailState>> _tvRailKeys = {};
+  final Map<String, GlobalKey<HubSectionState>> _hubKeys = {};
+  final Map<String, List<MediaHub>> _railHubLists = {};
+  late final FocusNode _firstPersonFocusNode = FocusNode(debugLabel: 'SearchFirstPerson');
 
   HiddenLibrariesProvider? _hiddenLibraries;
   Set<String> _lastSeenHiddenKeys = const {};
@@ -84,11 +93,7 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   void dispose() {
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
-    _allChipFocusNode.dispose();
-    _peopleChipFocusNode.dispose();
-    for (final node in _kindChipFocusNodes.values) {
-      node.dispose();
-    }
+    _firstPersonFocusNode.dispose();
     super.dispose();
   }
 
@@ -170,7 +175,7 @@ class _SearchScreenState extends State<SearchScreen>
   void onSearchError(Object error) {
     _focusResultsForQuery = null;
     _pendingSearchOutcome = null;
-    _resetFilter();
+    _resetRails();
     final message = error is _SearchUnavailableException
         ? t.errors.searchUnavailable
         : t.errors.searchFailed(error: error);
@@ -181,7 +186,7 @@ class _SearchScreenState extends State<SearchScreen>
   void onSearchCleared() {
     _focusResultsForQuery = null;
     _pendingSearchOutcome = null;
-    _resetFilter();
+    _resetRails();
   }
 
   @override
@@ -191,9 +196,7 @@ class _SearchScreenState extends State<SearchScreen>
     final matched = outcome != null && outcome.query == query ? outcome.result : null;
 
     // Committed alongside the results the pending setState renders (build has
-    // not run yet): the pre-rank pools the filter chips derive from. A selected
-    // filter survives a refined query as long as it still has candidates;
-    // otherwise it falls back to "All".
+    // not run yet).
     _searchCandidates =
         matched?.candidates ??
         [
@@ -206,9 +209,7 @@ class _SearchScreenState extends State<SearchScreen>
           for (final hit in results)
             if (hit case PersonSearchHit(:final person)) person,
         ];
-    _candidateKinds = _kindsIn(_searchCandidates);
-    if (!_hasCandidatesFor(_selectedFilter)) _selectedFilter = const _AllResults();
-    _filteredResults = _rankFilteredResults(_selectedFilter, query);
+    _rebuildRails(query);
 
     if (matched != null && matched.failedServerIds.isNotEmpty) {
       showAppSnackBar(context, t.messages.searchPartialResults);
@@ -218,7 +219,9 @@ class _SearchScreenState extends State<SearchScreen>
     _focusResultsForQuery = null;
     if (results.isEmpty) return;
     if (searchController.text.trim() != query) return; // user kept editing
-    FocusUtils.requestFocusAfterBuild(this, firstResultFocusNode);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) focusFirstResult();
+    });
   }
 
   /// OSK "Search" / hardware Enter on TV additionally focuses the results
@@ -231,6 +234,11 @@ class _SearchScreenState extends State<SearchScreen>
       _focusResultsForQuery = query;
     }
     super.handleSearchSubmit();
+  }
+
+  @override
+  void focusFirstResult() {
+    if (_rails.isNotEmpty) _focusRail(0);
   }
 
   @override
@@ -308,15 +316,12 @@ class _SearchScreenState extends State<SearchScreen>
       // library-less row would lose its label (#1970); keep the identity
       // and library context the search stamped on the original row.
       final merged = mergeFetchedMediaItem(fetched: updated, fallbackServerId: ServerId(serverId), existing: source);
-      // The same row can sit in the ranked "All" list, the filtered view,
-      // and the candidate pool; refresh every copy so a later chip switch
-      // cannot resurrect the stale row.
+      // Refresh every copy so a later rebuild cannot resurrect the stale row.
+      // The rails swap the item where it stands rather than re-ranking, so a
+      // changed title never moves the card out from under focus.
       var replaced = _replaceHitByGlobalKey(searchResults, source.globalKey, merged);
       replaced = _replaceByGlobalKey(_searchCandidates, source.globalKey, merged) || replaced;
-      final filtered = _filteredResults;
-      if (filtered != null) {
-        replaced = _replaceHitByGlobalKey(filtered, source.globalKey, merged) || replaced;
-      }
+      replaced = _replaceInRails(source.globalKey, merged) || replaced;
       if (replaced) setState(() {});
     } catch (e) {
       appLogger.d('Search item refresh skipped for ${source.globalKey}', error: e);
@@ -327,28 +332,82 @@ class _SearchScreenState extends State<SearchScreen>
     MainScreenFocusScope.focusSidebarOf(context);
   }
 
-  /// Chip display order. `folder`/`unknown` are never search kinds, and
-  /// `clip`/`photo` rows (e.g. extras)
-  /// stay reachable under "All" without a chip of their own.
-  static const List<MediaKind> _kindFilterOrder = [
-    MediaKind.movie,
-    MediaKind.show,
+  /// Rail order after Movies, TV Shows and Cast & Crew. Episodes get no rail:
+  /// their show's rail covers them. `folder`/`unknown` are never search kinds.
+  static const List<MediaKind> _otherRailKinds = [
     MediaKind.season,
-    MediaKind.episode,
     MediaKind.artist,
     MediaKind.album,
     MediaKind.track,
     MediaKind.collection,
     MediaKind.playlist,
+    MediaKind.clip,
+    MediaKind.photo,
   ];
 
-  static List<MediaKind> _kindsIn(List<MediaItem> candidates) {
-    if (candidates.isEmpty) return const [];
-    final present = {for (final item in candidates) item.kind};
-    return [
-      for (final kind in _kindFilterOrder)
-        if (present.contains(kind)) kind,
+  static const String _peopleRailId = 'search_people';
+
+  void _rebuildRails(String query) {
+    MediaHub? kindRail(MediaKind kind) {
+      final ofKind = [
+        for (final candidate in _searchCandidates)
+          if (candidate.kind == kind) candidate,
+      ];
+      if (ofKind.isEmpty) return null;
+      final ranked = rankMediaSearchResults(ofKind, query);
+      return MediaHub(
+        id: 'search_${kind.id}',
+        title: _kindRailLabel(kind),
+        type: kind.id,
+        items: ranked,
+        size: ranked.length,
+      );
+    }
+
+    final people = rankPeopleSearchResults(_searchPeople, query);
+    final personItems = <String, MediaPerson>{};
+    final peopleItems = [for (final person in people) _personRailItem(person, (id) => personItems[id] = person)];
+    _railPeople = personItems;
+    _rails = [
+      ?kindRail(MediaKind.movie),
+      ?kindRail(MediaKind.show),
+      if (peopleItems.isNotEmpty)
+        MediaHub(
+          id: _peopleRailId,
+          title: t.search.castAndCrew,
+          type: 'person',
+          items: peopleItems,
+          size: peopleItems.length,
+        ),
+      for (final kind in _otherRailKinds) ?kindRail(kind),
     ];
+  }
+
+  /// A person as a TV rail item: name as title, credit as the second line.
+  MediaItem _personRailItem(MediaPerson person, void Function(String id) register) {
+    final id = person.globalKey;
+    register(id);
+    return MediaItem(
+      id: id,
+      backend: person.backend,
+      kind: MediaKind.unknown,
+      title: person.name,
+      parentTitle: switch (person.credit) {
+        PersonCredit.actor => t.explore.creditRole.actor,
+        PersonCredit.director => t.explore.creditRole.director,
+        null => null,
+      },
+      thumbPath: person.thumbPath,
+      serverId: person.serverId,
+      serverName: person.serverName,
+    );
+  }
+
+  void _resetRails() {
+    _searchCandidates = const [];
+    _searchPeople = const [];
+    _rails = const [];
+    _railPeople = const {};
   }
 
   static bool _replaceByGlobalKey(List<MediaItem> items, String globalKey, MediaItem replacement) {
@@ -358,6 +417,21 @@ class _SearchScreenState extends State<SearchScreen>
     return true;
   }
 
+  bool _replaceInRails(String globalKey, MediaItem replacement) {
+    final rails = [..._rails];
+    var replaced = false;
+    for (var i = 0; i < rails.length; i++) {
+      final hub = rails[i];
+      final index = hub.items.indexWhere((item) => item.globalKey == globalKey);
+      if (index == -1) continue;
+      final items = [...hub.items]..[index] = replacement;
+      rails[i] = MediaHub(id: hub.id, title: hub.title, type: hub.type, items: items, size: items.length);
+      replaced = true;
+    }
+    if (replaced) _rails = rails;
+    return replaced;
+  }
+
   static bool _replaceHitByGlobalKey(List<SearchHit> hits, String globalKey, MediaItem replacement) {
     final index = hits.indexWhere((hit) => hit is MediaSearchHit && hit.globalKey == globalKey);
     if (index == -1) return false;
@@ -365,89 +439,7 @@ class _SearchScreenState extends State<SearchScreen>
     return true;
   }
 
-  /// The list the results sliver renders: the aggregation's ranked list, or
-  /// the selected filter's pool re-ranked with the full display budget.
-  List<SearchHit> get _visibleResults => _filteredResults ?? searchResults;
-
-  /// Chip order: All, the media kinds present, then People.
-  List<_SearchFilter> get _filterOptions => [
-    const _AllResults(),
-    for (final kind in _candidateKinds) _KindResults(kind),
-    if (_searchPeople.isNotEmpty) const _PeopleResults(),
-  ];
-
-  /// "All" plus a single other option (one kind, or only people) has nothing
-  /// to filter.
-  bool get _showFilterChips => _candidateKinds.length + (_searchPeople.isEmpty ? 0 : 1) > 1;
-
-  bool _hasCandidatesFor(_SearchFilter filter) => switch (filter) {
-    _AllResults() => true,
-    _KindResults(:final kind) => _candidateKinds.contains(kind),
-    _PeopleResults() => _searchPeople.isNotEmpty,
-  };
-
-  /// The selected filter's pool re-ranked with the full display budget, or
-  /// null for "All" (the aggregation's ranked list).
-  List<SearchHit>? _rankFilteredResults(_SearchFilter filter, String query) {
-    switch (filter) {
-      case _AllResults():
-        return null;
-      case _KindResults(:final kind):
-        final ofKind = [
-          for (final candidate in _searchCandidates)
-            if (candidate.kind == kind) candidate,
-        ];
-        return [
-          for (final item in rankMediaSearchResults(ofKind, query, limit: defaultMediaSearchLimit))
-            MediaSearchHit(item),
-        ];
-      case _PeopleResults():
-        return [
-          for (final person in rankPeopleSearchResults(_searchPeople, query, limit: defaultMediaSearchLimit))
-            PersonSearchHit(person),
-        ];
-    }
-  }
-
-  void _selectFilter(_SearchFilter filter) {
-    if (filter == _selectedFilter) return;
-    setState(() {
-      _selectedFilter = filter;
-      _filteredResults = _rankFilteredResults(filter, lastSearchedQuery);
-    });
-  }
-
-  void _resetFilter() {
-    _selectedFilter = const _AllResults();
-    _searchCandidates = const [];
-    _searchPeople = const [];
-    _candidateKinds = const [];
-    _filteredResults = null;
-  }
-
-  FocusNode _chipFocusNode(_SearchFilter filter) => switch (filter) {
-    _AllResults() => _allChipFocusNode,
-    _KindResults(:final kind) => _kindChipFocusNodes.putIfAbsent(
-      kind,
-      () => FocusNode(debugLabel: 'SearchKindChip_${kind.id}'),
-    ),
-    _PeopleResults() => _peopleChipFocusNode,
-  };
-
-  /// D-pad landing point for the chip row: the chip that is currently active.
-  void _focusFilterChips() => _chipFocusNode(_selectedFilter).requestFocus();
-
-  void _focusFirstResult() {
-    if (_visibleResults.isNotEmpty) firstResultFocusNode.requestFocus();
-  }
-
-  String _filterLabel(_SearchFilter filter) => switch (filter) {
-    _AllResults() => t.libraries.groupings.all,
-    _KindResults(:final kind) => _kindFilterLabel(kind),
-    _PeopleResults() => t.search.people,
-  };
-
-  String _kindFilterLabel(MediaKind kind) => switch (kind) {
+  String _kindRailLabel(MediaKind kind) => switch (kind) {
     MediaKind.movie => t.libraries.groupings.movies,
     MediaKind.show => t.libraries.groupings.shows,
     MediaKind.season => t.libraries.groupings.seasons,
@@ -457,85 +449,129 @@ class _SearchScreenState extends State<SearchScreen>
     MediaKind.track => t.libraries.groupings.tracks,
     MediaKind.collection => t.libraries.tabs.collections,
     MediaKind.playlist => t.libraries.tabs.playlists,
-    // Unreachable: excluded from _kindFilterOrder.
-    MediaKind.clip || MediaKind.photo || MediaKind.folder || MediaKind.unknown => kind.id,
+    MediaKind.clip => t.discover.extras,
+    MediaKind.photo || MediaKind.folder || MediaKind.unknown => kind.id,
   };
 
-  Widget _buildFilterChips() {
-    // Chips trap RIGHT to keep focus inside the strip (see
-    // FocusableChipStateMixin), so left/right neighbors are wired explicitly,
-    // like every other tab-chip strip.
-    final filters = _filterOptions;
-    return SliverToBoxAdapter(
-      child: Padding(
-        // The search field's own bottom padding provides the gap above; the
-        // results sliver below shrinks its top padding to match (16/16 visual
-        // rhythm around the strip instead of the default 24/24).
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: TabChipStrip(
-          children: [
-            for (final (index, filter) in filters.indexed) ...[
-              if (index > 0) const SizedBox(width: 8),
-              FocusableTabChip(
-                label: _filterLabel(filter),
-                isSelected: _selectedFilter == filter,
-                focusNode: _chipFocusNode(filter),
-                onSelect: () => _selectFilter(filter),
-                onNavigateLeft: index == 0
-                    ? _navigateToSidebar
-                    : () => _chipFocusNode(filters[index - 1]).requestFocus(),
-                onNavigateRight: index < filters.length - 1
-                    ? () => _chipFocusNode(filters[index + 1]).requestFocus()
-                    : null,
-                onNavigateUp: focusSearchInput,
-                onNavigateDown: _focusFirstResult,
-                onBack: _navigateToSidebar,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+  static IconData _railIcon(MediaHub hub) => switch (hub.type) {
+    'movie' => Symbols.movie_rounded,
+    'show' || 'season' || 'episode' => Symbols.tv_rounded,
+    'artist' || 'album' || 'track' => Symbols.music_note_rounded,
+    'collection' || 'playlist' => Symbols.video_library_rounded,
+    _ => Symbols.search_rounded,
+  };
+
+  /// Focus rail [index]: its remembered card, or the first person.
+  void _focusRail(int index) {
+    if (index < 0 || index >= _rails.length) return;
+    final hub = _rails[index];
+    if (PlatformDetector.isTV()) {
+      _tvRailKeys[hub.id]?.currentState?.requestFocus();
+    } else if (hub.id == _peopleRailId) {
+      _firstPersonFocusNode.requestFocus();
+    } else {
+      _hubKeys[hub.id]?.currentState?.requestFocusFromMemory();
+    }
   }
 
-  Widget _buildResultsList(BuildContext context) {
-    final multiServer = context.watch<MultiServerProvider>();
-    final libraries = context.watch<LibrariesProvider>();
-    final showServerName = multiServer.totalServerCount > 1;
-    final showChips = _showFilterChips;
-    final visible = _visibleResults;
-    return buildResultsSliver(
-      childCount: visible.length,
-      // Half the default top padding when the chip strip sits directly above:
-      // the strip already separates results from the search field.
-      padding: showChips ? const EdgeInsets.fromLTRB(16, 8, 16, 16) : const EdgeInsets.all(16),
-      (context, index) {
-        final isFirst = index == 0;
-        final onNavigateUp = isFirst ? (showChips ? _focusFilterChips : focusSearchInput) : null;
-        return switch (visible[index]) {
-          MediaSearchHit(:final item) => FocusableMediaCard(
-            key: Key(item.globalKey),
-            item: item,
-            viewModeOverride: ViewMode.list,
-            disableScale: true,
-            focusNode: isFirst ? firstResultFocusNode : null,
+  /// UP from rail [index]: the rail above, or the search field from the first.
+  void _focusAbove(int index) => index == 0 ? focusSearchInput() : _focusRail(index - 1);
+
+  /// The single-hub list a TV rail renders, kept identical while its hub is.
+  List<MediaHub> _railOf(MediaHub hub) {
+    final cached = _railHubLists[hub.id];
+    if (cached != null && identical(cached.single, hub)) return cached;
+    return _railHubLists[hub.id] = [hub];
+  }
+
+  void _openPerson(MediaPerson person) => unawaited(
+    navigateToPersonMedia(
+      context,
+      personId: person.id,
+      name: person.name,
+      thumbPath: person.thumbPath,
+      serverId: person.serverId,
+      serverName: person.serverName,
+      backend: person.backend,
+    ),
+  );
+
+  Widget _buildRail(BuildContext context, int index) {
+    final hub = _rails[index];
+    final isLast = index == _rails.length - 1;
+    if (PlatformDetector.isTV()) {
+      return Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onFocusChange: (hasFocus) {
+          if (!hasFocus) return;
+          // Center the rail, with its neighbors peeking in.
+          final rowContext = context;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !rowContext.mounted) return;
+            unawaited(
+              Scrollable.ensureVisible(
+                rowContext,
+                alignment: index == 0 ? 0.6 : 0.5,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+              ),
+            );
+          });
+        },
+        child: Builder(
+          builder: (context) => TvBrowseRail(
+            key: _tvRailKeys.putIfAbsent(hub.id, GlobalKey<TvBrowseRailState>.new),
+            hubs: _railOf(hub),
+            focusMemory: _focusMemory,
+            // Image-only posters with their own gutter; people as round
+            // photos with names underneath.
+            fullCardLayout: hub.id != _peopleRailId,
+            circularPersonCards: true,
+            extraItemGap: 16,
             onRefresh: updateItem,
-            onListRefresh: refresh,
-            onNavigateLeft: _navigateToSidebar,
-            onNavigateUp: onNavigateUp,
-            showServerName: showServerName,
-            libraryName: libraries.libraryLabelFor(item),
+            onNavigateUp: () => _focusAbove(index),
+            onNavigateDown: isLast ? null : () => _focusRail(index + 1),
+            onNavigateToSidebar: _navigateToSidebar,
+            onBack: focusSearchInput,
+            onActivateItem: (hub, item) {
+              final person = _railPeople[item.id];
+              if (person == null) return false;
+              _openPerson(person);
+              return true;
+            },
           ),
-          PersonSearchHit(:final person) => PersonSearchRow(
-            key: Key(person.globalKey),
-            person: person,
-            focusNode: isFirst ? firstResultFocusNode : null,
-            showServerName: showServerName,
-            onNavigateLeft: _navigateToSidebar,
-            onNavigateUp: onNavigateUp,
-          ),
-        };
-      },
+        ),
+      );
+    }
+
+    if (hub.id == _peopleRailId) {
+      return _PeopleRail(
+        title: hub.title,
+        people: [for (final item in hub.items) ?_railPeople[item.id]],
+        firstFocusNode: _firstPersonFocusNode,
+        showServerName: context.watch<MultiServerProvider>().totalServerCount > 1,
+        onNavigateUp: () => _focusAbove(index),
+        onNavigateDown: isLast ? null : () => _focusRail(index + 1),
+        onNavigateToSidebar: _navigateToSidebar,
+      );
+    }
+
+    return HubSection(
+      key: _hubKeys.putIfAbsent(hub.id, GlobalKey<HubSectionState>.new),
+      hub: hub,
+      focusMemory: _focusMemory,
+      icon: _railIcon(hub),
+      onRefresh: updateItem,
+      onVerticalNavigation: (isUp) => navigateVerticalHubRows(
+        hubCount: _rails.length,
+        hubIndex: index,
+        isUp: isUp,
+        requestFocus: _focusRail,
+        onTopBoundary: focusSearchInput,
+      ),
+      onNavigateToSidebar: _navigateToSidebar,
+      onBack: focusSearchInput,
     );
   }
 
@@ -555,9 +591,7 @@ class _SearchScreenState extends State<SearchScreen>
                 hintText: t.search.hint,
                 tvTextInputController: _tvTextInputController,
                 onNavigateLeft: _navigateToSidebar,
-                onNavigateDown: searchResults.isNotEmpty && !isSearching
-                    ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)
-                    : null,
+                onNavigateDown: _rails.isNotEmpty && !isSearching ? () => _focusRail(0) : null,
                 onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
                 onBack: () {
                   if (searchController.text.isNotEmpty) {
@@ -583,7 +617,7 @@ class _SearchScreenState extends State<SearchScreen>
               SliverFillRemaining(
                 child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
               )
-            else if (searchResults.isEmpty)
+            else if (_rails.isEmpty)
               SliverFillRemaining(
                 child: StateMessageWidget(
                   message: t.messages.noResultsFound,
@@ -593,8 +627,16 @@ class _SearchScreenState extends State<SearchScreen>
                 ),
               )
             else ...[
-              if (_showFilterChips) _buildFilterChips(),
-              _buildResultsList(context),
+              for (var index = 0; index < _rails.length; index++)
+                SliverToBoxAdapter(
+                  key: ValueKey(_rails[index].id),
+                  child: Padding(
+                    padding: EdgeInsets.only(top: index == 0 ? 8 : (PlatformDetector.isTV() ? 0 : 16)),
+                    child: Builder(builder: (context) => _buildRail(context, index)),
+                  ),
+                ),
+              // Room for the last rail to scroll up toward the middle.
+              SliverToBoxAdapter(child: SizedBox(height: PlatformDetector.isTV() ? 160 : 24)),
             ],
           ],
         ),
@@ -607,27 +649,90 @@ final class _SearchUnavailableException implements Exception {
   const _SearchUnavailableException();
 }
 
-/// One chip of the search results filter strip.
-sealed class _SearchFilter {
-  const _SearchFilter();
-}
+/// The Cast & Crew rail on touch and desktop: round photos with names, in a
+/// row that scrolls sideways. Keyboard focus moves card to card; UP and DOWN
+/// leave for the neighboring rails.
+class _PeopleRail extends StatelessWidget {
+  const _PeopleRail({
+    required this.title,
+    required this.people,
+    required this.firstFocusNode,
+    required this.showServerName,
+    required this.onNavigateUp,
+    required this.onNavigateDown,
+    required this.onNavigateToSidebar,
+  });
 
-final class _AllResults extends _SearchFilter {
-  const _AllResults();
-}
-
-final class _KindResults extends _SearchFilter {
-  final MediaKind kind;
-
-  const _KindResults(this.kind);
+  final String title;
+  final List<MediaPerson> people;
+  final FocusNode firstFocusNode;
+  final bool showServerName;
+  final VoidCallback onNavigateUp;
+  final VoidCallback? onNavigateDown;
+  final VoidCallback onNavigateToSidebar;
 
   @override
-  bool operator ==(Object other) => other is _KindResults && other.kind == kind;
+  Widget build(BuildContext context) {
+    return SettingValueBuilder<int>(
+      pref: SettingsService.libraryDensity,
+      builder: (context, density, _) => _build(context, density),
+    );
+  }
 
-  @override
-  int get hashCode => kind.hashCode;
-}
-
-final class _PeopleResults extends _SearchFilter {
-  const _PeopleResults();
+  Widget _build(BuildContext context, int density) {
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 2, 8, 2),
+          child: Row(
+            children: [
+              const AppIcon(Symbols.person_rounded, fill: 1),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(title, style: Theme.of(context).textTheme.titleLarge, maxLines: 1, overflow: .ellipsis),
+              ),
+            ],
+          ),
+        ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = MediaGridDelegate.cellWidth(
+              context: context,
+              availableWidth: constraints.maxWidth,
+              density: density,
+              useWideAspectRatio: false,
+            );
+            return SizedBox(
+              // Round photo plus two caption lines and the focus scale room.
+              height: cardWidth + 52,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                itemCount: people.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final person = people[index];
+                  return SizedBox(
+                    width: cardWidth,
+                    child: PersonSearchRow(
+                      key: Key(person.globalKey),
+                      person: person,
+                      viewMode: ViewMode.grid,
+                      focusNode: index == 0 ? firstFocusNode : null,
+                      showServerName: showServerName,
+                      onNavigateLeft: index == 0 ? onNavigateToSidebar : null,
+                      onNavigateUp: onNavigateUp,
+                      onNavigateDown: onNavigateDown ?? () {},
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
 }

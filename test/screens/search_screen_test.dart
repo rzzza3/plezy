@@ -30,11 +30,11 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
-import 'package:plezy/widgets/backend_badge.dart';
-import 'package:plezy/widgets/focusable_media_card.dart';
-import 'package:plezy/widgets/focusable_tab_chip.dart';
+import 'package:plezy/widgets/hub_section.dart';
+import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:plezy/widgets/person_search_row.dart';
+import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -110,14 +110,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     expect(client.queries, ['movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(_result('Movie 1'), findsOneWidget);
 
     await tester.showKeyboard(find.byType(TextField));
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(_focusedRailId(), 'search_movie');
+    expect(_result('Movie 1'), findsOneWidget);
     expect(client.queries, ['movie']);
   });
 
@@ -135,7 +135,7 @@ void main() {
 
     expect(client.queries, ['movie']);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+    expect(_focusedRailId(), 'search_movie');
   });
 
   testWidgets('companion-remote submitSearchQuery closes native input and focuses results', (tester) async {
@@ -147,9 +147,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(_result('Movie 1'), findsOneWidget);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+    expect(_focusedRailId(), 'search_movie');
 
     // Selection updates must not re-arm the debounce into a second fetch.
     await tester.pump(const Duration(milliseconds: 600));
@@ -160,7 +160,7 @@ void main() {
     final searchInput = key.currentState! as SearchInputFocusable;
     searchInput.submitSearchQuery('movie');
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+    expect(_focusedRailId(), 'search_movie');
     expect(client.queries, ['movie']);
 
     // Returning to the input is the D-pad-up path from the first result
@@ -235,7 +235,7 @@ void main() {
 
     expect(client.queries, ['movie']);
     expect(failedClient.queries, ['movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(_result('Movie 1'), findsOneWidget);
     expect(find.text(t.messages.searchPartialResults), findsOneWidget);
   });
 
@@ -258,8 +258,8 @@ void main() {
     // One request per user action: hydrating the hidden keys must not race the
     // first query into running twice.
     expect(client.queries, ['movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
-    expect(find.text('Movie 2'), findsNothing);
+    expect(_result('Movie 1'), findsOneWidget);
+    expect(_result('Movie 2'), findsNothing);
   });
 
   testWidgets('hiding a library while results are shown re-runs the query', (tester) async {
@@ -276,14 +276,14 @@ void main() {
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
     expect(client.queries, ['movie']);
-    expect(find.text('Movie 2'), findsOneWidget);
+    expect(_result('Movie 2'), findsOneWidget);
 
     await hiddenLibraries.hideLibrary('server_1:2');
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie', 'movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
-    expect(find.text('Movie 2'), findsNothing);
+    expect(_result('Movie 1'), findsOneWidget);
+    expect(_result('Movie 2'), findsNothing);
   });
 
   testWidgets('all server failures render the failed state instead of empty results', (tester) async {
@@ -335,7 +335,7 @@ void main() {
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(_result('Movie 1'), findsOneWidget);
 
     client.searchError = MediaServerHttpException(
       type: MediaServerHttpErrorType.cancelled,
@@ -345,7 +345,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie', 'second']);
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(_result('Movie 1'), findsOneWidget);
     expect(find.text(t.explore.searchFailed), findsNothing);
     expect(find.text(t.errors.searchUnavailable), findsNothing);
   });
@@ -384,16 +384,16 @@ void main() {
 
     expect(serverOneClient.queries, ['shared']);
     expect(serverTwoClient.queries, ['shared']);
-    expect(find.byType(FocusableMediaCard), findsNWidgets(2));
+    expect(find.byType(MediaCard), findsNWidgets(2));
 
     // The exact-title match is the first, focused card. Keep the fetch open
     // to observe the screen while the item-only refresh is in flight.
-    final sourceFinder = find.byKey(Key(serverOneItem.globalKey));
-    final untouchedFinder = find.byKey(Key(serverTwoItem.globalKey));
+    final sourceFinder = _card(serverOneItem.globalKey);
+    final untouchedFinder = _card(serverTwoItem.globalKey);
     final sourceCardState = tester.state(sourceFinder);
     final untouchedCardState = tester.state(untouchedFinder);
     final focusedNode = FocusManager.instance.primaryFocus;
-    expect(focusedNode?.debugLabel, 'SearchFirstResult');
+    expect(_focusedRailId(), 'search_movie');
 
     final fetchGate = Completer<void>();
     final updated = serverOneItem.copyWith(title: 'Refreshed on Server One');
@@ -401,7 +401,7 @@ void main() {
       ..itemResult = updated
       ..fetchGate = fetchGate;
 
-    tester.widget<FocusableMediaCard>(sourceFinder).onRefresh!(serverOneItem);
+    tester.widget<MediaCard>(sourceFinder).onRefresh!(serverOneItem);
     await tester.pump();
 
     // This used to fan the bare id out to every server and drive the whole
@@ -411,7 +411,7 @@ void main() {
     expect(serverOneClient.queries, ['shared']);
     expect(serverTwoClient.queries, ['shared']);
     expect(find.byWidget(LoadingIndicatorBox.sliver), findsNothing);
-    expect(find.byType(FocusableMediaCard), findsNWidgets(2));
+    expect(find.byType(MediaCard), findsNWidgets(2));
     expect(tester.state(sourceFinder), same(sourceCardState));
     expect(tester.state(untouchedFinder), same(untouchedCardState));
     expect(FocusManager.instance.primaryFocus, same(focusedNode));
@@ -421,11 +421,11 @@ void main() {
 
     // The refresh lands as a merged copy (mergeFetchedMediaItem keeps the
     // search row's library/server context, #1970), not the fetched instance.
-    final refreshedItem = tester.widget<FocusableMediaCard>(sourceFinder).item as MediaItem;
+    final refreshedItem = tester.widget<MediaCard>(sourceFinder).item as MediaItem;
     expect(refreshedItem.title, 'Refreshed on Server One');
     expect(refreshedItem.serverId, 'server_1');
     expect(refreshedItem.serverName, 'Server One');
-    expect(tester.widget<FocusableMediaCard>(untouchedFinder).item, same(serverTwoItem));
+    expect(tester.widget<MediaCard>(untouchedFinder).item, same(serverTwoItem));
     expect(tester.state(sourceFinder), same(sourceCardState));
     expect(tester.state(untouchedFinder), same(untouchedCardState));
     expect(FocusManager.instance.primaryFocus, same(focusedNode));
@@ -433,90 +433,6 @@ void main() {
     expect(serverTwoClient.queries, ['shared']);
 
     await tester.pumpWidget(const SizedBox.shrink());
-  });
-
-  testWidgets('search rows show the library name when the server has several libraries', (tester) async {
-    final (client, key) = await _pumpTvSearchScreen(
-      tester,
-      items: [
-        testMediaItem(
-          id: 'movie_1',
-          backend: MediaBackend.silo,
-          kind: MediaKind.movie,
-          title: 'Movie 1',
-          serverId: 'server_1',
-          serverName: 'Server',
-          libraryId: '1',
-          libraryTitle: 'Movies',
-        ),
-        testMediaItem(
-          id: 'movie_2',
-          backend: MediaBackend.silo,
-          kind: MediaKind.movie,
-          title: 'Movie 2',
-          serverId: 'server_1',
-          serverName: 'Server',
-          libraryId: '2',
-          libraryTitle: 'Anime',
-        ),
-      ],
-      libraries: [_library('1', 'Movies'), _library('2', 'Anime')],
-    );
-    await tester.pumpAndSettle();
-
-    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
-    await tester.pumpAndSettle();
-
-    expect(client.queries, ['movie']);
-    // The source line always carries the full provenance: backend icon,
-    // server name, then library name.
-    expect(find.text('Server • Movies'), findsOneWidget);
-    expect(find.text('Server • Anime'), findsOneWidget);
-    expect(find.byType(BackendBadge), findsNWidgets(2));
-  });
-
-  testWidgets('library name back-fills from loaded libraries when the row only carries an id', (tester) async {
-    // Search rows can name their library only by id; the
-    // title must resolve against the loaded libraries without a request.
-    final (_, key) = await _pumpTvSearchScreen(
-      tester,
-      items: _twoLibraryMovies(),
-      libraries: [_library('1', 'Movies'), _library('2', 'Anime')],
-    );
-    await tester.pumpAndSettle();
-
-    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
-    await tester.pumpAndSettle();
-
-    expect(find.text('Server • Movies'), findsOneWidget);
-    expect(find.text('Server • Anime'), findsOneWidget);
-  });
-
-  testWidgets('no library label on a single-library server', (tester) async {
-    final (_, key) = await _pumpTvSearchScreen(
-      tester,
-      items: [
-        testMediaItem(
-          id: 'movie_1',
-          backend: MediaBackend.silo,
-          kind: MediaKind.movie,
-          title: 'Movie 1',
-          serverId: 'server_1',
-          serverName: 'Server',
-          libraryId: '1',
-          libraryTitle: 'Movies',
-        ),
-      ],
-      libraries: [_library('1', 'Movies')],
-    );
-    await tester.pumpAndSettle();
-
-    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
-    await tester.pumpAndSettle();
-
-    expect(find.text('Movie 1'), findsOneWidget);
-    expect(find.text('Server • Movies'), findsNothing);
-    expect(find.byType(BackendBadge), findsNothing);
   });
 
   testWidgets('card refresh keeps the library stamp', (tester) async {
@@ -539,7 +455,6 @@ void main() {
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
-    expect(find.text('Server • Movies'), findsOneWidget);
 
     // A fresh fetchItem carries no library context; the merge must keep the
     // stamp search applied.
@@ -551,70 +466,82 @@ void main() {
       serverId: 'server_1',
       serverName: 'Server',
     );
-    final cardFinder = find.byKey(Key(stamped.globalKey));
-    tester.widget<FocusableMediaCard>(cardFinder).onRefresh!(stamped);
+    final cardFinder = _card(stamped.globalKey);
+    tester.widget<MediaCard>(cardFinder).onRefresh!(stamped);
     await tester.pumpAndSettle();
 
     expect(client.fetchedItemIds, ['movie_1']);
-    expect(find.text('Movie 1 (Refreshed)'), findsOneWidget);
-    expect(find.text('Server • Movies'), findsOneWidget);
-    final refreshed = tester.widget<FocusableMediaCard>(cardFinder).item as MediaItem;
+    expect(_result('Movie 1 (Refreshed)'), findsOneWidget);
+    final refreshed = tester.widget<MediaCard>(cardFinder).item as MediaItem;
     expect(refreshed.libraryId, '1');
     expect(refreshed.libraryTitle, 'Movies');
   });
 
-  testWidgets('kind chips appear only when results span multiple kinds', (tester) async {
-    final (client, key) = await _pumpTvSearchScreen(tester);
+  testWidgets('rails run Movies, TV Shows, Cast & Crew, then the other kinds found', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      items: _mixedKindItems(),
+      people: [_christophWaltz()],
+      viewSize: const Size(1280, 2400),
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['paw']);
+    expect(_railTitles(tester), [
+      t.libraries.groupings.movies,
+      t.libraries.groupings.shows,
+      t.search.castAndCrew,
+      t.libraries.groupings.tracks,
+    ]);
+    // Titles show as image-only posters; people as round photos with names.
+    expect(tester.widget<TvBrowseRail>(_rail('search_movie')).fullCardLayout, isTrue);
+    expect(tester.widget<TvBrowseRail>(_rail('search_people')).fullCardLayout, isFalse);
+    expect(find.text('Christoph Waltz'), findsOneWidget);
+  });
+
+  testWidgets('episode results get no rail', (tester) async {
+    final episode = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.silo,
+      kind: MediaKind.episode,
+      title: 'Paw Patrol Rescue',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final (_, key) = await _pumpTvSearchScreen(tester, items: [episode]);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+
+    expect(_railTitles(tester), isEmpty);
+    expect(_result('Paw Patrol Rescue'), findsNothing);
+    expect(find.text(t.messages.noResultsFound), findsOneWidget);
+  });
+
+  testWidgets('a single kind shows a single rail', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(tester);
     await tester.pumpAndSettle();
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
 
-    // Single-kind results have nothing to filter.
-    expect(find.byType(FocusableTabChip), findsNothing);
-
-    client.items
-      ..clear()
-      ..addAll(_mixedKindItems());
-    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
-    await tester.pumpAndSettle();
-
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks), findsOneWidget);
+    expect(_railTitles(tester), [t.libraries.groupings.movies]);
+    expect(_result('Movie 1'), findsOneWidget);
   });
 
-  testWidgets('selecting a kind chip filters the list and All restores it', (tester) async {
-    final (_, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
-    await tester.pumpAndSettle();
-
-    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
-    await tester.pumpAndSettle();
-    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
-    expect(find.text('Paw Patrol Rescue'), findsOneWidget);
-
-    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies));
-    await tester.pumpAndSettle();
-    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
-    expect(find.text('Paw Patrol Rescue'), findsNothing);
-    expect(find.text('Paw Patrol Theme'), findsNothing);
-    expect(find.byType(FocusableMediaCard), findsOneWidget);
-
-    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all));
-    await tester.pumpAndSettle();
-    expect(find.byType(FocusableMediaCard), findsNWidgets(3));
-  });
-
-  testWidgets('a kind ranked out of the trimmed All view keeps its chip and full results', (tester) async {
-    // 100 exact-title episodes fill the ranked display budget; the weakly
+  testWidgets('a kind ranked out of the trimmed results still gets its rail', (tester) async {
+    // 100 exact-title movies fill the ranked display budget; the weakly
     // titled track only survives in the candidate pool behind it.
     final items = [
       for (var i = 0; i < 100; i++)
         testMediaItem(
-          id: 'episode_$i',
+          id: 'movie_$i',
           backend: MediaBackend.silo,
-          kind: MediaKind.episode,
+          kind: MediaKind.movie,
           title: 'Paw Patrol',
           serverId: 'server_1',
           serverName: 'Server',
@@ -634,66 +561,38 @@ void main() {
     (key.currentState! as SearchInputFocusable).submitSearchQuery('Paw Patrol');
     await tester.pumpAndSettle();
 
-    // The track lost the ranked top-100, but its chip derives from the
-    // pre-rank pool, so it must still be offered and show its rows.
-    final tracksChip = find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks);
-    expect(tracksChip, findsOneWidget);
-
-    await tester.tap(tracksChip);
-    await tester.pumpAndSettle();
-    expect(find.byType(FocusableMediaCard), findsOneWidget);
-    expect(find.text('Underwater Instrumental Extended Version (paw remix)'), findsOneWidget);
+    expect(_railTitles(tester), [t.libraries.groupings.movies, t.libraries.groupings.tracks]);
+    expect(tester.widget<TvBrowseRail>(_rail('search_movie')).hubs.single.items, hasLength(100));
+    expect(_result('Underwater Instrumental Extended Version (paw remix)'), findsOneWidget);
   });
 
-  testWidgets('the filter falls back to All when its kind vanishes from a refined query', (tester) async {
-    final (client, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
-    await tester.pumpAndSettle();
-
-    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes));
-    await tester.pumpAndSettle();
-    expect(find.byType(FocusableMediaCard), findsOneWidget);
-
-    client.items.removeWhere((item) => item.kind == MediaKind.episode);
-    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw patrol');
-    await tester.pumpAndSettle();
-
-    // Episodes are gone: the chip disappears and every remaining row shows.
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsNothing);
-    expect(find.byType(FocusableMediaCard), findsNWidgets(2));
-  });
-
-  testWidgets('D-pad walks first result to chips and back, and Select applies the filter', (tester) async {
+  testWidgets('D-pad walks down the rails and up to the search field', (tester) async {
     final (_, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
     await tester.pumpAndSettle();
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
-
-    // Up from the first result lands on the active (All) chip.
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-    await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChipAll');
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-    await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChip_movie');
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.select);
-    await tester.pumpAndSettle();
-    expect(find.byType(FocusableMediaCard), findsOneWidget);
-    expect(find.text('Paw Patrol Rescue'), findsNothing);
+    expect(_focusedRailId(), 'search_movie');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+    expect(_focusedRailId(), 'search_show');
 
-    // Up returns to the selected chip, not All.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(_focusedRailId(), 'search_track');
+
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChip_movie');
+    expect(_focusedRailId(), 'search_show');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(_focusedRailId(), 'search_movie');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
   });
 
   testWidgets('a query that matches only a person shows the person instead of No results', (tester) async {
@@ -704,7 +603,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.queries, ['waltz']);
-    expect(find.widgetWithText(PersonSearchRow, 'Christoph Waltz'), findsOneWidget);
+    expect(_railTitles(tester), [t.search.castAndCrew]);
+    expect(find.text('Christoph Waltz'), findsOneWidget);
     expect(find.text(t.messages.noResultsFound), findsNothing);
   });
 
@@ -737,9 +637,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.queries, ['waltz']);
-    final focused = FocusManager.instance.primaryFocus;
-    expect(focused?.debugLabel, 'SearchFirstResult');
-    expect(focused!.context!.findAncestorWidgetOfExactType<PersonSearchRow>()?.person.id, '38797');
+    expect(_focusedRailId(), 'search_people');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
@@ -749,16 +647,10 @@ void main() {
     expect(screen.serverId, 'server_1');
   });
 
-  testWidgets('the People chip needs another filter option beside it and shows only people', (tester) async {
+  testWidgets('Cast & Crew follows the title rails and leaves when no one matches', (tester) async {
     final (client, key) = await _pumpTvSearchScreen(tester, items: [], people: [_christophWaltz()]);
     await tester.pumpAndSettle();
     final searchInput = key.currentState! as SearchInputFocusable;
-
-    // People alone have nothing to filter.
-    searchInput.submitSearchQuery('waltz');
-    await tester.pumpAndSettle();
-    expect(find.byType(PersonSearchRow), findsOneWidget);
-    expect(find.byType(FocusableTabChip), findsNothing);
 
     client.items.add(
       testMediaItem(
@@ -772,49 +664,47 @@ void main() {
     );
     searchInput.submitSearchQuery('waltz with');
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.search.people), findsOneWidget);
-    expect(find.byType(FocusableMediaCard), findsOneWidget);
-    expect(find.byType(PersonSearchRow), findsOneWidget);
+    expect(_railTitles(tester), [t.libraries.groupings.movies, t.search.castAndCrew]);
 
-    // D-pad: up from the first result to All, then right past Movies to People.
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    // Down from the movies lands on the people; Select opens the filmography.
+    expect(_focusedRailId(), 'search_movie');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChipAll');
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-    await tester.pumpAndSettle();
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-    await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchPeopleChip');
+    expect(_focusedRailId(), 'search_people');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
-    expect(find.byType(FocusableMediaCard), findsNothing);
-    expect(find.widgetWithText(PersonSearchRow, 'Christoph Waltz'), findsOneWidget);
-
-    // Down lands on the person, now the first row.
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    expect(tester.widget<ActorMediaScreen>(find.byType(ActorMediaScreen)).personId, '38797');
+    Navigator.of(tester.element(find.byType(ActorMediaScreen))).pop();
     await tester.pumpAndSettle();
-    final focused = FocusManager.instance.primaryFocus;
-    expect(focused?.debugLabel, 'SearchFirstResult');
-    expect(focused!.context!.findAncestorWidgetOfExactType<PersonSearchRow>(), isNotNull);
 
-    // The filter holds across a refined query while people remain...
-    searchInput.submitSearchQuery('waltz with b');
-    await tester.pumpAndSettle();
-    expect(tester.widget<FocusableTabChip>(find.widgetWithText(FocusableTabChip, t.search.people)).isSelected, isTrue);
-    expect(find.byType(FocusableMediaCard), findsNothing);
-    expect(find.byType(PersonSearchRow), findsOneWidget);
-
-    // ...and falls back to All once they are gone.
     client.people = [];
     searchInput.submitSearchQuery('waltz with bashir');
     await tester.pumpAndSettle();
-    expect(find.byType(FocusableTabChip), findsNothing);
-    expect(find.byType(PersonSearchRow), findsNothing);
-    expect(find.widgetWithText(FocusableMediaCard, 'Waltz with Bashir'), findsOneWidget);
+    expect(_railTitles(tester), [t.libraries.groupings.movies]);
+    expect(find.text('Christoph Waltz'), findsNothing);
+  });
+
+  testWidgets('touch layout shows title rails and a row of people', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(
+      tester,
+      tv: false,
+      items: _mixedKindItems(),
+      people: [_christophWaltz()],
+      viewSize: const Size(1280, 2400),
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TvBrowseRail), findsNothing);
+    expect(
+      [for (final section in tester.widgetList<HubSection>(find.byType(HubSection))) section.hub.title],
+      [t.libraries.groupings.movies, t.libraries.groupings.shows, t.libraries.groupings.tracks],
+    );
+    expect(find.text(t.search.castAndCrew), findsOneWidget);
+    expect(find.widgetWithText(PersonSearchRow, 'Christoph Waltz'), findsOneWidget);
   });
 }
 
@@ -831,10 +721,12 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   List<_FakeMediaServerClient> additionalClients = const [],
   HiddenLibrariesProvider? hiddenLibraries,
   List<MediaLibrary> libraries = const [],
+  // Taller views build every rail; lower ones are lazy slivers otherwise.
+  Size viewSize = const Size(1280, 720),
 }) async {
   TvDetectionService.debugSetAppleTVOverride(tv);
   tester.view.devicePixelRatio = 1.0;
-  tester.view.physicalSize = const Size(1280, 720);
+  tester.view.physicalSize = viewSize;
   addTearDown(() {
     tester.view.resetDevicePixelRatio();
     tester.view.resetPhysicalSize();
@@ -919,14 +811,22 @@ List<MediaItem> _twoLibraryMovies() => [
   ),
 ];
 
-/// One result per kind on the same single-library server, so kind chips have
-/// something to filter.
+/// One result per kind on the same single-library server, so each lands in
+/// its own rail.
 List<MediaItem> _mixedKindItems() => [
   testMediaItem(
     id: 'movie_1',
     backend: MediaBackend.silo,
     kind: MediaKind.movie,
     title: 'Paw Patrol: The Movie',
+    serverId: 'server_1',
+    serverName: 'Server',
+  ),
+  testMediaItem(
+    id: 'show_1',
+    backend: MediaBackend.silo,
+    kind: MediaKind.show,
+    title: 'Paw Patrol',
     serverId: 'server_1',
     serverName: 'Server',
   ),
@@ -962,6 +862,28 @@ MediaPerson _christophWaltz() => MediaPerson(
   serverId: ServerId('server_1'),
   serverName: 'Server',
 );
+
+/// A result card showing [title], in whichever rail holds it.
+Finder _result(String title) => find.byWidgetPredicate(
+  (widget) => widget is MediaCard && widget.item is MediaItem && (widget.item as MediaItem).title == title,
+);
+
+/// The result card for the item with [globalKey].
+Finder _card(String globalKey) => find.byWidgetPredicate(
+  (widget) => widget is MediaCard && widget.item is MediaItem && (widget.item as MediaItem).globalKey == globalKey,
+);
+
+/// The TV rail showing the hub [id].
+Finder _rail(String id) => find.byWidgetPredicate((widget) => widget is TvBrowseRail && widget.hubs.single.id == id);
+
+/// The TV rail titles, top to bottom.
+List<String> _railTitles(WidgetTester tester) => [
+  for (final rail in tester.widgetList<TvBrowseRail>(find.byType(TvBrowseRail))) rail.hubs.single.title,
+];
+
+/// The hub id of the TV rail holding focus, or null when focus is elsewhere.
+String? _focusedRailId() =>
+    FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TvBrowseRail>()?.hubs.single.id;
 
 TextEditingController _searchController(WidgetTester tester) {
   return tester.widget<FocusableTextField>(find.byType(FocusableTextField)).controller;

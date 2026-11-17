@@ -412,7 +412,7 @@
     "tryDifferentTerm": "Probeer een andere zoekterm",
     "searchYourMedia": "Zoek in je media",
     "enterTitleActorOrKeyword": "Voer een titel, acteur of trefwoord in",
-    "people": ""
+    "castAndCrew": "Cast & crew"
   },
   "hotkeys": {
     "setShortcutFor": "Stel sneltoets in voor ${actionName}",

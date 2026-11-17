@@ -511,6 +511,7 @@ class _Translations$search$hu extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Próbálj másik keresési kifejezést';
 	@override String get searchYourMedia => 'Keresés a saját médiatartalmak között';
 	@override String get enterTitleActorOrKeyword => 'Adj meg egy címet, színészt vagy kulcsszót';
+	@override String get castAndCrew => 'Szereplők és stáb';
 }
 
 // Path: hotkeys
@@ -2814,6 +2815,7 @@ extension on TranslationsHu {
 			'search.tryDifferentTerm' => 'Próbálj másik keresési kifejezést',
 			'search.searchYourMedia' => 'Keresés a saját médiatartalmak között',
 			'search.enterTitleActorOrKeyword' => 'Adj meg egy címet, színészt vagy kulcsszót',
+			'search.castAndCrew' => 'Szereplők és stáb',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Billentyűparancs beállítása ehhez: ${actionName}',
 			'hotkeys.clearShortcut' => 'Billentyűparancs törlése',
 			'hotkeys.noShortcutSet' => 'Nincs billentyűparancs beállítva',
@@ -2940,9 +2942,9 @@ extension on TranslationsHu {
 			'fileInfo.optimizedVersion' => 'Optimalizált verzió',
 			'fileInfo.optimizationTarget' => 'Optimalizálási cél',
 			'fileInfo.deletedAt' => 'Törölve',
-			'fileInfo.remoteSource' => 'Távoli forrás',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'Távoli forrás',
 			'fileInfo.infiniteStream' => 'Végtelen adatfolyam',
 			'fileInfo.directPlay' => 'Közvetlen lejátszás',
 			'fileInfo.directStream' => 'Közvetlen adatfolyam',
@@ -3454,9 +3456,9 @@ extension on TranslationsHu {
 			'explore.relation.prequel' => 'Előzmény',
 			'explore.relation.sequel' => 'Folytatás',
 			'explore.relation.sideStory' => 'Melléktörténet',
-			'explore.relation.spinOff' => 'Spin-off',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'Spin-off',
 			'explore.relation.alternativeVersion' => 'Alternatív verzió',
 			'explore.relation.summary' => 'Összefoglaló',
 			'explore.relation.parentStory' => 'Fő történet',
@@ -3968,9 +3970,9 @@ extension on TranslationsHu {
 			'seerr.noTags' => 'Nincsenek címkék',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (alapértelmezett)',
 			'seerr.animeNote' => 'Ez a sorozat anime.',
-			'seerr.requestSubmitted' => 'Igénylés elküldve',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'Igénylés elküldve',
 			'seerr.requestFailed' => ({required Object error}) => 'Az igénylés nem sikerült: ${error}',
 			'seerr.requestsLoadFailed' => 'Nem sikerült betölteni az igénylési opciókat',
 			'seerr.nothingToRequest' => 'Minden elem már elérhető vagy igényelve van.',

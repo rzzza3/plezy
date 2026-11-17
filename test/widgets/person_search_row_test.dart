@@ -42,7 +42,40 @@ void main() {
     expect(tester.getSize(find.byType(PersonSearchRow)).height, lessThan(squareMediaRowHeight));
     expect(tester.getTopLeft(find.text('Christoph Waltz')).dx, mediaTitleStart);
   });
+
+  testWidgets('a grid person card fits its cell with a round avatar above the name', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: monoTheme(dark: true),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 150,
+              height: 250,
+              child: PersonSearchRow(person: _person, viewMode: ViewMode.grid),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    final avatar = tester.getRect(find.byType(ClipOval));
+    expect(avatar.width, avatar.height);
+    expect(avatar.width, lessThanOrEqualTo(150));
+    expect(tester.getTopLeft(find.text('Christoph Waltz')).dy, greaterThanOrEqualTo(avatar.bottom));
+    expect(find.text('Actor'), findsOneWidget);
+  });
 }
+
+final _person = MediaPerson(
+  id: '38797',
+  name: 'Christoph Waltz',
+  thumbPath: 'https://example.invalid/christoph-waltz.jpg',
+  credit: PersonCredit.actor,
+  backend: MediaBackend.silo,
+  serverId: ServerId('srv-1'),
+);
 
 Future<void> _pumpRow(WidgetTester tester) {
   return tester.pumpWidget(

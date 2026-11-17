@@ -727,102 +727,110 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           const Spacer(),
           // TV only: a fullscreen leanback app hides the system clock, while a
           // phone status bar and a desktop menu bar already show one.
-          if (PlatformDetector.isTV()) ...[
-            SystemClock(
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: foregroundColor, fontWeight: .w500),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
-            builder: (context, watchTogether, companionRemote, _) {
-              final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
-              void openWatchTogether() =>
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen()));
-              void openCompanionRemote() {
-                if (isDesktop) {
-                  RemoteSessionDialog.show(context);
-                } else {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
+          if (PlatformDetector.isTV())
+            // TV shows only the clock here; refresh, Watch Together and the
+            // companion remote stay on phones and desktops.
+            Padding(
+              // Inset from the screen corner, roughly level with the sidebar's top.
+              padding: const EdgeInsets.only(top: 20, right: 24),
+              child: SystemClock(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: foregroundColor, fontWeight: .w500),
+              ),
+            )
+          else
+            Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
+              builder: (context, watchTogether, companionRemote, _) {
+                final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
+                void openWatchTogether() =>
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen()));
+                void openCompanionRemote() {
+                  if (isDesktop) {
+                    RemoteSessionDialog.show(context);
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
+                  }
                 }
-              }
 
-              return FocusableActionBar(
-                key: _actionBarKey,
-                onNavigateLeft: _navigateToSidebar,
-                onNavigateDown: _focusContentFromAppBar,
-                actions: [
-                  FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: manualRefresh),
-                  // Watch Together
-                  FocusableAction(
-                    onPressed: openWatchTogether,
-                    child: Stack(
-                      children: [
-                        IconButton(
-                          icon: AppIcon(
-                            Symbols.group_rounded,
-                            fill: watchTogether.isInSession ? 1 : 0,
-                            color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
+                return FocusableActionBar(
+                  key: _actionBarKey,
+                  onNavigateLeft: _navigateToSidebar,
+                  onNavigateDown: _focusContentFromAppBar,
+                  actions: [
+                    FocusableAction(
+                      icon: Symbols.refresh_rounded,
+                      iconColor: foregroundColor,
+                      onPressed: manualRefresh,
+                    ),
+                    // Watch Together
+                    FocusableAction(
+                      onPressed: openWatchTogether,
+                      child: Stack(
+                        children: [
+                          IconButton(
+                            icon: AppIcon(
+                              Symbols.group_rounded,
+                              fill: watchTogether.isInSession ? 1 : 0,
+                              color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
+                            ),
+                            onPressed: openWatchTogether,
+                            tooltip: t.watchTogether.title,
                           ),
-                          onPressed: openWatchTogether,
-                          tooltip: t.watchTogether.title,
-                        ),
-                        if (watchTogether.isInSession && watchTogether.participantCount > 1)
-                          Positioned(
-                            top: 6,
-                            right: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                borderRadius: const BorderRadius.all(Radius.circular(8)),
-                              ),
-                              child: Text(
-                                '${watchTogether.participantCount}',
-                                style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
+                          if (watchTogether.isInSession && watchTogether.participantCount > 1)
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                                ),
+                                child: Text(
+                                  '${watchTogether.participantCount}',
+                                  style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  // Companion Remote
-                  FocusableAction(
-                    onPressed: openCompanionRemote,
-                    child: Stack(
-                      children: [
-                        IconButton(
-                          icon: AppIcon(
-                            Symbols.phone_android_rounded,
-                            fill: companionRemote.isConnected ? 1 : 0,
-                            color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
+                    // Companion Remote
+                    FocusableAction(
+                      onPressed: openCompanionRemote,
+                      child: Stack(
+                        children: [
+                          IconButton(
+                            icon: AppIcon(
+                              Symbols.phone_android_rounded,
+                              fill: companionRemote.isConnected ? 1 : 0,
+                              color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
+                            ),
+                            onPressed: openCompanionRemote,
+                            tooltip: t.companionRemote.title,
                           ),
-                          onPressed: openCompanionRemote,
-                          tooltip: t.companionRemote.title,
-                        ),
-                        if (companionRemote.isConnected)
-                          Positioned(
-                            top: 6,
-                            right: 6,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                                border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
+                          if (companionRemote.isConnected)
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                  border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  // User menu — profiles + sign out. On TV the sidebar's
-                  // profile row opens it instead.
-                  if (!PlatformDetector.isTV()) _buildUserMenuAction(context),
-                ],
-              );
-            },
-          ),
+                    // User menu — profiles + sign out.
+                    _buildUserMenuAction(context),
+                  ],
+                );
+              },
+            ),
         ],
       ),
     );

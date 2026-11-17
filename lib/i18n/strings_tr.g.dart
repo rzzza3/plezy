@@ -511,6 +511,7 @@ class _Translations$search$tr extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Farklı bir arama terimi deneyin';
 	@override String get searchYourMedia => 'Medyanızda arayın';
 	@override String get enterTitleActorOrKeyword => 'Başlık, oyuncu veya anahtar kelime girin';
+	@override String get castAndCrew => 'Oyuncular ve ekip';
 }
 
 // Path: hotkeys
@@ -2814,6 +2815,7 @@ extension on TranslationsTr {
 			'search.tryDifferentTerm' => 'Farklı bir arama terimi deneyin',
 			'search.searchYourMedia' => 'Medyanızda arayın',
 			'search.enterTitleActorOrKeyword' => 'Başlık, oyuncu veya anahtar kelime girin',
+			'search.castAndCrew' => 'Oyuncular ve ekip',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} için Kısayol Ayarla',
 			'hotkeys.clearShortcut' => 'Kısayolu temizle',
 			'hotkeys.noShortcutSet' => 'Kısayol ayarlanmadı',
@@ -2940,9 +2942,9 @@ extension on TranslationsTr {
 			'fileInfo.optimizedVersion' => 'Optimize Edilmiş Sürüm',
 			'fileInfo.optimizationTarget' => 'Optimizasyon Hedefi',
 			'fileInfo.deletedAt' => 'Silindi',
-			'fileInfo.remoteSource' => 'Uzak Kaynak',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.remoteSource' => 'Uzak Kaynak',
 			'fileInfo.infiniteStream' => 'Sonsuz Akış',
 			'fileInfo.directPlay' => 'Doğrudan Oynatma',
 			'fileInfo.directStream' => 'Doğrudan Akış',
@@ -3454,9 +3456,9 @@ extension on TranslationsTr {
 			'explore.relation.prequel' => 'Prequel',
 			'explore.relation.sequel' => 'Sequel',
 			'explore.relation.sideStory' => 'Yan hikâye',
-			'explore.relation.spinOff' => 'Spin-off',
 			_ => null,
 		} ?? switch (path) {
+			'explore.relation.spinOff' => 'Spin-off',
 			'explore.relation.alternativeVersion' => 'Alternatif versiyon',
 			'explore.relation.summary' => 'Özet',
 			'explore.relation.parentStory' => 'Ana hikâye',
@@ -3968,9 +3970,9 @@ extension on TranslationsTr {
 			'seerr.noTags' => 'Etiket yok',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (Varsayılan)',
 			'seerr.animeNote' => 'Bu dizi bir anime.',
-			'seerr.requestSubmitted' => 'İstek gönderildi',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.requestSubmitted' => 'İstek gönderildi',
 			'seerr.requestFailed' => ({required Object error}) => 'İstek başarısız oldu: ${error}',
 			'seerr.requestsLoadFailed' => 'İstek seçenekleri yüklenemedi',
 			'seerr.nothingToRequest' => 'Her şey zaten mevcut veya istendi.',

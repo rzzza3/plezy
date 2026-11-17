@@ -202,16 +202,22 @@ mixin DebouncedMediaSearch<T extends StatefulWidget, R> on State<T> {
     );
   }
 
+  /// Move focus to the first result. Screens whose results are not a single
+  /// list (search rails) override this.
+  void focusFirstResult() {
+    firstResultFocusNode.requestFocus();
+    // Focus-gain auto-scroll is keyboard/D-pad-only, so reveal explicitly:
+    // a touch OSK submit must still jump to the results.
+    scrollContextToCenter(firstResultFocusNode.context);
+  }
+
   /// OSK "Search" / hardware Enter on TV: jump to results, or force the
   /// pending search to run now.
   void handleSearchSubmit() {
     final query = searchController.text.trim();
     if (query.isEmpty) return;
     if (searchResults.isNotEmpty && !isSearching && query == lastSearchedQuery) {
-      firstResultFocusNode.requestFocus();
-      // Focus-gain auto-scroll is keyboard/D-pad-only, so reveal explicitly:
-      // a touch OSK submit must still jump to the results.
-      scrollContextToCenter(firstResultFocusNode.context);
+      focusFirstResult();
       return;
     }
     if ((_debounceTimer?.isActive ?? false) || !isSearching) {

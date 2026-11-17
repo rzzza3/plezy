@@ -412,7 +412,7 @@
     "tryDifferentTerm": "Опитайте с различна дума за търсене",
     "searchYourMedia": "Търсете в медийното си съдържание",
     "enterTitleActorOrKeyword": "Въведете заглавие, актьор или ключова дума",
-    "people": ""
+    "castAndCrew": "Актьори и екип"
   },
   "hotkeys": {
     "setShortcutFor": "Задай клавишна комбинация за ${actionName}",

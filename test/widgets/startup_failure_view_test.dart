@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/services/app_exit_service.dart';
+import 'package:plezy/services/log_upload_service.dart';
 import 'package:plezy/services/startup_diagnostics.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/startup_failure_view.dart';
@@ -87,7 +88,16 @@ void main() {
     expect(find.text(t.startup.failedBody), findsOneWidget);
   });
 
+  testWidgets('a build that names no endpoint offers no upload', (tester) async {
+    await _pumpView(tester, restartRequired: true);
+
+    expect(find.byKey(startupFailureCopyKey), findsOneWidget);
+    expect(find.byKey(startupFailureUploadKey), findsNothing);
+  });
+
   testWidgets('a pending restart withdraws every action that would touch the store', (tester) async {
+    debugLogUploadEndpoint = 'https://logs.example.test/logs';
+    addTearDown(() => debugLogUploadEndpoint = null);
     await _pumpView(tester, restartRequired: true);
 
     // Withdrawn rather than disabled: a greyed-out Retry still invites another
