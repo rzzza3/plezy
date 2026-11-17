@@ -16,6 +16,7 @@ import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../navigation/main_screen_scope.dart';
 import '../screens/hub_detail_screen.dart';
 import '../services/device_performance.dart';
@@ -23,6 +24,7 @@ import '../services/settings_service.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
+import '../utils/formatters.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
 import 'animated_dim_scrim.dart';
@@ -33,6 +35,7 @@ import 'horizontal_scroll_with_arrows.dart';
 import 'listenable_selector.dart';
 import 'media_card.dart';
 import 'media_context_menu.dart';
+import 'media_progress_bar.dart';
 import 'optimized_media_image.dart';
 import 'person_avatar.dart';
 import 'rasterized_gradient.dart';
@@ -254,6 +257,23 @@ class TvBrowseRailLayout {
   static double minScrollExtentFor(TvBrowseRailLayoutMetrics metrics) =>
       metrics.hasLeading ? -(metrics.railEdgePadding + metrics.cardWidth) : 0.0;
 
+  /// Whether a hub's row morphs its focused poster into a wide backdrop card
+  /// (see [TvBrowseRail.expandFocusedPosters]): rows of 2:3 posters only, and
+  /// none with a leading options slot, whose negative scroll region the
+  /// pinned-to-start scrolling does not model.
+  static bool usesPosterMorph(MediaHub hub, TvBrowseRailLayoutMetrics metrics) =>
+      hub.items.isNotEmpty &&
+      !metrics.isPersonHub &&
+      !metrics.useWideLayout &&
+      !metrics.isMixedHub &&
+      !metrics.hasLeading &&
+      (metrics.posterHeight - metrics.posterWidth * 1.5).abs() < 0.5;
+
+  /// How much wider the focused card of a morphing row is than a poster: it
+  /// grows to 16:9 at the poster's height.
+  static double posterMorphExtraWidth(TvBrowseRailLayoutMetrics metrics) =>
+      metrics.posterHeight * 16 / 9 - metrics.posterWidth;
+
   static double itemExtentForIndex({required int index, required TvBrowseRailLayoutMetrics metrics}) {
     assert(index >= 0);
     return metrics.cardWidth + metrics.itemGap;
@@ -425,6 +445,11 @@ class TvBrowseRail extends StatefulWidget {
   /// centered underneath, instead of square photos.
   final bool circularPersonCards;
 
+  /// Rows of posters show image-only cards, and the focused one grows into a
+  /// wide backdrop with its logo, pinned at the row's start, while the row
+  /// slides past it (see [TvBrowseRailLayout.usesPosterMorph]).
+  final bool expandFocusedPosters;
+
   const TvBrowseRail({
     super.key,
     required this.hubs,
@@ -465,6 +490,7 @@ class TvBrowseRail extends StatefulWidget {
     this.showTimeLeft = false,
     this.fullCardLayout,
     this.circularPersonCards = false,
+    this.expandFocusedPosters = true,
   });
 
   @override
@@ -493,6 +519,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   final Map<String, TvRailTrailing> _lastTrailingByHubKey = {};
   final Map<String, GlobalKey<MediaContextMenuState>> _leadingMenuKeys = {};
   final Map<int, _HubArtworkDim> _artworkDims = {};
+
+  /// Per-hub morph state of the rows that expand their focused poster.
+  final Map<String, _PosterMorph> _posterMorphs = {};
 
   int _hubIndex = 0;
   int _itemIndex = 0;
@@ -662,6 +691,8 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       if (selectedInitialItem || followedFocusedItem || autoAdvancedFromLeading || enteredAtEdge) {
         _scrollToItem(animate: false);
       }
+      // Items came, went or moved: re-pin every morphing row in place.
+      _updatePosterMorphs(animate: false);
       if (shouldJumpAlignActiveHub) {
         _scrollActiveHubToTop(animate: false);
       } else if (shouldAnimateAlignActiveHub) {
@@ -723,6 +754,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       dim.dispose();
     }
     _focusModel.dispose();
+    for (final morph in _posterMorphs.values) {
+      morph.dispose();
+    }
     for (final controller in _scrollControllers.values) {
       controller.dispose();
     }
@@ -739,6 +773,36 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     // (per-card focus wrappers, headers and artwork dim), so a focus flip
     // repaints only those subtrees instead of rebuilding every visible row.
     _focusModel.setRailFocus(_focusNode.hasFocus);
+    _updatePosterMorphs();
+  }
+
+  /// Points every morphing row at where it should rest: the active hub's
+  /// focused slot pinned at its start and expanded while the rail has focus;
+  /// every other row collapsed where it was left.
+  void _updatePosterMorphs({bool animate = true}) {
+    for (var i = 0; i < widget.hubs.length; i++) {
+      final key = _hubKey(widget.hubs[i]);
+      final morph = _posterMorphs[key];
+      if (morph == null) continue;
+      final active = i == _hubIndex;
+      morph.retarget(
+        position: active ? _itemIndex.toDouble() : morph.targetPosition,
+        amount: active && _focusNode.hasFocus ? 1 : 0,
+        animate: animate,
+      );
+      if (!animate) _syncPosterMorphScroll(key);
+    }
+  }
+
+  /// Holds a morphing row's scroll at its pinned slot (see [_PosterMorph]).
+  void _syncPosterMorphScroll(String hubKey) {
+    final morph = _posterMorphs[hubKey];
+    final controller = _scrollControllers[hubKey];
+    final metrics = _metricsByHub[hubKey];
+    if (morph == null || controller == null || metrics == null || controller.positions.length != 1) return;
+    final position = controller.position;
+    final target = math.max(0.0, morph.position * (metrics.cardWidth + metrics.itemGap));
+    if ((position.pixels - target).abs() >= 0.01) position.jumpTo(target);
   }
 
   void _resetLongPressState() {
@@ -947,6 +1011,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _focusModel.set(_hubIndex, _itemIndex);
     _notifyFocusedItem();
     _notifyActiveHubChanged();
+    // The row left collapses and the one entered expands, both animated; the
+    // jump below then finds them already aimed and only aligns the scroll.
+    _updatePosterMorphs();
     _scrollToItemAfterLayout(animate: false);
     // Section offsets are computed at build, so a laid-out list can start the
     // vertical glide in this frame instead of one frame later.
@@ -1032,6 +1099,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     if (active == null || _hubKey(active) != _hubKey(hub) || _itemAtSlot(hub, index) == null || _itemIndex == index) {
       return;
     }
+    // Expanding the hovered card would slide the row under the pointer onto
+    // the next card, and on down the row.
+    if (_posterMorphs.containsKey(_hubKey(hub))) return;
     _hasUserInteracted = true;
     _itemIndex = index;
     _hasUserChangedItem = true;
@@ -1060,6 +1130,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _rememberFocus(hub);
     _notifyFocusedItem();
     if (hubChanged) _notifyActiveHubChanged();
+    _updatePosterMorphs();
     _scrollActiveHubToTop();
     _scrollToItemAfterLayout(animate: false);
   }
@@ -1071,6 +1142,10 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   void _scrollToItem({bool animate = true}) {
     final hub = _activeHub;
     if (hub == null) return;
+    if (_posterMorphs.containsKey(_hubKey(hub))) {
+      _updatePosterMorphs(animate: animate);
+      return;
+    }
     final controller = _scrollControllers[_hubKey(hub)];
     if (controller == null) return;
     if (controller.positions.length != 1) return;
@@ -1112,8 +1187,15 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     int initialItemIndex, {
     required bool hasTrailing,
     required bool isActiveHub,
+    bool posterMorph = false,
   }) {
     return _scrollControllers.putIfAbsent(_hubKey(hub), () {
+      // A morphing row rests with its slot pinned at the start.
+      if (posterMorph) {
+        return ScrollController(
+          initialScrollOffset: math.max(0, initialItemIndex) * (metrics.cardWidth + metrics.itemGap),
+        );
+      }
       final maxScrollExtent = TvBrowseRailLayout.estimatedMaxScrollExtent(
         hub: hub,
         metrics: metrics,
@@ -1135,6 +1217,22 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       return ScrollController(
         initialScrollOffset: isActiveHub ? initialScrollOffset : math.max(0.0, initialScrollOffset),
       );
+    });
+  }
+
+  /// The morph state of a hub's row when [enabled], created resting at [slot];
+  /// null (dropping any earlier state) when the row does not morph.
+  _PosterMorph? _posterMorphForHub(String hubKey, {required bool enabled, required int slot, required bool expanded}) {
+    if (!enabled) {
+      final stale = _posterMorphs.remove(hubKey);
+      // Its listeners unsubscribe as this build replaces their subtree.
+      if (stale != null) WidgetsBinding.instance.addPostFrameCallback((_) => stale.dispose());
+      return null;
+    }
+    return _posterMorphs.putIfAbsent(hubKey, () {
+      final morph = _PosterMorph(vsync: this, position: slot.toDouble(), amount: expanded ? 1 : 0);
+      morph.addListener(() => _syncPosterMorphScroll(hubKey));
+      return morph;
     });
   }
 
@@ -1623,6 +1721,13 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     final totalCount = _totalItemCount(hub);
     final inactiveIndex = widget.focusMemory.getForHubOnly(_hubKey(hub), totalCount, fallback: _defaultSlotFor(hub));
     final focusedIndex = isActiveHub ? _itemIndex : inactiveIndex;
+    final hubKey = _hubKey(hub);
+    final morph = _posterMorphForHub(
+      hubKey,
+      enabled: widget.expandFocusedPosters && TvBrowseRailLayout.usesPosterMorph(hub, metrics),
+      slot: focusedIndex,
+      expanded: isActiveHub && _focusNode.hasFocus,
+    );
     final scrollController = _scrollControllerForHub(
       hub,
       metrics,
@@ -1630,8 +1735,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       focusedIndex,
       hasTrailing: hasTrailing,
       isActiveHub: isActiveHub,
+      posterMorph: morph != null,
     );
-    _metricsByHub[_hubKey(hub)] = metrics;
+    _metricsByHub[hubKey] = metrics;
 
     final rail = _buildHubRailList(
       hub: hub,
@@ -1642,6 +1748,8 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       fullCardLayout: fullCardLayout,
       scrollController: scrollController,
       totalCount: totalCount,
+      morph: morph,
+      railViewportWidth: railViewportWidth,
     );
     final rightOverflow = metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap;
 
@@ -1671,8 +1779,26 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     required bool fullCardLayout,
     required ScrollController scrollController,
     required int totalCount,
+    _PosterMorph? morph,
+    double railViewportWidth = 0,
   }) {
     final leadingCount = _leadingCountFor(hub);
+    final itemDelegate = SliverChildBuilderDelegate(
+      addAutomaticKeepAlives: false,
+      addSemanticIndexes: false,
+      childCount: totalCount - leadingCount,
+      (context, childIndex) => _buildRailSlot(
+        context,
+        hub: hub,
+        hubIndex: hubIndex,
+        itemIndex: childIndex + leadingCount,
+        episodePosterMode: episodePosterMode,
+        metrics: metrics,
+        scale: scale,
+        fullCardLayout: fullCardLayout,
+        morph: morph,
+      ),
+    );
     const centerSliverKey = ValueKey('tv_browse_rail_row_center');
     return HorizontalScrollWithArrows(
       controller: scrollController,
@@ -1703,108 +1829,145 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
             ),
           SliverPadding(
             key: centerSliverKey,
-            padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
-            sliver: SliverFixedExtentList(
-              // A fixed extent keeps all sliver offset and child-index math O(1).
-              itemExtent: TvBrowseRailLayout.itemExtentForIndex(index: 0, metrics: metrics),
-              delegate: SliverChildBuilderDelegate(
-                addAutomaticKeepAlives: false,
-                addSemanticIndexes: false,
-                childCount: totalCount - leadingCount,
-                (context, childIndex) {
-                  final itemIndex = childIndex + leadingCount;
-                  // Focus is observed through _focusModel so a d-pad move or a
-                  // rail focus flip rebuilds only the cheap wrapper of the two
-                  // affected cards; the card content below is passed through as
-                  // a stable child.
-                  bool isItemFocused() => _focusModel.railHasFocus && _focusModel.position == (hubIndex, itemIndex);
-
-                  if (_isTrailingSlot(hub, itemIndex)) {
-                    return Padding(
-                      padding: .only(right: metrics.itemGap),
-                      child: Align(
-                        alignment: .topLeft,
-                        child: ListenableSelector<bool>(
-                          listenable: _focusModel,
-                          selector: isItemFocused,
-                          builder: (context, isFocused, _) => _buildTrailingSlot(
-                            context,
-                            hub,
-                            hubIndex,
-                            itemIndex,
-                            metrics: metrics,
-                            isFocused: isFocused,
-                            scale: scale,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  final item = hub.items[childIndex];
-                  // Record: (focused, glow shown). The glow is additionally gated on
-                  // the vertical scroll being idle — it paints in the root overlay,
-                  // unclipped by the rail's viewport, so on UP moves it would flash
-                  // over the spotlight while the target row is still offscreen. The
-                  // selection collapses to (false, false) for unfocused cards, so the
-                  // flag flip repaints only the focused card.
-                  final focusableCard = ListenableSelector<(bool, bool)>(
-                    listenable: _focusModel,
-                    selector: () {
-                      final isFocused = isItemFocused();
-                      return (isFocused, isFocused && !_focusModel.verticalScrollActive);
-                    },
-                    builder: (context, focus, child) => FocusBuilders.buildLockedFocusWrapper(
-                      context: context,
-                      isFocused: focus.$1,
-                      borderRadius: tokens(context).radiusSm,
-                      focusScale: fullCardLayout ? TvBrowseRailLayout.fullCardFocusScale : FocusTheme.focusScale,
-                      useFocusGlow: fullCardLayout,
-                      showGlow: focus.$2,
-                      // The card draws the border itself (poster rect for
-                      // standard cards, whole card when full-bleed).
-                      delegateFocusBorder: true,
-                      glowSize: fullCardLayout ? Size(metrics.cardWidth, metrics.posterHeight) : null,
-                      onTap: () {
-                        _selectHubItem(hub, hubIndex, itemIndex);
-                        unawaited(_activateCurrentItem());
-                      },
-                      onLongPress: metrics.isPersonHub
-                          ? null
-                          : () {
-                              _selectHubItem(hub, hubIndex, itemIndex);
-                              _cardKeyFor(hub, itemIndex).currentState?.showContextMenu();
-                            },
-                      child: child!,
-                    ),
-                    // MergeSemantics: one node per card (MediaCard merges
-                    // internally) — the per-frame semantics pass scales with
-                    // node count on TV boxes with an accessibility service.
-                    child: _buildHubCard(
-                      context,
-                      hub: hub,
-                      hubIndex: hubIndex,
-                      item: item,
-                      itemIndex: itemIndex,
-                      episodePosterMode: episodePosterMode,
-                      metrics: metrics,
-                      scale: scale,
-                      fullCardLayout: fullCardLayout,
-                    ),
-                  );
-
-                  return Padding(
-                    padding: .only(right: metrics.itemGap),
-                    child: MouseRegion(
-                      onEnter: (_) => _setHoveredItem(hub, itemIndex),
-                      child: Align(alignment: .topLeft, child: focusableCard),
-                    ),
-                  );
-                },
-              ),
+            // A morphing row pins even its last card at the start, so it
+            // runs a viewport on past it.
+            padding: .fromLTRB(
+              metrics.railEdgePadding,
+              2 * scale,
+              morph == null ? metrics.railEdgePadding : railViewportWidth,
+              6 * scale,
             ),
+            sliver: morph == null
+                ? SliverFixedExtentList(
+                    // A fixed extent keeps all sliver offset and child-index math O(1).
+                    itemExtent: TvBrowseRailLayout.itemExtentForIndex(index: 0, metrics: metrics),
+                    delegate: itemDelegate,
+                  )
+                // Card widths change as they morph.
+                : SliverList(delegate: itemDelegate),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRailSlot(
+    BuildContext context, {
+    required MediaHub hub,
+    required int hubIndex,
+    required int itemIndex,
+    required EpisodePosterMode episodePosterMode,
+    required TvBrowseRailLayoutMetrics metrics,
+    required double scale,
+    required bool fullCardLayout,
+    required _PosterMorph? morph,
+  }) {
+    // Focus is observed through _focusModel so a d-pad move or a rail focus
+    // flip rebuilds only the cheap wrapper of the two affected cards; the
+    // card content below is passed through as a stable child.
+    bool isItemFocused() => _focusModel.railHasFocus && _focusModel.position == (hubIndex, itemIndex);
+
+    if (_isTrailingSlot(hub, itemIndex)) {
+      return Padding(
+        padding: .only(right: metrics.itemGap),
+        child: Align(
+          alignment: .topLeft,
+          child: ListenableSelector<bool>(
+            listenable: _focusModel,
+            selector: isItemFocused,
+            builder: (context, isFocused, _) => _buildTrailingSlot(
+              context,
+              hub,
+              hubIndex,
+              itemIndex,
+              metrics: metrics,
+              isFocused: isFocused,
+              scale: scale,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final item = hub.items[itemIndex - _leadingCountFor(hub)];
+    final morphs = morph != null;
+    Widget card = _buildHubCard(
+      context,
+      hub: hub,
+      hubIndex: hubIndex,
+      item: item,
+      itemIndex: itemIndex,
+      episodePosterMode: episodePosterMode,
+      metrics: metrics,
+      scale: scale,
+      fullCardLayout: fullCardLayout || morphs,
+    );
+    if (morph != null) {
+      // Only the slot's own expansion rebuilds it, so a move repaints the
+      // two cards trading places; the poster card passes through untouched.
+      card = ListenableSelector<(({double expansion, double artwork, double logo}), double, bool)>(
+        listenable: morph,
+        selector: () => (morph.appearanceOf(itemIndex), morph.visibilityOf(itemIndex), morph.isNearTarget(itemIndex)),
+        builder: (context, state, poster) => _PosterMorphCard(
+          item: item,
+          expansion: state.$1.expansion,
+          artwork: state.$1.artwork,
+          logo: state.$1.logo,
+          visibility: state.$2,
+          prefetchBackdrop: state.$3,
+          metrics: metrics,
+          scale: scale,
+          episodePosterMode: episodePosterMode,
+          poster: poster!,
+        ),
+        child: card,
+      );
+    }
+
+    // Record: (focused, glow shown). The glow is additionally gated on the
+    // vertical scroll being idle — it paints in the root overlay, unclipped
+    // by the rail's viewport, so on UP moves it would flash over the
+    // spotlight while the target row is still offscreen. The selection
+    // collapses to (false, false) for unfocused cards, so the flag flip
+    // repaints only the focused card.
+    final focusableCard = ListenableSelector<(bool, bool)>(
+      listenable: _focusModel,
+      selector: () {
+        final isFocused = isItemFocused();
+        return (isFocused, isFocused && !_focusModel.verticalScrollActive);
+      },
+      builder: (context, focus, child) => FocusBuilders.buildLockedFocusWrapper(
+        context: context,
+        isFocused: focus.$1,
+        borderRadius: tokens(context).radiusSm,
+        // A morphing card grows instead of scaling up.
+        focusScale: morphs ? 1.0 : (fullCardLayout ? TvBrowseRailLayout.fullCardFocusScale : FocusTheme.focusScale),
+        useFocusGlow: fullCardLayout && !morphs,
+        showGlow: focus.$2,
+        // The card draws the border itself (poster rect for standard cards,
+        // whole card when full-bleed).
+        delegateFocusBorder: true,
+        glowSize: fullCardLayout && !morphs ? Size(metrics.cardWidth, metrics.posterHeight) : null,
+        onTap: () {
+          _selectHubItem(hub, hubIndex, itemIndex);
+          unawaited(_activateCurrentItem());
+        },
+        onLongPress: metrics.isPersonHub
+            ? null
+            : () {
+                _selectHubItem(hub, hubIndex, itemIndex);
+                _cardKeyFor(hub, itemIndex).currentState?.showContextMenu();
+              },
+        child: child!,
+      ),
+      child: card,
+    );
+
+    return Padding(
+      padding: .only(right: metrics.itemGap),
+      child: MouseRegion(
+        onEnter: (_) => _setHoveredItem(hub, itemIndex),
+        child: Align(alignment: .topLeft, child: focusableCard),
       ),
     );
   }
@@ -2306,6 +2469,381 @@ class _RailFocusModel extends ChangeNotifier {
     if (value == _railHasFocus) return;
     _railHasFocus = value;
     notifyListeners();
+  }
+}
+
+/// A card in a poster-morph row at [expansion] (0 a poster, 1 the focused
+/// wide card). The poster [MediaCard] keeps its slot underneath, holding the
+/// card's key, menu and watched badges; while expanded, a wider layer over
+/// it cross-fades the poster into the backdrop with the logo on top. Each
+/// image is decoded once at its final size and scaled to the frame, so the
+/// morph never requests new sizes.
+class _PosterMorphCard extends StatelessWidget {
+  final MediaItem item;
+  final double expansion;
+
+  /// How far the backdrop has replaced the poster, and the logo's (and
+  /// caption's) opacity; see [_PosterMorph.appearanceOf].
+  final double artwork;
+  final double logo;
+
+  /// Fades a card out as it slides past the pinned slot (1 at or after it).
+  final double visibility;
+
+  /// Loads the backdrop ahead of the card expanding, so it never opens on an
+  /// empty frame.
+  final bool prefetchBackdrop;
+  final TvBrowseRailLayoutMetrics metrics;
+  final double scale;
+  final EpisodePosterMode episodePosterMode;
+  final Widget poster;
+
+  const _PosterMorphCard({
+    required this.item,
+    required this.expansion,
+    required this.artwork,
+    required this.logo,
+    required this.visibility,
+    required this.prefetchBackdrop,
+    required this.metrics,
+    required this.scale,
+    required this.episodePosterMode,
+    required this.poster,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final extra = TvBrowseRailLayout.posterMorphExtraWidth(metrics);
+    final width = metrics.cardWidth + extra * expansion;
+    final height = metrics.posterHeight;
+    // Image-only cards would touch on a tight grid gap: inset each side so
+    // the row keeps a visible gutter between cards.
+    final inset = math.max(metrics.cardWidth - metrics.posterWidth, 10 * scale - metrics.itemGap).clamp(0.0, 24.0) / 2;
+    final card = SizedBox(
+      width: width,
+      height: metrics.containerHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(left: inset, top: 0, width: metrics.cardWidth - 2 * inset, height: height, child: poster),
+          if (expansion == 0 && prefetchBackdrop)
+            Offstage(
+              child: Column(
+                children: [
+                  _backdropImage(context, metrics.cardWidth + extra),
+                  _logo(context, (metrics.cardWidth + extra) * 0.5, height * 0.3),
+                ],
+              ),
+            ),
+          if (expansion > 0) ...[
+            Positioned(
+              left: inset,
+              top: 0,
+              width: width - 2 * inset,
+              height: height,
+              child: IgnorePointer(child: _buildExpandedArtwork(context, fullWidth: metrics.cardWidth + extra)),
+            ),
+            if (metrics.containerHeight - height >= 16 * scale)
+              Positioned(
+                left: inset + 2 * scale,
+                right: 0,
+                top: height + 8 * scale,
+                child: Opacity(opacity: logo, child: _buildCaption(context)),
+              ),
+          ],
+        ],
+      ),
+    );
+    if (visibility >= 1) return card;
+    return Opacity(opacity: visibility, child: card);
+  }
+
+  Widget _buildExpandedArtwork(BuildContext context, {required double fullWidth}) {
+    final theme = Theme.of(context);
+    final radius = tokens(context).radiusSm;
+    final client = context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId));
+    final height = metrics.posterHeight;
+    final backdrop = item.heroArtCandidates(containerAspectRatio: 16 / 9).firstOrNull;
+    final posterPath = item.posterThumb(mode: episodePosterMode) ?? item.thumbPath;
+    final logoWidth = fullWidth * 0.5;
+    final logoHeight = height * 0.3;
+
+    // Decoded at [w] × [h] and scaled to cover whatever frame the morph is at.
+    Widget cover(String? path, double w, double h, ImageType type) => FittedBox(
+      fit: BoxFit.cover,
+      clipBehavior: Clip.hardEdge,
+      child: SizedBox(
+        width: w,
+        height: h,
+        child: OptimizedMediaImage(
+          client: client,
+          imagePath: path,
+          width: w,
+          height: h,
+          fit: BoxFit.cover,
+          imageType: type,
+          fadeInDuration: Duration.zero,
+        ),
+      ),
+    );
+
+    return CardFocusBorder(
+      borderRadius: radius,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: theme.colorScheme.surfaceContainerHighest),
+            // Stays under the backdrop until that has loaded.
+            cover(posterPath, metrics.cardWidth, height, ImageType.poster),
+            if (backdrop != null && artwork > 0)
+              Opacity(
+                opacity: artwork,
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  clipBehavior: Clip.hardEdge,
+                  child: _backdropImage(context, fullWidth),
+                ),
+              ),
+            Opacity(
+              opacity: logo,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Darkens the corner under the logo, as Netflix does.
+                  RasterizedGradient(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomLeft,
+                      end: Alignment.topRight,
+                      colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+                      stops: const [0, 0.55],
+                    ),
+                  ),
+                  Positioned(
+                    left: 14 * scale,
+                    bottom: 12 * scale,
+                    // Sized for the full-width card so the logo never
+                    // reflows while the card grows; the clip trims it.
+                    width: logoWidth,
+                    height: logoHeight,
+                    child: _logo(context, logoWidth, logoHeight),
+                  ),
+                ],
+              ),
+            ),
+            if (item.hasActiveProgress)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: MediaProgressBar(
+                  viewOffset: item.viewOffsetMs!,
+                  duration: item.durationMs!,
+                  minHeight: 4 * scale,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The backdrop decoded at the fully expanded card's size, whether it is
+  /// shown or only being loaded ahead.
+  Widget _backdropImage(BuildContext context, double width) {
+    final height = metrics.posterHeight;
+    return SizedBox(
+      width: width,
+      height: height,
+      child: OptimizedMediaImage(
+        client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
+        imagePath: item.heroArtCandidates(containerAspectRatio: 16 / 9).firstOrNull,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        imageType: ImageType.art,
+        fadeInDuration: Duration.zero,
+      ),
+    );
+  }
+
+  /// The clear logo (or the title) in its slot of [width] × [height].
+  Widget _logo(BuildContext context, double width, double height) => ClearLogoImage(
+    client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
+    logoPath: item.clearLogoPath,
+    width: width,
+    height: height,
+    fallbackWidth: width,
+    alignment: Alignment.bottomLeft,
+    fadeInDuration: Duration.zero,
+    fallbackBuilder: (context) => Align(
+      alignment: Alignment.bottomLeft,
+      child: Text(
+        _title,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 22 * scale,
+          height: 1.1,
+          fontWeight: FontWeight.w800,
+          shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
+        ),
+      ),
+    ),
+  );
+
+  String get _title => item.isEpisode ? (item.grandparentTitle ?? item.displayTitle) : item.displayTitle;
+
+  /// The title and what kind of title it is, under the wide card.
+  Widget _buildCaption(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final details = [
+      if (item.isEpisode && item.parentIndex != null && item.index != null) 'S${item.parentIndex} E${item.index}',
+      if (!item.isEpisode && item.year != null) '${item.year}',
+      if (item.durationMs != null && item.isMovie) formatDurationTextual(item.durationMs!),
+    ].join('  •  ');
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: _title,
+            style: TextStyle(fontWeight: FontWeight.w700, color: colors.onSurface),
+          ),
+          if (details.isNotEmpty)
+            TextSpan(
+              text: '  •  $details',
+              style: TextStyle(color: colors.onSurface.withValues(alpha: 0.7)),
+            ),
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(fontSize: 14 * scale, height: 1.2),
+    );
+  }
+}
+
+/// The animated state of a poster-morph row: which slot is pinned at the
+/// row's start ([position], fractional mid-move) and how far its card is
+/// expanded ([amount], 0 resting to 1 focused).
+///
+/// A slot's expansion is `amount * (1 - |slot - position|)`, so while focus
+/// moves one step the outgoing card shrinks as the incoming one grows, and
+/// every slot before the pinned one stays poster-wide. That makes the row's
+/// scroll offset exactly `position * slotExtent` on every frame: the pinned
+/// card holds its place at the start while the outgoing one slides out.
+class _PosterMorph extends ChangeNotifier {
+  _PosterMorph({required TickerProvider vsync, required double position, required double amount})
+    : _position = position,
+      _amount = amount,
+      _fromPosition = position,
+      _toPosition = position,
+      _fromAmount = amount,
+      _toAmount = amount {
+    _controller = AnimationController(vsync: vsync, duration: _duration)..addListener(_tick);
+  }
+
+  /// A move from rest: focus (the border) lands on the next card at once and
+  /// the row holds still for the first fifth, then the outgoing card shrinks
+  /// out as the incoming one grows in, easing in and out.
+  static const _fromRestDuration = Duration(milliseconds: 340);
+  static const _fromRestCurve = Interval(0.2, 1, curve: Curves.easeInOutCubic);
+
+  /// A move that lands mid-glide (a held D-pad): no hold, and no ease-in, so
+  /// the row carries on at speed instead of stalling at each step.
+  static const _retargetDuration = Duration(milliseconds: 260);
+  static const _retargetCurve = Curves.easeOutCubic;
+
+  /// Moves further than this many slots jump instead of sweeping the row.
+  static const _maxAnimatedDistance = 3.0;
+
+  static Duration get _duration => DevicePerformance.reducedDuration(_fromRestDuration);
+
+  Curve _curve = _fromRestCurve;
+
+  late final AnimationController _controller;
+  double _position;
+  double _amount;
+  double _fromPosition;
+  double _toPosition;
+  double _fromAmount;
+  double _toAmount;
+
+  double get position => _position;
+  double get targetPosition => _toPosition;
+
+  /// Slots before the pinned one fade out as they slide past it.
+  double visibilityOf(int slot) => slot >= _position ? 1 : (1 - (_position - slot)).clamp(0.0, 1.0);
+
+  /// Slots within reach of the next few moves, whose backdrops load ahead.
+  bool isNearTarget(int slot) => _toAmount > 0 && (slot - _toPosition).abs() <= 2;
+
+  double expansionOf(int slot) {
+    final distance = (slot - _position).abs();
+    return distance >= 1 ? 0 : _amount * (1 - distance);
+  }
+
+  double _targetExpansionOf(int slot) {
+    final distance = (slot - _toPosition).abs();
+    return distance >= 1 ? 0 : _toAmount * (1 - distance);
+  }
+
+  /// How the slot's card is drawn: its width ([expansion]), how far the
+  /// backdrop has replaced the poster ([artwork]) and the logo's opacity.
+  ///
+  /// As in the reference, a growing card keeps its poster (cropped to the
+  /// widening frame) until it is mostly open, then fades to the backdrop, and
+  /// its logo comes last. A shrinking card drops its logo at once and keeps
+  /// its backdrop until it is nearly a poster again.
+  ({double expansion, double artwork, double logo}) appearanceOf(int slot) {
+    final expansion = expansionOf(slot);
+    if (expansion <= 0) return (expansion: 0, artwork: 0, logo: 0);
+    final target = _targetExpansionOf(slot);
+    if (target >= expansion - 1e-6 && target > 0) {
+      return (
+        expansion: expansion,
+        artwork: ((expansion - 0.55) / 0.4).clamp(0.0, 1.0),
+        logo: ((expansion - 0.85) / 0.15).clamp(0.0, 1.0),
+      );
+    }
+    return (expansion: expansion, artwork: (expansion / 0.35).clamp(0.0, 1.0), logo: 0);
+  }
+
+  void retarget({required double position, required double amount, required bool animate}) {
+    if (position == _toPosition && amount == _toAmount) return;
+    final snapPosition = !animate || (position - _position).abs() > _maxAnimatedDistance;
+    _fromPosition = snapPosition ? position : _position;
+    _fromAmount = animate ? _amount : amount;
+    _toPosition = position;
+    _toAmount = amount;
+    final midGlide = _controller.isAnimating;
+    if (_duration == Duration.zero || (_fromPosition == _toPosition && _fromAmount == _toAmount)) {
+      _controller.stop();
+      _position = position;
+      _amount = amount;
+      notifyListeners();
+      return;
+    }
+    // Hold-repeat retargets from wherever the last step got to, so a held
+    // D-pad glides continuously instead of restarting each step.
+    _curve = midGlide ? _retargetCurve : _fromRestCurve;
+    _controller.duration = DevicePerformance.reducedDuration(midGlide ? _retargetDuration : _fromRestDuration);
+    unawaited(_controller.forward(from: 0));
+  }
+
+  void _tick() {
+    final t = _curve.transform(_controller.value);
+    _position = _fromPosition + (_toPosition - _fromPosition) * t;
+    _amount = _fromAmount + (_toAmount - _fromAmount) * t;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
 

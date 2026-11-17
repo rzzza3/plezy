@@ -668,7 +668,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(focusMemory: focusMemory, hubs: [hub], autofocus: true),
+                child: TvBrowseRail(
+                  expandFocusedPosters: false,
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                ),
               ),
             ),
           ),
@@ -753,7 +758,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(focusMemory: focusMemory, hubs: [firstHub, secondHub], autofocus: true),
+                child: TvBrowseRail(
+                  expandFocusedPosters: false,
+                  focusMemory: focusMemory,
+                  hubs: [firstHub, secondHub],
+                  autofocus: true,
+                ),
               ),
             ),
           ),
@@ -828,7 +838,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(focusMemory: focusMemory, hubs: [firstHub, secondHub], autofocus: true),
+                child: TvBrowseRail(
+                  expandFocusedPosters: false,
+                  focusMemory: focusMemory,
+                  hubs: [firstHub, secondHub],
+                  autofocus: true,
+                ),
               ),
             ),
           ),
@@ -902,7 +917,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(focusMemory: focusMemory, hubs: [hub], autofocus: true),
+                child: TvBrowseRail(
+                  expandFocusedPosters: false,
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                ),
               ),
             ),
           ),
@@ -2027,7 +2047,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(focusMemory: focusMemory, hubs: [hub], autofocus: true),
+                child: TvBrowseRail(
+                  expandFocusedPosters: false,
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                ),
               ),
             ),
           ),
@@ -2069,6 +2094,99 @@ void main() {
       expect(midway, greaterThan(start));
       await tester.pumpAndSettle();
       expect(position.pixels, greaterThan(midway));
+    });
+  });
+
+  group('poster morph', () {
+    final morphCard = find.byWidgetPredicate((widget) => widget.runtimeType.toString() == '_PosterMorphCard');
+
+    Rect cardRect(WidgetTester tester, String id) => tester.getRect(
+      find.ancestor(
+        of: find.byWidgetPredicate((widget) => widget is MediaCard && (widget.item as MediaItem).id == id),
+        matching: morphCard,
+      ),
+    );
+
+    Future<FocusNode> pumpPosterRail(WidgetTester tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1280, 720);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final items = [
+        for (var i = 1; i <= 12; i++)
+          testMediaItem(id: 'movie_$i', backend: MediaBackend.silo, kind: MediaKind.movie, title: 'Movie $i'),
+      ];
+      final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: items, size: items.length);
+      final elsewhere = FocusNode();
+      addTearDown(elsewhere.dispose);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MultiServerProvider>(
+          create: (_) => testMultiServerProvider(MultiServerManager()),
+          child: InputModeTracker(
+            child: MaterialApp(
+              theme: monoTheme(dark: true),
+              home: Scaffold(
+                body: Column(
+                  children: [
+                    Focus(focusNode: elsewhere, child: const SizedBox(height: 1)),
+                    SizedBox(
+                      width: 1280,
+                      height: 600,
+                      child: TvBrowseRail(focusMemory: focusMemory, hubs: [hub], autofocus: true),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return elsewhere;
+    }
+
+    testWidgets('the focused poster rests wide, its neighbours stay posters', (tester) async {
+      await pumpPosterRail(tester);
+      final focused = cardRect(tester, 'movie_1');
+      final next = cardRect(tester, 'movie_2');
+      expect(next.width, lessThan(focused.width));
+      // 16:9 at the poster's height.
+      final posterHeight = tester
+          .getSize(find.byWidgetPredicate((w) => w is MediaCard && (w.item as MediaItem).id == 'movie_2'))
+          .height;
+      expect(focused.width, greaterThan(posterHeight * 16 / 9 - 1));
+    });
+
+    testWidgets('moving right pins the next card where the last one was and expands it', (tester) async {
+      await pumpPosterRail(tester);
+      final start = cardRect(tester, 'movie_1');
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      // Focus lands first: the row holds still for a beat before it moves.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      expect(cardRect(tester, 'movie_1'), start);
+      // Mid-morph the outgoing card is shrinking while it slides out.
+      await tester.pump(const Duration(milliseconds: 120));
+      final midOutgoing = cardRect(tester, 'movie_1');
+      expect(midOutgoing.left, lessThan(start.left));
+      expect(midOutgoing.width, lessThan(start.width));
+
+      await tester.pumpAndSettle();
+      final pinned = cardRect(tester, 'movie_2');
+      expect(pinned.left, moreOrLessEquals(start.left, epsilon: 0.5));
+      expect(pinned.width, moreOrLessEquals(start.width, epsilon: 0.5));
+      expect(cardRect(tester, 'movie_3').width, lessThan(pinned.width));
+    });
+
+    testWidgets('collapses when focus leaves the rail', (tester) async {
+      final elsewhere = await pumpPosterRail(tester);
+      final expanded = cardRect(tester, 'movie_1').width;
+      elsewhere.requestFocus();
+      await tester.pumpAndSettle();
+      expect(cardRect(tester, 'movie_1').width, lessThan(expanded));
+      expect(cardRect(tester, 'movie_1').width, moreOrLessEquals(cardRect(tester, 'movie_2').width, epsilon: 0.5));
     });
   });
 
@@ -2285,7 +2403,7 @@ void main() {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    child: TvBrowseRail(focusMemory: focusMemory, hubs: [hub]),
+                    child: TvBrowseRail(expandFocusedPosters: false, focusMemory: focusMemory, hubs: [hub]),
                   ),
                 ],
               ),

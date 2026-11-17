@@ -53,7 +53,7 @@ class ByteFormatter {
 /// Shows hours and minutes only (no seconds).
 ///
 /// Used for: media cards, media details, playlists.
-String formatDurationTextual(int milliseconds, {bool abbreviated = true}) {
+String formatDurationTextual(int milliseconds, {bool abbreviated = true, String spacer = ''}) {
   final duration = Duration(milliseconds: milliseconds);
 
   final durationLocale = _getDurationLocale();
@@ -62,7 +62,7 @@ String formatDurationTextual(int milliseconds, {bool abbreviated = true}) {
     abbreviated: abbreviated,
     locale: durationLocale,
     delimiter: abbreviated ? ' ' : ', ',
-    spacer: '',
+    spacer: spacer,
     tersity: duration.inMinutes == 0 ? DurationTersity.second : DurationTersity.minute,
   );
 }

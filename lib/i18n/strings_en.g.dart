@@ -3079,30 +3079,6 @@ class Translations$libraryHome$en {
 
 	// Translations
 
-	/// en: 'Ready for a morning pick-me-up?'
-	String get greetingMorning => 'Ready for a morning pick-me-up?';
-
-	/// en: 'Ready for a morning pick-me-up, ${name}?'
-	String greetingMorningNamed({required Object name}) => 'Ready for a morning pick-me-up, ${name}?';
-
-	/// en: 'Ready for an afternoon break?'
-	String get greetingAfternoon => 'Ready for an afternoon break?';
-
-	/// en: 'Ready for an afternoon break, ${name}?'
-	String greetingAfternoonNamed({required Object name}) => 'Ready for an afternoon break, ${name}?';
-
-	/// en: 'Settling in for the evening?'
-	String get greetingEvening => 'Settling in for the evening?';
-
-	/// en: 'Settling in for the evening, ${name}?'
-	String greetingEveningNamed({required Object name}) => 'Settling in for the evening, ${name}?';
-
-	/// en: 'One more before bed?'
-	String get greetingNight => 'One more before bed?';
-
-	/// en: 'One more before bed, ${name}?'
-	String greetingNightNamed({required Object name}) => 'One more before bed, ${name}?';
-
 	/// en: 'Movies & Shows'
 	String get moviesAndShows => 'Movies & Shows';
 
@@ -3114,6 +3090,38 @@ class Translations$libraryHome$en {
 
 	/// en: 'Browse All'
 	String get browseAll => 'Browse All';
+
+	/// en: 'Your Library'
+	String get heroEyebrow => 'Your Library';
+
+	/// en: 'Pick up where you left off.'
+	String get heroResumeHeadline => 'Pick up where you left off.';
+
+	/// en: 'Find something to watch.'
+	String get heroBrowseHeadline => 'Find something to watch.';
+
+	/// en: '(one) {One story is waiting.} (other) {${n} stories are waiting.}'
+	String heroWaiting({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: 'One story is waiting.',
+		other: '${n} stories are waiting.',
+	);
+
+	/// en: '${title} has ${duration} to go.'
+	TextSpan heroTimeToGo({required InlineSpan title, required InlineSpan duration}) => TextSpan(children: [
+		title,
+		const TextSpan(text: ' has '),
+		duration,
+		const TextSpan(text: ' to go.'),
+	]);
+
+	/// en: '${title} is up next.'
+	TextSpan heroUpNext({required InlineSpan title}) => TextSpan(children: [
+		title,
+		const TextSpan(text: ' is up next.'),
+	]);
+
+	/// en: 'Nothing in progress. Here's some of what's in your library.'
+	String get heroNothingInProgress => 'Nothing in progress. Here\'s some of what\'s in your library.';
 
 	/// en: 'Resume ${title}'
 	String resumeTitle({required Object title}) => 'Resume ${title}';
@@ -7364,18 +7372,17 @@ extension on Translations {
 			'watchlistPage.clearFilters' => 'Clear',
 			'watchlistPage.noMatches' => 'No titles match these filters',
 			'watchlistPage.seasons' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} season', other: '${n} seasons', ), 
-			'libraryHome.greetingMorning' => 'Ready for a morning pick-me-up?',
-			'libraryHome.greetingMorningNamed' => ({required Object name}) => 'Ready for a morning pick-me-up, ${name}?',
-			'libraryHome.greetingAfternoon' => 'Ready for an afternoon break?',
-			'libraryHome.greetingAfternoonNamed' => ({required Object name}) => 'Ready for an afternoon break, ${name}?',
-			'libraryHome.greetingEvening' => 'Settling in for the evening?',
-			'libraryHome.greetingEveningNamed' => ({required Object name}) => 'Settling in for the evening, ${name}?',
-			'libraryHome.greetingNight' => 'One more before bed?',
-			'libraryHome.greetingNightNamed' => ({required Object name}) => 'One more before bed, ${name}?',
 			'libraryHome.moviesAndShows' => 'Movies & Shows',
 			'libraryHome.movies' => 'Movies',
 			'libraryHome.shows' => 'Shows',
 			'libraryHome.browseAll' => 'Browse All',
+			'libraryHome.heroEyebrow' => 'Your Library',
+			'libraryHome.heroResumeHeadline' => 'Pick up where you left off.',
+			'libraryHome.heroBrowseHeadline' => 'Find something to watch.',
+			'libraryHome.heroWaiting' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'One story is waiting.', other: '${n} stories are waiting.', ), 
+			'libraryHome.heroTimeToGo' => ({required InlineSpan title, required InlineSpan duration}) => TextSpan(children: [ title, const TextSpan(text: ' has '), duration, const TextSpan(text: ' to go.'), ]), 
+			'libraryHome.heroUpNext' => ({required InlineSpan title}) => TextSpan(children: [ title, const TextSpan(text: ' is up next.'), ]), 
+			'libraryHome.heroNothingInProgress' => 'Nothing in progress. Here\'s some of what\'s in your library.',
 			'libraryHome.resumeTitle' => ({required Object title}) => 'Resume ${title}',
 			'libraryHome.timeLeft' => ({required Object duration}) => '${duration} left',
 			'libraryHome.calendar' => 'Calendar',
@@ -7383,9 +7390,9 @@ extension on Translations {
 			'libraryHome.nothingAiring' => 'Nothing from shows you follow on this day',
 			'libraryHome.calendarFailed' => 'Couldn\'t load the calendar',
 			'libraryHome.runtimeTitle' => 'How much time you got?',
+			'libraryHome.runtimeUnder60' => 'Under 60 Minutes',
 			_ => null,
 		} ?? switch (path) {
-			'libraryHome.runtimeUnder60' => 'Under 60 Minutes',
 			'libraryHome.runtimeUnder150' => 'Under 150 Minutes',
 			'libraryHome.runtimeAllNight' => 'All Night',
 			'libraryHome.runtimeEmpty' => 'No movies of this length',
@@ -7897,9 +7904,9 @@ extension on Translations {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure TBD is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Silo account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
+			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			_ => null,
 		} ?? switch (path) {
-			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
 			'companionRemote.remote.retryNow' => 'Retry Now',
